@@ -469,15 +469,47 @@ a reader asked why the lines in a figure all looked the same.
    also logs no lateral acceleration or friction-ellipse utilisation, which is how
    you would verify the retrain worked.
 
-### Next — Season 4, Episode 13
+### Episode 12 — DONE ✓
 
-Open vs passive LSD vs welded, same corner, yaw acceleration decomposed into
-lateral tire forces, load transfer and drivetrain asymmetry. The four-wheel model
-and `diff=` already exist from Episode 8's solves.
+All four criteria met: `experiments/ep12/run.py`, its `out/`, the draft, and
+FINDINGS F72–F77. Report passes 8/8. Both figures rendered and reviewed. This is the
+first episode of **Season 4** (seasons are 1–4, 5–8, 9–11, **12–16**).
 
-Episode 11's crack points straight at it: every driver in the series so far, solver
-and policy alike, has been handed a fixed car. None could change the car while
-driving it.
+### Next — Season 4, Episode 13: the classical torque-vectoring controller
+
+**Question:** if pushing one wheel harder rotates the car, why not just do that?
+
+**Build:** the classical two-layer controller — a reference model plus PID producing
+a desired yaw moment `Mz`, then a QP allocator that decides which wheels pay for it
+by minimising tire workload. The plan calls that split "20 years of engineering
+consensus", and Episode 14 is the flagship that asks whether a learner agrees.
+
+**The physics it needs already exists and is new this session.** `yaw_moment` carries
+the drivetrain term (F72), and `differential_forces` is the passive baseline TV gets
+compared against (F76/F77). Before F72 a TV controller would have produced **exactly
+zero** yaw response and nothing would have errored.
+
+**Expect 1–4% lap time.** The best published figure is ~9% for an FSAE car on a
+skidpad, which is maximally favourable — so **treat anything above 9% as a bug**,
+not a result. That is the outside reference (rule 2); our own model is not.
+
+**Read before starting:**
+
+- **F72/F73** — what the yaw moment does and why it changed four conclusions.
+- **F76/F77** — the differential is ONE mechanism, and modelling it as two got the
+  sign backwards. TV will be tempting to model the same wrong way.
+- **F79** — three measurement errors in one afternoon, all from comparing against the
+  wrong baseline. **Reproduce the published number before trusting a delta.**
+- **Rule 15** — state Episode 13's fidelity rung. Rung 2 reproduces ~5% of a real
+  car's understeer, so a TV lap-time gain is a trend claim, not a number a
+  manufacturer could use.
+
+**Strong recommendation, and the reason is in F70/F71.** Consider building the
+limit-seeking driver *first* (item 4 under Outstanding). Torque vectoring only acts
+where tires are saturated; the current policy corners at 5.8–7.4 deg of slip and
+uses 94–98% of peak lateral force, but the environment logs no lateral acceleration
+and no friction-ellipse utilisation, so there is no way to verify whether a TV result
+is measuring anything. Episodes 13–16 all inherit that.
 
 ### Superseded — Episode 10 planning notes
 

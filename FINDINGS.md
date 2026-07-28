@@ -3044,6 +3044,84 @@ number downstream of it, not only the ones the fix was motivated by, and the way
 to catch the rest is to regenerate every figure and reread every table rather than
 trust that "the important ones were checked."
 
+## Session 15 — Episode 14 infrastructure and pilot · 2026-07-27
+
+### F91 · The RL action space grows to variants H and E without disturbing Season 3, and a pilot run confirms the pipeline produces something sane. · 2026-07-27
+
+**Source:** `[MEASURED]` — `physics/rl_env.py` (`EnvConfig.tv_mode`),
+`diagnostics/D6_training_health.py`, `experiments/ep14/run.py --pilot`, 60,000
+steps per variant, seed 0.
+
+Episode 14 asks whether an RL policy, given the same four wheels and no
+hand-built reference model, agrees with Episode 13's classical two-layer
+controller. Per `docs/vehicle-codesign-research-plan.md` Phase 4b, two new
+variants:
+
+- **H (hybrid)** — the policy's action grows by one: an `Mz` DEMAND, fed
+  through the *identical* `physics.torque_vectoring.Allocator` variant C
+  uses. `act_dim` 3.
+- **E (end-to-end)** — the policy's action REPLACES the net drive-force
+  channel with four raw per-wheel force fractions, scaled by each wheel's own
+  grip-based capacity (`Allocator.capacities()`), no allocator call at all.
+  `act_dim` 5, no separate demand channel — matching the plan's "none" lower
+  layer exactly.
+
+Both route through `DoubleTrackBackend.attach_torque_vectoring`, the same hook
+`physics/driver.py` built for Episode 13 — no backend changes were needed.
+`schema.ACT_BICYCLE` is untouched; the extra action dimensions are consumed
+inside `DrivingEnv.step()` before anything reaches the backend's own action
+space.
+
+**`tv_mode="none"` reproduces every Season 3 result bit-for-bit** — all 18
+pre-existing `test_rl_env.py` tests pass unchanged, plus a new explicit seal
+test comparing the bare default against `tv_mode="none"` on identical seeds
+and actions.
+
+**Also fixed, not deferred: the environment logged no lateral acceleration
+and no per-wheel friction-ellipse utilisation**, flagged in `HANDOFF.md` as
+the reason there was previously no way to verify a torque-vectoring result was
+measuring anything a saturated tire actually did. `_record()` now logs `a_y`
+and per-corner `fx/fy/fz`; `rollout()` reports `peak_a_y_g` and
+`mean_utilisation`, mirroring `physics.driver.Lap`'s own properties so
+Episode 13 and 14 figures can share plotting code.
+
+**One new D6 check**, additive: `exploration_covers_the_torque_vectoring_action`
+inspects the model's current (post-training) `log_std` on the new action
+dimension(s) — collapsed-to-zero or blown-out-past-the-range are both failures,
+and for variant E, a >10x spread across the four wheels' exploration scale is
+too (a policy that never learned to use one wheel would look exactly like
+that — F52's mismatched-exploration-scale failure, in a new action space).
+A no-op for every `tv_mode="none"` run, so Episodes 9-11 are unaffected.
+
+**The pilot** (60,000 steps/variant, far short of Episode 10's 5,000,000, and
+read as pipeline validation, not a result — CLAUDE.md rule 5's seed discipline
+does not even apply to a number this provisional):
+
+| | wall-clock (60k steps) | D6 | peak lateral g | mean utilisation |
+|---|---|---|---|---|
+| H | 208 s | FAILED (3/13) | 0.879 | 0.45 |
+| E | 104 s | FAILED (3/12) | 0.613 | 0.25 |
+
+Both D6 failures are exactly what an undertrained policy should produce
+(`the_deployed_policy_completes_the_task`, `the_off_track_rate_came_down`,
+and one of `greedy_and_stochastic_agree` / `exploration_is_not_growing`) —
+none of the three failures is the new exploration-scale check, which passed
+for both, with a healthy, near-uniform spread across E's four wheels
+(std 0.221-0.229, a 1.0x ratio). The realized-`Mz`-vs-distance sanity figure
+(`experiments/ep14/out/01-pilot-sanity.svg`) shows three non-degenerate,
+distinctly different curves for C, H and E — the pipeline is producing
+something to compare, not noise or a flat line.
+
+**What this pilot is for, extrapolated rather than assumed.** Linear scaling
+from 60,000 to Episode 10's 5,000,000 steps gives **~4.8 hours per seed for H**
+and **~2.4 hours per seed for E** — before rule 5's 3-5 seeds per
+configuration, which multiplies straight through (roughly 14-24 hours for H
+alone, 7-12 for E, run serially). This is the number the approved plan's pilot
+phase exists to surface before any production run is committed to, and it is
+reported rather than acted on — the decision to spend that much wall-clock,
+or to look for a smaller production step count first, is not this session's
+to make alone.
+
 ---
 
 # Decisions

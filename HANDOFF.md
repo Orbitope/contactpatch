@@ -572,38 +572,85 @@ docstring already promised.
 **500 tests passing** after this session's changes, run in full, not just the
 figure suite.
 
-### Next — Season 4, Episode 14: what the machine found instead — **FLAGSHIP**
+### Session 15 — Episode 14 infrastructure and pilot ✓ DONE (infra), ⚠️ AWAITING A GO/NO-GO ON PRODUCTION SCALE
 
 **Question:** give a learner the same four wheels, the same physics and the same
 stopwatch, with no reference model. Does it agree with the engineers?
 
-**Build:** variant H (RL upper layer + the existing QP allocator) and variant E
-(end-to-end four-wheel torques). Overlay the learned `Mz` against the classical one;
-compare tire workload. The allocator, the reference model and the closed-loop
-driver all exist now and are pinned by `tests/test_torque_vectoring.py`.
+**Built, all additive to Season 3 — every prior result unaffected:**
 
-**Read before starting:**
+- `physics/rl_env.py`: `EnvConfig.tv_mode` — `"none"` (unchanged, all 18 prior
+  tests pass, plus a new bit-for-bit seal test), `"hybrid"` (variant H: `act_dim`
+  3, the policy's third action is an `Mz` demand through the *same*
+  `torque_vectoring.Allocator` Episode 13 uses), `"end_to_end"` (variant E:
+  `act_dim` 5, four raw per-wheel force fractions, no allocator at all — matches
+  `docs/vehicle-codesign-research-plan.md` Phase 4b exactly). Both route through
+  `DoubleTrackBackend.attach_torque_vectoring`, Episode 13's own hook — no
+  backend changes needed.
+- The environment now logs `a_y` and per-corner `fx/fy/fz`
+  (`rollout()` reports `peak_a_y_g`/`mean_utilisation`) — the exact gap this file
+  flagged below as blocking verification of any TV result.
+- `diagnostics/D6_training_health.py` gained one new, additive check:
+  `exploration_covers_the_torque_vectoring_action`, a no-op for `tv_mode="none"`.
+- `experiments/ep14/run.py` (`--pilot`, `--eval-only`, `--figures-only`) and
+  `viz/rl_tv_figures.py` (one pilot sanity figure; full pictorial/technical
+  pairs come after production training, per rule 1's own logic — nothing to
+  draw yet).
+- **513 tests passing**, full suite, after all of the above.
 
-- **F84** — the driver-tuning dependence. This is the one that can quietly ruin the
-  comparison: an RL driver is a *different driver*, so "the learner beat the
-  classical controller" may be measuring the driver swap. Consider running the
-  classical controller against the learned driver as a control condition.
+**Pilot run complete (F91): 60,000 steps/variant, seed 0, NOT a result.**
+
+| | wall-clock | D6 |
+|---|---|---|
+| H | 208 s | FAILED 3/13 (exactly what an undertrained policy should fail) |
+| E | 104 s | FAILED 3/12 (same) |
+
+The new exploration-scale check passed for both, and E's four wheels explore
+with a near-identical spread (1.0x) — no wheel is being ignored. The sanity
+figure shows three distinct, non-degenerate `Mz`-vs-distance curves for C/H/E.
+**The pipeline works.**
+
+**⚠️ The number this pilot exists to produce, and the reason to stop here:**
+linear-scaled to Episode 10's 5,000,000 steps, that wall-clock is **~4.8
+hours/seed for H** and **~2.4 hours/seed for E** — before rule 5's 3-5 seeds
+per configuration, which multiplies straight through. Reported per the approved
+plan's pacing (pilot first, then scale); **not acted on**. Before running a
+production pass, decide: full 5M-step multi-seed runs as-is (many hours,
+serial), a smaller production step count investigated first, or a remote/batched
+run. This is not this session's call to make alone.
+
+**Read before scaling to production:**
+
+- **F84** — the driver-tuning dependence. An RL policy IS its own driver
+  (steering and throttle both learned), so this mainly matters when comparing
+  against Episode 13's *classical* controller, which used a separately hand-built
+  driver (`physics/driver.py`). The comparison this episode actually needs —
+  overlaying **realized `Mz` against distance**, computed identically for C, H
+  and E via `DoubleTrackBackend.yaw_moment` on each one's own logged per-wheel
+  forces (`experiments/ep14/run.py::realized_mz`) — sidesteps most of this: it
+  is a control-surface shape comparison, not a lap-time race, and doesn't
+  require C, H and E to share a driver.
 - **F83** — separate the allocator from the yaw control, in both directions.
-- **F61 and the D6 gate** — a reinforcement-learning result is the DEPLOYED policy's
-  performance, over several seeds and several harnesses.
-- **F86** — our own reference-gradient sweep says asking for a pointier car helps,
-  weakly and monotonically. If the learner independently prefers a non-neutral yaw
-  reference, that is corroboration of the published result and is the strongest
-  outcome available. **Do not script the conclusion** — "it reinvented the
-  allocator" is a fine result.
+  Not yet needed for H/E vs each other (H always uses the allocator, E never
+  does, by construction) but relevant if H's own contribution gets decomposed
+  further.
+- **F61 and the D6 gate** — a reinforcement-learning result is the DEPLOYED
+  policy's performance, over several seeds and several harnesses. Production
+  runs must report the greedy (mean-action) policy, not sampled.
+- **F86** — our own reference-gradient sweep says asking for a pointier car
+  helps, weakly and monotonically. If H or E independently prefers a
+  non-neutral yaw reference, that corroborates the published result and is the
+  strongest outcome available. **Do not script the conclusion** — "it
+  reinvented the allocator" is a fine result.
 
 **Still true and still unfixed** (carried from Session 12): Season 3 has one
-training seed, Episode 10's D6 fails `exploration_is_not_growing`, Episode 9 needs
-rewriting around "it never learned to drive", and the limit-seeking policy does not
-exist. Episode 13 sidestepped that last one by building a classical driver instead
-— **Episode 14 cannot.** Its policy has to operate where tires are saturated, and
-`physics/driver.py` now logs lateral acceleration and per-wheel friction-ellipse
-utilisation, which is how you check.
+training seed elsewhere in the project, Episode 10's D6 fails
+`exploration_is_not_growing`, and Episode 9 needs rewriting around "it never
+learned to drive." The limit-seeking-policy gap is now addressed for Episode 14
+specifically: the pilot's own peak-lateral-g numbers (H: 0.879 g, E: 0.613 g,
+against a measured ~0.95 g ceiling) show the existing progress-reward curriculum
+already pushes toward saturation at just 60k steps, without any dedicated
+limit-seeking reward — worth re-checking at production scale, not assuming.
 
 ### Superseded — Episode 13 planning notes
 

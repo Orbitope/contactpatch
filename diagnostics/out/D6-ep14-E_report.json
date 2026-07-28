@@ -1,0 +1,185 @@
+{
+  "diagnostic": "D6-ep14-E",
+  "title": "Episode 14 variant E \u2014 training health",
+  "subtitle": "The same ten Season 3 checks, plus the exploration-scale check this episode's larger action space adds.",
+  "passed": false,
+  "n_checks": 12,
+  "n_failed": 3,
+  "findings": [],
+  "checks": [
+    {
+      "name": "policy_is_actually_updating",
+      "passed": true,
+      "detail": "median approximate KL per update is 0.00260 against a 0.0001 floor. Below the floor the weights are barely moving and the run is a very expensive way to keep a random policy \u2014 which is what happened when the value gradient was 150x the policy's and one shared gradient clip scaled both by 0.0067.",
+      "severity": "gate",
+      "value": 0.002601245637924876,
+      "expected": null,
+      "group": "Did the policy actually change?"
+    },
+    {
+      "name": "exploration_is_not_growing",
+      "passed": false,
+      "detail": "policy entropy went -1.40 -> -1.33 (+0.07). A policy that is learning gets more decisive; rising entropy means the entropy bonus is beating the policy gradient, which on a Gaussian policy it will do indefinitely because entropy is unbounded above.",
+      "severity": "gate",
+      "value": 0.06980242729187003,
+      "expected": null,
+      "group": "Did the policy actually change?"
+    },
+    {
+      "name": "exploration_matches_the_action_scale",
+      "passed": true,
+      "detail": "holding the 40 m corner needs a normalised steering action of about 0.037; the policy searches with a standard deviation of 0.082, a ratio of 2.2x. Far above and the car saws the wheel off the road before it learns anything; far below and it never finds the behaviour at all.",
+      "severity": "gate",
+      "value": 2.2254811533701724,
+      "expected": null,
+      "group": "Is the search at the scale of the problem?"
+    },
+    {
+      "name": "the_two_action_dimensions_need_different_exploration",
+      "passed": true,
+      "detail": "Steering rate and throttle have useful scales an order of magnitude apart \u2014 0.037 of authority against the whole [-1, 1] interval \u2014 so a single exploration standard deviation cannot serve both. With one value small enough for the steering, the policy never sampled braking at all and sat at full throttle for half a million steps. This run uses [0.082, 0.223, 0.223, 0.223, 0.223].",
+      "severity": "note",
+      "value": [
+        0.0820849986238988,
+        0.22313016014842982,
+        0.22313016014842982,
+        0.22313016014842982,
+        0.22313016014842982
+      ],
+      "expected": null,
+      "group": "Is the search at the scale of the problem?"
+    },
+    {
+      "name": "exploration_covers_the_torque_vectoring_action",
+      "passed": true,
+      "detail": "the torque-vectoring actions explore with standard deviations [0.22939999401569366, 0.2280000001192093, 0.22190000116825104, 0.22619999945163727]. Below 0.001 and the policy has stopped trying anything but whatever it already does; above 2 the noise alone spans the entire action range and swamps the signal. A 1.0x spread across the 4 dimensions means at least one is being explored an order of magnitude less than the others \u2014 a policy that never learned to use one wheel would look exactly like this (F52's mismatched-exploration-scale failure, in a new action space).",
+      "severity": "gate",
+      "value": [
+        0.22939036786556244,
+        0.22803153097629547,
+        0.2218976467847824,
+        0.2262134999036789
+      ],
+      "expected": null,
+      "group": "Is the search at the scale of the problem?"
+    },
+    {
+      "name": "the_task_is_completable",
+      "passed": true,
+      "detail": "the car makes 19.3 m/s round this corner at the limit and starts the episode at 15.0 m/s. Starting above the corner speed means the first thing the policy must discover is hard braking, seconds before any consequence, against an immediate reward for going faster \u2014 configured that way it never completed a single lap in 250k steps.",
+      "severity": "gate",
+      "value": {
+        "corner_limit_ms": 19.313125610351562,
+        "entry_ms": 15.0
+      },
+      "expected": null,
+      "group": "Is the task possible, and did it get solved?"
+    },
+    {
+      "name": "the_off_track_rate_came_down",
+      "passed": false,
+      "detail": "episodes ending off the road went 1.00 -> 1.00. A rate stuck at 1.00 means every episode is a crash and the policy has never seen the behaviour it is supposed to be reinforcing.",
+      "severity": "gate",
+      "value": 1.0,
+      "expected": null,
+      "group": "Is the task possible, and did it get solved?"
+    },
+    {
+      "name": "the_critic_predicts_returns",
+      "passed": true,
+      "detail": "explained variance over the last fifth of training has a median of +0.35. At zero the critic is no better than predicting the mean, which makes every advantage estimate noise and the policy gradient a random walk.",
+      "severity": "gate",
+      "value": 0.3454686508810589,
+      "expected": null,
+      "group": "Is the critic predicting anything?"
+    },
+    {
+      "name": "the_deployed_policy_completes_the_task",
+      "passed": false,
+      "detail": "the mean-action policy \u2014 the one you would ship \u2014 finishes 0% of laps and covers 64 m. Sampling its actions instead gives 0% and 51 m. **The deployed number is the result.** A run whose sampled policy performs well and whose mean action does not has not produced a driver; it has produced a policy whose competence lives in its own exploration noise, and the sampled figure describes something you cannot ship.",
+      "severity": "gate",
+      "value": {
+        "greedy_finish": 0.0,
+        "stochastic_finish": 0.0
+      },
+      "expected": null,
+      "group": "Does the policy you would actually deploy work?"
+    },
+    {
+      "name": "greedy_and_stochastic_agree",
+      "passed": true,
+      "detail": "mean-action rollouts reach 64 m and sampled rollouts reach 51 m, a 20% gap. A large gap means the behaviour depends on the exploration noise itself, so the deterministic policy you would ship is a different driver from the one the training curves describe.",
+      "severity": "gate",
+      "value": 0.19810724724868775,
+      "expected": null,
+      "group": "Does the policy you would actually deploy work?"
+    },
+    {
+      "name": "the_policy_stayed_inside_the_tire_model",
+      "passed": true,
+      "detail": "worst slip angle reached 8.9 deg against our 12 deg bound, with 0.0% of steps beyond it. Every minimum-time solve in Seasons 1 and 2 constrains this; the environment deliberately does not, so the policy is free to operate where the Magic Formula is extrapolating and the forces are arithmetic rather than measurement.",
+      "severity": "gate",
+      "value": {
+        "worst_deg": 8.856812999143648,
+        "fraction_beyond": 0.0
+      },
+      "expected": null,
+      "group": "Did it stay inside the tire model?"
+    },
+    {
+      "name": "the_tire_file_s_own_load_range_was_respected",
+      "passed": true,
+      "detail": "0.0% of steps left the tire file's own declared operating range. That bound is the file's, not ours, and outside it the model is not extrapolating from a fit \u2014 it has no fit.",
+      "severity": "gate",
+      "value": 0.0,
+      "expected": null,
+      "group": "Did it stay inside the tire model?"
+    }
+  ],
+  "data": {
+    "evaluation": {
+      "greedy": {
+        "distance_m": 63.8702746285547,
+        "distance_std": 0.0,
+        "finish_rate": 0.0,
+        "worst_slip_deg": 3.2441417424003576,
+        "slip_over_bound": 0.0,
+        "envelope_occupancy": 0.0,
+        "lap_time_s": NaN
+      },
+      "stochastic": {
+        "distance_m": 51.21711034087402,
+        "distance_std": 11.851671741286271,
+        "finish_rate": 0.0,
+        "worst_slip_deg": 8.856812999143648,
+        "slip_over_bound": 0.0,
+        "envelope_occupancy": 0.0,
+        "lap_time_s": NaN
+      }
+    },
+    "train_config": {
+      "total_steps": 60000,
+      "n_envs": 8,
+      "rollout_steps": 512,
+      "epochs": 10,
+      "minibatches": 4,
+      "gamma": 0.995,
+      "gae_lambda": 0.95,
+      "clip": 0.2,
+      "lr": 0.0003,
+      "value_coef": 0.5,
+      "entropy_coef": 0.0005,
+      "max_grad_norm": 0.5,
+      "hidden": 64,
+      "init_log_std": [
+        -2.5,
+        -1.5,
+        -1.5,
+        -1.5,
+        -1.5
+      ],
+      "seed": 0,
+      "anneal_lr": true
+    }
+  }
+}

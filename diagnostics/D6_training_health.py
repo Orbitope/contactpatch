@@ -35,6 +35,12 @@ rather than optimisation:
    the resulting lap time is a statement about our curve fit.
    → ``the_policy_stayed_inside_the_tire_model``
 
+**Episode 14 adds one check**, not a rewrite of the others: check 3 above only
+ever inspects action index 0 (steering), so it neither breaks nor says anything
+about the extra action(s) Episode 14's ``tv_mode="hybrid"``/``"end_to_end"``
+variants add. → ``exploration_covers_the_torque_vectoring_action`` — every
+Season 3 episode has `cfg.tv_mode == "none"` and this check is a no-op for them.
+
 Run::
 
     python -m diagnostics.D6_training_health
@@ -169,6 +175,34 @@ def run_checks(report: Report, history: list[dict], model, cfg: EnvConfig,
         f"steps. This run uses {np.round(std, 3).tolist()}.",
         value=std.tolist(),
     )
+
+    # -- Episode 14: did it explore the torque-vectoring action(s) at all? ---
+    # Uses model.log_std directly rather than train_cfg["init_log_std"] (which
+    # check 3 reads) because the latter's scalar-broadcast path above assumes
+    # exactly 2 actions and would silently mis-size for 3 or 5 — this sidesteps
+    # that rather than touching a check Episodes 9-11 already pass.
+    if cfg.tv_mode != "none":
+        full_std = np.exp(model.log_std.detach().numpy())
+        extra = full_std[2:] if cfg.tv_mode == "hybrid" else full_std[1:5]
+        lo, hi = float(extra.min()), float(extra.max())
+        spread = hi / max(lo, 1e-9)
+        report.add(
+            "exploration_covers_the_torque_vectoring_action",
+            (1e-3 < lo) and (hi < 2.0) and (spread < 10.0),
+            f"the torque-vectoring action{'s' if len(extra) > 1 else ''} "
+            f"explore{'s' if len(extra) == 1 else ''} with standard deviation"
+            f"{'s' if len(extra) > 1 else ''} {np.round(extra, 4).tolist()}. "
+            f"Below {1e-3:g} and the policy has stopped trying anything but "
+            f"whatever it already does; above {2.0:g} the noise alone spans "
+            f"the entire action range and swamps the signal. A {spread:.1f}x "
+            f"spread across the {len(extra)} dimension"
+            f"{'s' if len(extra) > 1 else ''} means at least one is being "
+            f"explored an order of magnitude less than the others — a policy "
+            f"that never learned to use one wheel would look exactly like "
+            f"this (F52's mismatched-exploration-scale failure, in a new "
+            f"action space).",
+            value=extra.tolist(),
+        )
 
     # -- is the task winnable? ----------------------------------------------
     report.section("Is the task possible, and did it get solved?")

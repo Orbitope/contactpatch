@@ -49,7 +49,11 @@ contact-patch/
 │   ├── mathkit.py        ✓ numpy/CasADi backend shim — ONE set of tire formulas
 │   ├── track.py          ✓ centreline as curvature(s), plus Ep 4's two corners
 │   ├── optimal_control.py ✓ distance-domain min-time collocation (CasADi/IPOPT)
-│   └── double_track.py   ✓ four wheels, lateral transfer, roll distribution (Ep 5+)
+│   ├── double_track.py   ✓ four wheels, lateral transfer, roll distribution (Ep 5+)
+│   ├── torque_vectoring.py ✓ Ep 13: reference model + PID + QP allocator. Two
+│   │                       layers, separable, zero-order held per control step
+│   └── driver.py         ✓ Ep 13: the closed-loop driver — pure pursuit plus a
+│                           quasi-steady-state speed profile, pushed to failure
 ├── diagnostics/            D1–D6 generators; run on every build
 │   ├── common.py         ✓ Check/Report, grouped output, generated write-ups
 │   ├── D1_tire_card.py   ✓ 60 checks — tire model
@@ -71,7 +75,10 @@ contact-patch/
 │   ├── line_figures.py   ✓ Ep 4 racing line; shared track backdrop
 │   ├── transient_figures.py ✓ D4 step-steer figures
 │   ├── load_figures.py   ✓ Ep 5 four wheels, body roll, anti-roll bar
-│   └── utilisation_figures.py ✓ Ep 6 friction circles, along-the-path, diff
+│   ├── utilisation_figures.py ✓ Ep 6 friction circles, along-the-path, diff
+│   └── tv_figures.py     ✓ Ep 13 two layers, allocation, the limit, tracking.
+│                           Its captions are COMPOSED from the traces — two
+│                           hand-written ones contradicted their own numbers
 ├── tires/                  tire parameter files
 │   └── Sedan_Pac02Tire.tir MF 2002 set, BSD-3 from Project Chrono
 ├── experiments/            one directory per episode
@@ -451,6 +458,7 @@ snapped to one — F47's apex defect recurring in a different variable, caught b
 a reader asked why the lines in a figure all looked the same.
 
 **412 tests. D1 60/60, D2 38/38, D3 21/21, D4 13/13, D5 22/22, ep12 8/8.**
+(Session 13: **489 tests**, and `D-ep13` fails 1 of 12 on purpose — see F84.)
 
 ### Outstanding
 
@@ -465,9 +473,15 @@ a reader asked why the lines in a figure all looked the same.
 4. **The limit-seeking driver** the user asked for — minimum-time reward with a
    large terminal envelope penalty, agreed shape — is not built. It is Season 4
    infrastructure: torque vectoring only acts where tires are saturated, so a TV
-   result measured with an under-driving policy measures nothing. The environment
-   also logs no lateral acceleration or friction-ellipse utilisation, which is how
-   you would verify the retrain worked.
+   result measured with an under-driving policy measures nothing.
+   **Partly addressed in Session 13, and only partly:** Episode 13 built a
+   *classical* closed-loop driver (`physics/driver.py`) that is pushed to failure by
+   construction and logs lateral acceleration and per-wheel friction-ellipse
+   utilisation, so saturation is now verifiable rather than assumed — `D-ep13`
+   gates on it. The RL side is untouched, and Episode 14 needs it.
+5. **A `[ASSUMED]` number in the driver moves Episode 13's headline by more than the
+   headline is worth** (F84). Any Season 4 comparison that swaps the driver — which
+   Episode 14 does by definition — inherits this and has to control for it.
 
 ### Episode 12 — DONE ✓
 
@@ -475,7 +489,123 @@ All four criteria met: `experiments/ep12/run.py`, its `out/`, the draft, and
 FINDINGS F72–F77. Report passes 8/8. Both figures rendered and reviewed. This is the
 first episode of **Season 4** (seasons are 1–4, 5–8, 9–11, **12–16**).
 
-### Next — Season 4, Episode 13: the classical torque-vectoring controller
+### Session 13 — Episode 13, the classical controller ✓ DONE
+
+Findings **F81–F86** and decision **D11**. Two new modules, both of which Episodes
+14–16 inherit: `physics/torque_vectoring.py` (reference model + PID + QP allocator)
+and `physics/driver.py` (a closed-loop driver, because **a controller can only be
+judged in closed loop** — a min-time solver handed four wheel forces just uses them
+optimally, which is the question Episode 8 already answered).
+
+**The headline, and it is smaller than the plan expected.** The controller works:
+it tracks the reference yaw rate 88% better than the passive car and the allocator
+delivers what the PID asks for. It buys **+5.2% of cornering limit**, **+1.30% of
+skidpad lateral g** — against a ~9% published ceiling — and **+0.51% of lap time**,
+because two thirds of `long_exit` is a power-limited straight.
+
+**Three things that reach forward into Episodes 14 and 15:**
+
+1. **F83 — the control condition is mandatory.** The allocator with its yaw demand
+   forced to zero gets ~40% of the lap gain (38–56% across sensitivities) and
+   *negative* gain on the skidpad. "Torque vectoring is worth X" is two claims, and
+   Episode 15 needs them separated.
+2. **F84 — a `[ASSUMED]` number in the DRIVER moves the headline from −0.34% to
+   +11.55%.** A driver aid is tuned against a driver whether or not anyone says so.
+   Episode 14 must hold the driver fixed or vary it deliberately, never leave it
+   implicit. `D-ep13` fails this check on purpose and the article leads with it.
+3. **F85 — under Episode 11's steering noise the controller turns 31/40 valid laps
+   into 40/40** and halves the lap-time scatter. That is much larger than anything
+   in the undisturbed lap and is the effect these systems are actually sold on.
+
+**`D-ep13` fails 1 of 12 checks by design** — F84's driver sensitivity. The
+threshold has not been loosened and the article leads with the failure. Also worth
+knowing: the ~9% ceiling and the "deviations from neutral yaw tracking" claim both
+come from the series plan, which states them without references, so both are marked
+**`[SOURCED — citation outstanding]`** rather than presented as verified. Tracing
+them is cheap and would strengthen Episode 14.
+
+### Session 14 — visualisation audit of Episodes 1–13 ✓ DONE
+
+Requested directly: a full pass over every published episode asking whether it has
+a pictorial figure and a technical one (rule 1), and whether every headline number
+has a figure behind it. Findings **F87–F90**. No new episode; this is maintenance
+on the twelve that exist.
+
+**Three real defects, not just gaps:**
+
+1. **F87 — Episodes 9 and 10 could not regenerate half their own figures.**
+   `viz.review_figures.path_review`/`.line_compare` and
+   `viz.conditioned_figures.line_family_figure` were written, exported, and called
+   from nowhere. `--figures-only` silently produced 3 of 6 (Ep 9) and 3 of 5
+   (Ep 10) embedded SVGs. Both are now fully wired; Ep 9 also gained the
+   `--eval-only` mode Ep 10 already had, so fixing this never required a retrain.
+2. **F88 — Episode 9's core narrative depended on an unseeded torch RNG.**
+   `_sampled()` drew from torch's global generator with nothing seeding it, so
+   regenerating in a fresh process produced a DIFFERENT sampled trajectory that
+   contradicted the episode's own published numbers (21.5 m/s and "gets round"
+   became a car that also leaves the road). Fixed with an explicit
+   `SAMPLE_SEED = 1`, found by sweeping 20 seeds and picking the first that
+   reproduces the published numbers to three significant figures. **This was
+   already broken before this session** — just never observed, because nobody had
+   regenerated the figures in a fresh process since they were published.
+3. **F90 — Episode 7's "brake release moves 15.9 m" was stale**, measured before
+   the F72/F73 yaw-moment fix that F80 used to correct this same episode's lap
+   times and drivetrain ordering. Under the corrected physics it is **~10.6 m**.
+   Direction and significance unchanged; only the magnitude was wrong. The lesson
+   is F79's again: a shared-machinery fix invalidates every downstream number, not
+   only the ones the fix was chasing.
+
+**One figure deliberately left unfixed.** `experiments/ep09/out/04-two-environments.svg`'s
+likely source (`learning_figures.failure_figure`) has a hardcoded caption that
+contradicts Episode 10's real, saved policy (F89). Wiring it anyway would have
+produced a figure whose caption contradicts its own data — the exact class of
+defect this project keeps finding (F68, F81, now F88). Left orphaned and flagged
+rather than guessed.
+
+**Additions, not just fixes:** Episode 2 got a technical μ(Fz) figure (the graph
+its title promises and never drew — F82-adjacent, filed under the "smaller
+additions" note); Episode 12 got a delivered-force comparison across all three
+differential types (its sharpest number, "35% thrown away," had no dedicated
+visual); Episode 7's `balance_card` got the 4th (brake-release) panel its own
+docstring already promised.
+
+**500 tests passing** after this session's changes, run in full, not just the
+figure suite.
+
+### Next — Season 4, Episode 14: what the machine found instead — **FLAGSHIP**
+
+**Question:** give a learner the same four wheels, the same physics and the same
+stopwatch, with no reference model. Does it agree with the engineers?
+
+**Build:** variant H (RL upper layer + the existing QP allocator) and variant E
+(end-to-end four-wheel torques). Overlay the learned `Mz` against the classical one;
+compare tire workload. The allocator, the reference model and the closed-loop
+driver all exist now and are pinned by `tests/test_torque_vectoring.py`.
+
+**Read before starting:**
+
+- **F84** — the driver-tuning dependence. This is the one that can quietly ruin the
+  comparison: an RL driver is a *different driver*, so "the learner beat the
+  classical controller" may be measuring the driver swap. Consider running the
+  classical controller against the learned driver as a control condition.
+- **F83** — separate the allocator from the yaw control, in both directions.
+- **F61 and the D6 gate** — a reinforcement-learning result is the DEPLOYED policy's
+  performance, over several seeds and several harnesses.
+- **F86** — our own reference-gradient sweep says asking for a pointier car helps,
+  weakly and monotonically. If the learner independently prefers a non-neutral yaw
+  reference, that is corroboration of the published result and is the strongest
+  outcome available. **Do not script the conclusion** — "it reinvented the
+  allocator" is a fine result.
+
+**Still true and still unfixed** (carried from Session 12): Season 3 has one
+training seed, Episode 10's D6 fails `exploration_is_not_growing`, Episode 9 needs
+rewriting around "it never learned to drive", and the limit-seeking policy does not
+exist. Episode 13 sidestepped that last one by building a classical driver instead
+— **Episode 14 cannot.** Its policy has to operate where tires are saturated, and
+`physics/driver.py` now logs lateral acceleration and per-wheel friction-ellipse
+utilisation, which is how you check.
+
+### Superseded — Episode 13 planning notes
 
 **Question:** if pushing one wheel harder rotates the car, why not just do that?
 
@@ -605,10 +735,10 @@ width on every TV claim.
 | 8 | Front, mid, or rear engine | 2 | `I_zz` sweep (D4 ✓) | ✅ **DRAFTED** — `episodes/`, `experiments/ep08/` |
 | 9 | Teaching a car to drive, and watching it cheat | 3 | PPO + envelope + D6 ✓ | ✅ **DRAFTED** — `episodes/`, `experiments/ep09/` |
 | 10 | One policy, a thousand cars | 3 | conditioned policy ✓ | ✅ **DRAFTED** — `episodes/`, `experiments/ep10/` |
-| 11 | The fastest setup is the one that crashes | 3 | perturbation eval | ← **NEXT** |
-| 12 | What a differential actually does | 4 | diff modes | — |
-| 13 | How engineers built a car that steers with its wheels | 4 | classical TV | — |
-| 14 | What the machine found instead | 4 | RL TV variants | — |
+| 11 | The fastest setup is the one that crashes | 3 | perturbation eval ✓ | ✅ **DRAFTED** — `episodes/`, `experiments/ep11/` |
+| 12 | What a differential actually does | 4 | diff modes ✓ | ✅ **DRAFTED** — `episodes/`, `experiments/ep12/` |
+| 13 | How engineers built a car that steers with its wheels | 4 | classical TV ✓ | ✅ **DRAFTED** — `episodes/`, `experiments/ep13/` |
+| 14 | What the machine found instead | 4 | RL TV variants | ← **NEXT** |
 | 15 | Is chassis tuning about to be automated away? | 4 | TV × Season 2 sweeps | — |
 | 16 | Did any of this survive real physics? | 4 | Chrono backend | — |
 

@@ -3,7 +3,7 @@
   "seed": 0,
   "entry_speed_ms": 15.0,
   "track_length_m": 392.8318530717959,
-  "corner_limit_ms": 19.482650756835938,
+  "corner_limit_ms": 19.313125610351562,
   "train_config": {
     "total_steps": 1200000,
     "n_envs": 8,
@@ -27,27 +27,28 @@
   },
   "evaluation": {
     "greedy": {
-      "distance_m": 129.10729304283947,
+      "distance_m": 128.72799467247418,
       "distance_std": 0.0,
       "finish_rate": 0.0,
-      "worst_slip_deg": 12.27988831815342,
-      "slip_over_bound": 0.0031446540880503146,
-      "envelope_occupancy": 0.0,
+      "worst_slip_deg": 12.811078744109665,
+      "slip_over_bound": 0.025236593059936908,
+      "envelope_occupancy": 0.022082018927444796,
       "lap_time_s": NaN
     },
     "stochastic": {
-      "distance_m": 361.53780541910834,
-      "distance_std": 83.80041326372765,
-      "finish_rate": 0.875,
-      "worst_slip_deg": 14.410959070940766,
-      "slip_over_bound": 0.0047198538367844095,
-      "envelope_occupancy": 0.0047198538367844095,
-      "lap_time_s": 15.877142857142857
+      "distance_m": 231.87341910972015,
+      "distance_std": 124.86643622737192,
+      "finish_rate": 0.375,
+      "worst_slip_deg": 15.157713601044536,
+      "slip_over_bound": 0.009708043200674303,
+      "envelope_occupancy": 0.009708043200674303,
+      "lap_time_s": 15.92
     }
   },
   "d6_passed": false,
   "d6_failures": [
     "exploration_is_not_growing",
+    "the_deployed_policy_completes_the_task",
     "greedy_and_stochastic_agree",
     "the_policy_stayed_inside_the_tire_model"
   ],

@@ -83,6 +83,8 @@ diff at low speed in a car park.
 the lighter inside wheel can hold. That single sentence is the entire reason the
 other two devices exist.
 
+![Which device actually delivers the force you asked for?](../experiments/ep12/out/03-who-delivers-the-force.svg)
+
 And the welded diff has **changed its mind**: at part throttle it pushed the car
 wide, at full throttle it turns the car in. Same device, same corner, opposite
 behaviour, because the inside wheel is now spinning and is therefore the faster

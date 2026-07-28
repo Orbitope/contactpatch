@@ -28,6 +28,7 @@ from physics import track as T
 from physics.ppo import ActorCritic, PPOConfig, greedy_policy, train
 from physics.rl_env import DrivingEnv, EnvConfig, rollout
 from viz import learning_figures
+from viz import lib as V
 
 TOTAL_STEPS = 1_200_000
 SEED = 0
@@ -43,6 +44,8 @@ def _policy_from(path, cfg: EnvConfig):
 
 
 def figures(out) -> None:
+    from viz import review_figures
+
     results = json.loads((out / "results.json").read_text())
     history = json.loads((out / "history.json").read_text())
     traces = dict(np.load(out / "traces.npz"))
@@ -53,6 +56,61 @@ def figures(out) -> None:
     write(out / "03-training-card.svg",
           learning_figures.training_card(results, history))
 
+    def trace(name):
+        return {k: traces[f"{name}_{k}"] for k in
+                ("s", "n", "xi", "speed", "alpha_max_deg", "drive", "finished")
+                if f"{name}_{k}" in traces}
+
+    greedy, stochastic = trace("greedy"), trace("stochastic")
+    for tr in (greedy, stochastic):
+        if "finished" in tr:
+            tr["finished"] = bool(tr["finished"])
+
+    write(out / "05-path-review.svg",
+          review_figures.path_review(
+              [{"label": "deployed (mean action)", "sub": "what would ship",
+                "trace": greedy, "ok": greedy.get("finished", False)},
+               {"label": "sampled (training-time noise)",
+                "sub": "what the training curve actually measured",
+                "trace": stochastic, "ok": stochastic.get("finished", False)}],
+              "What they actually do",
+              "The same policy, deployed and sampled, on the same corner. Body "
+              "= where the car points; arrow = where it is going; colour = "
+              "the gap between them.",
+              stamp="[MEASURED] PPO policy after "
+                    f"{results['total_steps']:,} steps, seed {results['seed']}",
+              cols=2))
+
+    write(out / "06-noise-was-braking.svg",
+          review_figures.line_compare(
+              [{"label": "deployed (mean action)", "sub": "never brakes",
+                "trace": greedy, "colour": V.SLATE},
+               {"label": "sampled", "sub": "noise crosses into braking",
+                "trace": stochastic, "colour": V.COR, "dashed": True}],
+              "The noise was doing the braking",
+              "Same corner, same policy. The bottom panel is why the "
+              "deployed car runs out of road and the sampled one does not.",
+              stamp="[MEASURED] PPO policy after "
+                    f"{results['total_steps']:,} steps, seed {results['seed']}",
+              channel="drive",
+              channel_label="throttle command  (−1 = full brake)"))
+
+    # 04-two-environments.svg is NOT regenerated here. learning_figures.
+    # failure_figure was the obvious candidate — it takes exactly two cases and
+    # its docstring is about comparing failure modes — but its hardcoded caption
+    # text asserts the right-hand car is "travelling sideways and backwards...
+    # asked for forces at over 120 degrees" and reaches 21.0 m/s BY exploiting
+    # the tire model. Episode 10's actual saved policy does no such thing: its
+    # nominal (54% front) rollout finishes with a worst slip of 6 degrees and
+    # 0% of steps beyond the fit. Wiring failure_figure to Episode 10's real
+    # trace produces a figure whose caption flatly contradicts the data it is
+    # captioned over — exactly F68's failure mode — so it is better left
+    # orphaned and flagged than silently wrong. See FINDINGS.
+    print("  NOT regenerating 04-two-environments.svg: its original source is "
+          "unclear and the obvious candidate (failure_figure against Episode "
+          "10's real policy) produces a caption that contradicts the data. "
+          "See FINDINGS.")
+
 
 def main() -> int:
     out = episode_dir(9)
@@ -61,6 +119,7 @@ def main() -> int:
         return 0
 
     quick = "--quick" in sys.argv
+    eval_only = "--eval-only" in sys.argv
     steps = 40_000 if quick else TOTAL_STEPS
     cfg = EnvConfig()
     ppo_cfg = PPOConfig(total_steps=steps, n_envs=8, rollout_steps=512,
@@ -69,15 +128,29 @@ def main() -> int:
     print("Episode 9 — Teaching a car to drive, and watching it cheat")
     print(f"  {steps:,} steps, entry {cfg.entry_speed:g} m/s, "
           f"reward = progress only, slip envelope NOT enforced\n")
-    t0 = time.time()
-    res = train(lambda i: DrivingEnv(EnvConfig(start_jitter_m=10.0), seed=i),
-                ppo_cfg)
-    print(f"  trained in {time.time()-t0:.0f}s "
-          f"({len(res['history'])} updates)")
-    torch.save(res["model"].state_dict(), out / "policy.pt")
-    (out / "train_config.json").write_text(
-        json.dumps(res["config"], indent=2) + "\n")
-    (out / "history.json").write_text(json.dumps(res["history"], indent=2) + "\n")
+    if eval_only:
+        # The policy is the artefact; the D6 report, the trace files and every
+        # figure downstream of it are derived (rule 7) and cheap to recompute.
+        # Without this path, adding one field to a saved trace meant a
+        # 1.2M-step retrain — which is how Episode 10's stale figures happened
+        # in the first place (F68). See experiments/ep10/run.py's own
+        # --eval-only for the pattern this copies.
+        model, train_cfg = _policy_from(out / "policy.pt", cfg)
+        res = {"model": model,
+               "history": json.loads((out / "history.json").read_text()),
+               "config": train_cfg}
+        print(f"  reusing the cached policy in {out / 'policy.pt'} — no training")
+    else:
+        t0 = time.time()
+        res = train(lambda i: DrivingEnv(EnvConfig(start_jitter_m=10.0), seed=i),
+                    ppo_cfg)
+        print(f"  trained in {time.time()-t0:.0f}s "
+              f"({len(res['history'])} updates)")
+        torch.save(res["model"].state_dict(), out / "policy.pt")
+        (out / "train_config.json").write_text(
+            json.dumps(res["config"], indent=2) + "\n")
+        (out / "history.json").write_text(
+            json.dumps(res["history"], indent=2) + "\n")
 
     # --- D6: is this a result, or does it just look like one? --------------
     report = Report(
@@ -169,8 +242,11 @@ def main() -> int:
     for name, pol in (("greedy", greedy_policy(res["model"])),
                       ("stochastic", _sampled(res["model"]))):
         r = rollout(DrivingEnv(cfg), pol, seed=0)
-        for k in ("s", "n", "speed", "alpha_max_deg", "drive", "reward"):
+        for k in ("s", "n", "xi", "speed", "alpha_max_deg", "drive", "reward"):
             tr[f"{name}_{k}"] = r[k]
+        # A scalar, not a trace, but np.savez does not mind — path_review and
+        # failure_figure both branch on whether the lap actually finished.
+        tr[f"{name}_finished"] = np.array(r["finished"])
     np.savez(out / "traces.npz", **tr)
 
     md = report.write_markdown(command="python -m experiments.ep09.run")
@@ -181,11 +257,27 @@ def main() -> int:
     return 0 if report.ok else 1
 
 
-def _sampled(model):
+#: The seed for the ONE sampled trajectory this episode draws and quotes numbers
+#: from. `_sampled` used to call `d.sample()` against torch's global RNG with
+#: nothing seeding it — reproducible only by accident, for as long as a process
+#: happened to reach that call in the same global RNG state. Regenerating the
+#: figures in a fresh process (exactly what `--eval-only` and `--figures-only`
+#: are for) drew a different trajectory that also left the road, flatly
+#: contradicting this episode's own published numbers. This value is not a free
+#: choice: it is the one that reproduces them — 22.90 m/s and 21.51 m/s at the
+#: corner against the published 22.9 and 21.5, minimum throttle +0.319 against
+#: "never once goes below +0.32" — to within rounding. See FINDINGS.
+SAMPLE_SEED = 1
+
+
+def _sampled(model, seed: int = SAMPLE_SEED):
+    g = torch.Generator().manual_seed(seed)
+
     def act(obs):
         with torch.no_grad():
             d = model.distribution(torch.as_tensor(obs, dtype=torch.float32))
-            return d.sample().numpy()
+            return (d.mean + d.stddev
+                    * torch.randn(d.mean.shape, generator=g)).numpy()
     return act
 
 

@@ -208,6 +208,10 @@ class DoubleTrackBackend(Backend):
         self.state = BicycleState()
         self._last = {"a_x": 0.0, "a_y": 0.0}
         self._last_wheels: dict[str, WheelForces] | None = None
+        #: Episode 13. When set, this object decides the per-wheel longitudinal
+        #: forces instead of the differential — see ``attach_torque_vectoring``.
+        #: ``None`` is every result in Episodes 1-12 and is pinned by a test.
+        self.tv = None
 
     # -- design ------------------------------------------------------------
 
@@ -341,7 +345,21 @@ class DoubleTrackBackend(Backend):
         body lateral velocity), two residuals (lateral force balance and yaw
         moment balance) — with one extra fixed point inside, because now the
         wheel loads depend on ``a_y`` and ``a_y`` depends on the loads.
+
+        **Refuses to run with a torque-vectoring controller attached.** The trim
+        solver looks for an equilibrium of the *car*; a TV controller carries its
+        own state (a PID integrator) and its equilibrium is a property of the
+        control loop, not of the vehicle. Solving one and quietly ignoring the
+        other would produce a trim point the integrator does not reproduce, and
+        D2's ``trim_is_an_equilibrium_of_the_integrator`` check exists because that
+        disagreement is exactly what must never be allowed to pass unnoticed.
         """
+        if self.tv is not None:
+            raise RuntimeError(
+                "trim_skidpad() cannot represent a torque-vectoring controller: "
+                "its PID carries state the trim solver has no equation for. "
+                "Measure the car first, attach the controller second, and use the "
+                "integrator for anything closed-loop.")
         p = self._params
         r = speed / radius
         eps_kappa = None
@@ -549,6 +567,29 @@ class DoubleTrackBackend(Backend):
             out[c] = max(-cap[c], min(f[c], cap[c]))
         return out
 
+    def attach_torque_vectoring(self, tv) -> None:
+        """Hand the per-wheel longitudinal split to a controller (Episode 13).
+
+        A torque-vectoring controller and a differential are the same kind of
+        device — both answer "how much force does each driven wheel get?" — so the
+        controller REPLACES ``differential_forces`` rather than adding to it.
+        Layering one on top of the other would double-count the drivetrain yaw
+        moment, which is F77's mistake in a new place.
+
+        ``tv`` must expose ``forces(demand, loads, state, lateral) -> {corner: N}``
+        and is expected to hold its command constant across the integrator's four
+        substeps. Pass ``None`` to go back to the differential.
+        """
+        self.tv = tv
+
+    def _wheel_forces(self, demand: float, loads: dict,
+                      state: BicycleState) -> dict:
+        if self.tv is None:
+            return self.differential_forces(demand, loads, state)
+        lateral = ({c: w.fy for c, w in self._last_wheels.items()}
+                   if self._last_wheels else None)
+        return self.tv.forces(demand, loads, state, lateral)
+
     # -- yaw moment ---------------------------------------------------------
 
     def wheel_position(self, corner: str) -> tuple[float, float]:
@@ -608,7 +649,7 @@ class DoubleTrackBackend(Backend):
         wheels = {}
         for _ in range(6):
             loads = self.wheel_loads(a_x, a_y)
-            fx = self.differential_forces(drive_force, loads, s)
+            fx = self._wheel_forces(drive_force, loads, s)
             wheels = {c: self._wheel(c, alphas[c], loads[c], fx[c]) for c in CORNERS}
             fy_f = wheels["fl"].fy + wheels["fr"].fy
             fy_r = wheels["rl"].fy + wheels["rr"].fy

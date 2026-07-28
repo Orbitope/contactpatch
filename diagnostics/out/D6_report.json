@@ -1,27 +1,31 @@
 {
   "diagnostic": "D6",
-  "title": "Training health \u2014 design-conditioned policy",
-  "subtitle": "The same nine checks Episode 9 introduced, run on a policy that has to drive every car in the range rather than one.",
+  "title": "Training health",
+  "subtitle": "Whether a reinforcement-learning run is evidence or an expensive way to keep a random policy. Every check here is a failure that happened while building this episode.",
   "passed": false,
-  "n_checks": 11,
-  "n_failed": 1,
-  "findings": [],
+  "n_checks": 12,
+  "n_failed": 4,
+  "findings": [
+    "**The policy has not learned the task.** Sampled rollouts reach 232 m of a 393 m track and finish 38% of laps. Nothing below is a finding about driving; it is a description of an unfinished training run.",
+    "**The policy you would deploy is not the policy that was trained.** Sampling its actions gives 232 m and a 38% finish rate; taking its mean action gives 129 m and 0%. The behaviour depends on the exploration noise itself.",
+    "**It went outside the tire model.** Worst slip angle 15.2 deg against our 12 deg bound, with 1.0% of steps beyond it. Nothing in the environment stopped it \u2014 that constraint exists only inside the optimal-control solver \u2014 so the forces out there are arithmetic rather than measurement, and no lap time from this run is comparable with Seasons 1 and 2."
+  ],
   "checks": [
     {
       "name": "policy_is_actually_updating",
       "passed": true,
-      "detail": "median approximate KL per update is 0.00347 against a 0.0001 floor. Below the floor the weights are barely moving and the run is a very expensive way to keep a random policy \u2014 which is what happened when the value gradient was 150x the policy's and one shared gradient clip scaled both by 0.0067.",
+      "detail": "median approximate KL per update is 0.00302 against a 0.0001 floor. Below the floor the weights are barely moving and the run is a very expensive way to keep a random policy \u2014 which is what happened when the value gradient was 150x the policy's and one shared gradient clip scaled both by 0.0067.",
       "severity": "gate",
-      "value": 0.0034695417445618658,
+      "value": 0.0030171970363880975,
       "expected": null,
       "group": "Did the policy actually change?"
     },
     {
       "name": "exploration_is_not_growing",
       "passed": false,
-      "detail": "policy entropy went -0.66 -> -0.48 (+0.18). A policy that is learning gets more decisive; rising entropy means the entropy bonus is beating the policy gradient, which on a Gaussian policy it will do indefinitely because entropy is unbounded above.",
+      "detail": "policy entropy went -0.66 -> -0.44 (+0.22). A policy that is learning gets more decisive; rising entropy means the entropy bonus is beating the policy gradient, which on a Gaussian policy it will do indefinitely because entropy is unbounded above.",
       "severity": "gate",
-      "value": 0.17733381986618035,
+      "value": 0.22161602377891543,
       "expected": null,
       "group": "Did the policy actually change?"
     },
@@ -61,50 +65,59 @@
     {
       "name": "the_off_track_rate_came_down",
       "passed": true,
-      "detail": "episodes ending off the road went 1.00 -> 0.00. A rate stuck at 1.00 means every episode is a crash and the policy has never seen the behaviour it is supposed to be reinforcing.",
+      "detail": "episodes ending off the road went 1.00 -> 0.08. A rate stuck at 1.00 means every episode is a crash and the policy has never seen the behaviour it is supposed to be reinforcing.",
       "severity": "gate",
-      "value": 0.0,
+      "value": 0.08,
       "expected": null,
       "group": "Is the task possible, and did it get solved?"
     },
     {
       "name": "the_critic_predicts_returns",
       "passed": true,
-      "detail": "explained variance over the last fifth of training has a median of +0.37. At zero the critic is no better than predicting the mean, which makes every advantage estimate noise and the policy gradient a random walk.",
+      "detail": "explained variance over the last fifth of training has a median of +0.57. At zero the critic is no better than predicting the mean, which makes every advantage estimate noise and the policy gradient a random walk.",
       "severity": "gate",
-      "value": 0.3653777385395901,
+      "value": 0.5748633771041407,
       "expected": null,
       "group": "Is the critic predicting anything?"
     },
     {
       "name": "the_deployed_policy_completes_the_task",
-      "passed": true,
-      "detail": "the mean-action policy \u2014 the one you would ship \u2014 finishes 100% of laps and covers 393 m. Sampling its actions instead gives 100% and 393 m. **The deployed number is the result.** A run whose sampled policy performs well and whose mean action does not has not produced a driver; it has produced a policy whose competence lives in its own exploration noise, and the sampled figure describes something you cannot ship.",
+      "passed": false,
+      "detail": "the mean-action policy \u2014 the one you would ship \u2014 finishes 0% of laps and covers 129 m. Sampling its actions instead gives 38% and 232 m. **The deployed number is the result.** A run whose sampled policy performs well and whose mean action does not has not produced a driver; it has produced a policy whose competence lives in its own exploration noise, and the sampled figure describes something you cannot ship.",
       "severity": "gate",
       "value": {
-        "greedy_finish": 1.0,
-        "stochastic_finish": 1.0
+        "greedy_finish": 0.0,
+        "stochastic_finish": 0.375
       },
       "expected": null,
       "group": "Does the policy you would actually deploy work?"
     },
     {
       "name": "greedy_and_stochastic_agree",
-      "passed": true,
-      "detail": "mean-action rollouts reach 393 m and sampled rollouts reach 393 m, a 0% gap. A large gap means the behaviour depends on the exploration noise itself, so the deterministic policy you would ship is a different driver from the one the training curves describe.",
+      "passed": false,
+      "detail": "mean-action rollouts reach 129 m and sampled rollouts reach 232 m, a 44% gap. A large gap means the behaviour depends on the exploration noise itself, so the deterministic policy you would ship is a different driver from the one the training curves describe.",
       "severity": "gate",
-      "value": 5.828031071810593e-05,
+      "value": 0.44483505195754497,
+      "expected": null,
+      "group": "Does the policy you would actually deploy work?"
+    },
+    {
+      "name": "why_the_noise_matters_here",
+      "passed": true,
+      "detail": "The action-to-force map has a kink at zero \u2014 braking authority is 12 kN against 4.5 kN of drive, because brakes really are stronger than engines. A Gaussian policy straddling that kink does not deliver the force of its mean action: E[f(a)] != f(E[a]), and the difference is always toward braking. At a mean throttle of zero the sampled policy delivers about 1.2 kN of net braking that the mean action does not have. **The policy did not learn to brake. It learned a mean action that brakes only when its own noise is added to it.**",
+      "severity": "note",
+      "value": null,
       "expected": null,
       "group": "Does the policy you would actually deploy work?"
     },
     {
       "name": "the_policy_stayed_inside_the_tire_model",
-      "passed": true,
-      "detail": "worst slip angle reached 6.8 deg against our 12 deg bound, with 0.0% of steps beyond it. Every minimum-time solve in Seasons 1 and 2 constrains this; the environment deliberately does not, so the policy is free to operate where the Magic Formula is extrapolating and the forces are arithmetic rather than measurement.",
+      "passed": false,
+      "detail": "worst slip angle reached 15.2 deg against our 12 deg bound, with 2.5% of steps beyond it. Every minimum-time solve in Seasons 1 and 2 constrains this; the environment deliberately does not, so the policy is free to operate where the Magic Formula is extrapolating and the forces are arithmetic rather than measurement.",
       "severity": "gate",
       "value": {
-        "worst_deg": 6.811724519590587,
-        "fraction_beyond": 0.0
+        "worst_deg": 15.157713601044536,
+        "fraction_beyond": 0.025236593059936908
       },
       "expected": null,
       "group": "Did it stay inside the tire model?"
@@ -112,9 +125,9 @@
     {
       "name": "the_tire_file_s_own_load_range_was_respected",
       "passed": true,
-      "detail": "0.0% of steps left the tire file's own declared operating range. That bound is the file's, not ours, and outside it the model is not extrapolating from a fit \u2014 it has no fit.",
+      "detail": "1.0% of steps left the tire file's own declared operating range. That bound is the file's, not ours, and outside it the model is not extrapolating from a fit \u2014 it has no fit.",
       "severity": "gate",
-      "value": 0.0,
+      "value": 0.009708043200674303,
       "expected": null,
       "group": "Did it stay inside the tire model?"
     }
@@ -122,26 +135,26 @@
   "data": {
     "evaluation": {
       "greedy": {
-        "distance_m": 393.03828641285713,
-        "distance_std": 0.1489491467053657,
-        "finish_rate": 1.0,
-        "worst_slip_deg": 6.811724519590587,
-        "slip_over_bound": 0.0,
-        "envelope_occupancy": 0.0,
-        "lap_time_s": 19.715000000000003
+        "distance_m": 128.72799467247418,
+        "distance_std": 0.0,
+        "finish_rate": 0.0,
+        "worst_slip_deg": 12.811078744109665,
+        "slip_over_bound": 0.025236593059936908,
+        "envelope_occupancy": 0.022082018927444796,
+        "lap_time_s": NaN
       },
       "stochastic": {
-        "distance_m": 393.0153800194009,
-        "distance_std": 0.0841495816623038,
-        "finish_rate": 1.0,
-        "worst_slip_deg": 6.458521590952637,
-        "slip_over_bound": 0.0,
-        "envelope_occupancy": 0.0,
-        "lap_time_s": 22.384999999999998
+        "distance_m": 231.87341910972015,
+        "distance_std": 124.86643622737192,
+        "finish_rate": 0.375,
+        "worst_slip_deg": 15.157713601044536,
+        "slip_over_bound": 0.009708043200674303,
+        "envelope_occupancy": 0.009708043200674303,
+        "lap_time_s": 15.92
       }
     },
     "train_config": {
-      "total_steps": 5000000,
+      "total_steps": 1200000,
       "n_envs": 8,
       "rollout_steps": 512,
       "epochs": 10,

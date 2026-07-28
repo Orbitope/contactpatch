@@ -1,0 +1,198 @@
+{
+  "diagnostic": "D-ep13",
+  "title": "How engineers built a car that steers with its wheels",
+  "subtitle": "Two layers: a reference model and a PID decide how much the car should rotate, a QP allocator decides which wheels pay for it. The checks ask whether each layer does its job, whether the tires were saturated enough for any of it to matter, and whether the result survives the numbers it was built on.",
+  "passed": false,
+  "n_checks": 16,
+  "n_failed": 1,
+  "findings": [
+    "The two-layer controller works as advertised: the allocator delivers the demanded yaw moment to within 60.23 N.m, and yaw-rate tracking error through the corner falls 88%.",
+    "It is worth +5.2% of cornering limit, +0.69% of the corner section and +0.51% of the whole lap \u2014 the last number is small because 260 of the lap's 393 m are a power-limited straight where a yaw controller has nothing to do.",
+    "On the skidpad, which is what the ~9% published figure measured, it is worth +1.30% of sustained lateral acceleration.",
+    "About 40% of the gain is the allocator alone, with its yaw demand forced to zero. Most of what a torque-vectoring system buys on this lap is not torque vectoring.",
+    "The number depends on the driver as much as on the car: across a +/-30% change in how far ahead the SAME driver looks, the gain runs from -0.34% to +11.55%. A controller is tuned against a driver whether or not anyone says so.",
+    "The passive limited-slip differential is the slowest configuration tested (14.719 s against the open differential's 14.508 s), which is Episode 12's push-wide appearing in a lap time."
+  ],
+  "checks": [
+    {
+      "name": "the_allocator_delivers_the_moment_it_is_asked_for",
+      "passed": true,
+      "detail": "across the whole lap the largest gap between the moment the PID asked for and the moment the four wheels produced is 60.2 N.m, against a peak demand of 996 N.m \u2014 6.0% at the worst instant of the lap and near zero for the rest of it. The lower layer is almost never the limitation: the tires have longitudinal capacity to spare nearly every time they are asked, and what shortfall there is comes from the allocation being computed once per control interval on the previous instant's loads, which is what a real ECU has to do.",
+      "severity": "gate",
+      "value": 60.22752553211899,
+      "expected": null,
+      "group": "Does the controller reach the wheels at all?"
+    },
+    {
+      "name": "the_upper_layer_tracks_its_reference_better_than_the_passive_car",
+      "passed": true,
+      "detail": "RMS yaw-rate error against the same reference model, through the same corner at the same aggression: passive 0.1662 rad/s, controlled 0.0197 rad/s (88% lower). This is what the controller was built to do, and it is a more direct measurement of it than any lap time.",
+      "severity": "gate",
+      "value": [
+        0.166244739610434,
+        0.019678906102315628
+      ],
+      "expected": null,
+      "group": "Does the controller reach the wheels at all?"
+    },
+    {
+      "name": "the_car_was_driven_at_the_limit",
+      "passed": true,
+      "detail": "the quickest valid TV lap peaks at 0.969 g against a measured steady-state ceiling of 0.951 g, and reaches 9.9 deg of slip where the tire's peak at this load is near 10.4 deg. Torque vectoring only acts where tires are saturated, so a result measured with an under-driving car measures nothing \u2014 this check is the precondition for every number in this episode.",
+      "severity": "gate",
+      "value": 0.9692164442957916,
+      "expected": null,
+      "group": "Were the tires saturated enough for it to matter?"
+    },
+    {
+      "name": "no_quoted_lap_left_the_tire_fit",
+      "passed": true,
+      "detail": "every lap quoted anywhere in this episode stayed inside the +/-12 deg region the tire file was fitted over. Laps outside it are discarded, not celebrated (rule 4), and they are discarded one lap at a time (F70).",
+      "severity": "gate",
+      "value": {
+        "open": 9.31103176206794,
+        "lsd": 8.34266071793451,
+        "alloc": 11.530186228104279,
+        "tv4": 9.943726943698415,
+        "tvrear": 8.393852147468367
+      },
+      "expected": null,
+      "group": "Were the tires saturated enough for it to matter?"
+    },
+    {
+      "name": "torque_vectoring_raises_the_cornering_limit",
+      "passed": true,
+      "detail": "the passive car runs out of road above grip_use 1.041; the controlled one holds on to 1.095, +5.2%. Same driver, same line, same speed plan \u2014 the only difference is which wheels got which force.",
+      "severity": "gate",
+      "value": [
+        1.041015625,
+        1.0949218749999998
+      ],
+      "expected": null,
+      "group": "What is it worth?"
+    },
+    {
+      "name": "the_gain_is_below_the_best_published_figure",
+      "passed": true,
+      "detail": "on the skidpad \u2014 the manoeuvre the ~9% figure comes from, and the most favourable one there is \u2014 this controller is worth +1.30% of sustained lateral acceleration. The 9% is an OUTSIDE number (rule 2) and it is a ceiling: our model does not get to beat the most favourable published case, and if it did that would be a bug rather than a result. **The citation is outstanding**: the figure comes from this project's own series plan, which states it without a reference, so it is marked as needing one rather than presented as verified (rule 2's own instruction about unsourced bands).",
+      "severity": "gate",
+      "value": 1.3024739292454008,
+      "expected": null,
+      "group": "What is it worth?"
+    },
+    {
+      "name": "the_passive_limited_slip_differential_is_slower_than_an_open_one",
+      "passed": true,
+      "detail": "the LSD's best valid lap is 14.719 s against 14.508 s for the open differential, and its cornering limit is 0.969 against 1.041. This is Episode 12's push-wide (F76/F77) showing up in a lap time for the first time: a locking device drags the outside wheel and yaws the car out of the corner, and here that costs the driver the corner entry.",
+      "severity": "gate",
+      "value": [
+        14.508057348428709,
+        14.71948591985728
+      ],
+      "expected": null,
+      "group": "What is it worth?"
+    },
+    {
+      "name": "the_control_condition_separates_the_two_layers",
+      "passed": true,
+      "detail": "the allocator with its yaw demand forced to zero reaches 1.063 against the open differential's 1.041 and the full controller's 1.095. So 40% of the improvement is the LOWER layer alone \u2014 spreading brake and drive force across four wheels in proportion to what each has left \u2014 and only the remainder is yaw control. A study without this condition would have attributed all of it to torque vectoring. Across the sensitivity runs the share spans 38-56%, so this is a 'roughly half' claim rather than a decimal one \u2014 but the ordering open < allocator < full controller holds in every one of them.",
+      "severity": "gate",
+      "value": {
+        "open": 1.041015625,
+        "alloc": 1.062578125,
+        "tv4": 1.0949218749999998,
+        "shares": [
+          0.41935483870967666,
+          0.37931034482758447,
+          0.5625000000000001,
+          0.43333333333333607,
+          0.40740740740740894
+        ]
+      },
+      "expected": null,
+      "group": "Is it the yaw control, or just better bookkeeping?"
+    },
+    {
+      "name": "on_the_skidpad_the_allocator_alone_buys_nothing",
+      "passed": true,
+      "detail": "sustained lateral acceleration: open 0.939 g, allocator-only 0.932 g, full controller 0.951 g. On a steady circle there is no braking to distribute and almost no drive force to spread, so the lower layer has nothing to be clever with and lands slightly BELOW the passive car \u2014 the whole skidpad gain is yaw control. The same two layers therefore split the credit completely differently in the two manoeuvres, which is an argument for reporting the decomposition per manoeuvre rather than once.",
+      "severity": "note",
+      "value": null,
+      "expected": null,
+      "group": "Is it the yaw control, or just better bookkeeping?"
+    },
+    {
+      "name": "the_conclusion_survives_plus_or_minus_3_percent_of_track_width",
+      "passed": true,
+      "detail": "track width is the moment arm for torque vectoring and is only [LIKELY] (CLAUDE.md). At -3% the gain is +5.36% and at +3% +5.00%, against +5.18% nominal. The magnitude moves with the arm, as it must; the conclusion does not.",
+      "severity": "gate",
+      "value": {
+        "track_0.97": 5.360096226131383,
+        "track_1.03": 4.997003296373958
+      },
+      "expected": null,
+      "group": "Does the conclusion survive the numbers it rests on?"
+    },
+    {
+      "name": "the_conclusion_survives_the_driver_being_tuned_differently",
+      "passed": false,
+      "detail": "**This check is expected to fail, and the failure is the finding.** The driver's preview time is [ASSUMED], and it is exactly the unstated protocol choice rule 9 was written about. Nominal gain +5.18%. At 30% LESS preview it is -0.34% \u2014 the passive car improves to 1.057 and the controlled one falls to 1.054, a difference of 0.0036 in grip_use against a bisection resolution of 0.002, so it is barely more than nothing rather than a reversal. At 30% MORE preview the gain is +11.55%. **The measured value of the controller therefore varies by more than the controller is worth, depending on how the driver it is helping was tuned** \u2014 and the threshold is not being loosened to hide that (F69).",
+      "severity": "gate",
+      "value": {
+        "look_short": -0.33993496896244424,
+        "look_long": 11.545098039215686
+      },
+      "expected": null,
+      "group": "Does the conclusion survive the numbers it rests on?"
+    },
+    {
+      "name": "the_conclusion_survives_the_allocator_s_priority_ratio",
+      "passed": true,
+      "detail": "when the two demands cannot both be met the allocator has to prefer one, and the preference is a modelling choice. Weighting the moment 4x gives +5.18% and weighting it 1/4 gives +4.66%.",
+      "severity": "gate",
+      "value": {
+        "priority_mz": 5.1782363977485755,
+        "priority_fx": 4.6604127579737185
+      },
+      "expected": null,
+      "group": "Does the conclusion survive the numbers it rests on?"
+    },
+    {
+      "name": "the_disturbed_comparison_has_enough_samples_to_be_a_rate",
+      "passed": true,
+      "detail": "40 seeded laps per configuration with steering noise, not repeats of one (F66) and not the ten that produced a retracted conclusion in Episode 11 (F70).",
+      "severity": "gate",
+      "value": 40,
+      "expected": null,
+      "group": "Does it help a driver who is not perfect?"
+    },
+    {
+      "name": "what_the_disturbance_study_found",
+      "passed": true,
+      "detail": "open diff: 31/40 valid, 14.60 +/- 0.01 s \u00b7 LSD: 3/40 valid, 14.66 +/- 0.04 s \u00b7 allocator only: 40/40 valid, 14.61 +/- 0.01 s \u00b7 TV (4 wheels): 40/40 valid, 14.58 +/- 0.01 s \u00b7 TV (rear axle): 40/40 valid, 14.60 +/- 0.02 s \u2014 all at grip_use 0.991.",
+      "severity": "note",
+      "value": null,
+      "expected": null,
+      "group": "Does it help a driver who is not perfect?"
+    },
+    {
+      "name": "the_two_headline_numbers_are_not_independent",
+      "passed": true,
+      "detail": "Lap time and cornering limit are the same measurement twice: every configuration drives the same plan, so a quicker lap is only available by surviving a more aggressive plan. They are both reported because a lap time is legible and a grip_use is not.",
+      "severity": "note",
+      "value": null,
+      "expected": null,
+      "group": "Does it help a driver who is not perfect?"
+    },
+    {
+      "name": "magnitudes_are_not_quotable",
+      "passed": true,
+      "detail": "Rung 2 (rule 15). Four independently commanded wheel forces is an electric car, not RV-1. Track width is [LIKELY] and is the moment arm. The driver is a centreline tracker, not a racing driver, so it cannot trade line for exit and its absolute lap times are not comparable with the optimal-control episodes (rule 6). Ordering and direction are the result.",
+      "severity": "note",
+      "value": null,
+      "expected": null,
+      "group": "Does it help a driver who is not perfect?"
+    }
+  ],
+  "data": {}
+}

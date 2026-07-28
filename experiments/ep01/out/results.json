@@ -1,0 +1,36 @@
+{
+  "load_N": 3601.0018800000003,
+  "peak_force_N": 3831.2252790316775,
+  "peak_mu": 1.0639331515793813,
+  "peak_slip_deg": 10.14807992161497,
+  "force_at_0_deg_N": 0.0,
+  "fraction_of_peak_at_2_deg": 0.5327932659099331,
+  "fraction_of_peak_at_5_deg": 0.9074608940755471,
+  "fraction_of_peak_at_16_deg": 0.9813767676807975,
+  "cornering_stiffness_N_per_deg": 1138.0622643641727,
+  "peak_slip_deg_at_1kN": 9.686747330042312,
+  "peak_slip_deg_at_9kN": 14.263862993889756,
+  "imposed_slip_bound_deg": 12.000000000000002,
+  "tire": {
+    "file": "Sedan_Pac02Tire.tir",
+    "fz0_prime": 3928.5000000000005,
+    "scaling": {
+      "lfzo": 0.81,
+      "lcx": 1.0,
+      "lmux": 1.0,
+      "lex": 1.0,
+      "lkx": 1.0,
+      "lhx": 1.0,
+      "lvx": 1.0,
+      "lcy": 1.0,
+      "lmuy": 1.0,
+      "ley": 1.0,
+      "lky": 1.0,
+      "lhy": 1.0,
+      "lvy": 1.0,
+      "lgay": 1.0
+    },
+    "offsets_removed": true,
+    "ey_camber_asymmetry": true
+  }
+}

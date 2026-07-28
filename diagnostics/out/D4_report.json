@@ -1,0 +1,269 @@
+{
+  "diagnostic": "D4",
+  "title": "Transient response",
+  "subtitle": "Flicks the steering and watches how the car answers. D3 measured where it ends up; this measures how it gets there \u2014 how long it takes to start turning, whether it swings past and settles back, and how all of that changes when the car's weight is spread further from its middle.",
+  "passed": true,
+  "n_checks": 15,
+  "n_failed": 0,
+  "findings": [
+    "Asked for a 1\u00b0 step of steering at 20 m/s, the car takes about 194 ms to reach 90% of its final rate of turn, swings roughly 1% past it, and settles within 0.3 s. The rise time sits inside the published band for a road car; the overshoot does not, and that is the interesting part \u2014 see below.",
+    "That response is a textbook second-order system, and closed-form theory predicts it: natural frequency 10.0 rad/s, damping ratio 0.98, giving 198 ms and 0% overshoot against the 194 ms and 1% measured. None of those formulas are in our code.",
+    "Spread the weight further from the middle and the car takes longer to start turning: 149 ms at 0.75x, 198 ms at 1.00x, 279 ms at 1.40x \u2014 a 130 ms spread across the range real cars span. It also overshoots slightly less, which is the direction the reference sheet predicts.",
+    "**But our car barely overshoots at all** \u2014 0.82% against the 5-40% a real car shows. It is almost critically damped (\u03b6 = 0.98). That is the bicycle model missing tire relaxation lag, suspension damping and steering dynamics \u2014 all of which add the phase lag that produces overshoot. The same kind of gap as the understeer one, and named rather than tolerated.",
+    "How much to trust these: yaw inertia is the least certain number in the car. The three published correlations bracket 1719-2346 kg\u00b7m\u00b2, which moves rise time over 172-234 ms. So it is a nearest-10-ms number, and Episode 8's comparison should lean on the direction of the effect rather than its exact size.",
+    "Whatever the inertia, the car ends up in the same corner \u2014 final yaw rate varies by 2.34 parts in ten thousand across the sweep, which is tire nonlinearity, not inertia. Polar moment changes the journey, never the destination. That is what makes it an axis independent of weight distribution, and it is why Episode 8 can hold one fixed while sweeping the other."
+  ],
+  "checks": [
+    {
+      "name": "step_steer_stays_inside_the_slip_envelope",
+      "passed": true,
+      "detail": "a 1 deg step at 20 m/s peaks at 1.0 deg of slip and 0.26 g, inside the imposed bounds \u2014 so the numbers below describe the car, not the model being extrapolated",
+      "severity": "gate",
+      "value": null,
+      "expected": null,
+      "group": "Is the manoeuvre inside the envelope?"
+    },
+    {
+      "name": "response_actually_settles",
+      "passed": true,
+      "detail": "yaw rate is within 2% of its final value after 0.316 s of a 2 s window; measuring a 'final value' from a trace that has not settled would corrupt every metric here",
+      "severity": "gate",
+      "value": 0.316,
+      "expected": null,
+      "group": "Is the manoeuvre inside the envelope?"
+    },
+    {
+      "name": "rise_time_matches_the_linear_model",
+      "passed": true,
+      "detail": "0.194 s vs 0.1975 s (rel err 0.0177, tol 0.03)",
+      "severity": "gate",
+      "value": 0.194,
+      "expected": 0.1975,
+      "group": "Does it match the linear model exactly?"
+    },
+    {
+      "name": "final_yaw_rate_matches_the_linear_model",
+      "passed": true,
+      "detail": "0.1291 rad/s vs 0.1301 rad/s (rel err 0.00775, tol 0.01)",
+      "severity": "gate",
+      "value": 0.12913486992794096,
+      "expected": 0.130143067332581,
+      "group": "Does it match the linear model exactly?"
+    },
+    {
+      "name": "settling_time_matches_the_linear_model",
+      "passed": true,
+      "detail": "0.316 s vs 0.337 s (rel err 0.0623, tol 0.15)",
+      "severity": "gate",
+      "value": 0.316,
+      "expected": 0.337,
+      "group": "Does it match the linear model exactly?"
+    },
+    {
+      "name": "closed_form_transient_agreement",
+      "passed": true,
+      "detail": "The linear bicycle model at 20 m/s has natural frequency 9.95 rad/s and damping ratio 0.983. Integrated exactly it rises in 198 ms; our nonlinear model takes 194 ms. None of that state-space formulation is in the codebase. **The comparison had to be against the integrated linear model, not the textbook second-order formulas** \u2014 the yaw-rate transfer function carries a numerator zero at s = -Cr*L/(a*m*V), which speeds the rise up. Using the no-zero formulas predicted 321 ms against 194 ms measured and looked like a model bug.",
+      "severity": "note",
+      "value": {
+        "wn": 9.951781837571279,
+        "zeta": 0.9825974540695819
+      },
+      "expected": null,
+      "group": "Does it match the linear model exactly?"
+    },
+    {
+      "name": "settled_state_matches_the_solved_trim",
+      "passed": true,
+      "detail": "0.9931 deg vs 1 deg (abs err 0.00693, tol 0.02)",
+      "severity": "gate",
+      "value": 0.9930692914232385,
+      "expected": 1.0,
+      "group": "Does the transient end where D3 says it should?"
+    },
+    {
+      "name": "rise_time_increases_with_yaw_inertia",
+      "passed": true,
+      "detail": "rise time 0.75x -> 149 ms, 1.00x -> 198 ms, 1.40x -> 279 ms \u2014 Gate 1 invariant 7: more polar moment, slower to respond",
+      "severity": "gate",
+      "value": [
+        0.149,
+        0.19849999999999998,
+        0.27899999999999997
+      ],
+      "expected": null,
+      "group": "How does yaw inertia change the response?"
+    },
+    {
+      "name": "overshoot_decreases_with_yaw_inertia",
+      "passed": true,
+      "detail": "overshoot 0.75x -> 0.34%, 1.00x -> 0.23%, 1.40x -> 0.14% \u2014 the direction vehicle-reference-parameters.md \u00a75 states, and the linear model agrees: 0.75x -> 0.09%, 1.00x -> 0.02%, 1.40x -> 0.00%",
+      "severity": "gate",
+      "value": [
+        0.003447072077467306,
+        0.0023026661931326853,
+        0.0013560211103786912
+      ],
+      "expected": null,
+      "group": "How does yaw inertia change the response?"
+    },
+    {
+      "name": "rise_time_matches_the_linear_model_across_the_sweep",
+      "passed": true,
+      "detail": "measured vs linear-model rise time: 0.75x 149/148 ms, 1.00x 198/198 ms, 1.40x 279/276 ms",
+      "severity": "gate",
+      "value": null,
+      "expected": null,
+      "group": "How does yaw inertia change the response?"
+    },
+    {
+      "name": "steady_state_independent_of_yaw_inertia",
+      "passed": true,
+      "detail": "final yaw rate varies by 30.4 microrad/s across the sweep, 2.34 parts in ten thousand \u2014 inertia is a transient effect only, and D3's answer must not move",
+      "severity": "gate",
+      "value": [
+        0.12965419435589076,
+        0.1296659008140524,
+        0.12968458789453152
+      ],
+      "expected": null,
+      "group": "How does yaw inertia change the response?"
+    },
+    {
+      "name": "rise_time_in_published_band",
+      "passed": true,
+      "detail": "194 ms against a published 80-300 ms band [ASSUMED, \u00a74]",
+      "severity": "gate",
+      "value": 0.194,
+      "expected": null,
+      "group": "Are the magnitudes plausible?"
+    },
+    {
+      "name": "overshoot_is_far_below_the_published_band",
+      "passed": true,
+      "detail": "0.82% against a published 5-40% band [ASSUMED, \u00a74]. Asserted as an accepted exception with a reason, the way D3 handles the understeer gradient \u2014 see the note below.",
+      "severity": "gate",
+      "value": 0.00822054662226157,
+      "expected": null,
+      "group": "Are the magnitudes plausible?"
+    },
+    {
+      "name": "our_car_is_far_more_damped_than_a_real_one",
+      "passed": true,
+      "detail": "Damping ratio is 0.983 at 20 m/s \u2014 practically critically damped \u2014 so the car barely overshoots at all (0.82%) against a 5-40% expectation. The linear model agrees, so this is not a solver artefact: it is what a bicycle model with pure cornering stiffness does. What a real car has and we do not: **tire relaxation length** (a tire takes roughly half a wheel revolution to build its side force, which is a lag we model as instantaneous), suspension compliance and damping, and steering-system dynamics. Every one of those adds phase lag, and phase lag is what produces overshoot. Same family as the understeer gap in FINDINGS F11 \u2014 the model is more idealised than the car in a nameable way. **Do not quote our overshoot as a property of a GR86.** Ep 8's comparison should rest on the direction and relative size of the inertia effect.",
+      "severity": "note",
+      "value": {
+        "zeta": 0.9825974540695819,
+        "overshoot": 0.00822054662226157
+      },
+      "expected": null,
+      "group": "Are the magnitudes plausible?"
+    },
+    {
+      "name": "reported_precision_is_supported_by_the_inputs",
+      "passed": true,
+      "detail": "the three published I_zz correlations span 1719-2346 kg.m2, which moves rise time over 172-234 ms and overshoot over 1-1%. Report rise time to the nearest 10 ms and overshoot to the nearest percent; the solver's extra digits are not information.",
+      "severity": "gate",
+      "value": {
+        "rise_time": [
+          0.17149999999999999,
+          0.23399999999999999
+        ],
+        "overshoot": [
+          0.006989498096105384,
+          0.009050522636345093
+        ]
+      },
+      "expected": null,
+      "group": "How precise is this entitled to be?"
+    }
+  ],
+  "data": {
+    "schema_version": "0.1.0",
+    "tire": {
+      "file": "Sedan_Pac02Tire.tir",
+      "fz0_prime": 3928.5000000000005,
+      "scaling": {
+        "lfzo": 0.81,
+        "lcx": 1.0,
+        "lmux": 1.0,
+        "lex": 1.0,
+        "lkx": 1.0,
+        "lhx": 1.0,
+        "lvx": 1.0,
+        "lcy": 1.0,
+        "lmuy": 1.0,
+        "ley": 1.0,
+        "lky": 1.0,
+        "lhy": 1.0,
+        "lvy": 1.0,
+        "lgay": 1.0
+      },
+      "offsets_removed": true,
+      "ey_camber_asymmetry": true
+    },
+    "conditions": {
+      "speed": 20.0,
+      "steer_deg": 1.0,
+      "dt": 0.0005
+    },
+    "measured": {
+      "final": 0.12913486992794096,
+      "rise_time": 0.194,
+      "peak_time": 0.6305000000000001,
+      "overshoot": 0.00822054662226157,
+      "settling_time": 0.316
+    },
+    "linear_theory": {
+      "wn": 9.951781837571279,
+      "zeta": 0.9825974540695819,
+      "cf": 130412.32914233768,
+      "cr": 116641.47197656111,
+      "final": 0.130143067332581,
+      "rise_time": 0.1975,
+      "peak_time": 0.7185,
+      "overshoot": 0.00018083279732206137,
+      "settling_time": 0.337
+    },
+    "implied_radius": 154.87683544468103,
+    "izz_sweep": {
+      "0.75": {
+        "rise_time": 0.149,
+        "peak_time": 0.47850000000000004,
+        "overshoot": 0.003447072077467306,
+        "final": 0.12965419435589076,
+        "settling_time": 0.248
+      },
+      "1.0": {
+        "rise_time": 0.19849999999999998,
+        "peak_time": 0.68,
+        "overshoot": 0.0023026661931326853,
+        "final": 0.1296659008140524,
+        "settling_time": 0.336
+      },
+      "1.4": {
+        "rise_time": 0.27899999999999997,
+        "peak_time": 1.0215,
+        "overshoot": 0.0013560211103786912,
+        "final": 0.12968458789453152,
+        "settling_time": 0.48
+      }
+    },
+    "izz_uncertainty": {
+      "low_1719": {
+        "i_zz": 1719.0,
+        "rise_time": 0.17149999999999999,
+        "overshoot": 0.009050522636345093
+      },
+      "nominal_1950": {
+        "i_zz": 1950.0,
+        "rise_time": 0.194,
+        "overshoot": 0.00822054662226157
+      },
+      "sae_regression_2346": {
+        "i_zz": 2346.0,
+        "rise_time": 0.23399999999999999,
+        "overshoot": 0.006989498096105384
+      }
+    }
+  }
+}

@@ -1,0 +1,995 @@
+{
+  "diagnostic": "D3",
+  "title": "Steady-state handling",
+  "subtitle": "Drives the car round a 30 m circle at every speed it can hold, and measures how much extra steering each additional g of cornering costs. That number \u2014 the understeer gradient \u2014 is how the industry describes a car's balance, and it is the first thing this project can compare against a real vehicle.",
+  "passed": true,
+  "n_checks": 25,
+  "n_failed": 0,
+  "findings": [
+    "How much to trust these numbers: across the input uncertainty the reference sheet itself documents, K spans 0.14-0.27 deg/g. So it is a one-decimal number, not a three-decimal one \u2014 and almost all of that spread comes from weight distribution being known only as a range, not from anything the model is doing.",
+    "The car understeers, but barely: K is about 0.2 deg/g (0.1-0.3 across the documented input uncertainty). A real sports car is 1.8-5.5, and below 1 deg/g is essentially never seen in production. **This is the model being honest, not wrong.** A bicycle model has no width, so it cannot lose grip by leaning on its outside tires \u2014 and that, plus suspension effects we do not model, is where most of a real car's understeer comes from.",
+    "Why it comes out near zero, in one line: the front axle carries 7,202 N and needs 3.16 deg of slip per g; the rear carries 6,135 N and needs 3.01 deg. Understeer is the difference between those two, and with identical tires front and rear they nearly cancel.",
+    "It grips about 1.03 g and reaches that limit at 7\u00b0 of front slip \u2014 inside the range we trust the tire model in, so the limit is a real grip limit rather than an artefact of extrapolating the curve.",
+    "What is missing, sized: at the 1.03 g limit a real car moves about 2,271 N from its inside front tire to its outside one \u2014 roughly 19x more than the front-to-rear transfer this model does have. That would cost the front axle an estimated 6% of its grip and the rear 5%. The two differ, so the balance shifts \u2014 and that difference is most of the understeer we are not producing.",
+    "Moving weight forward reliably adds understeer, from -0.3 deg/g at 42% front to +0.5 at 62% \u2014 a swing several times larger than the uncertainty in any single point. The car is neutral at about 50% front \u2014 near 50:50, which is what you get when the tires are identical at both ends. Real cars are not neutral at 50:50, and the reason is everything this model leaves out.",
+    "The test protocol matters more than expected: holding speed the way a real skidpad test does gives K = 0.19 deg/g with a 14x upturn near the limit; letting the car coast gives 0.16 and terminal oversteer instead. Same car \u2014 only the throttle differs.",
+    "Steering effort rises smoothly and then sharply approaching the limit, and the body's sideslip flips from pointing out of the corner at low speed to into it near the limit (crossing zero at 0.72 g). Both are textbook behaviours we did not build in \u2014 they fell out."
+  ],
+  "checks": [
+    {
+      "name": "understeer_gradient_is_positive",
+      "passed": true,
+      "detail": "K = +0.187 deg/g on a 30 m circle. Positive means it needs more steering the harder you corner \u2014 the safe direction, and the one almost every road car is built to have.",
+      "severity": "gate",
+      "value": 0.18723821720956238,
+      "expected": null,
+      "group": "Does the car understeer, and by how much?"
+    },
+    {
+      "name": "understeer_gradient_fit_is_linear",
+      "passed": true,
+      "detail": "R^2 = 0.99714 over the +/-0.5 g window the gradient is defined on",
+      "severity": "gate",
+      "value": 0.9971387937461625,
+      "expected": null,
+      "group": "Does the car understeer, and by how much?"
+    },
+    {
+      "name": "understeer_gradient_in_bicycle_model_band",
+      "passed": true,
+      "detail": "K = 0.187 is inside (0.05, 1.5) deg/g, the band for a model with no lateral load transfer. It is deliberately NOT the road-car band (1.8, 5.5) \u2014 see the accepted exception below.",
+      "severity": "gate",
+      "value": 0.18723821720956238,
+      "expected": null,
+      "group": "Does the car understeer, and by how much?"
+    },
+    {
+      "name": "understeer_gradient_below_a_real_car",
+      "passed": true,
+      "detail": "K = 0.187 < 1.8 deg/g. The parameter sheet's structural check: we model only the cornering-stiffness term, so our K must land below a real car's with the same tires. If it came out higher, something would be wrong.",
+      "severity": "gate",
+      "value": null,
+      "expected": null,
+      "group": "Does the car understeer, and by how much?"
+    },
+    {
+      "name": "measured_K_converges_to_the_textbook_formula",
+      "passed": true,
+      "detail": "K = W_f/C_f - W_r/C_r = +0.1505 deg/g analytically. Measured, shrinking the fit window: 0.50 g->+0.1933, 0.20 g->+0.1549, 0.10 g->+0.1516, 0.05 g->+0.1509, 0.02 g->+0.1508. Error falls monotonically to 0.2% \u2014 the nonlinear model becomes the linear one in the limit, as it must.",
+      "severity": "gate",
+      "value": {
+        "0.5": 0.19325650721199275,
+        "0.2": 0.1549060929080032,
+        "0.1": 0.15155954859333154,
+        "0.05": 0.15091966467707132,
+        "0.02": 0.150846470924956
+      },
+      "expected": null,
+      "group": "Is the low value explained?"
+    },
+    {
+      "name": "accepted_exception_K_is_below_the_road_car_band",
+      "passed": true,
+      "detail": "D3's nominal gate is K in (1.8, 5.5) deg/g (vehicle-reference-parameters.md \u00a75). We measure 0.187 and accept it, with the reason recorded rather than the tolerance widened. The bicycle model has NO track width, therefore no lateral load transfer, therefore none of the grip loss that gives a real car most of its understeer; it also has no compliance steer, no aligning torque, no roll camber and no roll steer. The Bundorf decomposition in \u00a74 attributes roughly 3 of a real car's 4.1 deg/g to exactly those terms. What remains \u2014 front and rear cornering compliance from tire stiffness alone \u2014 is 3.16 and 3.01 deg/g, and the difference between two nearly equal numbers is nearly zero. Episode 5 measures how much of the gap the double-track model closes.",
+      "severity": "note",
+      "value": {
+        "measured": 0.18723821720956238,
+        "road_car_band": [
+          1.8,
+          5.5
+        ]
+      },
+      "expected": null,
+      "group": "Is the low value explained?"
+    },
+    {
+      "name": "yaw_rate_gain_matches_linear_theory",
+      "passed": true,
+      "detail": "r/delta against V/(L + K*V^2): 6 m/s 2.3214 vs 2.3214, 10 m/s 3.8435 vs 3.8435, 15 m/s 5.6919 vs 5.6920, 20 m/s 7.4555 vs 7.4566 \u2014 worst error 0.016%",
+      "severity": "gate",
+      "value": 0.00015633968877445137,
+      "expected": null,
+      "group": "Does it match closed-form theory?"
+    },
+    {
+      "name": "sideslip_matches_linear_theory",
+      "passed": true,
+      "detail": "beta against b/R - (m_r/C_r)*V^2/R: worst disagreement 1.32 microradians across three conditions",
+      "severity": "gate",
+      "value": 1.3201754646896674e-06,
+      "expected": null,
+      "group": "Does it match closed-form theory?"
+    },
+    {
+      "name": "closed_form_agreement_is_the_strongest_check_in_season_1",
+      "passed": true,
+      "detail": "The linear bicycle model has exact solutions for yaw-rate gain, sideslip and understeer gradient. None of them are in the codebase, so agreeing with them is not a tautology the way an internal consistency check is. Our nonlinear model reproduces all three to better than 0.01% in the linear range and converges to the analytic K to within 0.3% as the fit window shrinks. Whatever is wrong with this model, the small-angle structure of it is right.",
+      "severity": "note",
+      "value": null,
+      "expected": null,
+      "group": "Does it match closed-form theory?"
+    },
+    {
+      "name": "steer_increases_monotonically_with_lateral_g",
+      "passed": true,
+      "detail": "required steer rises from 4.921 deg at 0.08 g to 6.296 deg at 1.01 g with no reversal anywhere \u2014 understeer throughout, per SAE J266",
+      "severity": "gate",
+      "value": null,
+      "expected": null,
+      "group": "Does the curve have the right shape?"
+    },
+    {
+      "name": "curve_steepens_near_the_limit",
+      "passed": true,
+      "detail": "between 0.5 g and the limit the slope averages 2.54 deg/g against 0.187 in the linear range \u2014 14 times steeper. This is the distinct upturn the reference expects, and it appears only under the constant-speed protocol; see the note below.",
+      "severity": "gate",
+      "value": 13.541683263983826,
+      "expected": null,
+      "group": "Does the curve have the right shape?"
+    },
+    {
+      "name": "understeer_holds_to_the_limit",
+      "passed": true,
+      "detail": "steering demand keeps rising to 1.01 g, 98% of the 1.03 g limit",
+      "severity": "gate",
+      "value": 0.980503783433409,
+      "expected": null,
+      "group": "Does the curve have the right shape?"
+    },
+    {
+      "name": "front_slip_exceeds_rear_throughout",
+      "passed": true,
+      "detail": "the front tires always work at a larger slip angle than the rear, which is what understeer means physically",
+      "severity": "gate",
+      "value": null,
+      "expected": null,
+      "group": "Does the curve have the right shape?"
+    },
+    {
+      "name": "sideslip_crosses_from_positive_to_negative",
+      "passed": true,
+      "detail": "body sideslip goes +2.40 deg at 0.08 g to -2.91 deg at 1.01 g, crossing zero at about 0.72 g \u2014 textbook, and the reason a car feels like it points into the corner at speed",
+      "severity": "gate",
+      "value": null,
+      "expected": null,
+      "group": "Does the curve have the right shape?"
+    },
+    {
+      "name": "protocol_sensitivity_is_recorded",
+      "passed": true,
+      "detail": "coasting instead of holding speed gives K = 0.159 (vs 0.187), max 1.073 g (vs 1.032), and steer peaking at 86% of the limit (vs 98%) \u2014 a 33% swing in K from the test protocol alone",
+      "severity": "gate",
+      "value": {
+        "K": 0.15895905666395566,
+        "max_lateral_g": 1.0729979005339334,
+        "steer_peaks_at_a_y_g": 0.9253924632774698,
+        "steer_peak_fraction_of_limit": 0.8624364155950224
+      },
+      "expected": null,
+      "group": "Does the curve have the right shape?"
+    },
+    {
+      "name": "the_test_protocol_changes_the_answer_more_than_expected",
+      "passed": true,
+      "detail": "Holding speed (SAE J266, the default) gives K = 0.187 deg/g, a 14x limit upturn, and understeer to 98% of the limit. Coasting gives K = 0.159, no upturn at all, and terminal OVERSTEER above 86%. Same car, same tires, same model \u2014 only the throttle differs. Mechanism: a steered front tire's grip points partly rearward, so a coasting car decelerates, which shifts load forward and unloads the rear. An earlier version of this diagnostic coasted, and attributed both the missing upturn and the terminal oversteer to the bicycle model's lack of lateral load transfer. That was wrong \u2014 see FINDINGS F17. **Only the magnitude of K is a real model limitation.**",
+      "severity": "note",
+      "value": {
+        "hold_speed_K": 0.18723821720956238,
+        "coasting_K": 0.15895905666395566
+      },
+      "expected": null,
+      "group": "Does the curve have the right shape?"
+    },
+    {
+      "name": "max_lateral_acceleration_in_band",
+      "passed": true,
+      "detail": "1.032 g, expected 0.95-1.1 g. NOTE this band is quoted in result-evaluation-guide Gate 2 but was itself derived from this tire file, so it is a consistency check, not outside validation \u2014 see FINDINGS validation status.",
+      "severity": "gate",
+      "value": 1.0315421886550773,
+      "expected": null,
+      "group": "Is the grip level plausible?"
+    },
+    {
+      "name": "limit_reached_inside_the_slip_envelope",
+      "passed": true,
+      "detail": "the hardest converged point runs 6.9 deg of front slip, inside the imposed 12 deg bound \u2014 the limit is a real grip limit, not the model being extrapolated",
+      "severity": "gate",
+      "value": null,
+      "expected": null,
+      "group": "Is the grip level plausible?"
+    },
+    {
+      "name": "omitted_lateral_transfer_is_larger_than_the_modelled_longitudinal_one",
+      "passed": true,
+      "detail": "at 1.03 g the lateral transfer this model cannot represent is 2271 N on the front axle, against 122 N of longitudinal transfer that it does. The missing term is the bigger one by a wide margin.",
+      "severity": "gate",
+      "value": {
+        "lateral_N": 2270.7099879033544,
+        "longitudinal_N": 122.33873627883905
+      },
+      "expected": null,
+      "group": "How big is the missing piece?"
+    },
+    {
+      "name": "estimated_grip_cost_of_the_missing_transfer_is_material",
+      "passed": true,
+      "detail": "splitting the front axle 5872 / 1330 N instead of evenly costs an estimated 6.2% of its peak lateral force (7662 -> 7189 N) \u2014 Episode 2's arithmetic applied to a real corner",
+      "severity": "gate",
+      "value": 0.061777008780782405,
+      "expected": null,
+      "group": "How big is the missing piece?"
+    },
+    {
+      "name": "estimate_of_the_episode_5_effect",
+      "passed": true,
+      "detail": "Computed from static geometry and the tire's load sensitivity, NOT simulated \u2014 the bicycle model has no track width and cannot produce these numbers itself. It assumes the roll-stiffness split follows the weight distribution, which is the assumption the double-track model exists to replace. Treat it as a prediction of the size of the Ep 5 effect: front axle loses about 6% and rear about 5% of peak lateral force at the limit, and because those two percentages differ, the balance moves \u2014 which is the mechanism this model is missing.",
+      "severity": "note",
+      "value": {
+        "front": {
+          "transfer_N": 2270.7099879033544,
+          "outside_N": 5871.711867903355,
+          "inside_N": 1330.2918920966458,
+          "capacity_even_N": 7662.450558063355,
+          "capacity_split_N": 7189.087282655564,
+          "grip_lost_frac": 0.061777008780782405
+        },
+        "rear": {
+          "transfer_N": 1947.2470266635596,
+          "outside_N": 5014.767146663559,
+          "inside_N": 1120.27309333644,
+          "capacity_even_N": 6677.510151921476,
+          "capacity_split_N": 6329.402700559707,
+          "grip_lost_frac": 0.052131324916308786
+        }
+      },
+      "expected": null,
+      "group": "How big is the missing piece?"
+    },
+    {
+      "name": "K_monotone_in_weight_distribution",
+      "passed": true,
+      "detail": "moving weight forward always adds understeer: 0.42\u2192-0.34, 0.46\u2192-0.16, 0.50\u2192+0.01, 0.54\u2192+0.19, 0.58\u2192+0.36, 0.62\u2192+0.54 deg/g",
+      "severity": "gate",
+      "value": {
+        "0.42": -0.3397123817787495,
+        "0.46": -0.16392755278253765,
+        "0.5": 0.011731342217888008,
+        "0.54": 0.18723821720956238,
+        "0.58": 0.36254609121309245,
+        "0.62": 0.5375546039871777
+      },
+      "expected": null,
+      "group": "Does the design knob move it the right way?"
+    },
+    {
+      "name": "design_sweep_spans_more_than_the_noise_floor",
+      "passed": true,
+      "detail": "the 0.42-0.62 sweep moves K by 0.88 deg/g, against a real-world measurement noise floor of 0.2 deg/g \u2014 the trend is resolvable even though the absolute values are not road-car-like",
+      "severity": "gate",
+      "value": 0.8772669857659272,
+      "expected": null,
+      "group": "Does the design knob move it the right way?"
+    },
+    {
+      "name": "reported_precision_is_supported_by_the_inputs",
+      "passed": true,
+      "detail": "across the documented input uncertainty K spans 0.14 to 0.27 deg/g and max lateral 1.03 to 1.03 g. So K is good to about one decimal (0.1-0.3) and max lateral to two (1.03-1.03). Quoting more digits than that is false precision, however many the solver returns.",
+      "severity": "gate",
+      "value": {
+        "K": [
+          0.14337769216890014,
+          0.2749215942386681
+        ],
+        "max_g": [
+          1.0273721028299063,
+          1.0339288869320116
+        ]
+      },
+      "expected": null,
+      "group": "How precise is this number entitled to be?"
+    },
+    {
+      "name": "weight_distribution_dominates_the_uncertainty",
+      "passed": true,
+      "detail": "the 0.53-0.56 weight-distribution range moves K by 0.13 deg/g; driver mass and CoM height together move it by less than 0.02. If one input is worth pinning down better, it is that one.",
+      "severity": "gate",
+      "value": {
+        "front_mass_fraction_0.53_0.56": {
+          "K": [
+            0.14337769216890014,
+            0.2749215942386681
+          ],
+          "max_g": [
+            1.0273721028299063,
+            1.0335309123661023
+          ]
+        },
+        "driver_mass_plus_minus_20kg": {
+          "K": [
+            0.18164258515123796,
+            0.1929220227848766
+          ],
+          "max_g": [
+            1.0291582482625956,
+            1.0339288869320116
+          ]
+        },
+        "com_height_457_463mm": {
+          "K": [
+            0.18709329107824801,
+            0.18738314948793694
+          ],
+          "max_g": [
+            1.0314428027434615,
+            1.0316415793546871
+          ]
+        }
+      },
+      "expected": null,
+      "group": "How precise is this number entitled to be?"
+    }
+  ],
+  "data": {
+    "schema_version": "0.1.0",
+    "tire": {
+      "file": "Sedan_Pac02Tire.tir",
+      "fz0_prime": 3928.5000000000005,
+      "scaling": {
+        "lfzo": 0.81,
+        "lcx": 1.0,
+        "lmux": 1.0,
+        "lex": 1.0,
+        "lkx": 1.0,
+        "lhx": 1.0,
+        "lvx": 1.0,
+        "lcy": 1.0,
+        "lmuy": 1.0,
+        "ley": 1.0,
+        "lky": 1.0,
+        "lhy": 1.0,
+        "lvy": 1.0,
+        "lgay": 1.0
+      },
+      "offsets_removed": true,
+      "ey_camber_asymmetry": true
+    },
+    "radius": 30.0,
+    "understeer_gradient_deg_per_g": 0.18723821720956238,
+    "fit_r_squared": 0.9971387937461625,
+    "max_lateral_g": 1.0315421886550773,
+    "sweep": [
+      {
+        "speed": 5.0,
+        "a_y_g": 0.08497635108149403,
+        "steer_deg": 4.921025804370844,
+        "understeer_angle_deg": 0.0031380628312775998,
+        "alpha_f_deg": -0.27029214244769934,
+        "alpha_r_deg": -0.2569113191893139,
+        "sideslip_deg": 2.397346332909049,
+        "a_x": -0.03488835128595786
+      },
+      {
+        "speed": 5.25,
+        "a_y_g": 0.09368642706734716,
+        "steer_deg": 4.922538262990908,
+        "understeer_angle_deg": 0.004650521451340615,
+        "alpha_f_deg": -0.2981264984069907,
+        "alpha_r_deg": -0.2834058295685425,
+        "sideslip_deg": 2.3708970821180415,
+        "a_x": -0.038039552735517054
+      },
+      {
+        "speed": 5.5,
+        "a_y_g": 0.10282138480860777,
+        "steer_deg": 4.924119167317575,
+        "understeer_angle_deg": 0.006231425778008635,
+        "alpha_f_deg": -0.3273625423557006,
+        "alpha_r_deg": -0.3112400736729125,
+        "sideslip_deg": 2.3431091668118813,
+        "a_x": -0.041258764039110433
+      },
+      {
+        "speed": 5.75,
+        "a_y_g": 0.11238122430527585,
+        "steer_deg": 4.925768622059438,
+        "understeer_angle_deg": 0.007880880519871255,
+        "alpha_f_deg": -0.3580119373593626,
+        "alpha_r_deg": -0.3404253496512422,
+        "sideslip_deg": 2.3139711263026426,
+        "a_x": -0.04453340970111045
+      },
+      {
+        "speed": 6.0,
+        "a_y_g": 0.12236594555735139,
+        "steer_deg": 4.927486939694078,
+        "understeer_angle_deg": 0.009599198154511573,
+        "alpha_f_deg": -0.39008820117649623,
+        "alpha_r_deg": -0.37097459259986615,
+        "sideslip_deg": 2.2834698545368846,
+        "a_x": -0.04785021772595569
+      },
+      {
+        "speed": 6.25,
+        "a_y_g": 0.1327755485648344,
+        "steer_deg": 4.929274670618185,
+        "understeer_angle_deg": 0.011386929078618813,
+        "alpha_f_deg": -0.4236069119033749,
+        "alpha_r_deg": -0.4029025498857151,
+        "sideslip_deg": 2.2515904243610896,
+        "a_x": -0.05119519274764647
+      },
+      {
+        "speed": 6.5,
+        "a_y_g": 0.1436100333277249,
+        "steer_deg": 4.931132636051753,
+        "understeer_angle_deg": 0.013244894512186987,
+        "alpha_f_deg": -0.45858593214696497,
+        "alpha_r_deg": -0.43622597212750247,
+        "sideslip_deg": 2.2183158960374714,
+        "a_x": -0.05455358502307214
+      },
+      {
+        "speed": 6.75,
+        "a_y_g": 0.15486939984602285,
+        "steer_deg": 4.933061964178094,
+        "understeer_angle_deg": 0.015174222638527204,
+        "alpha_f_deg": -0.4950456541658631,
+        "alpha_r_deg": -0.4709638217752447,
+        "sideslip_deg": 2.183627108056697,
+        "a_x": -0.05790985475645658
+      },
+      {
+        "speed": 7.0,
+        "a_y_g": 0.16655364811972828,
+        "steer_deg": 4.935064130106447,
+        "understeer_angle_deg": 0.017176388566880488,
+        "alpha_f_deg": -0.5330092688689947,
+        "alpha_r_deg": -0.5071375015706309,
+        "sideslip_deg": 2.1475024479497695,
+        "a_x": -0.06124763114912006
+      },
+      {
+        "speed": 7.25,
+        "a_y_g": 0.1786627781488412,
+        "steer_deg": 4.937141000370249,
+        "understeer_angle_deg": 0.0192532588306821,
+        "alpha_f_deg": -0.5725030620938367,
+        "alpha_r_deg": -0.5447711055736157,
+        "sideslip_deg": 2.109917600396144,
+        "a_x": -0.06454966548226584
+      },
+      {
+        "speed": 7.5,
+        "a_y_g": 0.19119678993336156,
+        "steer_deg": 4.939294882826758,
+        "understeer_angle_deg": 0.02140714128719089,
+        "alpha_f_deg": -0.613556742218308,
+        "alpha_r_deg": -0.5838916959165672,
+        "sideslip_deg": 2.070845269446308,
+        "a_x": -0.06779777743775493
+      },
+      {
+        "speed": 7.75,
+        "a_y_g": 0.20415568347328938,
+        "steer_deg": 4.941528583009369,
+        "understeer_angle_deg": 0.023640841469801777,
+        "alpha_f_deg": -0.6562038039152224,
+        "alpha_r_deg": -0.6245296090120086,
+        "sideslip_deg": 2.0302548711089266,
+        "a_x": -0.07097279373932316
+      },
+      {
+        "speed": 8.0,
+        "a_y_g": 0.2175394587686247,
+        "steer_deg": 4.9438454682111095,
+        "understeer_angle_deg": 0.025957726671542378,
+        "alpha_f_deg": -0.700481933763927,
+        "alpha_r_deg": -0.6667187956130111,
+        "sideslip_deg": 1.9881121918753868,
+        "a_x": -0.07405447805006633
+      },
+      {
+        "speed": 8.25,
+        "a_y_g": 0.23134811581936746,
+        "steer_deg": 4.94624954085766,
+        "understeer_angle_deg": 0.028361799318092847,
+        "alpha_f_deg": -0.7464334645261839,
+        "alpha_r_deg": -0.7104971999310795,
+        "sideslip_deg": 1.9443790079436931,
+        "a_x": -0.0770214508858569
+      },
+      {
+        "speed": 8.5,
+        "a_y_g": 0.24558165462551773,
+        "steer_deg": 4.94874552307497,
+        "understeer_angle_deg": 0.030857781535403226,
+        "alpha_f_deg": -0.7941058862180458,
+        "alpha_r_deg": -0.7559071839859614,
+        "sideslip_deg": 1.899012658927733,
+        "a_x": -0.07985109809186106
+      },
+      {
+        "speed": 8.75,
+        "a_y_g": 0.2602400751870755,
+        "steer_deg": 4.951338954789274,
+        "understeer_angle_deg": 0.03345121324970745,
+        "alpha_f_deg": -0.8435524237236715,
+        "alpha_r_deg": -0.8029960045328758,
+        "sideslip_deg": 1.851965568659142,
+        "a_x": -0.08251946617200961
+      },
+      {
+        "speed": 9.0,
+        "a_y_g": 0.2753233775040407,
+        "steer_deg": 4.954036308240711,
+        "understeer_angle_deg": 0.03614856670114359,
+        "alpha_f_deg": -0.8948326926903071,
+        "alpha_r_deg": -0.8518163513496327,
+        "sideslip_deg": 1.803184704242425,
+        "a_x": -0.0850011424476339
+      },
+      {
+        "speed": 9.25,
+        "a_y_g": 0.2908315615764133,
+        "steer_deg": 4.956845122479847,
+        "understeer_angle_deg": 0.038957380940279986,
+        "alpha_f_deg": -0.9480134478505545,
+        "alpha_r_deg": -0.9024269573686378,
+        "sideslip_deg": 1.7526109628095468,
+        "a_x": -0.08726911764052726
+      },
+      {
+        "speed": 9.5,
+        "a_y_g": 0.3067646274041934,
+        "steer_deg": 4.959774162282255,
+        "understeer_angle_deg": 0.041886420742687565,
+        "alpha_f_deg": -1.0031694410256697,
+        "alpha_r_deg": -0.9548932933606062,
+        "sideslip_deg": 1.7001784731835925,
+        "a_x": -0.08929462800200502
+      },
+      {
+        "speed": 9.75,
+        "a_y_g": 0.32312257498738106,
+        "steer_deg": 4.962833607061407,
+        "understeer_angle_deg": 0.04494586552184077,
+        "alpha_f_deg": -1.0603844097855435,
+        "alpha_r_deg": -1.0092883624277038,
+        "sideslip_deg": 1.6458137970915119,
+        "a_x": -0.09104697353332998
+      },
+      {
+        "speed": 10.0,
+        "a_y_g": 0.3399054043259761,
+        "steer_deg": 4.966035276764215,
+        "understeer_angle_deg": 0.048147535224647965,
+        "alpha_f_deg": -1.1197522225527436,
+        "alpha_r_deg": -1.065693612939425,
+        "sideslip_deg": 1.58943501116693,
+        "a_x": -0.09249330811830608
+      },
+      {
+        "speed": 10.25,
+        "a_y_g": 0.35711311541997864,
+        "steer_deg": 4.969392903662798,
+        "understeer_angle_deg": 0.05150516212323121,
+        "alpha_f_deg": -1.181378212000067,
+        "alpha_r_deg": -1.12419999263598,
+        "sideslip_deg": 1.5309506468627323,
+        "a_x": -0.09359839648958819
+      },
+      {
+        "speed": 10.5,
+        "a_y_g": 0.37474570826938863,
+        "steer_deg": 4.972922461389472,
+        "understeer_angle_deg": 0.05503471984990526,
+        "alpha_f_deg": -1.2453807362982539,
+        "alpha_r_deg": -1.1849091718448461,
+        "sideslip_deg": 1.4702584601341662,
+        "a_x": -0.09432433181663175
+      },
+      {
+        "speed": 10.75,
+        "a_y_g": 0.3928031828742061,
+        "steer_deg": 4.976642565840881,
+        "understeer_angle_deg": 0.05875482430131403,
+        "alpha_f_deg": -1.3118930177349262,
+        "alpha_r_deg": -1.2479349703732305,
+        "sideslip_deg": 1.407243996087116,
+        "a_x": -0.09463020626832208
+      },
+      {
+        "speed": 11.0,
+        "a_y_g": 0.41128553923443106,
+        "steer_deg": 4.980574966926137,
+        "understeer_angle_deg": 0.06268722538657093,
+        "alpha_f_deg": -1.3810653211379103,
+        "alpha_r_deg": -1.3134050311133212,
+        "sideslip_deg": 1.3417789052485767,
+        "a_x": -0.0944717250725596
+      },
+      {
+        "speed": 11.25,
+        "a_y_g": 0.4301927773500635,
+        "steer_deg": 4.9847451559972225,
+        "understeer_angle_deg": 0.06685741445765614,
+        "alpha_f_deg": -1.4530675514546536,
+        "alpha_r_deg": -1.3814627943355515,
+        "sideslip_deg": 1.2737189570950045,
+        "a_x": -0.09380075224069995
+      },
+      {
+        "speed": 11.5,
+        "a_y_g": 0.4495248972211034,
+        "steer_deg": 4.989183121774999,
+        "understeer_angle_deg": 0.07129538023543239,
+        "alpha_f_deg": -1.528092372212625,
+        "alpha_r_deg": -1.4522698408884946,
+        "sideslip_deg": 1.2029016821213883,
+        "a_x": -0.09256477307098925
+      },
+      {
+        "speed": 11.75,
+        "a_y_g": 0.4692818988475508,
+        "steer_deg": 4.993924298551289,
+        "understeer_angle_deg": 0.07603655701172284,
+        "alpha_f_deg": -1.6063589764802257,
+        "alpha_r_deg": -1.5260086912449846,
+        "sideslip_deg": 1.1291435548673132,
+        "a_x": -0.09070625454770018
+      },
+      {
+        "speed": 12.0,
+        "a_y_g": 0.48946378222940556,
+        "steer_deg": 4.999010765703567,
+        "understeer_angle_deg": 0.08112302416400109,
+        "alpha_f_deg": -1.6881176823372712,
+        "alpha_r_deg": -1.6028861721885799,
+        "sideslip_deg": 1.0522366052660166,
+        "a_x": -0.08816187946786075
+      },
+      {
+        "speed": 12.25,
+        "a_y_g": 0.5100705473666679,
+        "steer_deg": 5.00449277904843,
+        "understeer_angle_deg": 0.08660503750886306,
+        "alpha_f_deg": -1.7736555800905562,
+        "alpha_r_deg": -1.6831374962909835,
+        "sideslip_deg": 0.9719443120599197,
+        "a_x": -0.08486162306553276
+      },
+      {
+        "speed": 12.5,
+        "a_y_g": 0.5311021942593376,
+        "steer_deg": 5.01043074524153,
+        "understeer_angle_deg": 0.09254300370196336,
+        "alpha_f_deg": -1.8633035349703522,
+        "alpha_r_deg": -1.7670312446247234,
+        "sideslip_deg": 0.887996586366739,
+        "a_x": -0.08072763135694036
+      },
+      {
+        "speed": 12.75,
+        "a_y_g": 0.5525587229074149,
+        "steer_deg": 5.016897794883072,
+        "understeer_angle_deg": 0.0990100533435055,
+        "alpha_f_deg": -1.9574449565186998,
+        "alpha_r_deg": -1.8548755054450072,
+        "sideslip_deg": 0.8000835906812639,
+        "a_x": -0.07567284736044168
+      },
+      {
+        "speed": 13.0,
+        "a_y_g": 0.5744401333108996,
+        "steer_deg": 5.023983175427017,
+        "understeer_angle_deg": 0.10609543388745053,
+        "alpha_f_deg": -2.056526899218468,
+        "alpha_r_deg": -1.9470255084331352,
+        "sideslip_deg": 0.7078480510201932,
+        "a_x": -0.06959931320585563
+      },
+      {
+        "speed": 13.25,
+        "a_y_g": 0.5967464254697918,
+        "steer_deg": 5.0317967830264845,
+        "understeer_angle_deg": 0.11390904148691733,
+        "alpha_f_deg": -2.161074281414853,
+        "alpha_r_deg": -2.043893217064792,
+        "sideslip_deg": 0.6108755959151202,
+        "a_x": -0.06239605058877393
+      },
+      {
+        "speed": 13.5,
+        "a_y_g": 0.6194775993840914,
+        "steer_deg": 5.0404753021652136,
+        "understeer_angle_deg": 0.12258756062564652,
+        "alpha_f_deg": -2.271708338521485,
+        "alpha_r_deg": -2.145959518698301,
+        "sideslip_deg": 0.5086824774234666,
+        "a_x": -0.053936385410094684
+      },
+      {
+        "speed": 13.75,
+        "a_y_g": 0.6426336550537985,
+        "steer_deg": 5.050190655483731,
+        "understeer_angle_deg": 0.13230291394416455,
+        "alpha_f_deg": -2.3891709229458047,
+        "alpha_r_deg": -2.2537899115953315,
+        "sideslip_deg": 0.40069976747659763,
+        "a_x": -0.04407452901391055
+      },
+      {
+        "speed": 14.0,
+        "a_y_g": 0.6662145924789131,
+        "steer_deg": 5.061161839274074,
+        "understeer_angle_deg": 0.14327409773450683,
+        "alpha_f_deg": -2.514357029857989,
+        "alpha_r_deg": -2.3680549767419175,
+        "sideslip_deg": 0.28625273084386904,
+        "a_x": -0.03264114886823899
+      },
+      {
+        "speed": 14.25,
+        "a_y_g": 0.6902204116594352,
+        "steer_deg": 5.073671831989891,
+        "understeer_angle_deg": 0.15578409045032476,
+        "alpha_f_deg": -2.648359142964679,
+        "alpha_r_deg": -2.4895575177670457,
+        "sideslip_deg": 0.16453347531098184,
+        "a_x": -0.01943754028268515
+      },
+      {
+        "speed": 14.5,
+        "a_y_g": 0.7146511125953648,
+        "steer_deg": 5.088092297054115,
+        "understeer_angle_deg": 0.1702045555145485,
+        "alpha_f_deg": -2.7925289770910973,
+        "alpha_r_deg": -2.6192691886097363,
+        "sideslip_deg": 0.03456403495892904,
+        "a_x": -0.00422782113762104
+      },
+      {
+        "speed": 14.75,
+        "a_y_g": 0.7395066952867018,
+        "steer_deg": 5.104920608677814,
+        "understeer_angle_deg": 0.18703286713824724,
+        "alpha_f_deg": -2.948565539143921,
+        "alpha_r_deg": -2.758380945605485,
+        "sideslip_deg": -0.1048544882929341,
+        "a_x": 0.013271733840421431
+      },
+      {
+        "speed": 15.0,
+        "a_y_g": 0.7647871597334462,
+        "steer_deg": 5.124837014621922,
+        "understeer_angle_deg": 0.2069492730823548,
+        "alpha_f_deg": -3.118644292513651,
+        "alpha_r_deg": -2.9083742043710554,
+        "sideslip_deg": -0.255213666661776,
+        "a_x": 0.03340761179162301
+      },
+      {
+        "speed": 15.25,
+        "a_y_g": 0.7904925059355982,
+        "steer_deg": 5.148795998014396,
+        "understeer_angle_deg": 0.23090825647482968,
+        "alpha_f_deg": -3.3056129591401855,
+        "alpha_r_deg": -3.071124021713728,
+        "sideslip_deg": -0.41840179461389504,
+        "a_x": 0.0566105088693652
+      },
+      {
+        "speed": 15.5,
+        "a_y_g": 0.8166227338931575,
+        "steer_deg": 5.178178436804391,
+        "understeer_angle_deg": 0.26029069526482423,
+        "alpha_f_deg": -3.5133002705275405,
+        "alpha_r_deg": -3.2490537501095518,
+        "sideslip_deg": -0.5968598688069927,
+        "a_x": 0.08342718660840658
+      },
+      {
+        "speed": 15.75,
+        "a_y_g": 0.8431778436061246,
+        "steer_deg": 5.215057980576376,
+        "understeer_angle_deg": 0.2971702390368093,
+        "alpha_f_deg": -3.7470267795557803,
+        "alpha_r_deg": -3.445376369819638,
+        "sideslip_deg": -0.7938250311505083,
+        "a_x": 0.11456970849919348
+      },
+      {
+        "speed": 16.0,
+        "a_y_g": 0.8701578350744988,
+        "steer_deg": 5.262697153972322,
+        "understeer_angle_deg": 0.3448094124327552,
+        "alpha_f_deg": -4.014502204919235,
+        "alpha_r_deg": -3.664490508615386,
+        "sideslip_deg": -1.0137301213213954,
+        "a_x": 0.15099541138182962
+      },
+      {
+        "speed": 16.25,
+        "a_y_g": 0.8975627082982807,
+        "steer_deg": 5.32654748885534,
+        "understeer_angle_deg": 0.4086597473157734,
+        "alpha_f_deg": -4.327528422431647,
+        "alpha_r_deg": -3.9126739428295227,
+        "sideslip_deg": -1.2629034781439312,
+        "a_x": 0.19404539630932668
+      },
+      {
+        "speed": 16.5,
+        "a_y_g": 0.9253924632774698,
+        "steer_deg": 5.416490994352219,
+        "understeer_angle_deg": 0.49860325281265216,
+        "alpha_f_deg": -4.70558532944634,
+        "alpha_r_deg": -4.199409739375398,
+        "sideslip_deg": -1.5509073182161932,
+        "a_x": 0.24570609738056393
+      },
+      {
+        "speed": 16.75,
+        "a_y_g": 0.9536471000120667,
+        "steer_deg": 5.552681685414345,
+        "understeer_angle_deg": 0.6347939438747775,
+        "alpha_f_deg": -5.184593508373701,
+        "alpha_r_deg": -4.540267197767353,
+        "sideslip_deg": -1.8934455447372318,
+        "a_x": 0.3091695346101638
+      },
+      {
+        "speed": 17.0,
+        "a_y_g": 0.9823266185020709,
+        "steer_deg": 5.784881899458142,
+        "understeer_angle_deg": 0.8669941579185753,
+        "alpha_f_deg": -5.844056259424876,
+        "alpha_r_deg": -4.96459998487363,
+        "sideslip_deg": -2.320133754161471,
+        "a_x": 0.39030530007181063
+      },
+      {
+        "speed": 17.25,
+        "a_y_g": 1.0114310187474826,
+        "steer_deg": 6.295754665769209,
+        "understeer_angle_deg": 1.3778669242296429,
+        "alpha_f_deg": -6.942274150015881,
+        "alpha_r_deg": -5.547038704700271,
+        "sideslip_deg": -2.90628015676869,
+        "a_x": 0.5035521833727791
+      }
+    ],
+    "K_convergence_to_linear_theory": {
+      "0.5": 0.19325650721199275,
+      "0.2": 0.1549060929080032,
+      "0.1": 0.15155954859333154,
+      "0.05": 0.15091966467707132,
+      "0.02": 0.150846470924956
+    },
+    "cornering_compliance": {
+      "front_deg_per_g": 3.1641519034214305,
+      "rear_deg_per_g": 3.013610055997607,
+      "front_axle_stiffness_N_per_deg": 2276.1245287283455,
+      "rear_axle_stiffness_N_per_deg": 2035.7777303636894
+    },
+    "closed_form": {
+      "yaw_gain": [
+        {
+          "V": 6.0,
+          "measured": 2.321412125880203,
+          "theory": 2.321401688743365
+        },
+        {
+          "V": 10.0,
+          "measured": 3.8435106245115818,
+          "theory": 3.843503982525711
+        },
+        {
+          "V": 15.0,
+          "measured": 5.6918662690466775,
+          "theory": 5.691987820746943
+        },
+        {
+          "V": 20.0,
+          "measured": 7.4554826612467116,
+          "theory": 7.456648431341768
+        }
+      ],
+      "sideslip": [
+        {
+          "R": 600.0,
+          "V": 8.0,
+          "measured": 0.0017453738370664534,
+          "theory": 0.0017453993094319318
+        },
+        {
+          "R": 600.0,
+          "V": 16.0,
+          "measured": 2.777706226303549e-05,
+          "theory": 2.9097237727725156e-05
+        },
+        {
+          "R": 250.0,
+          "V": 10.0,
+          "measured": 0.0034154365741849856,
+          "theory": 0.0034166224103697428
+        }
+      ]
+    },
+    "steer_peaks_at_a_y_g": 1.0114310187474826,
+    "steer_peak_fraction_of_limit": 0.980503783433409,
+    "coasting_protocol": {
+      "K": 0.15895905666395566,
+      "max_lateral_g": 1.0729979005339334,
+      "steer_peaks_at_a_y_g": 0.9253924632774698,
+      "steer_peak_fraction_of_limit": 0.8624364155950224
+    },
+    "omitted_lateral_transfer_estimate": {
+      "front": {
+        "transfer_N": 2270.7099879033544,
+        "outside_N": 5871.711867903355,
+        "inside_N": 1330.2918920966458,
+        "capacity_even_N": 7662.450558063355,
+        "capacity_split_N": 7189.087282655564,
+        "grip_lost_frac": 0.061777008780782405
+      },
+      "rear": {
+        "transfer_N": 1947.2470266635596,
+        "outside_N": 5014.767146663559,
+        "inside_N": 1120.27309333644,
+        "capacity_even_N": 6677.510151921476,
+        "capacity_split_N": 6329.402700559707,
+        "grip_lost_frac": 0.052131324916308786
+      }
+    },
+    "K_vs_front_fraction": {
+      "0.42": -0.3397123817787495,
+      "0.46": -0.16392755278253765,
+      "0.5": 0.011731342217888008,
+      "0.54": 0.18723821720956238,
+      "0.58": 0.36254609121309245,
+      "0.62": 0.5375546039871777
+    },
+    "neutral_steer_front_fraction": 0.4973286084447111,
+    "parameter_sensitivity": {
+      "front_mass_fraction_0.53_0.56": {
+        "K": [
+          0.14337769216890014,
+          0.2749215942386681
+        ],
+        "max_g": [
+          1.0273721028299063,
+          1.0335309123661023
+        ]
+      },
+      "driver_mass_plus_minus_20kg": {
+        "K": [
+          0.18164258515123796,
+          0.1929220227848766
+        ],
+        "max_g": [
+          1.0291582482625956,
+          1.0339288869320116
+        ]
+      },
+      "com_height_457_463mm": {
+        "K": [
+          0.18709329107824801,
+          0.18738314948793694
+        ],
+        "max_g": [
+          1.0314428027434615,
+          1.0316415793546871
+        ]
+      }
+    },
+    "K_range_from_input_uncertainty": [
+      0.14337769216890014,
+      0.2749215942386681
+    ],
+    "max_g_range_from_input_uncertainty": [
+      1.0273721028299063,
+      1.0339288869320116
+    ]
+  }
+}

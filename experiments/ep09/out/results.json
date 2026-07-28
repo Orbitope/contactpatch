@@ -1,0 +1,55 @@
+{
+  "total_steps": 1200000,
+  "seed": 0,
+  "entry_speed_ms": 15.0,
+  "track_length_m": 392.8318530717959,
+  "corner_limit_ms": 19.482650756835938,
+  "train_config": {
+    "total_steps": 1200000,
+    "n_envs": 8,
+    "rollout_steps": 512,
+    "epochs": 10,
+    "minibatches": 4,
+    "gamma": 0.995,
+    "gae_lambda": 0.95,
+    "clip": 0.2,
+    "lr": 0.0003,
+    "value_coef": 0.5,
+    "entropy_coef": 0.0005,
+    "max_grad_norm": 0.5,
+    "hidden": 64,
+    "init_log_std": [
+      -2.5,
+      -1.0
+    ],
+    "seed": 0,
+    "anneal_lr": true
+  },
+  "evaluation": {
+    "greedy": {
+      "distance_m": 129.10729304283947,
+      "distance_std": 0.0,
+      "finish_rate": 0.0,
+      "worst_slip_deg": 12.27988831815342,
+      "slip_over_bound": 0.0031446540880503146,
+      "envelope_occupancy": 0.0,
+      "lap_time_s": NaN
+    },
+    "stochastic": {
+      "distance_m": 361.53780541910834,
+      "distance_std": 83.80041326372765,
+      "finish_rate": 0.875,
+      "worst_slip_deg": 14.410959070940766,
+      "slip_over_bound": 0.0047198538367844095,
+      "envelope_occupancy": 0.0047198538367844095,
+      "lap_time_s": 15.877142857142857
+    }
+  },
+  "d6_passed": false,
+  "d6_failures": [
+    "exploration_is_not_growing",
+    "greedy_and_stochastic_agree",
+    "the_policy_stayed_inside_the_tire_model"
+  ],
+  "note": "The slip envelope is deliberately NOT enforced in this environment (see physics/rl_env.py). Lap times from outside it are not comparable with Seasons 1-2 and are not quoted as such."
+}

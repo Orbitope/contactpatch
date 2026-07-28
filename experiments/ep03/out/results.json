@@ -1,0 +1,57 @@
+{
+  "radius_m": 30.0,
+  "understeer_gradient_deg_per_g": 0.18723821720956238,
+  "understeer_gradient_range_from_input_uncertainty": [
+    0.14337769216890014,
+    0.2749215942386681
+  ],
+  "fit_r_squared": 0.9971387937461625,
+  "max_lateral_g": 1.0315421886550773,
+  "K_by_front_fraction": {
+    "0.42": -0.3397123817787495,
+    "0.46": -0.16392755278253765,
+    "0.5": 0.011731342217888008,
+    "0.54": 0.18723821720956238,
+    "0.58": 0.36254609121309245,
+    "0.62": 0.5375546039871777
+  },
+  "neutral_front_fraction": 0.4973286084447111,
+  "cruising": {
+    "a_y_g": 0.20415568347328938,
+    "steer_deg": 4.941528583009369,
+    "alpha_f_deg": -0.6562038039152224,
+    "alpha_r_deg": -0.6245296090120086,
+    "sideslip_deg": 2.0302548711089266
+  },
+  "at_the_limit": {
+    "a_y_g": 1.0114310187474826,
+    "steer_deg": 6.295754665769209,
+    "alpha_f_deg": -6.942274150015881,
+    "alpha_r_deg": -5.547038704700271,
+    "sideslip_deg": -2.90628015676869
+  },
+  "ackermann_deg": 4.917887741539567,
+  "braking_load_transfer_N": 1191.2699495145625,
+  "tire": {
+    "file": "Sedan_Pac02Tire.tir",
+    "fz0_prime": 3928.5000000000005,
+    "scaling": {
+      "lfzo": 0.81,
+      "lcx": 1.0,
+      "lmux": 1.0,
+      "lex": 1.0,
+      "lkx": 1.0,
+      "lhx": 1.0,
+      "lvx": 1.0,
+      "lcy": 1.0,
+      "lmuy": 1.0,
+      "ley": 1.0,
+      "lky": 1.0,
+      "lhy": 1.0,
+      "lvy": 1.0,
+      "lgay": 1.0
+    },
+    "offsets_removed": true,
+    "ey_camber_asymmetry": true
+  }
+}

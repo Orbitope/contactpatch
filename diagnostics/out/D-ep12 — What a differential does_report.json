@@ -1,0 +1,114 @@
+{
+  "diagnostic": "D-ep12 \u2014 What a differential does",
+  "title": "One mechanism: torque flows from the faster-turning wheel to the slower. The checks ask whether both of its faces appear, whether they are ordered, and whether the conclusion survives the assumed numbers.",
+  "subtitle": "",
+  "passed": true,
+  "n_checks": 9,
+  "n_failed": 0,
+  "findings": [],
+  "checks": [
+    {
+      "name": "no_device_does_anything_in_a_straight_line",
+      "passed": true,
+      "detail": "with no yaw rate every device feeds both wheels 2000 N. There is no speed difference to resist, so a welded differential is invisible on a motorway and awful in a car park. A model showing a difference here would be inventing one.",
+      "severity": "gate",
+      "value": 2000.0,
+      "expected": null,
+      "group": "Does it do anything when there is nothing to decide?"
+    },
+    {
+      "name": "at_part_throttle_a_locking_differential_pushes_wide",
+      "passed": true,
+      "detail": "at 1000 N a welded differential gives -2057 N.m \u2014 negative, yawing the car OUT of the corner. Neither wheel is saturated, so kinematics decides: the outside wheel travels further, turns faster, and loses torque to the inside. This is the push every driver of a welded car complains about, and it is the OUTSIDE check on this model (rule 2) \u2014 the sign is not ours to choose.",
+      "severity": "gate",
+      "value": -2057.147051658733,
+      "expected": null,
+      "group": "Which way does it steer the car?"
+    },
+    {
+      "name": "at_full_throttle_the_same_device_turns_the_car_in",
+      "passed": true,
+      "detail": "at 6000 N the same device gives +1585 N.m, the other way. The inside wheel has saturated and is spinning, so it is now the faster one and torque flows outboard to the wheel that still grips. Same rule, opposite outcome. A model with a fixed bias direction can only ever produce one of these, and that was F77's mistake.",
+      "severity": "gate",
+      "value": 1584.9792596461164,
+      "expected": null,
+      "group": "Which way does it steer the car?"
+    },
+    {
+      "name": "more_locking_means_more_push",
+      "passed": true,
+      "detail": "part-throttle: open +0, limited-slip -1029, welded -2057 N.m. Ordered, which is what this model can claim (rule 6).",
+      "severity": "gate",
+      "value": {
+        "open": 0.0,
+        "lsd": -1028.5735258293664,
+        "locked": -2057.147051658733
+      },
+      "expected": null,
+      "group": "Which way does it steer the car?"
+    },
+    {
+      "name": "an_open_differential_steers_the_car_neither_way",
+      "passed": true,
+      "detail": "an open differential gives +0.00 N.m at part throttle and +0.00 at full. It feeds both wheels equally and resists no speed difference, so it has no handling effect to have.",
+      "severity": "gate",
+      "value": 0.0,
+      "expected": null,
+      "group": "Which way does it steer the car?"
+    },
+    {
+      "name": "an_open_differential_wastes_tractive_force",
+      "passed": true,
+      "detail": "asked for 6000 N with the inside wheel light, an open differential delivers 3880 N and throws away 2120 N. It must feed both wheels equally, so it is limited by twice the weaker one. That sentence is the entire reason the other two devices exist.",
+      "severity": "gate",
+      "value": 2120.3735914998215,
+      "expected": null,
+      "group": "What does it cost in traction?"
+    },
+    {
+      "name": "locking_recovers_the_wasted_force",
+      "passed": true,
+      "detail": "delivered at full throttle: open 3880 N, limited-slip 4850 N, welded 6000 N.",
+      "severity": "gate",
+      "value": {
+        "open": 3879.6264085001785,
+        "lsd": 4849.533010625223,
+        "locked": 6000.0
+      },
+      "expected": null,
+      "group": "What does it cost in traction?"
+    },
+    {
+      "name": "the_push_wide_conclusion_holds_across_the_assumed_locking_range",
+      "passed": true,
+      "detail": "the LSD's locking fraction is [ASSUMED] at 0.5 and is the weakest number in this model. Across 0.25-0.75 the part-throttle moment stays negative (0.25: -514, 0.50: -1029, 0.75: -1543 N.m), so the CONCLUSION does not depend on the assumption even though the magnitude plainly does.",
+      "severity": "gate",
+      "value": {
+        "0.25": {
+          "part_mz": -514.2867629146832,
+          "full_mz": 725.0051850884709
+        },
+        "0.50": {
+          "part_mz": -1028.5735258293664,
+          "full_mz": 725.0051850884709
+        },
+        "0.75": {
+          "part_mz": -1542.8602887440497,
+          "full_mz": 725.0051850884709
+        }
+      },
+      "expected": null,
+      "group": "Does the conclusion survive the assumed numbers?"
+    },
+    {
+      "name": "magnitudes_are_not_quotable",
+      "passed": true,
+      "detail": "Rung 2 (rule 15). Track width is [LIKELY]; the LSD's two numbers are [ASSUMED]; a real clutch pack behaves differently on coast than on drive, which this does not model. The ordering and the two signs are the result. The N.m are illustrative.",
+      "severity": "note",
+      "value": null,
+      "expected": null,
+      "group": "Does the conclusion survive the assumed numbers?"
+    }
+  ],
+  "data": {}
+}

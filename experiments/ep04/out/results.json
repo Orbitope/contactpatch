@@ -1,0 +1,86 @@
+{
+  "entry_speed_ms": 32.0,
+  "n_nodes": 200,
+  "corner": {
+    "radius_m": 40.0,
+    "arc_m": 62.83185307179586,
+    "half_width_m": 4.0,
+    "entry_straight_m": 70.0
+  },
+  "short_exit": {
+    "track": "short exit",
+    "track_length_m": 162.83185307179588,
+    "time_s": 5.827459201947198,
+    "apex_s_m": 100.64481370769292,
+    "apex_fraction_through_corner": 0.4868421052631579,
+    "apex_offset_m": 4.000000038516064,
+    "min_speed_ms": 24.612438377227665,
+    "exit_speed_ms": 27.50643391634742,
+    "max_speed_ms": 33.957474670676035,
+    "worst_slip_deg": 12.000000547231705,
+    "envelope_occupancy": 0.0,
+    "peak_brake_kN": -14.999995872500296,
+    "peak_drive_kN": 4.4999996713402695,
+    "brake_release_s_m": 82.64330231282102,
+    "solver_status": "Maximum_Iterations_Exceeded",
+    "converged": false
+  },
+  "long_exit": {
+    "track": "long exit",
+    "track_length_m": 392.8318530717959,
+    "time_s": 11.959276662968588,
+    "apex_s_m": 104.6235588583175,
+    "apex_fraction_through_corner": 0.5483870967741935,
+    "apex_offset_m": 4.000000036633131,
+    "min_speed_ms": 24.26059728500638,
+    "exit_speed_ms": 46.49873906092903,
+    "max_speed_ms": 46.49873906092903,
+    "worst_slip_deg": 12.000000529838482,
+    "envelope_occupancy": 0.0,
+    "peak_brake_kN": -14.999998555009292,
+    "peak_drive_kN": 4.499999978332793,
+    "brake_release_s_m": 73.03908825958014,
+    "solver_status": "Solve_Succeeded",
+    "converged": true
+  },
+  "apex_shift_points": 6.154499151103559,
+  "grid_refinement": {
+    "140": {
+      "short_apex_frac": 0.49056603773584906,
+      "long_apex_frac": 0.5454545454545454,
+      "shift_points": 5.488850771869636,
+      "short_time_s": 5.827917564243647,
+      "long_time_s": 11.960945075374248,
+      "short_status": "Maximum_Iterations_Exceeded",
+      "long_status": "Solve_Succeeded"
+    },
+    "200": {
+      "short_apex_frac": 0.4868421052631579,
+      "long_apex_frac": 0.5483870967741935,
+      "shift_points": 6.154499151103559,
+      "short_time_s": 5.827537477026075,
+      "long_time_s": 11.959276662968588,
+      "short_status": "Maximum_Iterations_Exceeded",
+      "long_status": "Solve_Succeeded"
+    },
+    "280": {
+      "short_apex_frac": 0.48598130841121495,
+      "long_apex_frac": 0.5454545454545454,
+      "shift_points": 5.947323704333046,
+      "short_time_s": 5.8272257217847,
+      "long_time_s": 11.960213705027451,
+      "short_status": "Maximum_Iterations_Exceeded",
+      "long_status": "Maximum_Iterations_Exceeded"
+    }
+  },
+  "limits": {
+    "drive_max": 4500.0,
+    "brake_max": 15000.0,
+    "steer_max": 0.5235987755982988,
+    "steer_rate_max": 3.490658503988659,
+    "v_min": 8.0,
+    "v_max": 70.0,
+    "alpha_max": 0.20943951023931956,
+    "kappa_max": 0.2
+  }
+}

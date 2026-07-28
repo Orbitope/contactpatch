@@ -1,0 +1,369 @@
+{
+  "diagnostic": "D5",
+  "title": "Load transfer audit",
+  "subtitle": "Gates the four-wheel model. Everything it adds over the two-wheel one is load moving between wheels, so this is mostly about whether that bookkeeping is exact \u2014 and about one thing the two-wheel model could not do at all.",
+  "passed": true,
+  "n_checks": 27,
+  "n_failed": 0,
+  "findings": [
+    "The four wheel loads always sum to the car's weight, to 2e-12 N. Cornering moves load onto the outside wheels, braking moves it forward, and doubling the height of the centre of gravity exactly doubles the sideways transfer. No fitting parameters anywhere.",
+    "**Lateral load transfer costs 8% of the car's peak cornering grip** \u2014 1.03 g becomes 0.95 g, purely from each axle sharing its load unevenly. Episode 3 predicted about 6% from static geometry alone, before a model existed that could simulate it.",
+    "**An anti-roll bar now works, and in the two-wheel model it did nothing whatsoever.** Sweeping front roll stiffness from 40% to 70% moves the understeer gradient from +0.05 to +0.40 deg/g. The identical sweep through the bicycle model moves it by 0e+00 \u2014 exactly zero, because the model has no left and right for the bar to act between.",
+    "**But it did not close the understeer gap, and that is a correction.** At the nominal setup K goes 0.19 -> 0.22 deg/g \u2014 essentially unchanged. Both axles lose grip to transfer and the losses nearly cancel. Episode 3 blamed the missing understeer partly on this term; that was wrong. What remains is suspension compliance, roll camber and roll steer.",
+    "With the centre of gravity lowered to the road the four-wheel model reproduces the two-wheel model's gradient to 1.42% and its grip limit to 0.00%. Two independently written models agreeing in the limit where they must is the strongest check in this diagnostic."
+  ],
+  "checks": [
+    {
+      "name": "four_loads_always_sum_to_mg",
+      "passed": true,
+      "detail": "worst deviation 1.82e-12 N across nine combinations of longitudinal and lateral acceleration. Transfer moves load; it never creates any.",
+      "severity": "gate",
+      "value": 1.8189894035458565e-12,
+      "expected": null,
+      "group": "Is the load bookkeeping exact?"
+    },
+    {
+      "name": "static_loads_symmetric",
+      "passed": true,
+      "detail": "3601 N vs 3601 N (abs err 0, tol 1e-09)",
+      "severity": "gate",
+      "value": 3601.0018800000007,
+      "expected": 3601.0018800000007,
+      "group": "Is the load bookkeeping exact?"
+    },
+    {
+      "name": "static_front_axle_matches_weight_distribution",
+      "passed": true,
+      "detail": "7202 N vs 7202 N (abs err 9.09e-13, tol 1e-09)",
+      "severity": "gate",
+      "value": 7202.003760000001,
+      "expected": 7202.0037600000005,
+      "group": "Is the load bookkeeping exact?"
+    },
+    {
+      "name": "left_turn_loads_the_right_hand_wheels",
+      "passed": true,
+      "detail": "turning left at 0.82 g: front 1772 left / 5430 right, rear 1561 / 4574. Gate 1 invariant 5.",
+      "severity": "gate",
+      "value": null,
+      "expected": null,
+      "group": "Does load move the right way?"
+    },
+    {
+      "name": "braking_still_loads_the_front",
+      "passed": true,
+      "detail": "front axle 7202 -> 8417 N under braking \u2014 the bicycle model's behaviour is unchanged by adding a second track",
+      "severity": "gate",
+      "value": null,
+      "expected": null,
+      "group": "Does load move the right way?"
+    },
+    {
+      "name": "lateral_transfer_proportional_to_com_height",
+      "passed": true,
+      "detail": "2 x vs 2 x (abs err 4.44e-16, tol 1e-09)",
+      "severity": "gate",
+      "value": 2.0000000000000004,
+      "expected": 2.0,
+      "group": "Is the transfer proportional to what it should be?"
+    },
+    {
+      "name": "lateral_transfer_proportional_to_lateral_g",
+      "passed": true,
+      "detail": "2 x vs 2 x (abs err 4.44e-16, tol 1e-09)",
+      "severity": "gate",
+      "value": 2.0000000000000004,
+      "expected": 2.0,
+      "group": "Is the transfer proportional to what it should be?"
+    },
+    {
+      "name": "lateral_transfer_inversely_proportional_to_track",
+      "passed": true,
+      "detail": "0.5 x vs 0.5 x (abs err 2.22e-16, tol 1e-09)",
+      "severity": "gate",
+      "value": 0.5000000000000002,
+      "expected": 0.5,
+      "group": "Is the transfer proportional to what it should be?"
+    },
+    {
+      "name": "roll_share_divides_the_transfer_moment",
+      "passed": true,
+      "detail": "0.55 vs 0.55 (abs err 0, tol 1e-09)",
+      "severity": "gate",
+      "value": 0.55,
+      "expected": 0.55,
+      "group": "Is the transfer proportional to what it should be?"
+    },
+    {
+      "name": "wheel_lift_below_the_static_stability_factor",
+      "passed": true,
+      "detail": "first inside wheel lifts at 1.606 g against an SSF of 1.630. SSF is the rigid-body rollover threshold; no elastic roll distribution can beat it, so lifting above it would be a bug.",
+      "severity": "gate",
+      "value": {
+        "lift_g": 1.606126482213439,
+        "ssf": 1.6304347826086956
+      },
+      "expected": null,
+      "group": "Does it lift a wheel when it should?"
+    },
+    {
+      "name": "wheel_lift_is_not_reached_in_normal_cornering",
+      "passed": true,
+      "detail": "1.61 g is well beyond the 0.95 g this car can actually generate, so no result in this series involves a lifted wheel \u2014 the case is handled, not exercised",
+      "severity": "gate",
+      "value": null,
+      "expected": null,
+      "group": "Does it lift a wheel when it should?"
+    },
+    {
+      "name": "flat_car_reproduces_the_bicycle_gradient",
+      "passed": true,
+      "detail": "0.2073 deg/g vs 0.2102 deg/g (rel err 0.0142, tol 0.02)",
+      "severity": "gate",
+      "value": 0.20726123581682782,
+      "expected": 0.2102364344008948,
+      "group": "Does it become the bicycle model when it should?"
+    },
+    {
+      "name": "flat_car_reproduces_the_bicycle_grip_limit",
+      "passed": true,
+      "detail": "1.044 g vs 1.044 g (rel err 0, tol 0.01)",
+      "severity": "gate",
+      "value": 1.0437031941900097,
+      "expected": 1.0437031941900097,
+      "group": "Does it become the bicycle model when it should?"
+    },
+    {
+      "name": "degeneracy_test_is_the_strongest_check_here",
+      "passed": true,
+      "detail": "With the centre of gravity on the road there is no lateral load transfer, so the four-wheel model has nothing the two-wheel model lacks. It reproduces the understeer gradient to 1.42% and the grip limit to 0.00%. Residual is the per-wheel slip-angle difference from yaw rate across the track, which the bicycle model averages away and which does not vanish with height.",
+      "severity": "note",
+      "value": {
+        "k_double_track": 0.20726123581682782,
+        "k_bicycle": 0.2102364344008948
+      },
+      "expected": null,
+      "group": "Does it become the bicycle model when it should?"
+    },
+    {
+      "name": "lateral_transfer_costs_grip",
+      "passed": true,
+      "detail": "maximum lateral acceleration drops 1.032 -> 0.948 g, a 8.1% loss, purely from sharing each axle's load unevenly. Episode 2's arithmetic, on a real car.",
+      "severity": "gate",
+      "value": 0.08077441988638386,
+      "expected": null,
+      "group": "What does lateral load transfer cost?"
+    },
+    {
+      "name": "measured_transfer_matches_the_closed_form",
+      "passed": true,
+      "detail": "2075 N vs 2075 N (rel err 2e-10, tol 0.02)",
+      "severity": "gate",
+      "value": 2074.7681067275316,
+      "expected": 2074.7681063122927,
+      "group": "What does lateral load transfer cost?"
+    },
+    {
+      "name": "F18_predicted_this_before_the_model_existed",
+      "passed": true,
+      "detail": "FINDINGS F18 estimated, from static geometry and the tire's load sensitivity alone, that lateral transfer would cost the front axle about 6% of its grip and the rear about 5%. Measured whole-car loss: 8.1%. The prediction was made in Episode 3 with a model that could not simulate the effect, and it landed.",
+      "severity": "note",
+      "value": {
+        "predicted_front_pct": 6.4,
+        "measured_whole_car_pct": 8.077441988638386
+      },
+      "expected": null,
+      "group": "What does lateral load transfer cost?"
+    },
+    {
+      "name": "stiffer_front_bar_adds_understeer",
+      "passed": true,
+      "detail": "K rises monotonically with front roll stiffness: 0.40->+0.05, 0.45->+0.11, 0.50->+0.17, 0.55->+0.22, 0.60->+0.28, 0.65->+0.34, 0.70->+0.40 deg/g. Gate 1 invariant 3.",
+      "severity": "gate",
+      "value": {
+        "0.4": 0.048737855786691334,
+        "0.45": 0.1071038739874627,
+        "0.5": 0.16506420893926624,
+        "0.55": 0.22277186316724704,
+        "0.6": 0.28037926149285913,
+        "0.65": 0.33803908890658385,
+        "0.7": 0.3959051296212059
+      },
+      "expected": null,
+      "group": "Can it respond to an anti-roll bar?"
+    },
+    {
+      "name": "the_bar_is_worth_more_than_the_noise_floor",
+      "passed": true,
+      "detail": "the documented 0.40-0.70 roll-share range moves K by 0.35 deg/g against a 0.2 deg/g real-world measurement noise floor \u2014 resolvable, but only by a factor of 1.7. See the note.",
+      "severity": "gate",
+      "value": 0.34716727383451457,
+      "expected": null,
+      "group": "Can it respond to an anti-roll bar?"
+    },
+    {
+      "name": "our_anti_roll_bar_authority_is_weaker_than_a_real_car_s",
+      "passed": true,
+      "detail": "The full documented roll-share range buys 0.35 deg/g, only 1.7x the 0.2 deg/g floor at which a professional test program can distinguish two builds. A single realistic bar change \u2014 say 0.05 of roll share \u2014 moves K by about 0.05 deg/g, which is BELOW that floor and would not be reportable. Real chassis engineers get much more than this out of a bar. Two reasons ours is weak, and the second is the interesting one: we model all lateral transfer as elastic, which if anything OVERSTATES bar authority; and a real bar acts partly through roll camber and roll steer, which change the tires' effective slip angles rather than just their loads, and we model neither. Same missing terms as the understeer gap. **Treat the Season 2 roll-stiffness sweeps as directionally right and quantitatively weak until those terms exist.**",
+      "severity": "note",
+      "value": {
+        "spread_deg_per_g": 0.34716727383451457,
+        "noise_floor": 0.2,
+        "ratio": 1.7358363691725727
+      },
+      "expected": null,
+      "group": "Can it respond to an anti-roll bar?"
+    },
+    {
+      "name": "the_bicycle_model_cannot_see_the_bar_at_all",
+      "passed": true,
+      "detail": "the same sweep through the bicycle model moves K by 0.00e+00 deg/g \u2014 exactly zero. It has no left and right, so roll stiffness distribution is not merely approximated, it is invisible. **This is the Episode 5 result.**",
+      "severity": "gate",
+      "value": 0.0,
+      "expected": null,
+      "group": "Can it respond to an anti-roll bar?"
+    },
+    {
+      "name": "roll_gradient_lands_in_the_published_road_car_range",
+      "passed": true,
+      "detail": "body roll works out at 5.8 deg/g from the documented spring rates, inside the 3-7 deg/g band quoted for road cars on springs. An outside-the-project comparison, not one of our own numbers.",
+      "severity": "gate",
+      "value": 5.784711729030043,
+      "expected": null,
+      "group": "What does a bar do to how far the car leans?"
+    },
+    {
+      "name": "the_spring_only_share_corroborates_the_assumed_share",
+      "passed": true,
+      "detail": "the springs alone give a front roll-stiffness share of 0.522; we assume 0.55. The gap is what a modest front bar (3.8 kN.m/rad) would supply \u2014 two numbers from different routes agreeing.",
+      "severity": "gate",
+      "value": {
+        "spring_only": 0.521846420697211,
+        "assumed": 0.55
+      },
+      "expected": null,
+      "group": "What does a bar do to how far the car leans?"
+    },
+    {
+      "name": "adding_any_bar_reduces_roll_whichever_end_it_goes_on",
+      "passed": true,
+      "detail": "a bar is a spring, so fitting one raises total roll stiffness and the car leans less no matter which axle it goes on: 0.40->4.4, 0.45->5.0, 0.50->5.5, 0.55->5.4, 0.60->4.8, 0.65->4.2, 0.70->3.6 deg/g against 5.8 on springs alone.",
+      "severity": "gate",
+      "value": {
+        "0.4": 4.434033845667774,
+        "0.45": 4.988288076376246,
+        "0.5": 5.542542307084717,
+        "0.55": 5.44410915392333,
+        "0.6": 4.839208136820739,
+        "0.65": 4.234307119718147,
+        "0.7": 3.629406102615555
+      },
+      "expected": null,
+      "group": "What does a bar do to how far the car leans?"
+    },
+    {
+      "name": "roll_angle_is_largest_with_no_bar_at_all",
+      "passed": true,
+      "detail": "The roll angle is **not monotonic** in front roll-stiffness share. It peaks at 5.8 deg/g at the spring-only share of 0.522 and falls either side \u2014 4.4 deg/g at 0.40 (which needs a REAR bar) and 3.6 deg/g at 0.70. Not what anyone expects from a knob labelled 'front stiffness', and the reason is simply that any bar is extra stiffness. **A bar does two separate things \u2014 it reduces lean AND it redistributes load \u2014 and only the redistribution changes the handling balance.** An earlier version of the anti-roll-bar figure asserted a bar cannot change how far a car leans, which was true of our parameterisation and false of cars.",
+      "severity": "note",
+      "value": {
+        "spring_only_gradient": 5.784711729030043,
+        "with_bar": {
+          "0.4": 4.434033845667774,
+          "0.45": 4.988288076376246,
+          "0.5": 5.542542307084717,
+          "0.55": 5.44410915392333,
+          "0.6": 4.839208136820739,
+          "0.65": 4.234307119718147,
+          "0.7": 3.629406102615555
+        }
+      },
+      "expected": null,
+      "group": "What does a bar do to how far the car leans?"
+    },
+    {
+      "name": "still_below_the_road_car_band",
+      "passed": true,
+      "detail": "the most understeering setup in the documented range gives K = 0.40 deg/g, still below the 1.8 deg/g floor for a real car. Lateral load transfer was not the whole story \u2014 see the note.",
+      "severity": "gate",
+      "value": 0.3959051296212059,
+      "expected": null,
+      "group": "Does it reach a real car yet?"
+    },
+    {
+      "name": "lateral_load_transfer_is_not_where_the_understeer_gap_came_from",
+      "passed": true,
+      "detail": "Episode 3 measured K = 0.19 deg/g and attributed the gap to the road-car band to missing lateral load transfer plus missing suspension effects. Adding lateral load transfer gives 0.22 deg/g at the nominal roll split \u2014 **essentially unchanged, and slightly lower**. Front and rear both lose grip to transfer, and at a 0.55 front roll share on a 54%-front car the two losses very nearly cancel, the same way the cornering compliances did. What the term DOES buy is authority: K spans +0.05 to +0.40 across the documented bar range, a knob that does not exist in the bicycle model at all. So the correct attribution is: the remaining gap to a real car is compliance steer, roll camber, roll steer and aligning torque \u2014 the Bundorf terms \u2014 not lateral load transfer. FINDINGS F11's emphasis was wrong and F29 records the correction.",
+      "severity": "note",
+      "value": {
+        "K_bicycle": 0.18804927619088158,
+        "K_double_track": 0.22277186316724704,
+        "K_range_over_bar_sweep": [
+          0.048737855786691334,
+          0.3959051296212059
+        ]
+      },
+      "expected": null,
+      "group": "Does it reach a real car yet?"
+    }
+  ],
+  "data": {
+    "schema_version": "0.1.0",
+    "tire": {
+      "file": "Sedan_Pac02Tire.tir",
+      "fz0_prime": 3928.5000000000005,
+      "scaling": {
+        "lfzo": 0.81,
+        "lcx": 1.0,
+        "lmux": 1.0,
+        "lex": 1.0,
+        "lkx": 1.0,
+        "lhx": 1.0,
+        "lvx": 1.0,
+        "lcy": 1.0,
+        "lmuy": 1.0,
+        "ley": 1.0,
+        "lky": 1.0,
+        "lhy": 1.0,
+        "lvy": 1.0,
+        "lgay": 1.0
+      },
+      "offsets_removed": true,
+      "ey_camber_asymmetry": true
+    },
+    "roll_stiffness_front_share": 0.55,
+    "K_double_track": 0.22277186316724704,
+    "K_bicycle": 0.18804927619088158,
+    "max_g_double_track": 0.9482199667781327,
+    "max_g_bicycle": 1.0315421886550773,
+    "grip_loss_fraction": 0.08077441988638386,
+    "fit_r_squared": 0.9679426777681824,
+    "K_vs_roll_share": {
+      "0.4": 0.048737855786691334,
+      "0.45": 0.1071038739874627,
+      "0.5": 0.16506420893926624,
+      "0.55": 0.22277186316724704,
+      "0.6": 0.28037926149285913,
+      "0.65": 0.33803908890658385,
+      "0.7": 0.3959051296212059
+    },
+    "K_vs_roll_share_bicycle": {
+      "0.4": 0.18804927619088158,
+      "0.45": 0.18804927619088158,
+      "0.5": 0.18804927619088158,
+      "0.55": 0.18804927619088158,
+      "0.6": 0.18804927619088158,
+      "0.65": 0.18804927619088158,
+      "0.7": 0.18804927619088158
+    },
+    "roll_gradient_with_added_bar": {
+      "0.4": 4.434033845667774,
+      "0.45": 4.988288076376246,
+      "0.5": 5.542542307084717,
+      "0.55": 5.44410915392333,
+      "0.6": 4.839208136820739,
+      "0.65": 4.234307119718147,
+      "0.7": 3.629406102615555
+    }
+  }
+}

@@ -1,0 +1,2819 @@
+# Findings
+
+**What this is.** The running record of what the build has actually established
+— every finding, every decision, and why. It accretes; nothing is deleted, only
+superseded (with a pointer to what superseded it).
+
+**Why it exists separately from everything else.** The project has four other
+places writing could go, and none of them is this:
+
+| Where | What belongs there |
+|---|---|
+| `docs/` | The plans. Written before the work; reference, not journal. |
+| `HANDOFF.md` | Where the build *is* and what to do next. Should stay short. |
+| `docs/learning-scaffold.md` | Concept explanations, useful as reference. Its predict-then-check workflow is not in use — see the bottom of this file. |
+| `episodes/` | Article drafts. The deliverable. |
+| **`FINDINGS.md`** | **What is true, how we know, and what we decided.** Feeds all of the above. |
+
+Each finding is numbered and dated so an episode draft can cite it and a later
+result can contradict it on the record.
+
+**Every number carries a provenance tag** (CLAUDE.md rule 3), so a reader can
+always tell a measurement from an assumption:
+
+| Tag | Meaning |
+|---|---|
+| `[MEASURED]` | Produced by our code, with the artefact and configuration named |
+| `[SOURCED]` | Published data or a published correlation, with the source named |
+| `[DERIVED]` | Computed from sourced values by a stated formula |
+| `[ASSUMED]` | Chosen by us |
+
+Unless a finding says otherwise, its `[MEASURED]` numbers come from
+`Sedan_Pac02Tire.tir`, MF 2002 pure slip, **offsets removed, unscaled**
+(`LMUY = LKY = 1`, `LFZO = 0.81`, `Fz0′ = 3,929 N`) — i.e. `tire.default_tire()`.
+
+---
+
+# How to read the figures
+
+D1 writes four figures. The first two are pictorial and assume nothing; the third
+is the validation ledger; the fourth is the technical card, which is denser on
+purpose and is the reference artefact.
+
+| File | What it is | For |
+|---|---|---|
+| `D1_slip_angle.svg` | Five actual wheels at five angles, with force arrows | Ep 1 hero |
+| `D1_load_split.svg` | Two wheels squashing by different amounts, plus a car in a corner | Ep 2 hero |
+| `D1_reality_check.svg` | Our numbers against published ranges | validation |
+| `D1_tire_card.svg` | Three analytical charts and the reference table | reference |
+| `D2_load_transfer.svg` | Three cars — braking, steady, accelerating — with contact patches sized by load | pictorial |
+| `D2_invariants_card.svg` | Axle load vs acceleration, transfer vs CoG height, yaw response vs inertia | technical |
+| `D3_understeer_explained.svg` | The same car cruising and at the limit, with slip angles drawn | Ep 3 hero |
+| `D3_steady_state_card.svg` | Understeer curve, slip angles, gradient vs weight distribution | technical |
+| `D4_response_explained.svg` | Two cars turning in frame by frame, differing only in polar moment | Ep 8 hero |
+| `D4_transient_card.svg` | Step response vs the linear model, the inertia sweep, the Izz uncertainty | technical |
+| `ep04/01-the-fastest-line.svg` | The corner with both solved lines and their apexes | Ep 4 hero |
+| `ep04/02-line-card.svg` | Speed, road position and longitudinal force along each line | technical |
+| `ep05/01-four-wheels.svg` | The same corner with four wheels, contact patches sized by load | Ep 5 hero |
+| `ep05/02-load-transfer-card.svg` | Per-wheel load, the anti-roll-bar sweep vs the bicycle model's flat line, wheel-lift margin | technical |
+
+**House rule for every figure from here on: the pictorial version comes first,
+the line chart second.** A force-versus-angle plot only means something once the
+reader already knows what a slip angle is, and the wheels are what teach that.
+Both get made; neither replaces the other.
+
+## The pictorial pair
+
+**`D1_slip_angle.svg`** — five copies of the same tire carrying the same weight.
+A grey dashed arrow through each shows the direction of travel, identical in
+every one. The tire is rotated off it by the slip angle, drawn true to scale, with
+a long centreline so a 2° angle is actually visible. The red arrow is the grip
+produced, to one length scale across all five. Underneath: the angle, the force,
+and what it means. The strip along the bottom plots those same five points as the
+conventional curve, so the reader can see the two representations are the same
+thing.
+
+**`D1_load_split.svg`** — three rows, each two tires sharing 6 kN. The lighter
+band across each tire is its contact patch, and it grows with load, because a
+harder-pressed tire really does squash into a longer patch. Arrows are each
+tire's peak grip; the right column totals them. Below, a plan view of a car in a
+left turn shows where the uneven split comes from in the first place.
+
+## The technical card
+
+`diagnostics/out/D1_tire_card.svg`. Three charts and a table. Every one of them
+answers a question you could ask without knowing any vehicle dynamics.
+
+### Vocabulary, once
+
+| Term | Symbol | Plain meaning |
+|---|---|---|
+| Vertical load | `Fz` | How much weight is on that tire, in newtons. Our front tire carries ~3,600 N parked, more mid-corner. |
+| Slip angle | `α` | The angle between where the wheel points and where it is actually travelling. **Not skidding** — a cornering tire runs a few degrees of it constantly. It is *how* a tire makes side force: rubber in the contact patch bends sideways, and bent rubber pushes back. |
+| Grip coefficient | `μ` | Side force ÷ vertical load. μ = 1.0 means the tire can push sideways as hard as the car presses down — roughly 1 g of cornering. |
+| Cornering stiffness | `Cα` | How fast force builds when you first turn the wheel, in newtons per degree. Steering response. |
+
+### Panel A — "Lateral force vs slip angle"
+
+**The question:** point a loaded tire slightly away from where it's rolling. How
+much sideways force do you get?
+
+- **Across the bottom:** how far off you're pointed, 0 to 20 degrees.
+- **Up the side:** how much sideways force that produces, in newtons.
+- **Seven curves:** the same tire with seven different weights pressing it down,
+  1 kN at the bottom to 9 kN at the top.
+
+Read any single curve left to right and you get the whole story of a tire. At
+zero it makes nothing. Force climbs steeply — *that initial steepness is your
+steering response*. It bends over, reaches a peak (the dot), and then **falls**.
+
+The falloff is the part that surprises people: past the dot you are asking for
+more and receiving less. There is no threshold you cross, no moment where grip
+"runs out." There is a hill, and you want to sit near the top of it.
+
+The **dashed vertical line at 12°** is a boundary we imposed on ourselves: past
+it we don't trust the model, because the tire was probably never tested that far.
+Notice the 7 kN and 9 kN dots sit beyond it — see finding F8.
+
+*This is the Episode 1 figure.*
+
+### Panel B — "Peak μ falls as load rises"
+
+**The question:** press a tire down twice as hard. Do you get twice the grip?
+
+Take just the seven dots from panel A. For each, divide the peak force by the
+weight that was on the tire. That ratio is μ, and plotting it against load gives
+this line.
+
+If tires were simple, the line would be **flat** — twice the load, twice the
+grip, same ratio. It isn't flat. It slopes down, and hard: 1.18 at 1 kN, 0.82 at
+9 kN. Nine times the load buys about six times the force.
+
+The two teal dashed lines mark where our actual car's front and rear tires sit at
+rest, so you can see which part of this line the car lives on.
+
+*This one chart is the reason most of the rest of the series exists.* See F1.
+
+### Panel C — "Two tires sharing 6 kN"
+
+**The question:** panel B says overloading a tire is wasteful. What does that
+cost, concretely?
+
+Two tires, 6 kN of weight between them. Slide load from one onto the other and
+add up what the pair can produce.
+
+- **Across the bottom:** how much load you moved across, 0 to 2,500 N.
+- **Up the side:** the two tires' peak forces added together.
+- **The three dots:** an even 3+3 split, then 4+2, then 5+1.
+
+Even wins. 4+2 costs 1.4% of the pair's grip; 5+1 costs 5.6%. The tire you
+overloaded never repays what the unloaded one gave up.
+
+The curve's shape is not arbitrary. Because μ falls almost perfectly linearly
+with load (panel B), the pair's total force works out to depend on the *sum of
+the squares* of the two loads — and for a fixed total, a sum of squares is
+smallest when the two are equal. That is why the penalty is a parabola: gentle
+at first, then accelerating.
+
+And this is not an abstract exercise. Cornering **is** moving rightward along
+this curve — that's what weight transfer does to your outside and inside tires.
+
+*This is the Episode 2 figure, and Episode 2 is the keystone of the series.*
+
+### The table
+
+Not physics — validation. The orange numbers are what our code computes; the grey
+numbers beside each are what an earlier, independent script computed from the same
+file. Agreement means we are turning the formula's knobs correctly. It says
+nothing about whether the tire is any good; the charts say that.
+
+---
+
+# Findings
+
+## Session 1 — tire model · 2026-07-25
+
+Evidence for all of these: `diagnostics/out/D1_report.json`, 60/60 checks.
+
+### F1 · Grip gets worse the harder you press. **Keystone.**
+At 1 kN this tire produces 1.18 g of side force; at 9 kN, 0.82 g. `dμ/dFz` =
+−0.0459 per kN, and for the offset-free tire that is exactly `PDY2/Fz0'` — a
+single fitted coefficient.
+
+**Why it matters:** this is the root of nearly every interesting claim the series
+will make. Weight transfer costs grip *because of this*. Low centres of gravity
+are good *because of this*. Anti-roll bars change handling balance *because of
+this*. Spreading tire workload is the right control objective *because of this*.
+Remove load sensitivity and most of the subject matter evaporates.
+
+**Source:** `[MEASURED]` — D1 `load_sensitivity_negative_and_sane`, project tire.
+`PDY2 = -0.18033` is a fitted coefficient of the .tir file `[SOURCED]`.
+
+**Lands in:** Ep 2 (keystone), and structurally in Ep 3, 5, 7, 12, 13.
+
+### F2 · Sharing load evenly between two tires maximises their combined grip, and the penalty for unevenness is quadratic.
+6 kN split evenly gives 6,549 N of combined peak lateral force. Split 4+2 gives
+6,457 N (−1.4%); 5+1 gives 6,182 N (−5.6%).
+
+**Why it matters:** it converts F1 from a curve into a cost. It also explains
+*why* the penalty accelerates — total grip depends on the sum of squared loads,
+minimised at an even split — which is a cleaner mechanism than "grip falls off."
+
+**Source:** `[MEASURED]` — D1 `even_split_makes_most_grip`. The 6 kN total and
+the three splits are round numbers chosen for the figure `[ASSUMED]`.
+
+**Lands in:** Ep 2.
+
+### F3 · A tire makes its best grip while already sliding, and the angle grows with load.
+Peak at 10.3° of slip at typical load; 9.7° at 1 kN rising to 14.3° at 9 kN.
+
+**Why it matters:** the Ep 1 payoff line. It also means "grip" and "not sliding"
+are different things, which is the intuition the whole series has to install
+before anything else lands.
+
+**Source:** `[MEASURED]` — D1 `slip_at_peak_increases_with_load`, project tire.
+
+**Lands in:** Ep 1.
+
+### F4 · The MF 2002 implementation is correct.
+Reproduces an independently computed reference table across seven loads: peak μ
+to 0.1%, peak force to 0.02%, cornering stiffness to 0.22%.
+
+**Source:** `[MEASURED]` vs `[SOURCED]` — D1 section 1, 35 checks, comparing
+`as_shipped_tire()` against the table in `docs/vehicle-reference-parameters.md`
+§3.2. Note this row uses the **as-shipped** tire, not the project default.
+
+**Why it matters:** it is the only reason to believe anything else in this file.
+The reference was computed by a different script at a different time from the
+same coefficients, so agreement is a genuine cross-check rather than a tautology.
+
+### F5 · The reference table's "slip at peak" column omitted one formula term.
+Standard MF 2002 puts the peak up to 1.0° below the reference (14.10° vs 15.1° at
+9 kN). Cause: the `(1 − PEY3·sgn αy)` curvature factor. That term moves *where*
+the peak sits and never *how high* — which is precisely why only that one column
+disagreed while the other three matched to the digit. Dropping it reproduces the
+reference to 0.04°.
+
+**Why it matters:** a disagreement with a documented reference is either a bug or
+an explanation, and leaving it as "close enough" would have been neither.
+`MF02Tire(ey_camber_asymmetry=False)` exists so the explanation is a *test*.
+
+**Caution carried forward:** this file's `PEY3 = −9.99` and `PEY4 = −760` are
+degenerate camber-curvature coefficients, almost certainly fitted to data with no
+camber sweep. **Do not model camber with them.**
+
+### F6 · The tire as shipped pulls to one side. Removed — see D1.
+Peak μ 1.012 cornering one way vs 1.086 the other, a 7.4% split, plus 37 N of
+lateral force at zero slip angle. Cause: conicity (the tire is slightly conical,
+so it rolls toward the apex like a paper cup) and ply steer (the belt plies are
+laid at a bias angle, so the tread band shears sideways through the contact
+patch). Both are per-sample manufacturing artefacts. The file declares
+`TYRESIDE = LEFT` — it describes a tire mounted on one side of a car.
+
+**Why it matters:** 7.4% is wider than the entire 0.95–1.10 g plausibility band
+for this car's max lateral acceleration. Left unaddressed it would have corrupted
+Ep 3's limit-grip number and every left/right comparison from Ep 5 onward.
+
+### F7 · As shipped, the tire produces thrust at zero slip ratio.
+`Fx(κ=0) = +108 N`, from the `PHX1` horizontal shift — 0.032 g of free
+acceleration over four tires. Removed along with the other offsets (D1), but the
+**modelling rule survives for any rescaled or re-sourced tire**: coasting must be
+modelled by solving for the κ that delivers the demanded `Fx`, never by setting
+`κ = 0`.
+
+### F8 · At high load, the tire's best grip lies outside the region we trust.
+At 7 kN and 9 kN the lateral peak occurs at 12.3° and 14.3° of slip — beyond our
+self-imposed ±12° bound. Peak grip at those loads is therefore not reachable
+inside honest territory.
+
+**Why it matters:** RV-1's most loaded corner reaches ~6 kN, where the peak is
+still inside — so this is not a problem today. It becomes one if a stiff,
+high-transfer setup in the Season 2 sweeps pushes a corner past 7 kN. **Any sweep
+that does needs its envelope occupancy checked before its lap time is believed.**
+
+### F9 · `docs/vehicle-reference-parameters.md` §5 contradicts its own §3.2.
+§5 states the D1 assertion as "slip at peak 5–10°". Its own §3.2 table lists
+13.1° at 7 kN and 15.1° at 9 kN. The table is right; the assertion text is not.
+D1 asserts 5–16°. The doc is left unedited (it is reference material) — this
+entry is the correction of record.
+
+## Session 2 — bicycle model · 2026-07-25
+
+Evidence: `diagnostics/out/D2_report.json` (21/21) and `D3_report.json` (14/14).
+`[MEASURED]` numbers are the bicycle model on the project tire unless stated.
+
+### F10 · Braking moves 1.2 kN onto the front axle, and the formula is exact.
+At 0.5 g of braking the front axle goes from 7.20 to 8.42 kN and the rear from
+6.14 to 4.92 kN — 17% more on the front, and the two always sum to the car's
+13.34 kN. Transfer is `m·a_x·h/L` with no fitting parameter, so it is exactly
+linear in both acceleration and centre-of-gravity height.
+
+**Source:** `[MEASURED]` — D2 `braking_transfers_load_forward`,
+`transfer_proportional_to_com_height`. Formula `[DERIVED]`, standard.
+
+**Why it matters:** combined with F1 (grip falls with load) this is the whole
+mechanism by which weight transfer costs grip. It is also the quantitative case
+for a low car: double the centre-of-gravity height, double the transfer.
+
+**Lands in:** Ep 3, and structurally in Ep 5, 7, 8.
+
+### F11 · The bicycle model is nearly neutral, and that is the one real model limitation. **Corrected — see F17.**
+Understeer gradient **K = 0.187 deg/g** (R² =
+0.9971 over the ±0.5 g fit window), against 1.8–5.5 for a real
+sports car. Front axle needs 3.16 deg of slip per g, rear needs 3.01; understeer
+is the difference between two nearly equal numbers — measured
+0.19 against 0.15 analytic from
+`W_f/C_f − W_r/C_r`.
+
+**Cause.** A bicycle model has no track width, so no lateral load transfer, so
+none of the grip loss that gives a real car most of its understeer. It also has
+no compliance steer, no aligning torque, no roll camber and no roll steer; the
+Bundorf decomposition attributes roughly 3 of a real car's 4.1 deg/g to exactly
+those. **This is the model being honest, not wrong**, and D3 records it as an
+accepted exception rather than widening a tolerance.
+
+**Source:** `[MEASURED]` — D3 `understeer_gradient_below_a_real_car`,
+`measured_K_matches_the_textbook_formula`. Bands `[SOURCED]` §4.
+
+**Everything else about the curve is right.** Steering demand rises monotonically
+to 99% of the grip limit, and steepens to
+about 13x the linear-range slope — the "distinct upturn" the reference expects. Front slip exceeds rear throughout.
+Sideslip crosses zero at 0.71 g. **An earlier version of this finding claimed the
+upturn was missing and that the car showed terminal oversteer, and blamed both on
+the missing lateral load transfer. Both were artefacts of my test protocol, not
+the model — see F17.** Only the magnitude of K is a real limitation.
+
+**How precise is that?** Across the input uncertainty the reference sheet itself
+documents — front mass fraction 0.53–0.56, driver mass ±20 kg, CoM height 457–463
+mm — K spans **0.14 to 0.27 deg/g**. So it is a one-decimal number. Almost all of
+that spread is the weight-distribution range; driver mass and CoM height together
+move it by less than 0.02. Quoting three decimals implies a confidence the inputs
+do not support, however many digits the solver returns.
+
+**Lands in:** Ep 3 (the measurement), Ep 5 (the crack — how much of the K gap does
+the double-track model close?).
+
+### F12 · Cornering slows a car down with no brakes and no drag.
+At 0.76 g on the skidpad the car decelerates at 0.40 m/s² (0.040 g). The front
+tire's grip acts along the steered wheel, so part of it points backwards.
+
+**Source:** `[MEASURED]` — D2 `a_steered_front_tire_slows_the_car`.
+
+**Why it matters:** it is why a real skidpad needs throttle to hold speed, it is
+why integrating forward from a steady-state trim drifts (the drift is physics,
+not solver error), and via load transfer it is the direct cause of F11's
+symptom 3.
+
+### F13 · Maximum lateral acceleration 1.073 g, reached inside the trusted envelope.
+The hardest sustainable corner runs 9.4° of front slip against our imposed 12°
+bound, so the limit is a real grip limit rather than the model being
+extrapolated past where the tire was fitted.
+
+**Source:** `[MEASURED]` — D3 `max_lateral_acceleration_in_band`,
+`limit_reached_inside_the_slip_envelope`. **Caution:** the 0.95–1.10 g band it
+is checked against was itself derived from this tire file, so this is a
+consistency check and not outside validation.
+
+### F14 · A load-transfer sign bug, found by D3 and fixed.
+`derivatives()` was computing longitudinal acceleration as `dv_x/dt` — which
+includes the centripetal term `v_y·r` — and feeding that to load transfer. Load
+transfer is caused by the centre of mass's acceleration along the body axis,
+which is `Fx/m`; the two differ by a kinematic term that is not a force.
+
+**Effect while wrong:** a hard corner appeared to decelerate about three times
+harder than it does, shifting enough load forward to invert the terminal
+balance. Maximum lateral acceleration read 1.04 g instead of 1.073, and the
+understeer curve turned over at 0.86 g with a *decreasing* steer angle that
+looked like a solver branch failure.
+
+**How it surfaced:** D3's `steer_increases_monotonically` check failed. It would
+not have been visible in any single number — only in the shape of a swept curve.
+
+**Source:** `[MEASURED]` — the fix is asserted by D2
+`trim_and_integrator_agree_on_longitudinal_acceleration`. The same correction
+applies to `a_y`, which is now the accelerometer reading `Fy/m` rather than
+`dv_y/dt`.
+
+**Carry forward:** the double-track model's *lateral* load transfer has exactly
+the same trap — it must use `Fy/m`, not `dv_y/dt`.
+
+### F15 · The car is neutral at 50.4% front weight, and the sweep is resolvable.
+K rises monotonically from −0.369 deg/g at 42% front to +0.507 at 62%: a 0.88
+deg/g spread against the 0.2 deg/g real-world measurement noise floor. Neutral
+lands at 50.4% front — essentially 50:50, which is what identical tires at both
+ends gives you.
+
+**Source:** `[MEASURED]` — D3 `K_monotone_in_weight_distribution`. Noise floor
+`[SOURCED]` §4.
+
+**Why it matters:** real cars are *not* neutral at 50:50, and the gap between
+that and this result is the same missing mechanism as F11. It also means the
+Season 2 weight-distribution sweep will produce resolvable trends even though
+the absolute values are not road-car-like — trend direction is the product
+(CLAUDE.md rule 6).
+
+### F16 · Doubling yaw inertia doubles the response time, and leaves steady state untouched.
+90% yaw-rate rise time goes from 197 ms to 397 ms; the steady-state trim is
+bit-identical. Rise time at nominal inertia sits inside the 0.08–0.30 s band.
+
+**Source:** `[MEASURED]` — D2 `higher_izz_responds_more_slowly`,
+`steady_state_independent_of_izz`. Band `[SOURCED]` §4.
+
+**Lands in:** Ep 8, where yaw inertia is the axis independent of weight
+distribution.
+
+
+### F17 · The skidpad protocol changes the measured balance by more than the effect being measured. **Correction to F11.**
+Same car, same tires, same model — only the throttle differs:
+
+| | K (deg/g) | max lateral | steer peaks at | limit upturn |
+|---|---|---|---|---|
+| **Holding speed** (SAE J266, now the default) | **0.187** | 1.032 g | 98% of limit | steep upturn |
+| Coasting (what I originally built) | 0.159 | 1.073 g | 86% of limit | none |
+
+**Mechanism.** A steered front tire's grip points partly rearward (F12), so a
+coasting car decelerates at ~0.04 g. That shifts load forward, pushing the
+front/rear load ratio above the 1.174 the yaw balance demands, so the rear runs
+proportionally nearer its peak and gives up first. A real constant-radius test
+holds speed, the net longitudinal force is zero, and none of this happens.
+
+**What it cost.** The coasting protocol produced two false findings — "no limit
+upturn" and "terminal oversteer" — which I attributed to the bicycle model's
+missing lateral load transfer. Both vanished when the protocol was corrected. **A
+33% swing in the headline number came from a modelling choice I made in passing
+and did not flag as a choice.**
+
+**How it surfaced.** Not from a failing check — the coasting results passed a
+diagnostic I had written around them. It surfaced from being asked whether the
+findings should be fixed rather than accepted, and testing the attribution
+instead of assuming it.
+
+**Source:** `[MEASURED]` — D3 `protocol_sensitivity_is_recorded`, D2
+`the_skidpad_protocol_changes_the_answer`. Protocol `[SOURCED]` SAE J266,
+constant speed.
+
+**Carried forward:** `trim_skidpad(hold_speed=True)` is the default and D3
+reports both. The grip cost of the balancing drive force is **not** modelled
+(combined slip, O2); `SkidpadPoint.drive_force_fraction` reports how much is being
+got away with — 6.1% of lateral force at worst here. **Any test protocol is a
+modelling choice and gets recorded as one.**
+
+
+### F18 · The load transfer the bicycle model omits is about ten times the one it models, and its grip cost is now estimated.
+Front-to-rear transfer in a corner is small — around 60 N at the limit. Side-to-side
+transfer, which needs a track width and so cannot exist in this model, is
+**2,316 N on the front axle** at 1.05 g.
+That would split the front axle 5,917 N outside /
+1,285 N inside instead of 3,601 N
+each, and cost it an estimated **6.4%** of its
+peak lateral force. The rear loses **5.4%**.
+
+**Source:** `[DERIVED]` — computed in D3 from `m·a_y·h/t` and the tire's own load
+sensitivity. **Not simulated**: the bicycle model cannot produce these numbers.
+Assumes the roll-stiffness split follows the weight distribution, which is the
+assumption `double_track.py` exists to replace.
+
+**Why it matters.** It is Episode 2's arithmetic applied to a real corner, and it
+sizes the Episode 5 effect before we build it. The two percentages differ, so the
+balance moves — and that difference is most of the understeer F11 is not
+producing. It also answers the obvious question about the current model directly:
+we know the front/rear split at every point on the skidpad, and we do **not** know
+the left/right split, because there is no left and right.
+
+**Prediction for Ep 5:** the double-track model should raise K materially and
+should not need any new tire physics to do it — just a track width and the load
+sensitivity we already have.
+
+### F19 · An ISO-to-screen sign error drew two figures with the wheels turned the wrong way.
+`physics.schema` is ISO 8855: positive steer is **left**. SVG's positive
+`rotate()` is **clockwise**, which on a nose-up car is **right**. Passing a
+physics angle straight into a drawing call renders a plausible, wrong picture and
+raises nothing.
+
+**Source:** caught by review, not by a test. Fixed with named converters
+`viz.diagram.screen_deg` / `screen_dx` that every figure now goes through.
+
+**Why it is worth recording:** the numbers were right the whole time — D2's
+mirror-symmetry check passed at 0.2% throughout. Only the picture was wrong, and
+the picture is the deliverable. A figure is an output like any other and can be
+wrong while every assertion passes.
+
+
+### F20 · Audit of D1-D3 against closed-form theory. **The model's linear structure is exactly right.**
+The linear bicycle model has exact solutions that appear nowhere in this
+codebase, so agreeing with them is not the tautology an internal consistency
+check is. Measured against them:
+
+| Quantity | Result |
+|---|---|
+| Yaw-rate gain `r/δ` vs `V/(L + K·V²)` | matches to **< 0.01%** at 6–20 m/s |
+| Sideslip `β` vs `b/R − (m_r/C_r)·V²/R` | matches to **< 0.002 mrad** |
+| Understeer gradient as the fit window shrinks | 0.175 → 0.154 → 0.152 → 0.151 → **0.151** against 0.1505 analytic |
+| Neutral-steer front mass fraction | 0.4999, where analytic K = −0.0002 deg/g |
+
+**Source:** `[MEASURED]` vs `[DERIVED]` — now permanent D3 checks
+(`yaw_rate_gain_matches_linear_theory`, `sideslip_matches_linear_theory`,
+`measured_K_converges_to_the_textbook_formula`), not a one-off script.
+
+**What it replaced.** D3 previously compared measured K against the analytic
+formula at a 0.15 deg/g tolerance and passed with a 40% gap. That check
+tolerated almost anything. Convergence has teeth: the error must fall
+monotonically to under 1% as the window shrinks.
+
+### F21 · Three real defects the audit found, none of which any existing check would have caught.
+
+**1. The envelope logger reported zero slip ratio.** `wheel_log()` hardcoded
+`kappa = 0`, and `Backend.envelope_violated()` defaults to that accessor — so
+slip-ratio violations were invisible through the documented API. Envelope
+occupancy is what decides whether a lap time counts at all (non-negotiable #1),
+so this would have made the statistic look clean while measuring two channels out
+of three. It would have surfaced first in Season 3's D6, as suspiciously good
+honesty numbers.
+
+**2. The constant-speed trim did not hold speed.** "Holding speed" means
+`dv_x/dt = 0`, and `dv_x/dt = Fx/m + v_y·r`. I had forced `Fx/m = 0`, which
+leaves `dv_x/dt = v_y·r`. In a circle with sideslip the centripetal acceleration
+has a small component along the body x-axis, so the correct condition is
+`a_x = −v_y·r`, not zero. **Consequence:** the "steady state" drifted — 0.19% off
+the commanded radius and 2.7° of heading over a single lap. Now exact: radius
+error 0.001%, radius spread 3×10⁻¹¹ m, zero speed drift.
+
+**3. Nothing tested the pose integration at all.** `x`, `y` and `heading` were
+integrated and fed no assertion anywhere. If they had been wrong, every
+trajectory figure and every lap time from Episode 4 on would have been wrong
+silently. D2 now drives a full lap and fits a circle to the path.
+
+**The pattern worth naming.** Every one of these passed the existing checks
+because the checks were written around what the code does. What caught them was
+comparing against something written independently — closed-form theory, or a
+property the code was never built to satisfy. **Internal consistency is cheap and
+proves little.** D2 and D3 now carry 4 closed-form and 7 instrumentation checks
+that no amount of self-consistent wrongness would pass.
+
+
+## Session 3 — transient response · 2026-07-25
+
+Evidence: `diagnostics/out/D4_report.json` (13/13).
+
+### F22 · The car answers the wheel in about 194 ms, and the linear model predicts it exactly.
+A 1° step at 20 m/s: yaw
+rate reaches 90% of final in 194 ms and settles in
+0.3 s. The linear bicycle model, integrated exactly, gives
+198 ms — a
+2% match, with
+ωn = 10.0 rad/s and ζ = 0.98. Rise time is inside the
+published 80–300 ms band.
+
+**Source:** `[MEASURED]` vs `[DERIVED]` — D4 `rise_time_matches_the_linear_model`.
+Band `[ASSUMED]` §4.
+
+**A trap worth recording.** The first version compared against the *textbook*
+second-order step-response formulas and disagreed by 65%, which looked like a
+model bug. The yaw-rate transfer function has a **numerator zero** at
+`s = −Cr·L/(a·m·V)` that those formulas assume away; it speeds the rise up. The
+fix was to integrate the linear state space instead of using a closed-form
+approximation to it. **An external reference is only external if it is the right
+reference.**
+
+### F23 · Our car barely overshoots, and that is another named gap.
+Overshoot is **0.8%** against a published 5–40% expectation.
+Damping ratio 0.98 — practically critically damped. The linear model
+agrees, so it is not a solver artefact.
+
+**Missing:** tire relaxation length (a tire needs roughly half a wheel revolution
+to build side force; we model it as instantaneous), suspension compliance and
+damping, and steering-system dynamics. All add phase lag, and phase lag is what
+produces overshoot.
+
+**Source:** `[MEASURED]` — D4 `overshoot_is_far_below_the_published_band`,
+recorded as an accepted exception with a reason rather than a widened band.
+
+**Same family as F11.** The model is more idealised than the car in a nameable
+way. **Do not quote our overshoot as a property of a GR86.** Episode 8 should
+rest on the direction and relative size of the inertia effect, not its absolute
+value.
+
+### F24 · Polar moment changes the journey, never the destination.
+Across the documented 0.75–1.40× inertia range, rise time goes
+149 → 279 ms
+while the final yaw rate is constant to a few parts in ten thousand. Overshoot
+falls slightly with inertia — the direction the reference sheet states.
+
+**Source:** `[MEASURED]` — D4, four checks.
+
+**Why it matters:** it is what makes yaw inertia an axis genuinely independent of
+weight distribution, so Episode 8 can hold one fixed and sweep the other.
+
+**Precision:** yaw inertia is the least certain number in the car — the three
+published correlations bracket 1719–2346 kg·m², moving rise time over
+172–234 ms.
+Report to the nearest 10 ms.
+
+### F25 · I almost published a wrong correction to the reference sheet.
+Working from the incomplete second-order theory above, I wrote a D4 note stating
+that §5 had the overshoot-vs-inertia direction backwards, and a plain-English
+finding to match. Both were wrong: with the correct reference the measured
+direction agrees with the sheet.
+
+**What caught it:** running the comparison before trusting the derivation. The
+wrong note would have passed every check, because the check was the derivation.
+
+**Carried forward:** a correction to a source is a claim like any other and needs
+the same standard of evidence as a finding — arguably more, since it invites the
+reader to distrust the reference.
+
+
+## Session 4 — optimal control · 2026-07-26
+
+Evidence: `experiments/ep04/out/results.json`, `tests/test_optimal_control.py`
+(16 checks), `tests/test_casadi_tire.py` (6 checks).
+
+### F26 · The optimal apex moves later when there is more straight to come. **The Episode 4 result.**
+Same 40 m corner, same 32 m/s entry, same car. With 30 m of exit the
+minimum-time apex sits **49%**
+through the corner; with 260 m of exit, **55%**
+— a shift of about **6 percentage points**, roughly 4 m along a 63 m arc.
+
+It pays for the later apex with corner speed: minimum speed drops
+24.6 → 24.3 m/s.
+In exchange, speed at the finish goes 27.5 →
+46.5 m/s.
+
+**Source:** `[MEASURED]` — distance-domain collocation, CasADi/IPOPT. Corner
+geometry and entry speed `[ASSUMED]`.
+
+**Robustness:** grid refinement at 140 / 200 / 280 nodes gives
++5.5 / +6.2 /
++5.9 points. The shift is not a
+discretisation artefact. Report it as "about 6 points", not 6.2.
+
+**Caveat on record:** the long-exit solve converged cleanly; the short-exit solve
+hit the 2000-iteration limit with its objective stable to 1 part in 10⁵ and
+constraint violation 2e-4 m. Converged in practice, not a clean exit.
+
+**Why it matters:** the geometric racing line is optimal for a corner with
+nothing after it, and real corners always have something after them. The fast
+line is not a shape.
+
+### F27 · The solver discovered trail braking without being told about it.
+Braking continues past turn-in in both solves — brake release at
+83 m and
+73 m, with the corner beginning at 70 m.
+The long-exit line releases 10 m earlier, trading turn-in help for getting on the
+power sooner.
+
+**Source:** `[MEASURED]` — `brake_release_s_m` in the Ep 4 results.
+
+**Mechanism:** braking transfers load forward (F10), more front load is more
+front grip (F1), so carrying the brakes into the corner buys front-end bite. The
+friction ellipse (D9) charges for it, and the solver weighs the trade.
+
+**Why it matters more than a demonstration would.** The original plan was to
+script three braking strategies and report which won. A solver given no technique
+that rediscovers one is stronger evidence than a comparison designed to have a
+winner. **This is also the first result that turns on the ellipse's assumed
+shape** — that a tire trades braking for cornering is certain; that it trades
+along an ellipse is a stand-in for coefficients this file lacks (O2 was closed
+pragmatically, not solved).
+
+### F28 · One set of tire formulas, two evaluation backends.
+`physics/mathkit.py` supplies a numpy or CasADi namespace; `physics/tire.py` is
+written against it. `tests/test_casadi_tire.py` asserts the two agree to 1e-6 N
+across ±15° of slip, ±0.3 slip ratio and 300–9500 N of load.
+
+**Source:** `[MEASURED]` — the differential test.
+
+**Why:** the alternative was a second tire model written in CasADi. An optimiser
+finds and exploits any difference between two implementations, and the result
+looks like a finding rather than a bug. Given how many defects this project has
+already traced to two things drifting apart, a duplicated tire model was not a
+risk worth taking.
+
+**Two deliberate differences, both bounded by the test.** CasADi's `sign()`
+returns 0 at exactly 0, which kills the Ey curvature term instead of picking a
+branch and leaves the solver on a discontinuity — replaced by a steep `tanh`.
+And the friction ellipse's `sqrt(1 - used²)` has an infinite derivative at
+saturation, which is a NaN in the Jacobian the first time an optimiser asks a
+fully-braked tire to corner — the radicand is now floored at 1e-6, capping
+lateral force at 0.1% of pure slip there rather than 0.
+
+
+## Session 5 — the double-track model · 2026-07-26
+
+Evidence: `diagnostics/out/D5_report.json` (19/19),
+`experiments/ep05/out/results.json`.
+
+### F29 · Lateral load transfer is NOT where the understeer gap came from. **Correction to F11.**
+Adding lateral load transfer moves the understeer gradient
+**0.19 → 0.22 deg/g** — essentially
+unchanged, and slightly higher.
+
+*(Originally recorded as 0.19 → 0.17, unchanged and slightly **lower**. The sign of
+that 0.03 deg/g wobble was an artefact of the yaw-moment defect corrected in F73;
+re-measured after the fix it goes the other way. **This finding's conclusion is
+untouched** — load transfer is still not where the understeer gap came from, and
+0.22 against a real car's 4.1 is still about 5% of it.)* Both axles lose grip to transfer, and at a 55%
+front roll share on a 54%-front car the two losses nearly cancel, the same
+cancellation that made the cornering compliances nearly equal in F11.
+
+**F11 attributed the gap to the road-car band to missing lateral load transfer
+plus missing suspension effects. The first half was wrong.** The remaining gap is
+compliance steer, roll camber, roll steer and aligning torque — the Bundorf terms,
+which a published decomposition puts at roughly 3 of a real car's 4.1 deg/g.
+
+**Source:** `[MEASURED]` — D5
+`lateral_load_transfer_is_not_where_the_understeer_gap_came_from`.
+
+**Why it matters:** it retires the assumption that Episode 5 would close the gap,
+and names what actually would. Any future claim that this model understeers like a
+real car needs those terms, not a wider track.
+
+### F30 · The bicycle model is blind to an anti-roll bar, not merely approximate.
+Sweeping the front share of roll stiffness across the documented 0.40–0.70 range
+moves K from **+0.02 to
++0.32 deg/g** in the four-wheel
+model. The identical sweep through the two-wheel model moves it by
+**0e+00 deg/g — exactly zero.**
+
+**Source:** `[MEASURED]` — D5 `the_bicycle_model_cannot_see_the_bar_at_all`,
+`stiffer_front_bar_adds_understeer`.
+
+**Why it matters, and it is the Episode 5 result.** An approximate answer can
+carry error bars. A blind one returns a confident number that cannot move, and
+nothing in the output says the input was ignored. Run Season 2's setup sweeps on
+the bicycle model and you get a clean flat line reading "roll stiffness
+distribution has no effect on handling balance" — a statement about the model
+indistinguishable in form from a statement about cars.
+
+### F31 · Our anti-roll bar authority is weak, and that is a real limitation.
+The full roll-share range buys only
+0.31 deg/g, about **1.5× the 0.2 deg/g floor** at
+which a professional test programme can distinguish two builds. A single realistic
+bar change of 0.05 roll share moves K by ~0.05 deg/g — **below that floor, and
+not reportable.**
+
+**Source:** `[MEASURED]` — D5 `our_anti_roll_bar_authority_is_weaker_than_a_real_car_s`.
+Noise floor `[SOURCED]` §4.
+
+**Two reasons, and the second is the interesting one.** We model all lateral
+transfer as elastic, which if anything *overstates* bar authority — there is a
+geometric component acting through the roll centres that does not follow roll
+stiffness. And a real bar acts partly through roll camber and roll steer, changing
+the tires' effective slip angles rather than only their loads, and we model
+neither. Same missing terms as F29.
+
+**Carried forward: treat Season 2's roll-stiffness sweeps as directionally right
+and quantitatively weak.** Rank ordering is usable; magnitudes are not.
+
+### F32 · The four-wheel model reduces to the two-wheel model in the limit where it must.
+With the centre of gravity lowered to the road, lateral transfer vanishes and the
+four-wheel model reproduces the two-wheel model's understeer gradient to **0.6%**
+and its grip limit to **0.00%**.
+
+**Source:** `[MEASURED]` — D5 `flat_car_reproduces_the_bicycle_gradient`,
+`flat_car_reproduces_the_bicycle_grip_limit`.
+
+**Why it counts.** Two independently written models agreeing in a limit neither
+was written to satisfy — the class of check CLAUDE.md rule 11 asks for. The 0.6%
+residual is the per-wheel slip-angle difference from yaw rate across the track,
+which the bicycle model averages away and which does not vanish with height.
+
+### F33 · F18's prediction landed.
+Episode 3 estimated, from static geometry and the tire's load sensitivity alone —
+with a model that could not simulate the effect — that lateral load transfer would
+cost the front axle ~6% of its grip. Measured whole-car loss:
+**6%** (1.03 → 0.97 g).
+
+At the limit the outside pair carries **3.8×**
+the inside pair, and the least-loaded wheel is down to
+1.37 kN. Wheel lift would occur at
+1.61 g against a static stability factor of
+1.63 — correctly just below, since SSF is the
+rigid-body threshold no elastic distribution can beat.
+
+**Source:** `[MEASURED]` — D5 `lateral_transfer_costs_grip`,
+`measured_transfer_matches_the_closed_form`, `F18_predicted_this_before_the_model_existed`.
+
+---
+
+## Session 6 — front-wheel drive vs rear-wheel drive · 2026-07-26
+
+Evidence: `experiments/ep06/out/results.json`, `traces.npz`. Four minimum-time
+solves — both drivetrains × both differential bounds — on the long-exit corner,
+160 nodes, entry 32 m/s, four-wheel model.
+
+### F34 · Rear-wheel drive is faster out of a corner, and the differential decides by how much.
+
+| | Open diff | Ideal diff | a perfect diff is worth |
+|---|---|---|---|
+| Rear-wheel drive | 12.15 s | 12.09 s | 0.07 s |
+| Front-wheel drive | 12.31 s | 12.19 s | **0.13 s** |
+| **front drive costs** | **+0.16 s** | **+0.10 s** | |
+
+**The conclusion holds under both bounds; the magnitude does not.**
+
+**Read the bounds the right way round.** An earlier version of this entry treated
+the ideal-diff +0.100 s as the answer and the open-diff +0.163 s as an inflated
+alternative. That is backwards: an *ideal* differential is the most generous
+assumption available to front drive, so **+0.100 s is a lower bound on the penalty,
+not a best estimate.** A real limited-slip differential sits between the bounds, so
+the honest statement is **"front drive costs at least 0.10 s here, and up to
+0.16 s with no LSD at all."** Both numbers are front drive's *best* and *worst*
+case, and the reference car's factory LSD puts the truth in between.
+
+**A perfect differential is worth roughly twice as much to front drive as to rear
+drive** (0.13 s vs 0.07 s). The front-drive car's driven wheels are also its
+steering wheels and are closer to saturation, so recovered traction is worth more
+to the axle with less to spare. This is Episode 12's opening.
+
+Both cars pick the **same line** — apex 53.33% through the corner in both
+ideal-diff solves, paths never more than 12 cm apart. The difference is entirely in
+what the tires are asked to do, not where the car goes. See F42.
+
+**Source:** `[MEASURED]` — `experiments/ep06/run.py`, `time_delta_s_open`,
+`time_delta_s_ideal`, `diff_worth_s_rwd`, `diff_worth_s_fwd`.
+
+**Precision:** quoted to 0.01 s. The differential assumption alone moves the
+answer by 0.06 s, which is larger than any digit beyond that, and the friction
+ellipse is a placeholder (D9). Treat the rank ordering as the result.
+
+### F35 · An open differential binds mid-corner, not on the exit straight. **Corrects a figure caption.**
+The point at which an open differential costs the driven axle the most total
+drive force is **19 m into the corner** for rear drive and **49 m in** for front
+drive — a peak shortfall of **1.4 kN** and **1.6 kN** of axle force
+respectively. Averaged over the exit straight the shortfall is **0.00 kN**: out
+there the car is level, both driven wheels can take plenty, and the *engine* is
+the binding constraint instead.
+
+This is obvious once stated — the inside wheel is unloaded by cornering, so that
+is where equal-torque splitting hurts — and it was not what the figure originally
+said. The first version of `differential_figure` sampled the station where drive
+force peaks on the exit straight, so both panels read 4.50 kN and the picture
+silently contradicted its own caption.
+
+Mean shortfall through the corner is **0.38 kN** (rear drive) and **0.76 kN**
+(front drive) — twice as much, which is the mechanism behind F34's asymmetry.
+
+**Source:** `[MEASURED]` — `traces.npz`, ideal-minus-open axle force.
+
+### F36 · Every plan-view car in the project was drawn pointing backwards. **Defect.**
+The track-heading-to-screen conversion was `screen_deg(θ) - 90`, i.e. `-θ - 90`.
+The correct rotation is `90 - θ`. The two differ by **exactly 180° at every
+heading**, so every car drawn along a path — including the apex cars in Episode
+4's published hero figure — had its nose pointing back down its own line.
+
+**It survived review because a car body outline is nearly symmetric.** The only
+tells are the small nose mark and the force arrows, and Episode 4's cars carried
+no arrows. It was caught when the Episode 6 along-the-path figure put force
+arrows on the wheels and the cornering forces pointed *outward*.
+
+Fixed by adding `viz.diagram.screen_heading_deg` — a third named converter
+alongside `screen_deg` and `screen_dx` — and pinning it with
+`test_car_heading_rotation_points_the_nose_along_travel`, which works the
+rotation geometry rather than restating the formula.
+
+**Why it matters:** this is the third silent frame-convention defect in the
+project and the first to survive into a published figure. All three were
+compositions of conventions, not single-angle conversions. Rule 11's point again:
+it was found by an external cross-check (do the arrows point where physics says?),
+never by self-consistency.
+
+**Source:** `[MEASURED]` — `tests/test_figures.py`, frame-conversion group.
+
+### F37 · An anti-roll bar reduces body roll, and our sweep protocol hid that. **Corrects Episode 5.**
+Episode 5's anti-roll-bar figure stated that both cars "lean by the same total
+amount — that is set by mass, height and cornering force, and a bar cannot change
+it." **That is true of our parameterisation and false of cars.**
+
+The sweep varies `roll_stiffness_front_share`, which redistributes a *fixed*
+total roll stiffness — the **trade** protocol, what you get by stiffening one bar
+and softening the other. Bolting a bar *on* is the other protocol and the more
+common one: a bar is a spring, so it raises the total and the car leans less as
+well as redistributing.
+
+Computed for RV-1 (roll gradient 5.8 deg/g on springs alone):
+
+| Front share of roll stiffness | Bar needed | Roll gradient |
+|---|---|---|
+| 0.40 | 18.5 kN·m/rad, rear | 4.4 deg/g |
+| 0.52 (springs only) | none | **5.8 deg/g** |
+| 0.55 (nominal) | 3.8 kN·m/rad, front | 5.4 deg/g |
+| 0.70 | 36.1 kN·m/rad, front | 3.6 deg/g |
+
+**The roll angle is largest with no bar at all and falls either side**, because
+any bar is extra stiffness whichever end it goes on. Non-monotonic in a knob
+labelled "front stiffness", which is why the figure now says so explicitly.
+
+The two effects are separate and **only the redistribution changes the handling
+balance.** Less lean is a comfort and suspension-geometry gain.
+
+**Source:** `[DERIVED]` — `VehicleParams.bar_rate_for_share`,
+`roll_gradient_deg_per_g_with_bar`; `m·g·h/K_φ` with
+`K_φ = 0.5·k·t²` per axle plus the bar. Rigid-axle, no roll-centre geometry.
+Spring rates `[SOURCED anchor / ASSUMED]`.
+
+**Why it matters:** a statement about our parameterisation was published as a
+statement about cars. Rule 9's failure mode exactly — the trade-versus-add choice
+was made implicitly by writing the sweep, never recorded as a protocol, and then
+generalised in prose.
+
+### F38 · The spring-only roll share corroborates the assumed one.
+The documented spring rates alone give a front roll-stiffness share of
+**0.522**; we assume **0.55**. The gap is exactly what a modest front bar
+(3.8 kN·m/rad, 6% of total) would supply. Two numbers reached by different routes
+agreeing is cheap reassurance that the assumed share is not arbitrary.
+
+**Source:** `[DERIVED]` — `spring_only_roll_share` vs
+`roll_stiffness_front_share`; `tests/test_schema_and_tire.py`.
+
+### F39 · An unconverged min-time solve returns an objective that cannot be trusted at the 0.1–0.7% level, in either direction. **Corrects Episode 4.**
+
+Episode 4 said of its unconverged solve: *"its objective was stable to 1 part in
+10⁵ and its constraint violation was 2×10⁻⁴ m, so it is converged in every
+practical sense."* **That reasoning is wrong** — "the objective has stopped
+moving" measures whether the iterate stalled, not whether it reached the feasible
+optimum, and the two differ by far more than 1 part in 10⁵.
+
+**Correction to an earlier version of this entry.** It claimed unconverged solves
+report a time *below* the true optimum — a systematic optimistic bias. That was
+generalised from a single case and is **wrong**. Later evidence (below) shows
+deviations of either sign: on the Episode 6 problem the unconverged rear-drive
+times land 3 ms above and 4 ms below the cleanly converged value. The reliable
+statement is that the objective is *untrustworthy*, not that it is *optimistic*.
+
+Demonstrated on the short-exit corner, same problem three ways:
+
+| | Time | Status |
+|---|---|---|
+| cold start, 110 nodes | 5.873 s | `Maximum_Iterations_Exceeded` |
+| cold start, 80 nodes | 5.875 s | `Maximum_Iterations_Exceeded` |
+| **warm start resampled from the 80-node answer** | **5.912 s** | **`Solve_Succeeded`** |
+
+The cleanly converged answer is **0.65% slower**. Two independent cold runs at
+different node counts agreeing with each other (5.873, 5.875) looked like
+convergence evidence and was not — they were agreeing about the same bias.
+
+**Mechanism.** IPOPT drives feasibility and optimality together. Stopping early
+leaves a constraint violation, so the returned iterate is slightly infeasible and
+its objective is not the optimum of the problem we posed — it is the objective of
+a trajectory that does not quite obey the physics. Which side of the optimum it
+lands on depends on which constraints are still violated, and is not predictable.
+The magnitude is problem-dependent: 0.65% on the Episode 4 short-exit corner,
+0.03% on the Episode 6 long-exit one.
+
+Also worth recording: the code comment claimed the returned iterate's constraint
+violation was bounded by `acceptable_constr_viol_tol`. **It is not.** The
+rear-drive problem never reaches IPOPT's *acceptable* level at all, so that bound
+never applies to it — `Maximum_Iterations_Exceeded` is not
+`Solved_To_Acceptable_Level`.
+
+**Consequence for Episode 6: none, once checked properly.** Both rear-drive solves
+had hit the iteration limit while both front-drive solves converged, which is
+exactly the asymmetry that could manufacture the result — so it had to be checked
+rather than assumed either way. Re-solved with staged warm starts and a raised
+iteration limit:
+
+| Nodes | RWD | FWD | front drive costs | both converged |
+|---|---|---|---|---|
+| 100 | 12.091 s | 12.191 s | **+0.100 s** | **yes** |
+| 140 | 12.094 s | 12.187 s | +0.093 s | no |
+| 180 | 12.087 s | 12.185 s | +0.098 s | no |
+
+**The penalty survives.** Spread 0.007 s across three grids against a ~0.096 s
+effect, and the fully converged pair at 100 nodes gives +0.100 s. Decisively, the
+unconverged rear-drive times *straddle* the converged one (+3 ms, −4 ms) instead
+of sitting below it, so no one-sided bias is operating. Episode 6 now reports the
+100-node grid as primary, because it is the grid on which every solve in the
+comparison converges.
+
+Episode 6's draft also contained a wrong reassurance — *"the unclean solves are
+the ones that came out faster, so if anything the true rear-drive advantage is
+slightly larger"* — which assumed a bias direction that does not exist. Removed.
+
+**Fix in hand:** `solve_min_time` now resamples a warm start onto the requested
+grid instead of silently ignoring one whose node count differs, which is what
+makes clean convergence reachable — solve coarse, then resample up. The silent
+ignore was the enabling defect. `max_iter` is now a parameter too; the rear-drive
+problem never even reaches IPOPT's *acceptable* level at 2000 iterations, so the
+returned iterate's constraint violation is not bounded by
+`acceptable_constr_viol_tol` as the code comment implied.
+
+**On the intermediate scare.** A first re-solve at 160 nodes with the *default*
+2000-iteration limit returned rear drive at 12.110 s, making the gap look like
+0.075 s and suggesting a grid dependence. Raising the limit to 8000 moved that
+same solve to ~12.09 s, in line with every other grid. **The 0.075 s was an
+artefact of the iteration limit, not of the mesh** — which is itself the finding
+restated: an unconverged objective is not evidence about anything.
+
+**Why it matters:** convergence status is now a gate rather than a footnote, and
+`Maximum_Iterations_Exceeded` on any solve whose number is quoted means the number
+does not ship until it is either converged or bracketed. Note also the shape of
+the near-miss: two cold runs at 80 and 110 nodes agreeing to 2 ms *looked* like
+convergence evidence and was two runs agreeing about the same artefact.
+
+**Source:** `[MEASURED]` — `tests/test_optimal_control.py`
+`test_a_warm_start_from_a_different_node_count_is_resampled_not_ignored`;
+direct probe on `T.short_exit()`.
+
+**Why it matters:** the third finding in a row (with F36, F37) where a *stated
+justification* was the failure rather than the code. The code did what it said;
+the sentence explaining why that was acceptable was false. Convergence status is
+now a gate, not a footnote.
+
+### F43 · The front-drive penalty is proportional to engine power, and at low power it vanishes.
+The whole Episode 6 mechanism is front tires running out of grip because they are
+steering *and* accelerating. So the penalty should scale with how much
+acceleration there is to place — and the drive-force cap was `[ASSUMED]` at
+4.5 kN, never tested. Swept:
+
+| Drive cap | ≈ power at 30 m/s | RWD | FWD | **FWD costs** | converged |
+|---|---|---|---|---|---|
+| 2.5 kN | 75 kW / 101 hp | 13.279 s | 13.276 s | **no measurable difference** | no |
+| **4.5 kN** | **135 kW / 181 hp** | **12.092 s** | **12.193 s** | **+0.101 s** | **yes** |
+| 7.0 kN | 210 kW / 282 hp | 11.306 s | 11.493 s | **+0.187 s** | no |
+| 10.0 kN | 300 kW / 402 hp | 11.002 s | 11.465 s | **+0.463 s** | no |
+
+**Monotonic across a 4× power range, spanning 0.46 s** — four and a half times the
+effect at our own assumed power level. At ~100 hp it **vanishes**: −0.003 s, far
+below the 0.02 s floor the convergence uncertainty imposes. Which is what the
+mechanism predicts, and the figure shows why — at 2.5 kN **no tire on either car
+exceeds 63%** of its capability, so there is spare grip everywhere and it cannot
+matter which pair is driven.
+
+**Correction to an earlier version of this entry**, which reported −0.041 s at
+2.5 kN and called it a sign reversal with front drive "marginally faster". That came
+from a solve warm-started off a bicycle seed; restarted from the converged 100-node
+answer the same case gives −0.003 s. **There is no measurable reversal — the penalty
+goes to zero, it does not go negative.** Reporting a −0.04 s "gain" was also a
+rule-5 violation: below the floor it is no measurable effect, never a small one.
+
+**Convergence, per F39.** Only the 4.5 kN row has both solves converged, and it
+reproduces the headline (+0.101 vs +0.100 s). The other three have an unconverged
+rear-drive solve, so **individual values are not quotable.** The *trend* is: the
+0.46 s span is ~6× the largest plausible convergence bias (0.08 s), it is monotonic
+across four points, and it is the direction the mechanism requires. Direction and
+rough magnitude are usable; the numbers are not.
+
+**Why it matters — this is the episode's most useful result.** "Rear drive is
+faster" is not a fact about drivetrains, it is a fact about drivetrains *at a given
+power level*, and the conditional is doing most of the work. It also lines up with
+something anyone can observe without a model: economy hatchbacks are front-drive and
+nobody objects, while high-powered cars are overwhelmingly rear- or all-wheel-drive.
+The model reproduces that split from the friction circle alone, with no styling,
+packaging or cost argument anywhere in it — a check against the outside world of
+exactly the kind CLAUDE.md rule 2 asks for, and one the code was not written toward.
+
+**Source:** `[MEASURED]` — `experiments/ep06/run.py` power sweep, 100 nodes, ideal
+differential, staged warm start, `max_iter` 8000. Drive cap is `[ASSUMED]`; the
+power equivalents are `[DERIVED]` as force × 30 m/s and are indicative only, since
+a real engine's force falls with speed rather than staying capped.
+
+### F42 · The drivetrain does not change where the car goes. It changes which tires pay for it.
+The strongest thing in Episode 6 is a *non*-difference. Measured between the two
+ideal-differential solves:
+
+| | Rear drive | Front drive |
+|---|---|---|
+| Apex position | 53.33% through the corner | **53.33%** |
+| Path separation | — | max **12 cm**, mean 5 cm, on an **800 cm** road |
+| Peak speed difference | — | 0.70 m/s |
+| **Front tires used, exit straight** | **10%** | **61%** |
+| **Rear tires used, exit straight** | **59%** | **8%** |
+
+**The two racing lines are the same line to within the width of a hand**, and the
+apexes agree to 0.01%. Meanwhile the tire workload is almost exactly inverted.
+
+**Why, and it is not a coincidence.** Through the corner the car is grip-limited
+and neither drivetrain helps it turn — both solve an identical cornering problem
+and find an identical optimum. The drivetrain only starts to matter once there is
+longitudinal force to place, and by then the path is already committed. So the
+difference cannot show up as a different line; it can only show up as a different
+*distribution of work*.
+
+This is also why the effect is worth so little per corner (0.8% of the segment) and
+so much per lap: 0.10 s compounds across every corner, and across a dozen corners
+it is more than a second.
+
+**Source:** `[MEASURED]` — `experiments/ep06/out/traces.npz`, `fwd_n − rwd_n` and
+per-wheel utilisation over `s > 132.8 m`.
+
+**Why it matters:** it is the answer to "these two figures look identical — is that
+real?" It is real, it is the point, and the figures should lead with it rather than
+apologise for it. It also means the overlay figure is the right hero: two lines a
+reader cannot tell apart, with wheels that are obviously doing different things.
+
+### F40 · The approach "straight" is a hard manoeuvre at the grip limit, and the busy steering there is real. **This entry replaces an earlier one that called it a defect. The earlier one was wrong.**
+
+**What I originally claimed:** that minimising time alone leaves the steering
+degenerate on the approach straight, that the observed ±10° swings were the
+optimiser wandering in a flat direction, that two figures were therefore drawing
+meaningless steer angles, and that the fix was a steering-rate penalty.
+
+**Every part of that was wrong**, and two independent checks killed it.
+
+**Check 1 — what the car is actually doing on the "straight":**
+
+| s (m) | n (m) | steer | slip, front left | lateral accel |
+|---|---|---|---|---|
+| 4.0 | −0.02 | −8.6° | +8.3° | **−0.60 g** |
+| 15.9 | −0.64 | +0.6° | +3.8° | **−0.86 g** |
+| 23.8 | −1.58 | +13.5° | −6.7° | +0.26 g |
+| 47.6 | −3.98 | +2.8° | **−12.0°** | **+0.96 g** |
+| 63.5 | −2.80 | +5.8° | **−12.0°** | **1.00 g** |
+
+It is not cruising. It pulls up to **0.86 g in the direction away from the corner**
+to reach the outside edge, reverses, and is **pinned to the ±12° slip envelope from
+s = 48 m — twenty-two metres before the corner nominally begins.** A manoeuvre that
+reverses lateral acceleration through 1.5 g of range while at the limit requires
+large steering inputs in both directions. That is what was in the trace.
+
+**Check 2 — the failed fix, which is the cleaner argument.** Swept over
+1e-4 / 1e-3 / 1e-2, a steer-rate penalty:
+
+| Weight | Time | Convergence | Worst jump | Reversals |
+|---|---|---|---|---|
+| 0 | 12.0909 s | **Solve_Succeeded** | 10.9° | 4 |
+| 1e-4 | 12.0917 s | iteration limit | 8.3° | 4 |
+| 1e-3 | 12.0945 s | iteration limit | 7.1° | 4 |
+| 1e-2 | 12.0989 s | iteration limit | 4.8° | 4 |
+
+**Damping the steering costs time, monotonically.** If the motion were a
+degenerate flat direction, damping it would have been free — that is what
+degenerate means. It was not free, so the steering is doing work. It also removed
+none of the four reversals (they are the real manoeuvre) and broke a solve that
+converged cleanly without it.
+
+A third hypothesis, that the car was riding the road-edge constraint, is also dead:
+only 5 of 100 nodes sit on the edge and **none** of the nine large steering changes
+occurs at one. The path `n` is perfectly smooth throughout —
+0, −0.02, −0.12, −0.32, −0.64, −1.08, −1.58 — which should have told me
+immediately that a smooth path cannot be produced by meaningless steering.
+
+**Consequences.**
+1. **The figures were correct.** Cars drawn with turned wheels on the approach are
+   showing a real manoeuvre. I was about to "fix" an accurate figure, which would
+   have replaced a true picture with a false one.
+2. `steer_rate_weight` stays in `solve_min_time` but **defaults to 0.0** — it is
+   an opt-in lever, not a fix.
+3. **There is a genuine finding here, and it is not a defect:** the optimum begins
+   cornering well before the corner and deliberately swerves the *wrong way* first
+   to use the full width of the road. Nobody told it to.
+
+**Source:** `[MEASURED]` — `traces.npz` per-node `delta`, `alpha`, summed `fy`;
+steer-weight sweep on the Episode 6 problem at 100 nodes.
+
+**Why it matters — and this is the part worth keeping.** I found "chatter" by
+diffing an array, built a story that explained it, wrote it up as a defect, and
+proposed a fix. The story was plausible and false. What killed it was **checking
+the physical state at those nodes** (0.86 g and a saturated tire is not a car
+cruising) and **the fix's own failure to be free**. A defect that goes away when
+you look at what the car is doing was never a defect. Compare F36, where the
+figure really was wrong: there the force arrows pointed somewhere physics forbade.
+The discipline is the same in both directions — check against the physics, not
+against how the numbers look.
+
+| Steering change per node | In the corner | Entry straight |
+|---|---|---|
+| Typical | 0.5° | 2.4° (RWD), 3.8° (FWD) |
+| Worst | 1.0° | **10.9° (RWD), 12.4° (FWD)** |
+| Direction reversals in the first 70 m | — | **4 (RWD), 6 (FWD)** |
+
+**Cause.** The car genuinely must move ~4 m across the road before the
+left-hander, and it does — `n` runs from 0 to the −4.00 m road edge, which is the
+correct wide entry. But thousands of ways to travel 4 m sideways on a straight
+take *the same time*, so the time-only objective does not distinguish them and the
+solver settles on an arbitrary one. Arbitrary looks like sawing at the wheel.
+
+**Consequences.**
+1. **Two figures draw a car on the entry straight, and its steer angle there is
+   noise** — the Episode 6 along-the-path figure's first station and Episode 4's
+   line figure both sit in the chatter zone.
+2. The two drivetrains chatter *differently* (4 vs 6 reversals). Weaving adds
+   distance, so some unknown part of any time difference is arbitrary rather than
+   physical.
+3. **Likely the reason the rear-drive open-differential case would not converge**
+   even at 8000 iterations — a flat, chattering direction is badly conditioned.
+
+**Fix.** A small penalty on steering rate, `w · Σ(steer_rate/steer_rate_max)²`,
+normalised so `w` is dimensionless. Standard practice in minimum-time formulations
+and it should have been there from Episode 4. **The weight must not buy smoothness
+with lap time**, so it is chosen by measuring both, and the invariance is asserted
+in the tests rather than assumed.
+
+**Source:** `[MEASURED]` — `traces.npz`, per-node `delta` differences split by
+track section.
+
+**Why it matters:** found by asking whether 4 m node spacing was too coarse for a
+40 m corner. It wasn't — the geometric error is 4.9 cm on an 8 m road. But
+checking *the shape* led to checking *the controls*, which is where the real defect
+was. The question that finds a bug is often not about the thing that is broken.
+
+### F41 · Episode 6's differential numbers are not all on equal footing.
+With the 100-node primary grid, three of the four solves converge cleanly and one
+does not:
+
+| | Open diff | Ideal diff |
+|---|---|---|
+| Rear-wheel drive | 12.158 s ⚠️ **iteration limit** | 12.091 s ✓ |
+| Front-wheel drive | 12.322 s ✓ | 12.191 s ✓ |
+
+So under F39's rule:
+
+- **The headline (+0.100 s with an ideal diff) is established** — both solves
+  converged, and it holds to 0.008 s across 100/140/180 nodes.
+- **"A perfect differential is worth 0.131 s to front drive" is established** —
+  both front-drive solves converged.
+- **"…worth 0.067 s to rear drive" is NOT**, and neither is the open-diff gap of
+  +0.163 s. Both subtract an unconverged number.
+
+The qualitative claim that the differential matters roughly twice as much to front
+drive survives, since the front-drive side is clean and the rear-drive gain would
+have to be more than double its current value to overturn the ordering. But the
+open-diff figures do not ship until that solve converges — F40's regularisation is
+the most likely route.
+
+**Source:** `[MEASURED]` — `experiments/ep06/out/results.json`, `solver_status`
+per solve; the run script now prints a warning when any solve in a comparison
+fails to converge.
+
+---
+
+## Session 7 — where you put the weight · 2026-07-26
+
+Evidence: `experiments/ep07/out/results.json`, `traces.npz`. Front mass fraction
+swept 0.40–0.65, both drivetrains, 100 nodes, ideal differential, continuation
+warm starts outward from the nominal 0.54.
+
+### F44 · Balance transforms how the car behaves and barely changes how fast it is.
+| Front mass | K (deg/g) | Rear drive | Front drive |
+|---|---|---|---|
+| 40% | **−0.43** | 12.103 s ✓ | 12.305 s ✓ |
+| 47% | −0.13 | 12.078 s ⚠ | 12.221 s ✓ |
+| 54% (nominal) | +0.17 | 12.091 s ✓ | 12.191 s ✓ |
+| 61% | +0.47 | 12.136 s ⚠ | 12.199 s ✓ |
+| 65% | **+0.63** | 12.189 s ⚠ | 12.221 s ✓ |
+
+**The understeer gradient swings 1.06 deg/g**, from clear oversteer to clear
+understeer, against a 0.2 deg/g real-world measurement floor. That is the largest
+and cleanest effect in the sweep, and it is the number Episode 3 introduced now
+doing real work.
+
+**The lap time does almost nothing.** Within the 0.02 s floor these solves
+support (F39), rear drive's two converged points — 40% and 54% — are
+**indistinguishable** (0.012 s apart), and front drive ties across 54–61%
+(0.008 s apart). Only one point is clearly worse: front drive at 40% front, which
+loses **0.114 s** because a front-drive car with 60% of its mass over the
+undriven axle cannot put power down.
+
+**So "50:50 is a marketing number" is true, but not for the expected reason.** The
+series plan anticipated an optimum somewhere other than 50:50. What the sweep
+actually shows is that **across most of the range there is no measurable optimum
+at all.** Balance dominates how the car *feels* and is nearly irrelevant to how
+fast it is — over this corner, at this power, with yaw inertia held fixed.
+
+**Source:** `[MEASURED]` — `experiments/ep07/run.py`. Three rear-drive solves hit
+the iteration limit and are excluded from every optimum claim.
+
+### F45 · Weight over the driven wheels recovers most of the front-drive penalty, but never all of it. **Completes Episode 6.**
+Episode 6 found front drive 0.10 s slower at a fixed 54% front and explicitly
+deferred the obvious objection: a real front-drive car puts its engine over its
+driven wheels. Measured:
+
+| Front mass | 40% | 47% | 54% | 61% | 65% |
+|---|---|---|---|---|---|
+| **front drive costs** | +0.202 s | *+0.119 s* | +0.100 s | +0.063 s | **+0.032 s** |
+
+**Monotonic across every converged point, and it never crosses zero.** Loading the
+driven axle buys back roughly 85% of the deficit between 40% and 65% front — but
+at 65% front, more nose-heavy than most real front-drive cars, front drive is
+still slower.
+
+The objection is therefore answered and the Episode 6 conclusion survives it: at
+equal power, the axle that steers should not also be the axle that drives, and
+piling weight onto it narrows the gap without closing it.
+
+**Re-solved, and the monotonic claim now has support it previously lacked.** An
+earlier version of this entry called the trend monotonic while **three of five
+rear-drive solves had stopped on the iteration limit**, each carrying up to
+~0.08 s of F39 error — larger than every adjacent gap in the sequence (0.03–0.06 s).
+The *span* claim survived that; the point-by-point claim did not, and both were
+stated as though equally supported.
+
+Re-solving with Episode 8's recipe — front drive first, each rear-drive point
+seeded from the converged front-drive answer at the **same balance**, plus a retry
+at 16,000 iterations — converged 9 of 10. The four converged gaps are
+**+0.202, +0.100, +0.063, +0.032 s: monotonic, spanning 0.170 s**, with no
+unconverged number among them.
+
+**0.47 front is still excluded** (italicised above). It failed at 16,000
+iterations after 1,008 s and is the one point in this sweep that will not solve.
+Its value sits between its neighbours, which is consistent, but consistency is not
+evidence.
+
+### F46 · Balance moves the braking point, not the apex. **Corrects an expectation in the series plan.**
+The plan predicted that "the apex migrates continuously as weight moves
+rearward". It does not:
+
+| | across the whole 40–65% sweep |
+|---|---|
+| Apex position, rear drive | moves **0.9** percentage points |
+| Apex position, front drive | moves **1.5** points |
+| **Brake release point** | moves **15.9 m** (both drivetrains) |
+
+Apex movement of about a point is not resolvable here and is not a finding. The
+brake point moves 15.9 m — four node spacings, unambiguous — and monotonically:
+more front weight, later braking, because there is more front grip to brake
+against. At 61–65% front the car is still braking well past turn-in.
+
+Worth comparing with Episode 4, where changing what came *after* the corner moved
+the apex about 6 points. **The apex is set by the corner's context, not by the
+car's balance.** That is a sharper statement than the one the plan expected, and
+it came out of the data rather than being looked for.
+
+**Source:** `[MEASURED]` — apex from interpolated position (F47), brake release
+from the last node with longitudinal force below −100 N before mid-corner.
+
+### F47 · Apex position was quantised to the node grid. **Defect, and it silently affected Episode 4.**
+`apex_index` is an `argmax` over nodes, so apex position could only ever land *on*
+a node. At 100 nodes this track's corner gets ~16 of them, quantising apex to
+**6.7% of the corner** — coarser than the effect Episode 7 set out to measure. It
+showed up as five different cars all reporting *exactly* 53.3%: not a physical
+result, one shared node index.
+
+Fixed with three-point parabolic interpolation about the peak, computed downstream
+from the logged arrays (rule 7). Pinned by a test that recovers a vertex whose
+position is known in closed form, rather than checking against solver output.
+
+**This reaches back into Episode 4**, whose grid-refinement table reported apex
+shifts of 5.5 / 6.2 / 5.9 points at 140 / 200 / 280 nodes. At those grids one node
+is 3.1–6.3% of the corner, so that spread was substantially quantisation rather
+than physics. The conclusion (a later apex with a long straight to follow)
+survives — 6 points is larger than the quantisation — but the digits did not mean
+what they appeared to.
+
+**Source:** `[MEASURED]` — `Solution.apex_offset_nodes`;
+`tests/test_optimal_control.py` apex group.
+
+**Why it matters:** a metric can be precise, reproducible, stable under
+refinement, and still be reporting the grid rather than the car. Five identical
+readings looked like a clean null result and were an artefact.
+
+
+---
+
+## Session 8 — front, mid or rear engine · 2026-07-26
+
+Evidence: `experiments/ep08/out/results.json`. Step-steer transients on the
+bicycle model (matching D4, validated against an exactly integrated linear model
+to 3%); lap times from four-wheel minimum-time solves at 100 nodes.
+
+### F48 · Balance and polar moment are independent axes, and the layouts people argue about are separated on the second one.
+Two cars at **identical** 43% front balance, polar moment at the ends of the
+documented range:
+
+| | 0.80× polar moment | 1.22× |
+|---|---|---|
+| Rise time | **201 ms** | **304 ms** |
+| Settling time | 386 ms | 560 ms |
+| Understeer gradient | −0.30 deg/g | **−0.30 deg/g** |
+
+**Same steady-state behaviour, 51% difference in how long it takes to get
+there.** That comparison cannot be made with real cars, because moving an engine
+changes both properties at once.
+
+The five layout archetypes, placed on the two axes:
+
+| Layout | Front mass | Polar moment | Rise time | K |
+|---|---|---|---|---|
+| Front engine, FWD | 62% | 1.25× | 234 ms | +0.49 |
+| Front engine, RWD | **55%** | **1.20×** | 236 ms | +0.21 |
+| Front-mid, RWD | 53% | 1.00× | 201 ms | +0.13 |
+| Mid engine, RWD | 43% | **0.80×** | 201 ms | −0.30 |
+| Rear engine, RWD | **38%** | **1.22×** | 356 ms | −0.51 |
+
+**The front-engine saloon and the rear-engine 911 sit at opposite ends of the
+balance axis — 55% against 38%, about as far apart as production cars get — and
+at essentially the same height on the inertia axis (1.20× against 1.22×).**
+
+And the mid-engine car is not the balance outlier: at 43% front it is *less*
+rearward than the 911. What separates it is 0.80× polar moment, the lowest of the
+five. **"Mid-engine is better" is a polar-moment claim that is habitually argued
+as a weight-distribution claim**, and the two get conflated because a real engine
+move changes both.
+
+Note also that front-mid (53% front, 1.00×) and mid (43% front, 0.80×) reach the
+*same* 201 ms rise time by different routes — nose-heavier but higher inertia
+versus more rearward but lower inertia. Two axes trading off, in one pair of
+numbers.
+
+**Source:** `[MEASURED]` — `experiments/ep08/run.py`. Archetype balance and
+inertia values are `[ASSUMED]`, from the reference sheet §2.
+
+### F49 · Polar moment barely shows up in a lap time, because the solver cannot be surprised.
+**All five layouts converged cleanly**, so this comparison rests on no excluded
+solves:
+
+| Layout | Polar moment | Rise time | Lap time |
+|---|---|---|---|
+| Front-mid, RWD | 1.00× | 201 ms | 12.09 s |
+| Mid engine, RWD | 0.80× | 201 ms | 12.09 s |
+| Front engine, RWD | 1.20× | 236 ms | 12.09 s |
+| Rear engine, RWD | **1.22×** | **356 ms** | 12.12 s |
+| Front engine, FWD | 1.25× | 234 ms | 12.21 s |
+
+**Quoted to 0.01 s (rule 12).** These solves resolve to about 0.02 s, so the
+millisecond digits an earlier version of this entry printed were solver output,
+not accuracy. At honest precision **three of the four rear-drive layouts share one
+lap time** across a 0.80×–1.20× range of polar moment.
+
+Across all four rear-drive cars, rise time spans 155 ms and lap time spans
+**0.03 s — barely above the floor.** Only the mid-engine and rear-engine pair are
+far enough apart to separate at all, and even that gap is 1.5× the floor. Read the
+lap-time column as "no measurable effect", not as a small one.
+
+The only layout clearly off the pace is the front-drive one, 0.113 s behind the
+quickest — and Episode 6 already accounted for that on entirely different grounds
+(the friction circle, not the inertia). **Polar moment, the property this episode
+is about, is worth almost nothing here.**
+
+**This is not a null result, it is the setup for Season 3.** The minimum-time
+solver plans the entire corner before turning the wheel. It knows exactly when the
+corner arrives, so it can simply begin steering earlier to compensate for a car
+that responds slowly. Response time costs a clairvoyant driver almost nothing.
+
+A real driver reacts to what has already happened. For them a 155 ms delay is 155
+ms of the car not doing what they asked, at a moment when they are correcting.
+**The gap between those two situations is the entire justification for Episodes
+9–11**, and it is why "which layout is faster" has been the wrong question for
+three episodes running.
+
+**Source:** `[MEASURED]` — all five archetypes `Solve_Succeeded`, envelope
+occupancy zero throughout. Reaching that took seeding every layout from the
+front-drive solve, which converges in ~13 s where the rear-drive ones need
+250–350 s, plus one retry at 16,000 iterations. Continuation from the *easiest*
+member of a family, not the most representative one, is the lesson — the
+reference-closest layout failed on a cold start and converged when it inherited a
+four-wheel answer.
+
+### F50 · Our model shows no "twitchiness", and the plan expected some. **Corrects an expectation.**
+The series plan predicted low polar moment would be "twitchier at the limit".
+Measured overshoot in the controlled pair: **0.23%** at 0.80× against **0.14%** at
+1.22×.
+
+The *direction* is right and matches D4 and the linear model — lower inertia
+overshoots more. The *magnitude* is nil. Neither car meaningfully overshoots, so
+nothing here supports calling one nervous.
+
+**Why our setup cannot show it.** The step is 3° at constant speed, which is a
+gentle, essentially linear input, and there is no driver in the loop. "Nervous at
+the limit" is a claim about large inputs near saturation with a human correcting —
+three things this experiment deliberately does not have. Reporting a 0.09
+percentage-point difference as twitchiness would have been the rule-5 error again.
+
+**Source:** `[MEASURED]` — `experiments/ep08/run.py` pair overshoot; consistent
+with D4's `overshoot_decreases_with_yaw_inertia`.
+
+
+---
+
+## Session 9 — teaching a car to drive · 2026-07-26
+
+Evidence: `experiments/ep09/out/results.json`, `history.json`,
+`diagnostics/out/D6_report.json`. PPO on the four-wheel model, progress-only
+reward, slip envelope deliberately unenforced.
+
+### F51 · PPO's conventional shared gradient clip silently disabled policy learning. **Defect.**
+Measured directly on this problem:
+
+| | loss | gradient norm |
+|---|---|---|
+| policy | 0.14 | **1.0** |
+| value | 1606 | **149.5** |
+| combined, clipped to 0.5 | | **scaled by 0.0067** |
+
+A progress reward gives returns of order 40 m, so the value loss starts near 1600
+and its gradient is 150× the policy's. One `clip_grad_norm_` across both — the
+default in most PPO implementations — then scales *everything* by 0.0067, giving
+the policy an effective learning rate of 2×10⁻⁶.
+
+**Training ran for 250,000 steps. Losses moved. Nothing crashed. Approximate KL
+sat at 0.0000 and the policy never updated.** The two networks share no
+parameters, so clipping them separately costs nothing and removes the coupling.
+
+**Source:** `[MEASURED]` — direct gradient-norm comparison; `physics/ppo.py`.
+
+### F52 · Three hyperparameters were wrong because they came from convention rather than from the task.
+Each was diagnosed by computing what the *problem* needs and comparing:
+
+| | conventional | what this task needs | ratio |
+|---|---|---|---|
+| Steering exploration | std 0.61 | **0.037** of authority | **16×** too large |
+| Throttle exploration | same as steering | the whole [−1, +1] | **10×** too small |
+| Entropy coefficient | 0.01 | 0.0005 | 20× too large |
+
+Holding the 40 m corner needs about 3.7° of steer reached over half a second —
+7.4 deg/s against 200 deg/s of authority, a normalised action of 0.037. Searching
+that with a standard deviation of 0.61 means sawing the wheel off an 8 m road
+within a second, every episode, so the policy never saw a trajectory worth
+reinforcing.
+
+**And one exploration scale cannot serve both action dimensions.** With a value
+small enough for steering, the policy converged to full throttle and never
+sampled braking at all, sitting in that local optimum for half a million steps.
+`init_log_std` is now per-dimension: `(-2.5, -1.0)`.
+
+**Why it matters:** none of these produced an error. All three produced training
+runs with moving curves and no learning. The diagnosis in every case was to
+compute the scale of a useful action and compare it against the scale being
+searched — which is now a D6 check.
+
+### F53 · The task was physically impossible as configured. **Defect.**
+The corner is 40 m radius and the car makes 0.97 g, so **19.5 m/s is the fastest
+it can be taken. The environment started the car at 32 m/s**, copied from the
+optimal-control episodes.
+
+A solver that sees the whole road plans that braking in one shot. A learner must
+discover 1.3 s of hard braking beginning two seconds before any consequence,
+against an immediate reward for going faster. Configured that way the policy
+never completed a single lap in 250k steps — it drove off the road at 65 m, every
+time.
+
+Starting at 15 m/s makes the task learnable **with no reward shaping**: the policy
+learns to steer first, and the progress reward pushes it faster until braking
+becomes necessary on its own terms. The curriculum is in the task, not the reward.
+
+**Why it matters:** the same number describing a different problem. Nothing
+flagged it, because 32 m/s is a perfectly reasonable speed — for a driver that can
+plan.
+
+### F54 · The policy's behaviour lives in its exploration noise. The trained driver and the deployed driver are different drivers.
+**This is Episode 9's result.**
+
+| | distance | laps finished |
+|---|---|---|
+| Sampled, as trained | **362 m** | **88%** |
+| Its own mean action | **129 m** | **0%** |
+
+A 64% gap on the same weights, same road, same seed. The mean-action policy
+arrives at the corner at 22.9 m/s where 19.5 is the limit, runs wide, and leaves
+the road.
+
+**Mechanism, and it is exact.** Braking authority is 12 kN against 4.5 kN of
+drive — real physics, brakes are stronger than engines — so the map from throttle
+action to force has a kink at zero. A Gaussian policy straddling that kink does
+not deliver the force of its mean action:
+
+| mean throttle | force(mean action) | E[force(sampled)] | difference |
+|---|---|---|---|
+| +0.30 | +1350 N | +939 N | −411 N |
+| **0.00** | **0 N** | **−1183 N** | **−1183 N** |
+| −0.10 | −1200 N | −2035 N | −835 N |
+
+`E[f(a)] ≠ f(E[a])`, and the gap is always toward braking. **The policy never
+learned to brake. It learned a mean action that brakes only once its own noise is
+added to it.** Switch the noise off to deploy it and the braking disappears with
+it.
+
+**Why it matters:** every training curve in the run describes the sampled policy.
+Nothing in them hints that the deterministic policy — the one you would actually
+ship — cannot get round the corner. Reporting either number alone is a true
+statement about a driver that is not the other one.
+
+### F55 · The policy gradient raises exploration noise on its own, with no entropy bonus at all.
+Two arms, 400k steps each, identical seed:
+
+| entropy coefficient | throttle `log_std` | steering `log_std` |
+|---|---|---|
+| **0.0 — none** | −1.00 → **−0.96** | −2.50 → **−2.41** |
+| 0.0005 | −1.00 → −0.97 | −2.50 → −2.43 |
+
+**Removing the entropy bonus entirely does not stop the noise growing.** The rise
+is the policy gradient's doing, not the regulariser's. A converging policy
+normally becomes more decisive; this one becomes slightly less so.
+
+That is consistent with F54 — if the noise is doing useful work, the gradient
+should protect it — but **the effect is modest** (~4% over 400k steps, ~6% over
+1.2M) and this is corroboration, not proof. The direct evidence for noise-as-control
+is the 64% greedy gap and the arithmetic above.
+
+Worth recording as a caution: "entropy is rising, lower the entropy coefficient"
+is the obvious reading and it is wrong here. The coefficient was already almost
+zero.
+
+**Source:** `[MEASURED]` — two-arm experiment, `physics/ppo.py` history
+`log_std`.
+
+### F56 · The policy went outside the tire model, but far less than the series plan predicted.
+Worst slip angle **14.4°** against our 12° bound, with **0.5%** of steps beyond
+it — with nothing in the environment enforcing the bound.
+
+The plan expected this to be the episode: *"It didn't learn to drive. It learned
+that my tire model was optimistic at 25 degrees of slip, and drove there."* At
+14.4° peak and half a percent of steps it is real and it is a D6 failure, but it
+is a footnote next to F54, not the headline.
+
+**Why the prediction missed:** the policy is not fast enough yet to be tempted.
+It finishes 88% of laps at a modest pace; the tire-model exploit is available to a
+policy operating at the limit everywhere, and this one is not. Expect this finding
+to grow in Episodes 10–11 as the policies get quicker, and re-check it there.
+
+**Source:** `[MEASURED]` — D6 `the_policy_stayed_inside_the_tire_model`.
+
+
+---
+
+## Session 10 — audit corrections · 2026-07-26
+
+An in-depth audit of Episodes 7–10 found four methodology problems and several
+documentation lapses. These are the entries of record.
+
+### F57 · Continuation should start from the EASIEST member of a family, not the most representative.
+Episode 7 originally left three of five rear-drive solves on the iteration limit
+by seeding each balance from its neighbour starting at one end of the sweep.
+Excluding them was correct, but it left the monotonic trend and Episode 10's
+cross-check resting on two usable points.
+
+**The recipe that works, established in Episode 8 and now applied to 7:** solve
+the *fastest-converging* member first and seed everything from it, plus one retry
+at double the iteration budget. Front-drive four-wheel solves converge in ~10 s
+where rear-drive ones need 250–350 s, so the front-drive answer at the same
+balance is the best available seed for its rear-drive twin.
+
+Result: **7 of 10 converged → 9 of 10.** One point, 47% front rear drive, still
+fails after 16,000 iterations and 1,008 s and is excluded everywhere.
+
+**It changed a published conclusion.** With four converged rear-drive points
+instead of two, structure appeared where Episode 7 had reported none: rear drive
+is tied fastest at 40% and 54% front and **measurably slower** at 61% (+0.05 s)
+and 65% (+0.10 s), while front drive is tied at 54% and 61%. Each drivetrain
+prefers the end of the range that loads the wheels it drives. The earlier
+statement — "no measurable optimum at all across most of the range" — was a
+description of having two data points, not of cars.
+
+**Source:** `[MEASURED]` — `experiments/ep07/run.py`.
+
+### F58 · Averaging lap time over finishers only is survivorship bias when the finish rate varies.
+Episode 10 compared designs on mean lap time computed across finishing rollouts.
+Finish rate varies by design, so a car finishing 30% of laps was scored on its
+luckiest runs and one finishing 95% on typical ones — biased in an unknown
+direction.
+
+Replaced with **progress rate** (distance per second, over every rollout
+including crashes), which drops nothing and is finite even when the finish rate
+is zero.
+
+**Source:** `[MEASURED]` — `experiments/ep10/run.py`.
+
+### F59 · JSON has no float keys, and the failure is silent. **Defect.**
+Episode 10's cross-check figure rendered axes, gridlines, labels and **no data at
+all.** Both curves missing, no error, and it passed every figure test — valid
+XML, provenance stamp present, title present.
+
+`_ep07_reference()` built a dict keyed by floats. Written to JSON and read back,
+`0.40` becomes the string `"0.4"` — not even `"0.40"`. Every lookup missed. The
+RL curve was separately absent because the policy finished no laps, so two
+independent faults produced one empty figure.
+
+Fixed with a single `dkey()` used by both the experiment and the figures.
+
+**Why it matters:** the audit only found this because the figure was rendered and
+looked at. Four distinct figure-bug classes this session passed XML, stamp and
+title checks and were visible only by eye.
+
+### F60 · Train over the range you evaluate.
+Episode 10 sampled front mass fraction from the documented sweep (0.35–0.65)
+while only ever evaluating 0.40–0.65 — spending a quarter of its samples on the
+hardest cars in the range, which nobody asks about. Narrowed to the evaluated
+range. Recorded as a **training** decision in `EnvConfig`, not a change to what
+`DESIGN_SWEEP` means.
+
+### F61 · A reinforcement-learning result is the DEPLOYED policy's performance. **Corrects Episode 9's framing.**
+
+Episode 9 was written around a policy that finishes **88% of laps when its actions
+are sampled and 0% when they are not.** The 88% was the headline; the 0% was
+presented as an interesting caveat.
+
+**That is backwards.** The mean-action policy is the artefact a reader would use.
+If it does not work, nothing was learned — and the sampled figure was measuring a
+quirk of the exploration noise rather than driving skill. F54 established the
+mechanism precisely: the policy's braking comes from Gaussian noise passing
+through a kinked actuator map, so removing the noise removes the braking.
+
+**Both readings describe real drivers; neither describes a competent one.** The
+sampled policy limps round on a noise-generated crutch; the mean policy is the
+same policy with the crutch removed.
+
+**And the 88% does not survive being asked twice.** It came from D6's evaluation
+harness with `start_jitter_m=0` and its own seed sequence. Six clean-start seeds
+give **0%**. A number that moves that far under a change of harness is not a
+measurement.
+
+**Consequences, applied:**
+- D6 gains `the_deployed_policy_completes_the_task`, gating on an 80% mean-action
+  finish rate. **Episode 9 now fails it**, which is the honest verdict.
+- The tire-model check judges the deployed policy too.
+- Two CLAUDE.md invariants: the deployed policy is the result; evaluate over
+  several seeds *and* several harnesses.
+
+**This also kills the Episode 9 vs Episode 10 contrast** drawn earlier — "Ep 9
+behaved, Ep 10 exploited". Neither learned to drive. They found different
+shortcuts: Episode 9 one in the *optimiser* (noise through a kinked force map),
+Episode 10 one in the *physics* (forces from an unfitted region of the tire
+model). See F62.
+
+### F62 · Sliding outside the tire model pays, measurably. The environment is under-specified.
+Measured directly on Episode 10's policy, 6 rollouts, per-step progress split by
+whether the step was inside our ±12° slip bound:
+
+| | share of steps | progress |
+|---|---|---|
+| Inside the envelope | 67.3% | 20.23 m/s |
+| **Outside** (to 121°) | **32.7%** | **21.01 m/s** |
+
+**It goes 4% faster where the tire model has no fit.** The exploit is real and the
+reward pays for it, so more training finds it *faster* — a 4M-step run launched to
+"fix" the collapse was killed on this evidence.
+
+The environment as specified — progress reward, no envelope penalty — does not
+have driving as its optimum. Two independent runs found two different shortcuts,
+which is the signature of an under-determined task rather than of bad luck.
+
+**Consequence:** Episode 10 cannot deliver its design comparison or the
+RL-versus-optimal-control cross-check as posed. A policy sliding at 121° says
+nothing about weight distribution. Resolving the exploit is properly Episode 11's
+subject, arriving two episodes early.
+
+**Source:** `[MEASURED]` — per-step progress from `traces`, split on
+`alpha_max_deg > 12`.
+
+
+### F63 · Penalising the physics exploit also closed the optimiser exploit. Prediction wrong.
+Episode 10's environment gains a per-step cost for operating outside the ±12°
+slip fit, scaled by how far outside. **A protocol change, recorded as one** (rule
+9): the unconstrained environment was not broken, it was answering a different
+question. Episode 9 keeps `envelope_penalty = 0.0` and its premise intact.
+
+| | unconstrained | constrained |
+|---|---|---|
+| Worst slip | **148°** | 18.5° (10.9° on cars it drives) |
+| Steps beyond 12° | **36.5%** | 3.2% |
+| Deployed vs sampled distance | 129 m vs 362 m | **322 m vs 320 m** |
+
+**I predicted the noise crutch (F54) would survive this, and it did not.** The
+prediction was that the envelope penalty addresses the physics shortcut only,
+leaving the Gaussian-through-a-kink braking mechanism untouched.
+
+The mechanism I missed: **noise now costs.** Random actions push slip past the
+bound and get penalised, so the policy stopped relying on them — and the
+deployed/sampled gap closed on its own, to the point where the mean action is
+*better* than sampling at 61% front. Constraining the physics fixed the optimiser
+exploit as a side effect, because both shortcuts were being paid for out of the
+same currency.
+
+Worth keeping as a caution in the other direction: two shortcuts that looked
+independent shared a cause, and I reasoned about them as if they were separate.
+
+**Source:** `[MEASURED]` — `experiments/ep10/run.py`, `envelope_penalty=0.5`.
+
+### F64 · A design-conditioned policy has a competence band, and the aggregate hides it.
+The constrained policy, deployed (mean action), across the five designs:
+
+| Front mass | Finishes | Distance | Worst slip |
+|---|---|---|---|
+| 40% | **0%** | 110 m | 21.6° |
+| 47% | **100%** | 393 m | 10.9° |
+| 54% | **100%** | 393 m | 7.0° |
+| 61% | **100%** | 393 m | 4.5° |
+| 65% | **0%** | 94 m | 4.2° |
+
+**It drives the middle of the range perfectly and entirely inside the tire model,
+and fails both extremes.** D6 reported this as "75% of laps" — an average across
+a bimodal distribution, which is the kind of number that conceals a result rather
+than stating one.
+
+The two failures are different in kind. At 40% front, the most oversteering car,
+it slides at 21.6° and crashes. At 65% it never exceeds 4.2°, so it is not
+sliding at all — it understeers wide and runs out of road. One end needs less
+aggression, the other needs more.
+
+**Consequence for the cross-check, which is the episode's purpose.** An earlier
+version computed a shape correlation of **+0.75** across all five designs, with an
+RL spread of **6.15 s** against the solver's **0.098 s**. That number was
+worthless: it correlated *which cars the policy can drive* against *which cars are
+quicker*, and was driven entirely by the two total failures.
+
+The cross-check is now gated on designs where **both** methods produced a
+trustworthy answer — the optimal-control solve converged *and* the deployed policy
+drives the car — and **refuses to report a correlation below three usable
+designs** rather than producing one. On this run that leaves two, so it refuses.
+
+**Source:** `[MEASURED]` — `experiments/ep10/run.py`; `crosscheck_n_usable`.
+
+
+### F65 · The learned driver says balance matters ~4x more than the solver does. Observed, and NOT explained.
+Over the three designs where both methods have a trustworthy answer (54%, 61%,
+65% front):
+
+| | relative spread of lap time |
+|---|---|
+| Learned driver, deployed | **3.1%** (19.43 → 20.04 s) |
+| Optimal control | **0.81%** (12.091 → 12.189 s) |
+
+Both put lap time **increasing with front mass** — same ordering, independent
+methods sharing only the tire file, the four-wheel model and the corner. That
+agreement is the episode's cross-check and it holds.
+
+**The magnitudes disagree by about 4x, and I cannot currently say why.**
+
+The attractive explanation is driver quality: the solver re-optimises its entire
+line for each car and absorbs the design change, while one conditioned policy
+cannot fully re-plan per car, so the same change costs it more. If true it is a
+caution for every RL-based design comparison — *a suboptimal driver exaggerates
+how different designs are.*
+
+**But the two methods are running different tasks, not just different methods.**
+The RL environment starts at 15 m/s; the solver starts at 32. The control test is
+to re-solve the optimal-control problem at 15 m/s entry and see whether its
+sensitivity grows to match.
+
+**That test was run and returned nothing usable: all three solves failed to
+converge at 15 m/s**, even with the front-drive seeding and a 16,000-iteration
+retry. Their values (13.119 / 13.145 / 13.183 s) imply a 0.49% spread — *lower*
+than at 32 m/s, which would point away from entry speed being the explanation —
+but unconverged objectives are not evidence (F39) and this is not quoted as any.
+
+**Status: the gap is measured; the mechanism is unattributed.** Recorded this way
+rather than assigned to the appealing explanation. What would settle it: getting
+the 15 m/s optimal-control solves to converge, or training an RL policy at 32 m/s
+entry so both methods share one task.
+
+**Source:** `[MEASURED]` — `experiments/ep10/out/results.json`,
+`rl_over_oc_sensitivity`; control test unconverged.
+
+### F66 · Twelve identical rollouts reported as twelve samples. **Defect.**
+Episode 10's evaluation reported `19.68 +/- 0.000 s` over 12 rollouts per design.
+That reads as extraordinary precision and is the **complete absence of
+replication**: the deployed policy is deterministic, the environment is
+deterministic, and every rollout started at the same place, so all twelve were
+byte-identical. One run, printed twelve times, with a zero standard deviation
+attached.
+
+Fixed by jittering the start position during evaluation. With genuine variation:
+
+| Front mass | deployed lap |
+|---|---|
+| 47% | 19.13 ± 0.142 s |
+| 54% | 19.43 ± 0.132 s |
+| 61% | 19.80 ± 0.123 s |
+| 65% | 20.04 ± 0.122 s |
+
+**The trend survives:** 0.615 s spread across designs against a 0.132 s
+within-design standard deviation — 4.7x, clear of rule 5's 2x bar.
+
+**Note what this spread is and is not.** It is *rollout* variation from a jittered
+start. It is **not** training-seed variation, which rule 5 actually asks for and
+which no Season 3 result yet has.
+
+**Why it matters:** a zero error bar is not a small error bar. It is a signal that
+nothing was being averaged, and it looked like the most precise number in the
+episode.
+
+### F67 · On a correlation of three monotone points.
+Episode 10's cross-check initially reported a shape correlation of **+0.9997**,
+which is very nearly meaningless. Tested directly: **two random monotone 3-point
+series exceed r = 0.99 about 25% of the time.** With both series monotone and
+n = 3 the statistic is close to determined by the ordering alone.
+
+The figure and the results file now report the two things three points can
+support — whether the methods agree on **ordering**, and how far apart they are on
+**magnitude** — with the correlation demoted and carrying its own caveat.
+
+Kept as a general caution: a correlation computed over a handful of monotone
+points will look spectacular and is not evidence. Check what the same statistic
+does on random data of the same shape before quoting it.
+
+### F68 · Episode 10's figures were generated by an earlier version of the code and were never regenerated. **Defect, four parts.** · 2026-07-27
+
+**Source:** `experiments/ep10/out/02-two-methods-one-answer.svg` and
+`results.json`, reviewed by eye against `experiments/ep10/run.py`.
+
+The cross-check gate from F64 landed in `run.py` and the on-disk artefacts were
+never rebuilt, because the only way to rebuild them was a 5-million-step retrain.
+Four separate defects, all of which a reader would have taken at face value.
+
+**1. The figure plotted a different population, a different policy and a
+different metric from the arithmetic printed beside it.** The panel drew the
+**sampled** policy's *progress rate* across **all five** designs; the correlation,
+spread and "fastest balance" text beside it came from the **deployed** policy's
+*lap time* across the **gated three**. The visible result was a red curve whose
+minimum sat at 40% front next to a caption reading `fastest balance: learned 54%
+front` — the figure contradicting its own legend. The figure now plots exactly the
+designs the arithmetic uses, on the same metric, normalised over the same subset.
+
+**2. The retracted correlation was still on disk as the current value.** The
+figure showed `shape correlation +1.00` from a stored `+0.9997` — the number F67
+retracted. Recomputed on the correct three designs and metric it is **+0.9851**,
+and it still carries F67's caveat.
+
+**3. Both exclusions were recorded under one key named for the wrong reason.**
+`crosscheck_excluded_unconverged` listed `0.40` and `0.47` together, asserting the
+solver failed on the 40% car. The solver is fine there — **the policy cannot drive
+it**, which is this episode's actual finding, filed as a solver problem. Now
+`crosscheck_excluded` records the reason per design and the figure draws each
+exclusion in place with that reason, so a gated design cannot read as an untested
+one.
+
+**4. The provenance stamp on every Episode 10 figure asserted the opposite of
+Episode 10.** `_stamp` carried the literal string "slip envelope NOT enforced",
+copied from Episode 9, onto the episode whose one substantive protocol change is
+that it *is* enforced (F63). Rule 3 exists to stop exactly this; a hardcoded
+provenance string defeats it. The stamp now reads `envelope_penalty` from the
+results.
+
+**The enabling condition was the absence of a cheap rebuild.** `run.py` gained
+`--eval-only`, which reloads `policy.pt` and recomputes every downstream number
+and figure in about two minutes. The policy is the artefact; everything after it
+is derived (rule 7). When regenerating a figure costs an hour, figures go stale —
+that is a property of the workflow, not of anyone's diligence.
+
+**Also corrected while here:** the console printed the **sampled** per-design
+table as the headline result. That is the reporting habit behind Episode 9's 88%
+(F61). It now prints deployed first and labels sampled as diagnostic.
+
+### F69 · Episode 10's D6 fails one of ten checks, and the article did not say so. · 2026-07-27
+
+**Source:** `diagnostics/out/D6.md`, `experiments/ep10/out/results.json`
+(`d6_passed: false`).
+
+`exploration_is_not_growing` **fails**: policy entropy rose from −0.66 to −0.48
+(**+0.18**) over 5M steps, meaning the entropy bonus is outrunning the policy
+gradient. This was failing before the F68 rebuild — it is not new, and it was
+absent from the episode draft, which mentioned D6 only as something the run
+performs.
+
+The threshold is **not** being loosened. A check that gets relaxed when it fires
+is decoration (rule 11), and this one is in the battery because it caught a real
+Episode 9 failure.
+
+**What it does and does not put at risk.** The five deployed-policy and
+envelope checks pass: the policy drives 4 of 5 cars deployed, at a worst slip of
+7.4° against a 12° bound. So the episode's *comparative* claim — the ordering of
+designs by lap time — does not rest on the failing check. What the failure does
+say is that this policy was **still drifting toward randomness when training
+stopped**, so it is not a converged artefact and its absolute times have no claim
+to being the best this method can do. The episode states this, and it compounds
+the single-seed gap (rule 5) rather than being independent of it.
+
+Recorded rather than fixed: raising `entropy_coef`'s decay or annealing it to zero
+is the likely remedy and is a retrain, which belongs with the seed-discipline work
+that Season 3 owes anyway.
+
+### F70 · Calibrating a failure rate on 10 rollouts produced a retracted conclusion. The speed-fragility tradeoff is real; its magnitude is only partly quotable. · 2026-07-27
+
+**Source:** `experiments/ep11/run.py`, Episode 10's policy deployed, 5 designs x 5
+disturbance conditions x 40 rollouts. Supersedes the first version of this entry
+entirely.
+
+**The retraction first, because it is the transferable part.** Perturbation levels
+were calibrated at **10 rollouts per cell**, which reported 0% failures and a worst
+slip of 8.7-9.8 deg at steering sigma 0.15. At **40 rollouts the same condition
+loses laps and reaches 11.7-15.3 deg.** On that basis this entry originally
+concluded "there is no perturbation level at which this driver fails while staying
+inside the tire fit" and the episode was drafted around *I could not make it
+crash.* Both were wrong.
+
+**Two distinct errors, and the second is the one worth remembering:**
+
+1. **A failure rate needs far more samples than a mean.** At n = 10 a true 7% rate
+   shows up as zero events about half the time. Nothing was measured; absence of
+   evidence was read as evidence of absence.
+2. **Worst-slip is an extreme-value statistic and was used as if it were a bound.**
+   The maximum over a sample grows with sample size, so "worst slip 9.8 deg over 10
+   laps" says nothing about the worst over 40. Any max-over-n quantity — worst slip,
+   peak load, largest excursion — is a property of the sample, not of the system,
+   and must never be quoted as a limit. **Medians and quantiles are stable under n;
+   maxima are not.**
+
+**What the 40-rollout data actually shows.** Under both disturbances together, on
+the four cars the policy can drive, in-fit failure rate falls monotonically as the
+cars get slower — the fastest is several times more likely to end up off the road
+than the slowest. The tradeoff the episode set out to find is there and has the
+shape vehicle-dynamics intuition predicts for a more rear-biased car.
+
+**Rule 4 is a per-LAP rule, and applying it per-condition was a third error.** The
+first envelope check gated on the worst slip in an entire condition. At n = 40 that
+reached 35 deg while the **median** lap sat at ~8 deg, so a single excursion
+disqualified 39 defensible laps. Laps from outside the envelope are discarded —
+laps, not conditions. `trial()` now records per-lap `(finished, worst_slip)` pairs
+and reports `failure_rate_inside_fit` over the laps that never exceeded 12 deg.
+
+**The remaining honest limit.** A lap that BOTH failed and left the fit is
+discarded, and some of those were real crashes. So every in-fit failure rate here is
+a **lower bound**, and cells for which that applies are flagged
+(`failure_rate_is_lower_bound`) and counted in the report by the
+`discarded_failures_are_declared` check. The ordering is robust; the magnitudes are
+floors, not estimates.
+
+**The 40%-front car is not a fragility result and Episode 10 mis-worded it.** It
+fails **unperturbed**, at 0% deployed finish rate. That is a car this driver cannot
+drive, not a knife-edge car. Episode 10's "that is a car that is fragile" is
+corrected in its draft; the two conditions have different causes and different
+fixes.
+
+**A fourth error, corrected: "5 degrees of margin it never spends" was wrong.**
+This entry and the Episode 11 draft both described the policy as conservative
+because it corners at 5.8-7.4 deg of slip against a 12 deg bound. **The Magic
+Formula is flat near its peak, so that is not margin.** Measured on our own tire:
+
+| Fz (N) | slip at peak Fy | Fy at 12 deg, as % of peak |
+|---|---|---|
+| 1500 | 9.65 deg | 99.5% |
+| 4000 | 10.35 deg | 99.7% |
+| 7000 | 12.50 deg | 100.0% |
+
+At 4 kN the tire peaks at **10.35 deg**, and the policy's 5.8-7.3 deg is already
+**94-98% of peak lateral force**. The +/-12 deg envelope sits *at* peak grip, not
+below it — past 12 deg is the tire giving up, not the tire working harder. So there
+is no large untapped slip region, and "conservative driver banking margin" was a
+misreading of a flat curve. What remains unmeasured is whether the policy leaves
+**lap time** on the table, which needs instrumentation the environment does not yet
+have (see F71).
+
+### F71 · The fastest design is measurably the fragile one, and the mechanism is recoverability, not margin. · 2026-07-27
+
+**Source:** `experiments/ep11/run.py --deep`, `experiments/ep11/out/results_deep.json`.
+Episode 10's policy deployed, 4 designs x 2 conditions x **120** rollouts, rule 4
+applied per lap.
+
+**Unperturbed, this driver is flawless on all four designs it can drive:** 120/120
+laps completed, **zero** laps outside the tire fit, on every one of 47/54/61/65%
+front. That baseline matters — it means everything below is disturbance-induced
+rather than residual incompetence.
+
+**Under steering noise and grip variation together, only the fastest design loses
+laps:**
+
+| Design | nominal lap | in-fit failures | rate | 95% Wilson |
+|---|---|---|---|---|
+| **47% front** | 19.16 s | **9 / 104** | **8.7%** | 4.6-15.6% |
+| 54% front | 19.45 s | 0 / 114 | 0% | 0-3.3% |
+| 61% front | 19.82 s | 0 / 102 | 0% | 0-3.6% |
+| 65% front | 20.06 s | 0 / 105 | 0% | 0-3.5% |
+
+**Significant after correction.** Six pairwise Fisher exact tests, Holm-Bonferroni
+at family-wise 0.05: 47 vs 54 **p = 0.0011**, 47 vs 65 **p = 0.0016**, 47 vs 61
+**p = 0.0033**, all below their Holm thresholds. The other three designs are
+indistinguishable from each other (p = 1.000). At n = 40 the same effect sat at
+p = 0.045 uncorrected and established nothing — the depth was necessary.
+
+**It is a cliff, not a gradient.** One design is fragile and three are not, rather
+than fragility rising smoothly with pace. That is a more useful shape than a
+gradient: it means there is a threshold to stay behind, not a dial to trade off.
+
+**The mechanism is recoverability, and it is visible in the discarded laps.** All
+four designs leave the +/-12 deg fit about equally often. What differs is whether
+they come back:
+
+| Design | laps that left the fit | of which crashed |
+|---|---|---|
+| 47% front | 16 | **13 (81%)** |
+| 54% front | 6 | 2 (33%) |
+| 61% front | 18 | **1 (6%)** |
+| 65% front | 15 | 1 (7%) |
+
+The 61% car exceeded the limit **more often** than the 47% car and crashed once.
+So this is not about how much margin a design has — it is about **what happens when
+the margin is gone.** A nose-heavy car that runs out of front grip pushes wide and
+slows, which is self-correcting; a rear-biased car that runs out of rear grip
+rotates, which is not. That is Season 2's understeer mechanism reappearing as a
+robustness property, and it supersedes the "margin" explanation in F70.
+
+**Scope, and it is narrow.** One training seed; Episode 10's D6 failure
+(`exploration_is_not_growing`, F69) applies unchanged; one evaluation harness where
+rule 5 asks for several; the 40%-front car is excluded because the policy cannot
+drive it unperturbed at all (that is not fragility); and every rate is a **lower
+bound**, since laps that both failed and left the fit are discarded. The claim is
+"fragile **for this driver**", not "fragile". Which is the honest form of it, and is
+Episode 10's crack arriving on schedule: how different a design is depends on who
+is driving it.
+
+**Not established: whether this driver leaves lap time on the table.** It uses
+94-98% of peak lateral force (F70), so it is near the *grip* limit — but the
+environment logs no lateral acceleration and no per-wheel friction-ellipse
+utilisation, so "at the limit" cannot currently be stated as a measurement. That
+instrumentation is a prerequisite for Season 4: torque vectoring only acts where
+tires are saturated and there is longitudinal force to redistribute, so a TV result
+measured with an under-driving policy would be measuring nothing.
+
+**Kept as a standing check.** `a_speed_fragility_tradeoff_is_measurable_inside_the_fit`
+and `the_faster_car_is_the_more_fragile_one` are in the Episode 11 report so this
+cannot silently revert to a null result, and so the ordering — not just the existence
+of failures — is what gets asserted.
+
+
+
+### F72 · The double-track model has no drivetrain yaw moment. Torque vectoring would produce exactly zero yaw response. **Blocker for Season 4.** · 2026-07-27
+
+**Source:** `physics/double_track.py` lines 326 and 428 — both yaw-moment
+computations — plus a direct experiment.
+
+Both `m_z` expressions in the simulator are:
+
+```python
+m_z = p.a * (fy_f * cos(steer) + fx_f * sin(steer)) - p.b * fy_r
+```
+
+Longitudinal moment arms only. **There is no `(fx_right - fx_left) * track / 2`
+term anywhere in the model.** Track width is used for load transfer, for the
+rollover threshold, and for per-wheel velocities in the slip-angle calculation —
+but never as a moment arm.
+
+**Verified by experiment rather than by reading.** Driving the rear axle with the
+same total force split three ways:
+
+| Split | `m_z` the model computes | drivetrain term it discards |
+|---|---|---|
+| 1500 N / 1500 N | 0.0000 N.m | 0 (zero by symmetry) |
+| 0 N / 3000 N | **0.0000 N.m** | **+2242 N.m** |
+| 3000 N / 0 N | **0.0000 N.m** | **−2242 N.m** |
+
+The model returns an identical yaw moment when the entire drive force is moved from
+one wheel to the other. On RV-1's 1.495 m rear track that discards 2242 N.m, which
+against `i_zz` = 1950 kg.m² is **1.15 rad/s² of yaw acceleration**.
+
+**Why this matters more than a missing term usually would.** Torque vectoring *is*
+this term. Season 4 — Episodes 12 through 16, described in the series plan as "the
+core; everything above was setup" — is entirely about generating yaw by asymmetric
+longitudinal force. Run today, a TV controller would produce **precisely zero** yaw
+response, and nothing would error. Episode 12's differential comparison has the same
+problem: an open, a limited-slip and a welded differential differ mainly in how much
+left/right asymmetry they permit, and the model is blind to all of it.
+
+**A second, smaller gap in the same place.** Drive force is split 50/50 between the
+driven wheels unconditionally (`fx[c] = drive_force / 2.0`). That is not a
+differential model — it is a fixed split that happens to coincide with a locked
+diff in force terms. An open differential's defining constraint is that the pair is
+limited by twice the weaker wheel; `optimal_control.py` models that correctly (see
+its `diff="open"` handling) and the simulator does not. **The optimiser and the
+simulator therefore disagree about the drivetrain**, which is the class of
+divergence `tests/test_casadi_tire.py` exists to prevent for the tire.
+
+**How this survived.** Nothing references it. Seasons 1-3 never applied an
+asymmetric longitudinal force, so the missing term was always multiplied by zero and
+no diagnostic, test or episode could have detected it. D2 checks signs and
+conservation but has no asymmetric-drive case. CLAUDE.md already carries the line
+"track width is the moment arm for torque vectoring and is only `[LIKELY]`" — the
+rule anticipated the term that was never written.
+
+**Required before Episode 12, in order:**
+
+1. Add the drivetrain yaw moment to both `m_z` computations, with a sign convention
+   asserted in `schema.py` (positive `m_z` is a left turn under ISO 8855, so more
+   force on the RIGHT wheel yaws left).
+2. Add a real differential model — open, limited-slip and locked — replacing the
+   unconditional 50/50 split, matching `optimal_control.py`'s open-diff constraint
+   so the two agree.
+3. Add a D2 check with an asymmetric-drive case that **fails** without the moment
+   term. This finding was invisible because no check could see it; the fix is not
+   done until a check would catch its removal.
+4. Re-derive nothing else: the term is additive and zero under symmetric drive, so
+   every Season 1-3 result is unaffected. That is worth asserting with a test rather
+   than assuming.
+
+### F73 · The yaw-moment equation was inconsistent with the force equations. Fixing it moves the understeer gradient 0.172 → 0.220 deg/g. **Correction of record.** · 2026-07-27
+
+**Source:** `[MEASURED]` — `physics/double_track.py`, before/after on
+`skidpad_sweep(30 m, 5–18.75 m/s)` with `understeer_gradient`. Follows from F72.
+
+Fixing F72's missing drivetrain term meant rewriting `m_z` as a per-wheel sum,
+`M_z = Σ (x_w · Fy_body − y_w · Fx_body)`. That turned out to add **two** terms, not
+one, and the second changes published Season 1–3 numbers. I claimed in F72 that
+every earlier result was unaffected. **That was wrong, and this is the correction.**
+
+**The two added terms:**
+
+1. **Drivetrain** — `(track/2)·(fx_right − fx_left)` per axle. Zero under a
+   symmetric split, which is why Seasons 1–3 never saw it. This is F72, and it is
+   what torque vectoring is.
+2. **Steering drag** — `(track_f/2)·sin(steer)·(fy_fl − fy_fr)`. A steered front
+   tire's lateral force has a rearward component in the body frame, and the more
+   heavily loaded **outside** tire is dragged back harder than the inside one, which
+   yaws the car **out** of the corner. Not zero in any steady corner.
+
+**Why this is a fix and not an addition.** The model's force equations already
+resolved the front wheels fully into the body frame:
+
+```python
+fx_body = fx_f * cos(steer) - fy_f * sin(steer) + fx_r - drag
+fy_body = fy_f * cos(steer) + fx_f * sin(steer) + fy_r
+```
+
+The old moment expression used only the *lateral* projection and discarded the
+longitudinal one entirely. **The same model was resolving forces one way and moments
+another, about the same four wheels.** That is an internal inconsistency, not a
+modelling choice, and it is the strongest argument for the change: nothing new was
+assumed.
+
+**The cost, stated plainly.** The understeer gradient on the reference car moves:
+
+| | K, deg/g |
+|---|---|
+| bicycle model (F29) | 0.19 |
+| double-track, superseded moment | **0.172** |
+| double-track, consistent moment | **0.220** |
+
+That is **+28% relative**, on a number Episode 3 published. It is inside the
+0.14–0.27 band that the weight-distribution uncertainty already implies (rule 12),
+so **no published headline changes at its stated precision** — K remains a
+one-decimal number and 0.2 deg/g covers both. But the underlying value moved and
+saying otherwise would be false.
+
+**Weak external support for the direction.** F29 puts a real car near 4.1 deg/g with
+about 3 of that from Bundorf suspension terms this model does not have. Our value
+rising 0.172 → 0.220 closes ~0.05 of a ~3.9 deg/g gap — the right direction, and far
+too small to be evidence on its own. Recorded as direction, not validation.
+
+**No double counting.** Steering drag is a tire-force projection, not a suspension
+kinematic. It is disjoint from the compliance-steer/roll-camber/roll-steer terms F29
+names as the remaining gap.
+
+**Pinned.** `tests/test_drivetrain_yaw.py` decomposes the new moment into the
+superseded expression plus these two named terms, so any future change to either is
+attributable rather than mysterious, and asserts `body_forces` matches the
+projection the acceleration equations use.
+
+**Still to check** (not done, and it belongs with Episode 12): whether
+`optimal_control.py`'s four-wheel yaw moment carries the same two terms. If it does
+not, the solver and the simulator now disagree about yaw the way F72 found they
+disagree about the drivetrain — and `tests/test_casadi_tire.py` exists precisely
+because that class of divergence is what makes cross-checks meaningless.
+
+### F74 · ~~Season 2's four-wheel solves must be re-run...~~ **RETRACTED — the measurement compared two different differential models. See F79.** · 2026-07-27
+
+**Source:** `[MEASURED]` — `solve_min_time(long_exit, RV_1 fwd, n_nodes=100,
+four_wheel=True, diff="open", entry_speed=32)`, matched to Episode 7's exact
+configuration, before and after F73's fix.
+
+| | fwd, 54% front |
+|---|---|
+| Episode 7 as published | 12.1910 s |
+| corrected yaw moment, same 100 nodes, same entry speed | **12.3218 s** |
+| shift | **+0.1308 s (+1.07%)** |
+
+**Episode 7's entire rear-drive spread across five weight distributions was
+0.098 s.** The correction is **1.3x the size of the finding it sits under**, so the
+four-wheel results of Episodes 6, 7 and 8 — and Episode 10's cross-check against
+them — are not quotable until re-solved.
+
+**What probably survives, and it must be shown rather than assumed.** The correction
+is systematic: every design gains the same missing steering-drag moment, so rank
+ordering and trend direction plausibly hold while absolute times all move. That is
+exactly the distinction rule 6 draws, and it is the claim Season 2 actually made. But
+"plausibly holds" is not a result. The re-solve has to demonstrate the ordering
+survives, and if it does not, Season 2's conclusions change.
+
+**Not affected:** anything from the bicycle model (Episodes 1-4), because a two-axle
+model has no left/right asymmetry for either new term to act on. Episodes 9-11's RL
+results use the simulator, which is now consistent, and their *fragility* conclusion
+is an ordering of finish rates rather than a lap time — but Episode 10's OC
+cross-check numbers come from Episode 7 and inherit this.
+
+**Re-solve order when it happens:** Episode 6's four solves first (fewest, and they
+establish whether the shift is uniform), then Episode 7's ten, then Episode 8's
+surface. Seed from the easiest member and retry at 2x iterations (the F57 recipe),
+and quote nothing from a solve that did not converge (F39).
+
+### D10 · Model fidelity is labelled on every episode, and "illustrative" is an honourable label. · 2026-07-27
+
+**Decision.** A simplified model is a legitimate way to teach a mechanism; implying
+it describes a real car is not. CLAUDE.md rule 15 now carries the three-rung ladder
+(bicycle / double-track / Chrono cross-check) with what each rung cannot say, and
+every episode states which rung it stands on.
+
+**Rationale.** Requested directly by the user: re-running and re-reporting prior
+results is fine, and a simpler model is fine, *provided it is flagged as a simpler
+model that is illustrative of the concept rather than realistic.* This is the
+model-fidelity counterpart to the existing per-number provenance tags
+(`[MEASURED]`/`[SOURCED]`/`[DERIVED]`/`[ASSUMED]`), which label where a number came
+from but say nothing about whether the model that produced it resembles a car.
+
+**The anchoring number.** Our understeer gradient is ~0.2 deg/g against a real car's
+~4.1 (F29, F73) — roughly **5%** of a real car's understeer, because about 3 of
+those 4.1 deg/g are Bundorf suspension terms the double-track model does not have.
+That single comparison sets the scale for how much of this project is illustrative,
+and it is to be stated in those terms wherever understeer is discussed.
+
+### F75 · The differential's traction model is right and its yaw model has the wrong sign. A force-only model cannot see a locked diff's defining behaviour. · 2026-07-27
+
+**Source:** `[MEASURED]` — `DoubleTrackBackend.split_drive` + `yaw_moment`, left
+turn at 9 m/s² lateral, 6000 N demanded on the rear axle.
+
+**What is right, and it is verified.** Parameterising the three differentials on a
+single torque bias ratio — open 1.0, LSD 1.5 `[ASSUMED]`, welded ∞ — reproduces the
+tractive-force story exactly as textbooks describe it:
+
+| a_y | open | lsd (1.5:1) | locked |
+|---|---|---|---|
+| 0 m/s² | 6000 N | 6000 N | 6000 N |
+| 6 m/s² | 5191 N | 6000 N | 6000 N |
+| 9 m/s² | **3880 N** | 4850 N | **6000 N** |
+
+The open differential loses 35% of the demanded force once the inside wheel goes
+light, the LSD recovers until it hits its bias limit, and the welded one recovers
+all of it. That is Episode 12's traction half and it is sound.
+
+**What is wrong.** The yaw moments that follow are:
+
+| | rl | rr | m_z | reads as |
+|---|---|---|---|---|
+| open | 1940 | 1940 | 0 N.m | neutral |
+| lsd | 1940 | 2910 | **+725 N.m** | turns IN |
+| locked | 1940 | 4060 | **+1585 N.m** | turns IN |
+
+**The series plan predicts a locked differential pushes WIDE on power, and this
+model says the opposite.** The plan is right and the model is wrong.
+
+**Why, precisely.** I modelled torque distribution as proportional to grip capacity,
+which gives more force to the loaded **outside** wheel and therefore a moment into
+the corner. That captures the traction benefit and misses the mechanism that
+actually dominates a locked diff's handling: **the speed constraint.** A welded
+differential forces both wheels to one rotational speed while the outside wheel must
+travel further round the corner, so the inside wheel is over-driven and pushes while
+the outside is under-driven and drags. That couple yaws the car **out** of the
+corner, and it is the classic locked-diff complaint.
+
+Both effects are real and they oppose each other. **A model with no wheel speeds
+cannot represent the second one at all**, and `double_track.py` takes `fx` as an
+input and never solves for wheel rotation.
+
+**The fix, and it is not a tweak.** The kinematic term is
+``Δκ ≈ yaw_rate · track / v``, giving a force couple of roughly
+``±½ · K_κ · Δκ`` — inside positive, outside negative — scaled by how much the device
+actually locks (0 for open, partial for an LSD, full for welded). That needs
+`split_drive` to receive yaw rate and speed, which it currently does not, and needs
+the tire's longitudinal slip stiffness. It is a real addition, not a sign flip.
+
+**RESOLVED the same day — see F76.** The couple is implemented as
+`speed_couple`, kept as a separate method from `split_drive` because conflating the
+two mechanisms is what produced this defect. The traction numbers below stand
+unchanged.
+
+**Until it existed, no yaw claim from this differential model was usable.** The
+traction numbers above were. Episode 12's payoff line — "a differential is a machine
+for deciding which wheel gets to be in charge" — survives on traction alone; its
+"locked diff pushes wide" result does not, and must not be written up from this
+model as it stands.
+
+**Consequence for Season 4.** Torque vectoring is genuinely torque-commanded rather
+than speed-constrained, so a TV actuator's yaw authority does **not** depend on the
+missing term — F72's moment arm is what TV needs and that is now correct. But any
+Season 4 comparison against a *passive* differential baseline inherits this gap, and
+Episode 12 is that baseline.
+
+### F76 · A differential has two mechanisms, and only one of them steers the car. · 2026-07-27
+
+**Source:** `[MEASURED]` — `DoubleTrackBackend.split_drive` and `speed_couple`,
+left-hand corner exit at 25 m/s, 0.55 rad/s yaw, 9 m/s² lateral, 6000 N demanded.
+Resolves F75.
+
+Modelling a differential as a torque-sharing device alone gets its handling
+**backwards**. The two mechanisms are separate, and they are separate methods:
+
+| | what it does | what it decides |
+|---|---|---|
+| `split_drive` | shares out the demanded force, limited by grip and by the torque bias ratio | **traction** — how much force reaches the road |
+| `speed_couple` | resists the left/right speed difference a corner forces | **handling** — which way the car is steered |
+
+**The couple.** In a corner the outside wheel must travel further, so free-rolling it
+turns faster. A device that resists that drags the outside wheel below its rolling
+speed and pushes the inside above it — opposite slip ratios, opposite forces:
+
+    d_kappa ~ yaw_rate * track / v ,   dF ~ 0.5 * K_kappa * d_kappa * locking
+
+inside pushed forward, outside dragged back. `K_kappa` is
+`tire.longitudinal_slip_stiffness`, read from the file, not assumed. Each side is
+capped by its own grip so the couple cannot invent force.
+
+**The result, and the sign is now right:**
+
+| device | couple (inside/outside) | net yaw moment | reads as |
+|---|---|---|---|
+| open | 0 / 0 | **+0 N.m** | neither way |
+| lsd (1.5:1, locking 0.5) | +605 / −605 N | **−180 N.m** | pushes wide |
+| welded (locking 1.0) | +1211 / −1211 N | **−225 N.m** | pushes wide |
+
+Negative is out of the corner. **The welded diff now pushes wide, as the series plan
+and every driver who has used one says it should.** Before the couple it produced
++1585 N.m and turned *into* the corner (F75).
+
+Note the two mechanisms genuinely oppose each other: the grip-bias term alone yaws
+in, the couple yaws out, and the couple wins. That is why getting one of them right
+was not enough, and why they are reported separately rather than as one number.
+
+**Traction is unchanged and still correct:** of 6000 N demanded with the inside wheel
+light, open delivers 3880 N, the LSD 4850 N and welded 6000 N.
+
+**`locking` is the least defensible number here.** 0.5 for the LSD is `[ASSUMED]`; a
+real clutch pack's locking varies with torque and with direction (coast versus
+drive), which this does not model. Every LSD claim is to be re-run at 0.25 and 0.75
+with the conclusion required to hold. Rung 2 (rule 15): this shows the mechanism, not
+any particular hardware.
+
+**Pinned, and the pin is verified.** Nine tests in `tests/test_drivetrain_yaw.py`
+cover the sign, mirroring left against right, vanishing in a straight line, growing
+with yaw rate, shrinking with speed, and ordering the three devices. Four D2 checks
+under "Does a welded differential push the car wide?" — and removing `speed_couple`
+makes two of them fail with exactly F75's +1585 N.m, so the defect cannot return
+unnoticed.
+
+### F77 · A differential's torque bias and its speed resistance are the SAME mechanism. Modelling them as two counted it twice and got the direction backwards. · 2026-07-27
+
+**Source:** `[MEASURED]` — Episode 12's first run. Three of seven checks failed and
+all three were right. Supersedes the two-mechanism structure of F76.
+
+**What the checks caught:**
+
+1. `all_three_devices_agree_when_the_wheels_are_equally_loaded` — **the sweep was
+   unphysical.** It varied lateral acceleration while holding yaw rate fixed, but a
+   steady corner ties them: `a_y = v²/R`. At 25 m/s on a 40 m radius the implied
+   lateral acceleration is **1.59 g** on a car that makes about 0.97 g, and at the
+   bottom of the sweep the car was yawing at 0.625 rad/s with *zero* lateral
+   acceleration. A scenario that cannot happen.
+2. `more_locking_means_more_push` — **not monotone**: open +0, LSD −352, welded
+   −318 N.m. The welded diff pushed *less* than the LSD.
+3. `the_push_wide_conclusion_holds_across_the_assumed_locking_range` — the sign
+   flipped at locking 0.25 (+166 N.m), so the conclusion depended on the assumption.
+
+**The root cause is one modelling error, and it is conceptual rather than
+arithmetic.** `split_drive` biased torque toward the wheel with more **grip** — the
+loaded **outside** wheel. A locking differential does not do that. A clutch pack, or
+a weld, resists *relative rotation*: **torque flows from the faster-turning wheel to
+the slower one.** In a corner the outside wheel travels further and therefore turns
+faster, so a locking device sends torque **inboard**. My model sent it outboard.
+
+Worse, that transfer **is** the yaw couple. `split_drive`'s bias and
+`speed_couple`'s couple are not two mechanisms that happen to interact — they are one
+physical effect described twice, with opposite signs, which is why the net ordering
+came out scrambled.
+
+**The unifying rule, and it explains both behaviours a differential is known for:**
+
+- **No wheelspin** — kinematics dominates. Outside turns faster, torque flows
+  inboard, the car is yawed **out** of the corner. That is the locked-diff push.
+- **Inside wheel spinning** — the light inside wheel turns faster than kinematics
+  alone would have it, so torque flows **outboard**, to the wheel that still grips.
+  That is the traction benefit an LSD is bought for.
+
+Same rule, opposite outcomes, selected by which wheel is actually turning faster.
+A model that hard-codes a bias direction cannot produce both.
+
+**What this invalidates.** F76's traction table (open 3880 N / LSD 4850 N / welded
+6000 N) came from the grip-proportional bias and is **not quotable**. Its yaw-couple
+half — the mechanism, the sign, the scaling with yaw rate and speed — stands, because
+that part was never the grip bias. Episode 12 is not written and nothing published
+depends on this.
+
+**The fix:** one method taking demand, loads and state; equal split first, then a
+locking transfer from faster wheel to slower sized by
+`½·K_κ·(Δv/v)·locking`, then per-wheel grip caps, then an anti-spin transfer of
+whatever the saturated wheel cannot hold — up to the device's bias limit. Open
+differential = no transfer at either stage, which correctly leaves it limited by
+twice the weaker wheel.
+
+**The lesson, which is the transferable part.** I built the traction model first,
+verified it against a textbook table, and it looked right. Then I built the handling
+model separately, verified its sign, and that looked right too. **Both were checked
+in isolation and the pair was incoherent.** Checking each mechanism against what it
+alone should do never asks whether they are the same mechanism. Only running them
+together, against an ordering check, did.
+
+### F78 · ~~The rear-drive four-wheel solve cannot be re-solved...~~ **RETRACTED — rear drive converges in 10 s with the correct configuration. See F79.** · 2026-07-27
+
+**Source:** `[MEASURED]` — four solves of `long_exit`, RV-1 rear drive, 100 nodes,
+32 m/s entry, four-wheel, open differential. Plan Phase B, time box reached.
+
+| attempt | iterations | wall clock | objective | IPOPT status |
+|---|---|---|---|---|
+| cold | 8 000 | 497 s | 12.1579 | not converged |
+| warm-started from the FWD solution | 8 000 | 605 s | 12.1579 | not converged |
+| warm-started from the FWD solution | 20 000 | 1 466 s | 12.1579 | not converged |
+| cold, short | 400 | 33 s | 12.1582 | `Maximum_Iterations_Exceeded` |
+
+**Front drive converges in 9 s. Rear drive does not converge in 24 minutes**, and
+warm-starting from the geometrically identical front-drive solution does not help at
+all — the same value to four decimals every time.
+
+**It is not wandering; it is stuck.** The objective is stable from **400** iterations
+to **20 000** — 12.1582 against 12.1579, one part in 4 x 10⁴. It reaches a point in
+under a minute and then spends 24 more failing to certify it.
+
+**And that is precisely the trap F39 documents**, which is why the number is not
+quotable despite looking settled: *"the objective stopped moving to 1 part in 10⁵"*
+is explicitly **not** convergence evidence. An uncertified iterate belongs to a
+trajectory that does not quite obey the physics, wrong by 0.1-0.7% in either
+direction — and 0.1% here is 0.012 s against an Episode 7 finding whose whole spread
+was 0.098 s.
+
+**Invoking plan step B4.** Front-drive results re-solve cleanly and will be
+re-reported. **Rear-drive results from Episodes 6, 7 and 8 become unsupported rather
+than revised.** That is a worse outcome to publish than a corrected number and it is
+the honest one: there is no rear-drive figure I can stand behind until the solve
+converges.
+
+**What this costs.** Episode 7's headline comparison was rear drive across five
+weight distributions. Episode 6's rear-drive case, and Episode 8's surface, are
+affected the same way. Episode 10's cross-check already excluded the 47% rear-drive
+car for non-convergence (F64); it now loses the rest.
+
+**Remedies not yet tried**, in the order worth trying next:
+
+1. **Regularisation.** The objective is documented as degenerate wherever the car has
+   spare road, which is what `steer_rate_weight` exists for. A problem that reaches a
+   point and cannot certify it is what a degenerate objective looks like — a flat
+   direction leaves the KKT conditions unsatisfiable to tolerance. Raising the weight
+   is the cheapest next move and was outside this phase's time box.
+2. **Continuation in the coupling.** Scale the new drivetrain yaw term from 0 to 1
+   across a sequence of solves, warm-starting each from the last.
+3. **A coarser grid solved first**, then interpolated up — the F57 recipe applied to
+   node count rather than to design.
+
+**Never** loosen `ipopt.tol` to make this pass. The whole point of the gate is that
+it is not ours to move.
+
+### F79 · Retraction of F74 and F78. Three of my own errors, none of them physics. · 2026-07-27
+
+**Source:** `[MEASURED]` — Episode 7's exact configuration (`diff="ideal"`, bicycle
+seed, rear drive warm-started from the solved front-drive car of the same balance),
+with the yaw-moment fix toggled by `optimal_control._LEGACY_YAW_MOMENT`.
+
+**The legacy setting reproduces the published numbers exactly**, which is what makes
+everything below trustworthy:
+
+| | fwd 0.54 | rwd 0.54 |
+|---|---|---|
+| published | 12.1910 | 12.0909 |
+| legacy yaw moment, re-run | **12.1910** ✓ | **12.0909** ✓ |
+| corrected yaw moment | **12.0537** | **12.0864** |
+| delta | **−0.1373 s** | **−0.0045 s** |
+
+**Rear drive converges in 10 seconds** — ten times *faster* than the legacy solve's
+99 s. There was never a convergence regression.
+
+**Three errors, and not one of them was in the physics:**
+
+1. **I solved `diff="open"` and compared it against Episode 7's published
+   `diff="ideal"` numbers.** A different and far more constrained problem. Every
+   "regression" measurement in F74 and F78 was that mismatch.
+2. **The solver fix went into the wrong function.** A `str.replace(..., 1)` matched
+   the *first* occurrence of the force/moment block, which is the **bicycle** model;
+   `dynamics_4w` was never changed. So F74's "+0.13 s from the yaw fix" measured
+   nothing but the differential mode — the four-wheel yaw moment was still the old
+   one throughout.
+3. **That misplaced edit silently broke the bicycle path**, deleting its `a_x`/`a_y`
+   definitions. Nothing exercised it until the correct recipe needed a bicycle seed,
+   at which point it raised `NameError`. It had been broken for hours.
+
+**What actually diagnosed it**, since two plausible leads did not: the literature
+points at IPOPT's `mu_init` for minimum-lap-time problems, and the `fmax(fz, 1.0)`
+floor is a known non-smoothness. **Both were dead ends here** — `lg(mu)` reached
+−10.8, so the barrier was fully driven down, and the lightest wheel load was ~900 N,
+nowhere near the 1 N floor. What found it was **reading IPOPT's iteration log**
+(constraint violation oscillating at 2.5e-2 with step norms of 108 — cycling, not
+slow convergence) and then **diffing my call signature against Episode 7's**.
+
+**The transferable lesson.** F73's process rule was "measure before claiming". That
+was necessary and not sufficient: I *did* measure, three times, and every
+measurement was against the wrong baseline. **A measurement is only as good as the
+claim that the two sides differ in exactly one thing.** The cheap guard is to
+reproduce the published number first — had I checked that my "before" case returned
+12.1910, all three errors would have surfaced in the first ten minutes instead of
+after two hours of solver time.
+
+**`_LEGACY_YAW_MOMENT` is kept** in `optimal_control.py` as a documented diagnostic
+hook, precisely so this class of question is answerable by A/B rather than by
+argument. It must never be set for a published solve.
+
+### F80 · The corrected yaw moment reverses the front-drive/rear-drive ordering. **Escalated.** · 2026-07-27
+
+**Source:** `[MEASURED]` — as F79, RV-1 nominal 54% front, `long_exit`, 100 nodes,
+32 m/s entry, `diff="ideal"`, both solves converged, envelope occupancy 0.
+
+| | fwd | rwd | verdict |
+|---|---|---|---|
+| published (legacy moment) | 12.1910 | 12.0909 | **rear drive faster by 0.100 s** |
+| corrected moment | 12.0537 | 12.0864 | **front drive faster by 0.033 s** |
+
+**The fix moves front drive 30× more than rear drive** (−0.137 s against −0.005 s),
+and that asymmetry is physically coherent rather than suspicious: on a front-drive
+car the driven wheels are *also* the steered ones, so both new terms — the drivetrain
+moment and the steering-drag moment — act on the same axle. On rear drive only the
+drivetrain term does, and the steered front axle carries no drive force.
+
+**Episode 6's conclusion is that "front drive costs at least 0.10 s here."** With the
+corrected moment that is wrong in sign, not merely in magnitude. Episode 6 line 162
+already records an earlier draft in which "the sign flipped and front drive came out
+marginally ahead" — which is what the corrected physics now says.
+
+**The full sweep, both ways.** The legacy setting reproduces **all ten** published
+numbers to four decimals — including the 47% rear-drive case, still uncertified
+after 831 s exactly as published. That is what makes the corrected column evidence.
+
+| Front mass | published (legacy) | corrected | |
+|---|---|---|---|
+| 40% | RWD by 0.202 s | RWD by 0.116 s | |
+| 47% | RWD by 0.119 s | RWD by 0.037 s | |
+| 54% | RWD by 0.100 s | **FWD by 0.033 s** | flips |
+| 61% | RWD by 0.063 s | **FWD by 0.110 s** | flips |
+| 65% | RWD by 0.032 s | **FWD by 0.167 s** | flips |
+
+**The correction is uniform for front drive (−0.130 to −0.137 s, spread 0.007) and
+wildly non-uniform for rear drive (−0.055 to +0.063, spread 0.118).** Seventeen
+times more scatter, which is why the ordering moves at all.
+
+**Three further consequences.**
+
+1. **Rear drive's optimum moves from 54% to 47% front**, and its sensitivity to
+   balance doubles: 0.21 s across the range against the 0.10 s previously reported.
+   Front drive's optimum stays at 54%.
+2. **Every solve now converges.** The 47% rear-drive case had never converged in the
+   project's history — 831 s of failure on the legacy moment, 15 s and certified
+   with the fix. It was a standing exclusion in Episode 7 *and* in Episode 10's
+   cross-check.
+3. **Episode 6's open-differential comparison is still unavailable.** The rear-drive
+   open-diff solve stops on the iteration limit at 8000 iterations. Every Episode 6
+   claim now uses the ideal differential, where all four solves converge.
+
+**Both episodes have been rewritten around the corrected numbers**, including
+explicit retraction paragraphs — Episode 6's "rear-wheel drive is faster, under
+either assumption" and Episode 7's "it never reaches zero". In both cases the
+previous draft had the trend right and the intercept wrong, because the missing term
+penalised the steered-and-driven axle specifically and so held front drive back at
+every point of the sweep.
+
+**The better story is the one the correction produced**, not the one it destroyed:
+whichever end of the car carries the weight is the end that should drive it, and the
+crossover sits near 50:50 — which is also why a real front-drive hatchback is
+nose-heavy. Episode 6's power sweep says the same thing from the other direction:
+at 101 hp front drive is 0.026 s quicker, at 402 hp it is 0.287 s slower.
+
+---
+
+# Decisions
+
+### D1 · The project drives an offset-free tire. · 2026-07-25
+`physics.tire.default_tire()` zeroes `PHY*`/`PVY*`/`PHX*`/`PVX*`.
+`as_shipped_tire()` returns the file verbatim and is what the reference-table
+check validates against.
+
+**Rationale:** F6. Zeroing the shifts removes a manufacturing artefact that a
+real car aligns out; it is not an idealisation of the tire's physics. Every
+fitted shape coefficient survives — peak μ becomes exactly the Magic Formula's
+own `μy`, and cornering stiffness moves by at most 0.22% (only the point at which
+the slope is read shifted).
+
+**Consequences:** peak μ at `Fz0'` is 1.049 both ways instead of 1.012 / 1.086.
+`Fy(0) = Fx(0) = 0` exactly. Max lateral g at RV-1's static front corner rises
+from 1.026 to 1.064 — still inside the 0.95–1.10 band.
+
+**Would be revisited if:** we ever want to model a car that genuinely pulls, or
+Ep 16 shows Chrono's offsets materially changing a conclusion.
+
+### D2 · Keep the `Ey` curvature asymmetry. · 2026-07-25
+**Rationale:** removing it means zeroing `PEY3`/`PEY4` — an edit to the `P*`
+coefficients, which discards the fit's internal consistency
+(`docs/vehicle-reference-parameters.md` §3.3). It contributes **zero**
+peak-force asymmetry; it only moves where the peak sits (0.27° apart at 1 kN,
+0.79° at `Fz0'`, 2.38° at 9 kN, where both peaks are outside our envelope
+anyway). It is third-order in slip angle, so it vanishes entirely at the ±0.5 g
+slip angles where understeer gradient is measured.
+
+**Consequence for D2 (the diagnostic):** the mirror test must assert **peak force
+exactly** and **trajectories to a stated tolerance** — not bit-equality.
+
+### D3 · Implement standard MF 2002, not a simplified form. · 2026-07-25
+**Rationale:** Chrono consumes this same file with these same equations, so Ep 16
+compares two *vehicle* models rather than two tire models plus two vehicle
+models. Confirms open item 7 in `vehicle-reference-parameters.md` §6.
+
+### D4 · Diagnostics lead with plain English. · 2026-07-25
+Console output groups checks under the question each answers and states findings
+in sentences; `-v` and the JSON carry the assertion-level detail.
+
+**Rationale:** `docs/result-evaluation-guide.md` opens by promising that "is the
+physics right?" is checkable *without* vehicle-dynamics expertise. A wall of 60
+assertions named `peak_mu@3929N` broke that promise.
+
+### D5 · Each axle is two tires at half the axle load, not one tire at full load. · 2026-07-25
+**Rationale:** with load sensitivity in play those are materially different —
+one tire at 7,200 N makes far less than two at 3,600 N — and the real car has
+two. Modelling the axle as a single tire would have systematically
+under-predicted grip and corrupted every absolute number in Season 1.
+
+### D8 · The skidpad holds speed, matching SAE J266. · 2026-07-25
+`trim_skidpad(hold_speed=True)` is the default: net longitudinal force zero, no
+longitudinal load transfer. **Rationale:** F17 — it is what the real test does,
+and the alternative changes K by 33% and inverts the terminal balance. The grip
+cost of the balancing drive force is not modelled (O2) and is reported per point
+so the omission stays visible.
+
+### D6 · The skidpad is solved, not simulated. · 2026-07-25
+`trim_skidpad` runs a damped Newton solve on the two steady-state equations.
+**Rationale:** at steady state the transients are gone by definition, so
+integrating for ten seconds and hoping is strictly worse than solving to machine
+precision in milliseconds. The two paths are cross-checked in D2 — the trim is
+exactly a state in which the integrator's accelerations vanish. Sweeps use
+continuation, warm-starting each solve from its neighbour, which is also what
+keeps the solver on the grippy side of the tire curve near the limit.
+
+### D7 · D3 accepts an understeer gradient below the road-car band. · 2026-07-25
+**Rationale:** F11. The gate is stated as a bicycle-model band (0.05–1.5 deg/g)
+with teeth at both ends, plus a separate assertion that K must land *below* the
+road-car band — the parameter sheet's own structural check. The reason is
+recorded in the report rather than the tolerance being widened, per
+`result-evaluation-guide.md` Part C.
+
+
+### D9 · Combined slip is a friction ellipse, on by default. · 2026-07-25
+`MF02Tire.fy_combined` scales pure-slip lateral force by
+`sqrt(1 - (Fx/Fx_peak)^2)`; `BicycleBackend(combined_slip=True)` is the default.
+**Closes open item O2.**
+
+**Rationale.** Brought forward from Episode 4 for two reasons. It closes a
+dishonesty that was already live: D3's constant-speed skidpad applies a drive
+force to hold speed, and without an ellipse that force was free. And everything
+from Ep 4 onward — the racing line, FWD vs RWD tire utilisation, torque
+vectoring — is a combined-slip story, so the alternative was building three
+episodes on a model that says a tire can brake and corner at 100% of both.
+
+**What it is and is not.** The one certain thing is modelled: a tire has a finite
+force budget and longitudinal force spends part of it. The *shape* of the
+trade-off is an assumption. MF 2002 ships its own fitted weighting functions
+(`RBX*`/`RBY*`), and this `.tir` does not contain them, so the ellipse is a
+stand-in. Any result that turns on the shape rather than on there merely being a
+trade-off carries that caveat.
+
+**Measured effect on existing results:** small. At 0.87 g the throttle holding
+skidpad speed is 4.9% of the driven axle's longitudinal budget, which costs
+0.1% of its lateral force. K and max lateral g are unchanged to three decimals.
+
+**A small finding fell out.** On an RWD car the throttle costs the *rear* axle
+grip, so combined slip makes the car need slightly **less** steering, not more —
+power oversteer in miniature. Direction confirmed by test.
+
+**Deferred deliberately: the trail-braking result.** That is Episode 4, and the
+strong version is the optimal-control solver discovering trail braking on its own
+rather than a hand-scripted comparison of three brake protocols. The physics to
+support it now exists; the experiment waits for the solver.
+
+
+---
+
+# Open
+
+| # | Question | Blocks |
+|---|---|---|
+| O1 | Rescale the tire to GR86 size via `LMUY`/`LKY`/`LFZO`, or accept a 245-section tire on a car that wears 215s? Currently unscaled and mildly optimistic. | Nothing yet; must be decided before any absolute-grip claim is published |
+| ~~O2~~ | ~~Combined-slip formulation~~ **CLOSED by D9** — friction ellipse, on by default. Revisit only if a result turns on the shape of the trade-off rather than its existence. | |
+| O3 | Differential model: concrete preload/ramp torque-bias formulation. | Ep 12 |
+| O4 | Mirror-test tolerance for the D2 diagnostic, given D2 above. | `double_track.py` |
+| ~~O6~~ | ~~How much of the understeer gap does the double-track model close?~~ **CLOSED by F29 — none of it.** The gap is the Bundorf suspension terms. |  |
+| O8 | Add compliance steer / roll camber / roll steer, or accept a permanently low understeer gradient and compare only trends? Decides whether Season 2's magnitudes are ever quotable. | Season 2 |
+| ~~O6-old~~ | ~~How much of the understeer gap (F11) does the double-track model close? F18 predicts the size of the effect; Ep 5 measures it. The single most important open question in Season 1. | Ep 5 |
+| O7 | ~~Does terminal oversteer survive lateral load transfer?~~ **CLOSED by F17** — it was a protocol artefact, not a model property. |  |
+| O5 | Pin real citations for two bands in the reality-check figure: slip angle at peak (6-12°) and road-sports-car skidpad grip (0.85-1.05 g). Both are general knowledge today, marked as such on the figure. | Publishing any comparison against them |
+
+---
+
+# Validation status — where we stand against outside knowledge
+
+`diagnostics/out/D1_reality_check.svg` is the live version of this table; it
+regenerates on every run, so it cannot drift from the code.
+
+The project's validation comes in four tiers, weakest to strongest. It is worth
+being blunt that only the first two are done:
+
+1. **Internal consistency.** 60 D1 checks: signs, monotonicity, conservation.
+   Catches bugs, proves nothing about reality. **Done.**
+2. **Reproducing an independent computation** of the same tire file. Proves the
+   Magic Formula is implemented correctly. **Done.**
+3. **Agreement with published ranges.** What the reality-check figure shows.
+   **Partly done** — four quantities measurable now, three waiting on the
+   vehicle model.
+4. **A different simulator.** Episode 16 re-runs three design points in Project
+   Chrono and compares trend direction. This is the only tier that tests whether
+   our findings survive assumptions we did not make ourselves. **Not started, and
+   it is the one that counts.**
+
+| Quantity | Published range | Ours | |
+|---|---|---|---|
+| Slip angle at peak grip | 6–12° | 10.1° | inside |
+| Peak grip, one tire at resting corner load | 0.85–1.05 g | 1.064 g | **outside, explained** |
+| Grip accelerating ÷ grip cornering | 1.05–1.20× | 1.116× | inside |
+| Static Stability Factor | 0.95–1.80 (NHTSA) | 1.63 | inside |
+| Understeer gradient | 1.5–3.0 deg/g | — | needs `bicycle.py` |
+| Step-steer yaw rise time | 0.08–0.30 s | — | needs `bicycle.py` |
+| Lap time gained from torque vectoring | 1–4% | — | needs Season 4 |
+
+**The one outside the band is expected and is not a defect.** Our tire is a
+245-section fitted for a ~1,980 kg car; the real GR86 wears 215s. It grips more
+than the real car would. Open item O1 tracks rescaling it via `LMUY`/`LKY`/`LFZO`.
+Because the series' output is *comparative* — this design versus that one, with
+one tire model throughout — an absolute-grip offset does not invalidate anything.
+It does mean no absolute lap time or cornering-g figure gets published as a claim
+about a real GR86.
+
+**Two of the bands still need real citations** (O5). The NHTSA range and the
+handling bands are sourced in `docs/vehicle-reference-parameters.md`; the
+slip-at-peak and skidpad ranges are general vehicle-dynamics knowledge, marked as
+such on the figure, and must be pinned to a reference before publication.
+
+**One band was deliberately excluded.** `result-evaluation-guide.md` Gate 2 gives
+0.95–1.10 g for max lateral acceleration — but that band was itself derived from
+this tire file. Checking this tire against it would be circular, so it is not on
+the figure. Worth watching for the same trap elsewhere in the docs.
+# On `docs/learning-scaffold.md`
+
+Its predict-then-check structure is not being used, by decision. Validation
+against published ranges and against Chrono (the table above) is the mechanism
+we are relying on instead. The scaffold's concept explanations remain useful as
+reference; its Prediction/Reality slots are not part of the workflow.

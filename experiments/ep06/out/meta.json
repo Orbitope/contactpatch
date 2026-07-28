@@ -1,0 +1,37 @@
+{
+  "n_nodes": 100,
+  "ds": 3.967998515876726,
+  "entry_speed": 32.0,
+  "four_wheel": true,
+  "drive": "rwd",
+  "diff": "ideal",
+  "tire": {
+    "file": "Sedan_Pac02Tire.tir",
+    "fz0_prime": 3928.5000000000005,
+    "scaling": {
+      "lfzo": 0.81,
+      "lcx": 1.0,
+      "lmux": 1.0,
+      "lex": 1.0,
+      "lkx": 1.0,
+      "lhx": 1.0,
+      "lvx": 1.0,
+      "lcy": 1.0,
+      "lmuy": 1.0,
+      "ley": 1.0,
+      "lky": 1.0,
+      "lhy": 1.0,
+      "lvy": 1.0,
+      "lgay": 1.0
+    },
+    "offsets_removed": true,
+    "ey_camber_asymmetry": true
+  },
+  "vehicle": {
+    "mass": 1360.0,
+    "wheelbase": 2.575,
+    "front_mass_fraction": 0.54,
+    "com_height": 0.46,
+    "i_zz": 1950.0
+  }
+}

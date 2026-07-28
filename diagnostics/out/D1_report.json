@@ -1,0 +1,942 @@
+{
+  "diagnostic": "D1",
+  "title": "Tire model card",
+  "subtitle": "Checks the rubber before any car exists. A tire model answers one question: given how hard the tire is squashed into the road, and how far the wheel is pointed away from where it is actually travelling, how much sideways force does it make? Everything downstream is built on the answer.",
+  "passed": true,
+  "n_checks": 67,
+  "n_failed": 0,
+  "findings": [
+    "Grip gets WORSE the harder you press. At 1 kN of load this tire pulls 1.18 g sideways; at 9 kN only 0.82 g. Press nine times harder and you get about six times the grip, not nine. Most of what this series is about traces back to that one fact.",
+    "Two tires sharing 6 kN make the most total grip when they share it evenly. Splitting it 4+2 costs 1.4% of the pair's grip; 5+1 costs 5.6%. The overloaded tire never repays what the unloaded one gave up. That is why weight transfer is expensive, and it is the Episode 2 result.",
+    "A tire makes its best grip while already sliding a little \u2014 10.3 degrees off its direction of travel at typical load. Below that it has grip in reserve; past it, grip falls away again. The Episode 1 result.",
+    "The file's tire pulled to one side, and we removed it. As shipped it made 7.4% more grip cornering one way than the other (1.012 vs 1.086) \u2014 a manufacturing artefact a real car aligns out. It is now 1.049 both ways, with every fitted curve parameter untouched.",
+    "The code reproduces an independently computed reference for this tire file to 0.1% on grip, 0.02% on force and 0.22% on steering response, across seven loads. One column \u2014 where along the curve the peak sits \u2014 differs by up to 1 degree, because the reference left out a formula term that moves the peak sideways without changing its height. Turning that term off here matches the reference to 0.04 degrees, so nothing is unexplained.",
+    "On our reference car this tire is good for about 1.06 g of cornering at its resting front-corner load \u2014 plausible for a GR86 on good summer tires, and mildly optimistic because it is a wider tire than the real car wears.",
+    "Caution for later: at 7 kN and 9 kN of load, the tire's best grip happens at a slip angle beyond the limit we are willing to trust the model to, so peak grip at those loads is not reachable inside honest territory. Our car's most loaded corner sits below that \u2014 but a stiff setup could push past it."
+  ],
+  "checks": [
+    {
+      "name": "peak_mu@1000N",
+      "passed": true,
+      "detail": "1.139 vs 1.139 (abs err 0.000482, tol 0.001)",
+      "severity": "gate",
+      "value": 1.1385179573628612,
+      "expected": 1.139,
+      "group": "Does the code reproduce the reference table?"
+    },
+    {
+      "name": "peak_Fy@1000N",
+      "passed": true,
+      "detail": "1139 N vs 1139 N (rel err 0.000423, tol 0.002)",
+      "severity": "gate",
+      "value": 1138.5179573628611,
+      "expected": 1139.0,
+      "group": "Does the code reproduce the reference table?"
+    },
+    {
+      "name": "cornering_stiffness@1000N",
+      "passed": true,
+      "detail": "375.4 N/deg vs 375 N/deg (rel err 0.00102, tol 0.005)",
+      "severity": "gate",
+      "value": 375.3841895684444,
+      "expected": 375.0,
+      "group": "Does the code reproduce the reference table?"
+    },
+    {
+      "name": "slip_at_peak_simplifiedEy@1000N",
+      "passed": true,
+      "detail": "9.669 deg vs 9.7 deg (abs err 0.0314, tol 0.05)",
+      "severity": "gate",
+      "value": 9.668573863134588,
+      "expected": 9.7,
+      "group": "Does the code reproduce the reference table?"
+    },
+    {
+      "name": "slip_at_peak_standard@1000N",
+      "passed": true,
+      "detail": "9.537 deg vs 9.7 deg (abs err 0.163, tol 1.1)",
+      "severity": "gate",
+      "value": 9.537303614359999,
+      "expected": 9.7,
+      "group": "Does the code reproduce the reference table?"
+    },
+    {
+      "name": "peak_mu@2000N",
+      "passed": true,
+      "detail": "1.095 vs 1.095 (abs err 0.000173, tol 0.001)",
+      "severity": "gate",
+      "value": 1.0951729147257223,
+      "expected": 1.095,
+      "group": "Does the code reproduce the reference table?"
+    },
+    {
+      "name": "peak_Fy@2000N",
+      "passed": true,
+      "detail": "2190 N vs 2190 N (rel err 0.000158, tol 0.002)",
+      "severity": "gate",
+      "value": 2190.345829451445,
+      "expected": 2190.0,
+      "group": "Does the code reproduce the reference table?"
+    },
+    {
+      "name": "cornering_stiffness@2000N",
+      "passed": true,
+      "detail": "716.6 N/deg vs 715 N/deg (rel err 0.00217, tol 0.005)",
+      "severity": "gate",
+      "value": 716.5527012337756,
+      "expected": 715.0,
+      "group": "Does the code reproduce the reference table?"
+    },
+    {
+      "name": "slip_at_peak_simplifiedEy@2000N",
+      "passed": true,
+      "detail": "9.729 deg vs 9.7 deg (abs err 0.0293, tol 0.05)",
+      "severity": "gate",
+      "value": 9.729313076763535,
+      "expected": 9.7,
+      "group": "Does the code reproduce the reference table?"
+    },
+    {
+      "name": "slip_at_peak_standard@2000N",
+      "passed": true,
+      "detail": "9.523 deg vs 9.7 deg (abs err 0.177, tol 1.1)",
+      "severity": "gate",
+      "value": 9.523305455739322,
+      "expected": 9.7,
+      "group": "Does the code reproduce the reference table?"
+    },
+    {
+      "name": "peak_mu@3000N",
+      "passed": true,
+      "detail": "1.052 vs 1.052 (abs err 0.000172, tol 0.001)",
+      "severity": "gate",
+      "value": 1.0518278720885832,
+      "expected": 1.052,
+      "group": "Does the code reproduce the reference table?"
+    },
+    {
+      "name": "peak_Fy@3000N",
+      "passed": true,
+      "detail": "3155 N vs 3155 N (rel err 0.000153, tol 0.002)",
+      "severity": "gate",
+      "value": 3155.48361626575,
+      "expected": 3155.0,
+      "group": "Does the code reproduce the reference table?"
+    },
+    {
+      "name": "cornering_stiffness@3000N",
+      "passed": true,
+      "detail": "999.1 N/deg vs 997 N/deg (rel err 0.00206, tol 0.005)",
+      "severity": "gate",
+      "value": 999.056799206378,
+      "expected": 997.0,
+      "group": "Does the code reproduce the reference table?"
+    },
+    {
+      "name": "slip_at_peak_simplifiedEy@3000N",
+      "passed": true,
+      "detail": "10.04 deg vs 10 deg (abs err 0.0416, tol 0.05)",
+      "severity": "gate",
+      "value": 10.04156486898351,
+      "expected": 10.0,
+      "group": "Does the code reproduce the reference table?"
+    },
+    {
+      "name": "slip_at_peak_standard@3000N",
+      "passed": true,
+      "detail": "9.755 deg vs 10 deg (abs err 0.245, tol 1.1)",
+      "severity": "gate",
+      "value": 9.754979991178777,
+      "expected": 10.0,
+      "group": "Does the code reproduce the reference table?"
+    },
+    {
+      "name": "peak_mu@3929N",
+      "passed": true,
+      "detail": "1.012 vs 1.012 (abs err 0.00044, tol 0.001)",
+      "severity": "gate",
+      "value": 1.0115603274786813,
+      "expected": 1.012,
+      "group": "Does the code reproduce the reference table?"
+    },
+    {
+      "name": "peak_Fy@3929N",
+      "passed": true,
+      "detail": "3974 N vs 3974 N (rel err 0.000106, tol 0.002)",
+      "severity": "gate",
+      "value": 3974.4205266637387,
+      "expected": 3974.0,
+      "group": "Does the code reproduce the reference table?"
+    },
+    {
+      "name": "cornering_stiffness@3929N",
+      "passed": true,
+      "detail": "1200 N/deg vs 1197 N/deg (rel err 0.00218, tol 0.005)",
+      "severity": "gate",
+      "value": 1199.6136350148222,
+      "expected": 1197.0,
+      "group": "Does the code reproduce the reference table?"
+    },
+    {
+      "name": "slip_at_peak_simplifiedEy@3929N",
+      "passed": true,
+      "detail": "10.52 deg vs 10.5 deg (abs err 0.0247, tol 0.05)",
+      "severity": "gate",
+      "value": 10.52472842516258,
+      "expected": 10.5,
+      "group": "Does the code reproduce the reference table?"
+    },
+    {
+      "name": "slip_at_peak_standard@3929N",
+      "passed": true,
+      "detail": "10.15 deg vs 10.5 deg (abs err 0.346, tol 1.1)",
+      "severity": "gate",
+      "value": 10.154460718091988,
+      "expected": 10.5,
+      "group": "Does the code reproduce the reference table?"
+    },
+    {
+      "name": "peak_mu@5000N",
+      "passed": true,
+      "detail": "0.9651 vs 0.965 (abs err 0.000138, tol 0.001)",
+      "severity": "gate",
+      "value": 0.9651377868143057,
+      "expected": 0.965,
+      "group": "Does the code reproduce the reference table?"
+    },
+    {
+      "name": "peak_Fy@5000N",
+      "passed": true,
+      "detail": "4826 N vs 4826 N (rel err 6.45e-05, tol 0.002)",
+      "severity": "gate",
+      "value": 4825.688934071529,
+      "expected": 4826.0,
+      "group": "Does the code reproduce the reference table?"
+    },
+    {
+      "name": "cornering_stiffness@5000N",
+      "passed": true,
+      "detail": "1359 N/deg vs 1357 N/deg (rel err 0.0013, tol 0.005)",
+      "severity": "gate",
+      "value": 1358.7675270067164,
+      "expected": 1357.0,
+      "group": "Does the code reproduce the reference table?"
+    },
+    {
+      "name": "slip_at_peak_simplifiedEy@5000N",
+      "passed": true,
+      "detail": "11.27 deg vs 11.3 deg (abs err 0.0269, tol 0.05)",
+      "severity": "gate",
+      "value": 11.273141451235173,
+      "expected": 11.3,
+      "group": "Does the code reproduce the reference table?"
+    },
+    {
+      "name": "slip_at_peak_standard@5000N",
+      "passed": true,
+      "detail": "10.79 deg vs 11.3 deg (abs err 0.507, tol 1.1)",
+      "severity": "gate",
+      "value": 10.792853870597291,
+      "expected": 11.3,
+      "group": "Does the code reproduce the reference table?"
+    },
+    {
+      "name": "peak_mu@7000N",
+      "passed": true,
+      "detail": "0.8784 vs 0.878 (abs err 0.000448, tol 0.001)",
+      "severity": "gate",
+      "value": 0.8784477015400278,
+      "expected": 0.878,
+      "group": "Does the code reproduce the reference table?"
+    },
+    {
+      "name": "peak_Fy@7000N",
+      "passed": true,
+      "detail": "6149 N vs 6149 N (rel err 2.18e-05, tol 0.002)",
+      "severity": "gate",
+      "value": 6149.133910780195,
+      "expected": 6149.0,
+      "group": "Does the code reproduce the reference table?"
+    },
+    {
+      "name": "cornering_stiffness@7000N",
+      "passed": true,
+      "detail": "1491 N/deg vs 1489 N/deg (rel err 0.00127, tol 0.005)",
+      "severity": "gate",
+      "value": 1490.8981314501625,
+      "expected": 1489.0,
+      "group": "Does the code reproduce the reference table?"
+    },
+    {
+      "name": "slip_at_peak_simplifiedEy@7000N",
+      "passed": true,
+      "detail": "13.07 deg vs 13.1 deg (abs err 0.0304, tol 0.05)",
+      "severity": "gate",
+      "value": 13.069551967677242,
+      "expected": 13.1,
+      "group": "Does the code reproduce the reference table?"
+    },
+    {
+      "name": "slip_at_peak_standard@7000N",
+      "passed": true,
+      "detail": "12.34 deg vs 13.1 deg (abs err 0.76, tol 1.1)",
+      "severity": "gate",
+      "value": 12.339646238959748,
+      "expected": 13.1,
+      "group": "Does the code reproduce the reference table?"
+    },
+    {
+      "name": "peak_mu@9000N",
+      "passed": true,
+      "detail": "0.7918 vs 0.792 (abs err 0.000242, tol 0.001)",
+      "severity": "gate",
+      "value": 0.7917576162657503,
+      "expected": 0.792,
+      "group": "Does the code reproduce the reference table?"
+    },
+    {
+      "name": "peak_Fy@9000N",
+      "passed": true,
+      "detail": "7126 N vs 7126 N (rel err 2.55e-05, tol 0.002)",
+      "severity": "gate",
+      "value": 7125.8185463917525,
+      "expected": 7126.0,
+      "group": "Does the code reproduce the reference table?"
+    },
+    {
+      "name": "cornering_stiffness@9000N",
+      "passed": true,
+      "detail": "1488 N/deg vs 1486 N/deg (rel err 0.00123, tol 0.005)",
+      "severity": "gate",
+      "value": 1487.8227297200303,
+      "expected": 1486.0,
+      "group": "Does the code reproduce the reference table?"
+    },
+    {
+      "name": "slip_at_peak_simplifiedEy@9000N",
+      "passed": true,
+      "detail": "15.14 deg vs 15.1 deg (abs err 0.0389, tol 0.05)",
+      "severity": "gate",
+      "value": 15.13891138743397,
+      "expected": 15.1,
+      "group": "Does the code reproduce the reference table?"
+    },
+    {
+      "name": "slip_at_peak_standard@9000N",
+      "passed": true,
+      "detail": "14.1 deg vs 15.1 deg (abs err 0.996, tol 1.1)",
+      "severity": "gate",
+      "value": 14.104024043018565,
+      "expected": 15.1,
+      "group": "Does the code reproduce the reference table?"
+    },
+    {
+      "name": "slip_at_peak_discrepancy_explained",
+      "passed": true,
+      "detail": "Standard MF 2002 puts the lateral peak up to 1.00 deg below the reference table; dropping the (1 - PEY3*sgn(alpha_y)) curvature term reproduces it to 0.05 deg. The reference table was therefore generated without that term. Peak force, peak mu and cornering stiffness are unaffected by Ey, which is why only this one column disagrees. This file's PEY3=-9.99 / PEY4=-760 are degenerate camber-curvature coefficients; we keep the standard form for Chrono parity (Ep 16).",
+      "severity": "note",
+      "value": 0.9959759569814342,
+      "expected": null,
+      "group": "Does the code reproduce the reference table?"
+    },
+    {
+      "name": "peak_force_symmetric@1000N",
+      "passed": true,
+      "detail": "peak |Fy| identical both ways: 1183.3270 vs 1183.3270 N (as shipped: 1.1385 vs 1.2281 mu, a 7.9% split)",
+      "severity": "gate",
+      "value": 0.0,
+      "expected": null,
+      "group": "Did removing the tire's built-in pull work?"
+    },
+    {
+      "name": "peak_force_symmetric@3929N",
+      "passed": true,
+      "detail": "peak |Fy| identical both ways: 4121.0379 vs 4121.0379 N (as shipped: 1.0116 vs 1.0862 mu, a 7.4% split)",
+      "severity": "gate",
+      "value": 0.0,
+      "expected": null,
+      "group": "Did removing the tire's built-in pull work?"
+    },
+    {
+      "name": "peak_force_symmetric@9000N",
+      "passed": true,
+      "detail": "peak |Fy| identical both ways: 7344.9257 vs 7344.9257 N (as shipped: 0.7918 vs 0.8404 mu, a 6.1% split)",
+      "severity": "gate",
+      "value": 0.0,
+      "expected": null,
+      "group": "Did removing the tire's built-in pull work?"
+    },
+    {
+      "name": "no_lateral_pull_at_zero_slip",
+      "passed": true,
+      "detail": "Fy(0) = 0.0 N and Fx(0) = 0.0 N at Fz0' (as shipped: -37 N and +108 N)",
+      "severity": "gate",
+      "value": null,
+      "expected": null,
+      "group": "Did removing the tire's built-in pull work?"
+    },
+    {
+      "name": "peak_mu_equals_fitted_muy@1000N",
+      "passed": true,
+      "detail": "1.183 vs 1.183 (abs err 0, tol 1e-09)",
+      "severity": "gate",
+      "value": 1.1833269835815197,
+      "expected": 1.1833269835815197,
+      "group": "Did removing the tire's built-in pull work?"
+    },
+    {
+      "name": "peak_mu_equals_fitted_muy@3929N",
+      "passed": true,
+      "detail": "1.049 vs 1.049 (abs err 0, tol 1e-09)",
+      "severity": "gate",
+      "value": 1.0488770484917906,
+      "expected": 1.0488770484917906,
+      "group": "Did removing the tire's built-in pull work?"
+    },
+    {
+      "name": "peak_mu_equals_fitted_muy@9000N",
+      "passed": true,
+      "detail": "0.8161 vs 0.8161 (abs err 0, tol 1e-09)",
+      "severity": "gate",
+      "value": 0.816102852233677,
+      "expected": 0.816102852233677,
+      "group": "Did removing the tire's built-in pull work?"
+    },
+    {
+      "name": "cornering_stiffness_preserved_by_offset_removal",
+      "passed": true,
+      "detail": "max change 0.23% across the load range \u2014 the fitted BCD is untouched; only the point at which the slope is read moved",
+      "severity": "gate",
+      "value": 0.002330639183342864,
+      "expected": null,
+      "group": "Did removing the tire's built-in pull work?"
+    },
+    {
+      "name": "peak_mu_monotone_decreasing",
+      "passed": true,
+      "detail": "mu falls 1.183 -> 0.816 over 1000-9000 N; largest step -0.0426",
+      "severity": "gate",
+      "value": [
+        1.1833269835815197,
+        1.1374239671630393,
+        1.091520950744559,
+        1.0488770484917906,
+        0.9997149179075983,
+        0.9079088850706376,
+        0.816102852233677
+      ],
+      "expected": null,
+      "group": "Does grip fall as the tire is pressed harder?"
+    },
+    {
+      "name": "load_sensitivity_dmu_dkN_as_shipped",
+      "passed": true,
+      "detail": "-0.04335 /kN vs -0.043 /kN (abs err 0.000345, tol 0.006)",
+      "severity": "gate",
+      "value": -0.043345042637138814,
+      "expected": -0.043,
+      "group": "Does grip fall as the tire is pressed harder?"
+    },
+    {
+      "name": "load_sensitivity_negative_and_sane",
+      "passed": true,
+      "detail": "project tire dmu/dFz = -0.0459 /kN (as shipped -0.0433); the offset-free value is the cleaner number \u2014 it is exactly PDY2/Fz0'",
+      "severity": "gate",
+      "value": -0.04590301641848028,
+      "expected": null,
+      "group": "Does grip fall as the tire is pressed harder?"
+    },
+    {
+      "name": "cornering_stiffness_rises_then_saturates",
+      "passed": true,
+      "detail": "376 -> 1493 N/deg then rolls over; analytic maximum at Fz = PKY2*Fz0' = 7862 N",
+      "severity": "gate",
+      "value": [
+        376.25907466946,
+        718.212226259186,
+        1001.2435739245225,
+        1202.0194484251763,
+        1361.1607881596285,
+        1492.8787232221305,
+        1489.3141090787578
+      ],
+      "expected": null,
+      "group": "Does the force curve have the right shape?"
+    },
+    {
+      "name": "slip_at_peak_increases_with_load",
+      "passed": true,
+      "detail": "9.69 -> 14.26 deg over the tested load range; largest local reversal 0.013 deg (tol 0.05)",
+      "severity": "gate",
+      "value": [
+        9.686747330042312,
+        9.674048575820244,
+        9.907022515658308,
+        10.307710389257828,
+        10.947495203874041,
+        12.496886381033718,
+        14.263862993889756
+      ],
+      "expected": null,
+      "group": "Does the force curve have the right shape?"
+    },
+    {
+      "name": "slip_at_peak_dips_between_low_loads",
+      "passed": true,
+      "detail": "Slip at peak dips 0.013 deg between 1000 and 2000 N before climbing. Real feature of the fit's Ey(dfz) term; it disappears with the simplified Ey. Not resolvable on a rig.",
+      "severity": "note",
+      "value": 0.012698754222068231,
+      "expected": null,
+      "group": "Does the force curve have the right shape?"
+    },
+    {
+      "name": "slip_at_peak_in_band",
+      "passed": true,
+      "detail": "all peaks within 5-16 deg (min 9.67, max 14.26)",
+      "severity": "gate",
+      "value": [
+        9.674048575820244,
+        14.263862993889756
+      ],
+      "expected": null,
+      "group": "Does the force curve have the right shape?"
+    },
+    {
+      "name": "slip_at_peak_band_differs_from_parameter_sheet",
+      "passed": true,
+      "detail": "docs/vehicle-reference-parameters.md \u00a75 states the D1 assertion as 'slip at peak 5-10 deg', which contradicts its own \u00a73.2 table (13.1 deg at 7 kN, 15.1 deg at 9 kN). The table is right and the assertion text is not; D1 asserts 5-16 deg. Within RV-1's actual corner loads (~3601-6000 N) the peak sits at 10-11.5 deg.",
+      "severity": "note",
+      "value": null,
+      "expected": null,
+      "group": "Does the force curve have the right shape?"
+    },
+    {
+      "name": "odd_symmetry_exact_without_Ey_asymmetry@1000N",
+      "passed": true,
+      "detail": "max |Fy(a) + Fy(-a)| = 0.00e+00 N",
+      "severity": "gate",
+      "value": 0.0,
+      "expected": null,
+      "group": "Is the tire the same turning left and right?"
+    },
+    {
+      "name": "odd_symmetry_exact_without_Ey_asymmetry@3929N",
+      "passed": true,
+      "detail": "max |Fy(a) + Fy(-a)| = 0.00e+00 N",
+      "severity": "gate",
+      "value": 0.0,
+      "expected": null,
+      "group": "Is the tire the same turning left and right?"
+    },
+    {
+      "name": "odd_symmetry_exact_without_Ey_asymmetry@9000N",
+      "passed": true,
+      "detail": "max |Fy(a) + Fy(-a)| = 0.00e+00 N",
+      "severity": "gate",
+      "value": 0.0,
+      "expected": null,
+      "group": "Is the tire the same turning left and right?"
+    },
+    {
+      "name": "residual_asymmetry_is_location_only",
+      "passed": true,
+      "detail": "max |Fy(a)+Fy(-a)| = 43.5 N at Fz0' (1.1% of peak, down from 328 N as shipped). Peak force is identical both ways; the two branches reach it 0.79 deg apart.",
+      "severity": "gate",
+      "value": 43.47376456190341,
+      "expected": null,
+      "group": "Is the tire the same turning left and right?"
+    },
+    {
+      "name": "residual_asymmetry_is_the_Ey_term_and_is_kept_deliberately",
+      "passed": true,
+      "detail": "What remains is the Ey curvature term's (1 - PEY3*sgn alpha_y) factor: the branches peak at 10.31 and 11.10 deg with the same peak force. Removing it would mean zeroing PEY3/PEY4 \u2014 an edit to the P* coefficients, which discards the fit's internal consistency (vehicle-reference-parameters.md \u00a73.3). It is third-order in slip angle, so it vanishes at the +/-0.5 g slip angles where understeer gradient is fitted. It does grow with load \u2014 0.27 deg at 1 kN, 0.79 deg at 3.929 kN, 2.38 deg at 9 kN \u2014 but by 9 kN both peaks are outside the imposed +/-12 deg envelope, so nothing we are willing to trust sees the wide end of it. D2's mirror test should assert peak force exactly and trajectories to a stated tolerance, not bit-equality.",
+      "severity": "note",
+      "value": {
+        "alpha_peak_pos_deg": 10.307710389257828,
+        "alpha_peak_neg_deg": 11.097585098566352
+      },
+      "expected": null,
+      "group": "Is the tire the same turning left and right?"
+    },
+    {
+      "name": "why_the_offsets_were_removed",
+      "passed": true,
+      "detail": "As shipped this file is left/right asymmetric by 7.4% in peak mu (1.012 vs 1.086 at Fz0'), and declares TYRESIDE = 'LEFT'. That is conicity and ply steer \u2014 per-sample manufacturing artefacts that a real car aligns out. The split is wider than the whole 0.95-1.10 g plausibility band for max lateral g, so it would have corrupted Ep 3 and every left/right comparison from Ep 5 on. physics.tire.default_tire() therefore zeroes PHY*/PVY*/PHX*/PVX*; every fitted shape coefficient is untouched. physics.tire.as_shipped_tire() still returns the file verbatim, and section 1 above validates the implementation against it.",
+      "severity": "note",
+      "value": null,
+      "expected": null,
+      "group": "Is the tire the same turning left and right?"
+    },
+    {
+      "name": "peak_mux_monotone_decreasing",
+      "passed": true,
+      "detail": "mu_x falls 1.296 -> 0.962 over the load range",
+      "severity": "gate",
+      "value": [
+        1.2961165139361768,
+        1.254383027723086,
+        1.2126495416199912,
+        1.1738791331668135,
+        1.1291825696164155,
+        1.0457155974103631,
+        0.9622486254230072
+      ],
+      "expected": null,
+      "group": "Does accelerating and braking behave?"
+    },
+    {
+      "name": "longitudinal_stiffness_sign",
+      "passed": true,
+      "detail": "dFx/dkappa = 87631 N at Fz0' \u2014 drive slip drives",
+      "severity": "gate",
+      "value": null,
+      "expected": null,
+      "group": "Does accelerating and braking behave?"
+    },
+    {
+      "name": "no_free_thrust_at_zero_slip_ratio",
+      "passed": true,
+      "detail": "Fx(kappa=0) = 0.0 N at Fz0'. As shipped it is +108 N \u2014 from the PHX1 horizontal shift \u2014 which over four tires would have been +0.032 g of thrust at zero commanded slip. Removing the offsets removes that too.",
+      "severity": "gate",
+      "value": 107.68797510845266,
+      "expected": null,
+      "group": "Does accelerating and braking behave?"
+    },
+    {
+      "name": "mux_exceeds_muy",
+      "passed": true,
+      "detail": "mu_x > mu_y at every tested load (1.174 vs 1.049 at Fz0') \u2014 conventional for a road tire",
+      "severity": "gate",
+      "value": null,
+      "expected": null,
+      "group": "Does accelerating and braking behave?"
+    },
+    {
+      "name": "reference_loads_inside_declared_Fz_range",
+      "passed": true,
+      "detail": "tested 1000-9000 N inside declared 225-10125 N",
+      "severity": "gate",
+      "value": null,
+      "expected": null,
+      "group": "Is everything inside the range we trust?"
+    },
+    {
+      "name": "lateral_peak_outside_imposed_slip_envelope_at_high_load",
+      "passed": true,
+      "detail": "At 7000 N, 9000 N the lateral peak sits beyond our imposed +/-12 deg slip bound, so peak lateral force at those loads is not reachable inside the region we are willing to trust. RV-1's loaded outside front corner reaches ~6 kN, where the peak is still inside.",
+      "severity": "note",
+      "value": [
+        7000.0,
+        9000.0
+      ],
+      "expected": null,
+      "group": "Is everything inside the range we trust?"
+    },
+    {
+      "name": "kappa_at_peak_inside_imposed_envelope",
+      "passed": true,
+      "detail": "longitudinal peaks at kappa 0.135-0.183, imposed bound 0.20",
+      "severity": "gate",
+      "value": null,
+      "expected": null,
+      "group": "Is everything inside the range we trust?"
+    },
+    {
+      "name": "even_split_makes_most_grip",
+      "passed": true,
+      "detail": "6 kN split: 3+3 -> 6549 N (+0.0%), 4+2 -> 6457 N (-1.4%), 5+1 -> 6182 N (-5.6%)",
+      "severity": "gate",
+      "value": {
+        "3+3": 6549.125704467353,
+        "4+2": 6457.319671630393,
+        "5+1": 6181.901573119511
+      },
+      "expected": null,
+      "group": "Episode 2's experiment"
+    },
+    {
+      "name": "grip_at_RV1_static_corner_load",
+      "passed": true,
+      "detail": "At RV-1's static front corner load (3601 N) this tire peaks at mu = 1.064 at 10.1 deg. Consistent with the 0.95-1.10 g band in result-evaluation-guide Gate 2, and mildly optimistic: it is a 245-section tire on a car that wears 215s.",
+      "severity": "note",
+      "value": 1.0639331515793813,
+      "expected": null,
+      "group": "Episode 2's experiment"
+    }
+  ],
+  "data": {
+    "schema_version": "0.1.0",
+    "as_shipped": {
+      "file": "Sedan_Pac02Tire.tir",
+      "fz0_prime": 3928.5000000000005,
+      "scaling": {
+        "lfzo": 0.81,
+        "lcx": 1.0,
+        "lmux": 1.0,
+        "lex": 1.0,
+        "lkx": 1.0,
+        "lhx": 1.0,
+        "lvx": 1.0,
+        "lcy": 1.0,
+        "lmuy": 1.0,
+        "ley": 1.0,
+        "lky": 1.0,
+        "lhy": 1.0,
+        "lvy": 1.0,
+        "lgay": 1.0
+      },
+      "offsets_removed": false,
+      "ey_camber_asymmetry": true
+    },
+    "project_default": {
+      "file": "Sedan_Pac02Tire.tir",
+      "fz0_prime": 3928.5000000000005,
+      "scaling": {
+        "lfzo": 0.81,
+        "lcx": 1.0,
+        "lmux": 1.0,
+        "lex": 1.0,
+        "lkx": 1.0,
+        "lhx": 1.0,
+        "lvx": 1.0,
+        "lcy": 1.0,
+        "lmuy": 1.0,
+        "ley": 1.0,
+        "lky": 1.0,
+        "lhy": 1.0,
+        "lvy": 1.0,
+        "lgay": 1.0
+      },
+      "offsets_removed": true,
+      "ey_camber_asymmetry": true
+    },
+    "conventions": {
+      "schema_version": "0.1.0",
+      "frame": "ISO 8855 (x forward, y left, z up)",
+      "angles": "radians internally; *_deg suffix at output boundaries only",
+      "slip_angle": "alpha = arctan(v_y / v_x); Fy opposes alpha (K_y_alpha < 0)",
+      "slip_ratio": "kappa = (Omega*R_e - v_x)/|v_x|; Fx follows kappa (K_x_kappa > 0)",
+      "yaw_rate": "positive = left turn",
+      "steer": "positive = road wheels turned left",
+      "vertical_load": "Fz > 0 in compression (a loaded tire has positive Fz)"
+    },
+    "table": [
+      {
+        "fz": 1000.0,
+        "mu_peak_as_shipped": 1.1385179573628612,
+        "mu_ref": 1.139,
+        "fy_peak_as_shipped": 1138.5179573628611,
+        "fy_ref": 1139.0,
+        "alpha_peak_deg_as_shipped": 9.537303614359999,
+        "alpha_peak_deg_simplified_ey": 9.668573863134588,
+        "alpha_ref_deg": 9.7,
+        "cornering_stiffness_per_deg_as_shipped": 375.3841895684444,
+        "cornering_stiffness_ref": 375.0,
+        "mu_peak_as_shipped_negative_branch": 1.2281360098001783,
+        "mu_peak_project_default": 1.1833269835815197
+      },
+      {
+        "fz": 2000.0,
+        "mu_peak_as_shipped": 1.0951729147257223,
+        "mu_ref": 1.095,
+        "fy_peak_as_shipped": 2190.345829451445,
+        "fy_ref": 2190.0,
+        "alpha_peak_deg_as_shipped": 9.523305455739322,
+        "alpha_peak_deg_simplified_ey": 9.729313076763535,
+        "alpha_ref_deg": 9.7,
+        "cornering_stiffness_per_deg_as_shipped": 716.5527012337756,
+        "cornering_stiffness_ref": 715.0,
+        "mu_peak_as_shipped_negative_branch": 1.1796750196003563,
+        "mu_peak_project_default": 1.1374239671630393
+      },
+      {
+        "fz": 3000.0,
+        "mu_peak_as_shipped": 1.0518278720885832,
+        "mu_ref": 1.052,
+        "fy_peak_as_shipped": 3155.48361626575,
+        "fy_ref": 3155.0,
+        "alpha_peak_deg_as_shipped": 9.754979991178777,
+        "alpha_peak_deg_simplified_ey": 10.04156486898351,
+        "alpha_ref_deg": 10.0,
+        "cornering_stiffness_per_deg_as_shipped": 999.056799206378,
+        "cornering_stiffness_ref": 997.0,
+        "mu_peak_as_shipped_negative_branch": 1.1312140294005344,
+        "mu_peak_project_default": 1.091520950744559
+      },
+      {
+        "fz": 3929.0,
+        "mu_peak_as_shipped": 1.0115603274786813,
+        "mu_ref": 1.012,
+        "fy_peak_as_shipped": 3974.4205266637387,
+        "fy_ref": 3974.0,
+        "alpha_peak_deg_as_shipped": 10.154460718091988,
+        "alpha_peak_deg_simplified_ey": 10.52472842516258,
+        "alpha_ref_deg": 10.5,
+        "cornering_stiffness_per_deg_as_shipped": 1199.6136350148222,
+        "cornering_stiffness_ref": 1197.0,
+        "mu_peak_as_shipped_negative_branch": 1.0861937695048998,
+        "mu_peak_project_default": 1.0488770484917906
+      },
+      {
+        "fz": 5000.0,
+        "mu_peak_as_shipped": 0.9651377868143057,
+        "mu_ref": 0.965,
+        "fy_peak_as_shipped": 4825.688934071529,
+        "fy_ref": 4826.0,
+        "alpha_peak_deg_as_shipped": 10.792853870597291,
+        "alpha_peak_deg_simplified_ey": 11.273141451235173,
+        "alpha_ref_deg": 11.3,
+        "cornering_stiffness_per_deg_as_shipped": 1358.7675270067164,
+        "cornering_stiffness_ref": 1357.0,
+        "mu_peak_as_shipped_negative_branch": 1.034292049000891,
+        "mu_peak_project_default": 0.9997149179075983
+      },
+      {
+        "fz": 7000.0,
+        "mu_peak_as_shipped": 0.8784477015400278,
+        "mu_ref": 0.878,
+        "fy_peak_as_shipped": 6149.133910780195,
+        "fy_ref": 6149.0,
+        "alpha_peak_deg_as_shipped": 12.339646238959748,
+        "alpha_peak_deg_simplified_ey": 13.069551967677242,
+        "alpha_ref_deg": 13.1,
+        "cornering_stiffness_per_deg_as_shipped": 1490.8981314501625,
+        "cornering_stiffness_ref": 1489.0,
+        "mu_peak_as_shipped_negative_branch": 0.9373700686012473,
+        "mu_peak_project_default": 0.9079088850706376
+      },
+      {
+        "fz": 9000.0,
+        "mu_peak_as_shipped": 0.7917576162657503,
+        "mu_ref": 0.792,
+        "fy_peak_as_shipped": 7125.8185463917525,
+        "fy_ref": 7126.0,
+        "alpha_peak_deg_as_shipped": 14.104024043018565,
+        "alpha_peak_deg_simplified_ey": 15.13891138743397,
+        "alpha_ref_deg": 15.1,
+        "cornering_stiffness_per_deg_as_shipped": 1487.8227297200303,
+        "cornering_stiffness_ref": 1486.0,
+        "mu_peak_as_shipped_negative_branch": 0.8404480882016037,
+        "mu_peak_project_default": 0.816102852233677
+      }
+    ],
+    "dmu_dkN": -0.04590301641848028,
+    "dmu_dkN_as_shipped": -0.043345042637138814,
+    "mu_x_peak": [
+      1.2961165139361768,
+      1.254383027723086,
+      1.2126495416199912,
+      1.1738791331668135,
+      1.1291825696164155,
+      1.0457155974103631,
+      0.9622486254230072
+    ],
+    "kappa_at_peak": [
+      0.1825006958333333,
+      0.16989071684999998,
+      0.15896073506666666,
+      0.1503407494333333,
+      0.14234076276666666,
+      0.13490077516666665,
+      0.15587074021666666
+    ],
+    "imposed_alpha_max_deg": 12.000000000000002,
+    "imposed_kappa_max": 0.2,
+    "load_split_6kN": {
+      "3+3": 6549.125704467353,
+      "4+2": 6457.319671630393,
+      "5+1": 6181.901573119511
+    },
+    "static_corner_loads": {
+      "front": 3601.0018800000003,
+      "rear": 3067.5201199999997
+    },
+    "reality_check": [
+      {
+        "label": "Slip angle where a tire makes its best grip",
+        "source": "General vehicle-dynamics range for a road tire \u00b7 citation not yet pinned (FINDINGS O5)",
+        "value": 10.1,
+        "unit": "\u00b0",
+        "lo": 6.0,
+        "hi": 12.0,
+        "axis": [
+          0.0,
+          20.0
+        ]
+      },
+      {
+        "label": "Peak grip of one tire at this car's resting corner load",
+        "source": "Published skidpad figures, sports coupe on summer tires \u00b7 citation not yet pinned (FINDINGS O5)",
+        "value": 1.064,
+        "unit": "g",
+        "lo": 0.85,
+        "hi": 1.05,
+        "axis": [
+          0.7,
+          1.3
+        ],
+        "note": "Known and expected: this is a 245-section tire on a car that wears 215s. Open item O1 tracks rescaling it."
+      },
+      {
+        "label": "Grip accelerating vs grip cornering (\u03bcx \u00f7 \u03bcy)",
+        "source": "Road tires grip slightly better longitudinally \u00b7 textbook, qualitative",
+        "value": 1.116,
+        "unit": "\u00d7",
+        "lo": 1.05,
+        "hi": 1.2,
+        "axis": [
+          0.9,
+          1.4
+        ]
+      },
+      {
+        "label": "Static Stability Factor of the reference car",
+        "source": "NHTSA measured range, ~0.95 SUV to ~1.8 Corvette \u00b7 vehicle-reference-parameters.md \u00a71 [DERIVED from SOURCED]",
+        "value": 1.63,
+        "unit": "",
+        "lo": 0.95,
+        "hi": 1.8,
+        "axis": [
+          0.8,
+          2.0
+        ]
+      },
+      {
+        "label": "Understeer gradient",
+        "source": "Sports car 1-2, passenger car 3-5 deg/g \u00b7 vehicle-reference-parameters.md \u00a74 [SOURCED]",
+        "value": null,
+        "unit": "deg/g",
+        "lo": 1.5,
+        "hi": 3.0,
+        "axis": [
+          0.0,
+          6.0
+        ]
+      },
+      {
+        "label": "Step-steer yaw rise time",
+        "source": "vehicle-reference-parameters.md \u00a74 [ASSUMED]",
+        "value": null,
+        "unit": "s",
+        "lo": 0.08,
+        "hi": 0.3,
+        "axis": [
+          0.0,
+          0.5
+        ]
+      },
+      {
+        "label": "Lap time gained from torque vectoring",
+        "source": "Published studies; 9% is the best case, an FSAE car on a skidpad \u00b7 result-evaluation-guide.md Gate 2 [SOURCED]",
+        "value": null,
+        "unit": "%",
+        "lo": 1.0,
+        "hi": 4.0,
+        "axis": [
+          0.0,
+          10.0
+        ]
+      }
+    ]
+  }
+}

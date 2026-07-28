@@ -1,0 +1,305 @@
+{
+  "entry_speed_ms": 32.0,
+  "n_nodes": 100,
+  "track": "long exit",
+  "track_length_m": 392.8318530717959,
+  "front_fractions": [
+    0.4,
+    0.47,
+    0.54,
+    0.61,
+    0.65
+  ],
+  "nominal": 0.54,
+  "tire": {
+    "file": "Sedan_Pac02Tire.tir",
+    "fz0_prime": 3928.5000000000005,
+    "scaling": {
+      "lfzo": 0.81,
+      "lcx": 1.0,
+      "lmux": 1.0,
+      "lex": 1.0,
+      "lkx": 1.0,
+      "lhx": 1.0,
+      "lvx": 1.0,
+      "lcy": 1.0,
+      "lmuy": 1.0,
+      "ley": 1.0,
+      "lky": 1.0,
+      "lhy": 1.0,
+      "lvy": 1.0,
+      "lgay": 1.0
+    },
+    "offsets_removed": true,
+    "ey_camber_asymmetry": true
+  },
+  "held_fixed": "mass, wheelbase, track, yaw inertia, CoM height, tires and roll stiffness distribution. ONLY the fore-aft position of the mass moves. Yaw inertia is held fixed deliberately -- separating balance from polar moment is the split between this episode and Episode 8, and a real engine move would change both.",
+  "sourced_range": [
+    0.53,
+    0.56
+  ],
+  "rows": {
+    "fwd_0.54": {
+      "time_s": 12.053667437462577,
+      "understeer_gradient_deg_per_g": 0.2200929220118136,
+      "apex_fraction_through_corner": 0.5615897503544204,
+      "brake_release_s": 68.66828533124132,
+      "min_speed_ms": 23.576557115793513,
+      "exit_speed_ms": 46.61083285338516,
+      "mean_utilisation_in_corner": {
+        "fl": 0.9970430030412407,
+        "fr": 0.997864404727984,
+        "rl": 0.9814448156942124,
+        "rr": 0.957789104632179
+      },
+      "mean_utilisation_on_exit": {
+        "fl": 0.614074830136784,
+        "fr": 0.6102937190377747,
+        "rl": 0.0956006110610927,
+        "rr": 0.08944898400669977
+      },
+      "worst_slip_deg": 12.000000537199021,
+      "envelope_occupancy": 0.0,
+      "solver_status": "Solve_Succeeded",
+      "converged": true
+    },
+    "fwd_0.47": {
+      "time_s": 12.08383830775827,
+      "understeer_gradient_deg_per_g": -0.07380531863624101,
+      "apex_fraction_through_corner": 0.5630481914603997,
+      "brake_release_s": 65.23845304358969,
+      "min_speed_ms": 23.55297184314873,
+      "exit_speed_ms": 46.52832426387753,
+      "mean_utilisation_in_corner": {
+        "fl": 0.9972937337509316,
+        "fr": 0.9995365046972441,
+        "rl": 0.9828943664377454,
+        "rr": 0.9576082821165188
+      },
+      "mean_utilisation_on_exit": {
+        "fl": 0.6937672633453941,
+        "fr": 0.6903047739725796,
+        "rl": 0.09788375541540895,
+        "rr": 0.09082060713887118
+      },
+      "worst_slip_deg": 11.999994791594805,
+      "envelope_occupancy": 0.0,
+      "solver_status": "Solve_Succeeded",
+      "converged": true
+    },
+    "fwd_0.40": {
+      "time_s": 12.174647260374183,
+      "understeer_gradient_deg_per_g": -0.3696779239490755,
+      "apex_fraction_through_corner": 0.5543614533404979,
+      "brake_release_s": 68.36074683369219,
+      "min_speed_ms": 23.417066962804256,
+      "exit_speed_ms": 46.29362149023618,
+      "mean_utilisation_in_corner": {
+        "fl": 0.9978375132420033,
+        "fr": 0.9999590129725773,
+        "rl": 0.9870905763161708,
+        "rr": 0.9632670474293716
+      },
+      "mean_utilisation_on_exit": {
+        "fl": 0.805112059223483,
+        "fr": 0.8036414009678025,
+        "rl": 0.09775183438871576,
+        "rr": 0.08989222495643998
+      },
+      "worst_slip_deg": 12.000000532218673,
+      "envelope_occupancy": 0.0,
+      "solver_status": "Solve_Succeeded",
+      "converged": true
+    },
+    "fwd_0.61": {
+      "time_s": 12.062586828333538,
+      "understeer_gradient_deg_per_g": 0.5118042990990551,
+      "apex_fraction_through_corner": 0.5579119744896133,
+      "brake_release_s": 72.18643037877113,
+      "min_speed_ms": 23.513725604498774,
+      "exit_speed_ms": 46.61738271182034,
+      "mean_utilisation_in_corner": {
+        "fl": 0.9969808652669118,
+        "fr": 0.9957442589890133,
+        "rl": 0.9798825529096381,
+        "rr": 0.9594520026456987
+      },
+      "mean_utilisation_on_exit": {
+        "fl": 0.5553503655021277,
+        "fr": 0.5498681250438817,
+        "rl": 0.09394662235854306,
+        "rr": 0.08877674736506261
+      },
+      "worst_slip_deg": 12.000000545008557,
+      "envelope_occupancy": 0.0,
+      "solver_status": "Solve_Succeeded",
+      "converged": true
+    },
+    "fwd_0.65": {
+      "time_s": 12.085104490503618,
+      "understeer_gradient_deg_per_g": 0.6771085472223186,
+      "apex_fraction_through_corner": 0.554877989900816,
+      "brake_release_s": 75.59914489319091,
+      "min_speed_ms": 23.423639849284132,
+      "exit_speed_ms": 46.592807214321844,
+      "mean_utilisation_in_corner": {
+        "fl": 0.9970638662563664,
+        "fr": 0.9944149463400453,
+        "rl": 0.9789743989729829,
+        "rr": 0.9608081579567704
+      },
+      "mean_utilisation_on_exit": {
+        "fl": 0.5275591766156165,
+        "fr": 0.5223264070588042,
+        "rl": 0.09291672522975991,
+        "rr": 0.08836825958214435
+      },
+      "worst_slip_deg": 12.00000054832668,
+      "envelope_occupancy": 0.0,
+      "solver_status": "Solve_Succeeded",
+      "converged": true
+    },
+    "rwd_0.54": {
+      "time_s": 12.086446365084006,
+      "understeer_gradient_deg_per_g": 0.2200929220118136,
+      "apex_fraction_through_corner": 0.5639910486753851,
+      "brake_release_s": 69.15451700181625,
+      "min_speed_ms": 23.452073473746495,
+      "exit_speed_ms": 46.54710457059686,
+      "mean_utilisation_in_corner": {
+        "fl": 0.9747721066090888,
+        "fr": 0.9450504600032008,
+        "rl": 0.9984877147879796,
+        "rr": 0.9962851116323924
+      },
+      "mean_utilisation_on_exit": {
+        "fl": 0.09020726094059023,
+        "fr": 0.08340253253634043,
+        "rl": 0.5950107946997473,
+        "rr": 0.5881351508291367
+      },
+      "worst_slip_deg": 12.000000569759758,
+      "envelope_occupancy": 0.0,
+      "solver_status": "Solve_Succeeded",
+      "converged": true
+    },
+    "rwd_0.47": {
+      "time_s": 12.046886393317699,
+      "understeer_gradient_deg_per_g": -0.07380531863624101,
+      "apex_fraction_through_corner": 0.5641719819280314,
+      "brake_release_s": 66.08804731231882,
+      "min_speed_ms": 23.394202073851048,
+      "exit_speed_ms": 46.63996249306062,
+      "mean_utilisation_in_corner": {
+        "fl": 0.9838493275841087,
+        "fr": 0.963764672984792,
+        "rl": 0.9981964816631979,
+        "rr": 0.9933271366223353
+      },
+      "mean_utilisation_on_exit": {
+        "fl": 0.09431564798228725,
+        "fr": 0.08890166312980674,
+        "rl": 0.5377610406612768,
+        "rr": 0.537151361407234
+      },
+      "worst_slip_deg": 12.00000056911541,
+      "envelope_occupancy": 0.0,
+      "solver_status": "Solve_Succeeded",
+      "converged": true
+    },
+    "rwd_0.40": {
+      "time_s": 12.05850035482482,
+      "understeer_gradient_deg_per_g": -0.3696779239490755,
+      "apex_fraction_through_corner": 0.5552431670344532,
+      "brake_release_s": 71.09170550441652,
+      "min_speed_ms": 23.31379043896843,
+      "exit_speed_ms": 46.58437688588963,
+      "mean_utilisation_in_corner": {
+        "fl": 0.9883076393944348,
+        "fr": 0.9765327354935942,
+        "rl": 0.9977914122628687,
+        "rr": 0.9905382458289445
+      },
+      "mean_utilisation_on_exit": {
+        "fl": 0.09729192344470916,
+        "fr": 0.09340978437612031,
+        "rl": 0.5020417291375162,
+        "rr": 0.48705264280772564
+      },
+      "worst_slip_deg": 12.00000056856645,
+      "envelope_occupancy": 0.0,
+      "solver_status": "Solve_Succeeded",
+      "converged": true
+    },
+    "rwd_0.61": {
+      "time_s": 12.172941649501132,
+      "understeer_gradient_deg_per_g": 0.5118042990990551,
+      "apex_fraction_through_corner": 0.5608737067620269,
+      "brake_release_s": 72.01016615412496,
+      "min_speed_ms": 23.391773508437037,
+      "exit_speed_ms": 46.35621797770563,
+      "mean_utilisation_in_corner": {
+        "fl": 0.9619281400018407,
+        "fr": 0.923349204786345,
+        "rl": 0.9985140645201145,
+        "rr": 0.9983159196079507
+      },
+      "mean_utilisation_on_exit": {
+        "fl": 0.08773815277731989,
+        "fr": 0.0794251137046114,
+        "rl": 0.6648746788455829,
+        "rr": 0.6615044022203748
+      },
+      "worst_slip_deg": 12.000000565812956,
+      "envelope_occupancy": 0.0,
+      "solver_status": "Solve_Succeeded",
+      "converged": true
+    },
+    "rwd_0.65": {
+      "time_s": 12.252242834283756,
+      "understeer_gradient_deg_per_g": 0.6771085472223186,
+      "apex_fraction_through_corner": 0.5536787391048854,
+      "brake_release_s": 75.88517731522073,
+      "min_speed_ms": 23.30201718906843,
+      "exit_speed_ms": 46.170335215106576,
+      "mean_utilisation_in_corner": {
+        "fl": 0.9573156115878071,
+        "fr": 0.9160531839061359,
+        "rl": 0.9985107566387238,
+        "rr": 0.9990287778240048
+      },
+      "mean_utilisation_on_exit": {
+        "fl": 0.08468776336766425,
+        "fr": 0.07560861174235357,
+        "rl": 0.7149865746352413,
+        "rr": 0.7152637070836295
+      },
+      "worst_slip_deg": 12.000000568448591,
+      "envelope_occupancy": 0.0,
+      "solver_status": "Solve_Succeeded",
+      "converged": true
+    }
+  },
+  "K_deg_per_g": {
+    "0.40": -0.3696779239490755,
+    "0.47": -0.07380531863624101,
+    "0.54": 0.2200929220118136,
+    "0.61": 0.5118042990990551,
+    "0.65": 0.6771085472223186
+  },
+  "best_front_fraction_rwd": 0.47,
+  "best_time_rwd": 12.046886393317699,
+  "best_is_from_converged_solves_only_rwd": true,
+  "time_span_rwd": 0.20535644096605665,
+  "best_front_fraction_fwd": 0.54,
+  "best_time_fwd": 12.053667437462577,
+  "best_is_from_converged_solves_only_fwd": true,
+  "time_span_fwd": 0.1209798229116057,
+  "fwd_minus_rwd_at_each_fraction": {
+    "0.40": 0.11614690554936224,
+    "0.47": 0.03695191444057144,
+    "0.54": -0.03277892762142898,
+    "0.61": -0.11035482116759354,
+    "0.65": -0.16713834378013814
+  }
+}

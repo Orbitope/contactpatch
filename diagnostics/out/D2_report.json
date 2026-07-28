@@ -1,0 +1,462 @@
+{
+  "diagnostic": "D2",
+  "title": "Invariants and signs",
+  "subtitle": "The textbook facts, as assertions. Weight moves forward under braking, tires push back against the way they are sliding, left mirrors right, and two independently written pieces of code agree about the same corner. A violation here is a bug, and nothing downstream means anything until it is fixed.",
+  "passed": true,
+  "n_checks": 42,
+  "n_failed": 0,
+  "findings": [
+    "Braking moves 1,215 N onto the front axle at 5 m/s\u00b2 \u2014 about 17% more weight on the front tires than at rest. Double the centre-of-gravity height and you double the transfer, which is the whole reason low cars handle better.",
+    "The steady-state solver and the step-by-step simulator are separate implementations of the same physics, and they agree to machine precision about the same corner \u2014 the equilibrium one solves for is exactly a state in which the other's accelerations vanish.",
+    "Cornering slows a car down even with no brakes and no air resistance. At 0.76 g a coasting car loses 0.036 g, because the front tire's grip points along the wheel and the wheel is turned. A real skidpad test holds speed instead \u2014 539 N of throttle here \u2014 and that choice changes the measured balance materially. See FINDINGS F17.",
+    "With the manufacturing offsets removed, a car with the steering straight stays perfectly straight: zero yaw rate, zero sideways drift, to machine precision. The tire file as shipped would have pulled to one side (FINDINGS F6).",
+    "Doubling yaw inertia slows the response from 197 ms to 397 ms \u2014 the car resists changing direction. That is the difference between a mid-engine car and a front-engine one, and it is Episode 8's subject."
+  ],
+  "checks": [
+    {
+      "name": "loads_sum_to_mg_at_rest",
+      "passed": true,
+      "detail": "1.334e+04 N vs 1.334e+04 N (abs err 1.82e-12, tol 1e-09)",
+      "severity": "gate",
+      "value": 13337.044000000002,
+      "expected": 13337.044,
+      "group": "Does weight move the right way?"
+    },
+    {
+      "name": "static_front_load",
+      "passed": true,
+      "detail": "7202 N vs 7202 N (abs err 9.09e-13, tol 1e-09)",
+      "severity": "gate",
+      "value": 7202.003760000001,
+      "expected": 7202.0037600000005,
+      "group": "Does weight move the right way?"
+    },
+    {
+      "name": "braking_transfers_load_forward",
+      "passed": true,
+      "detail": "braking at -5 m/s2: front 7202 -> 8417 N, rear 6135 -> 4920 N",
+      "severity": "gate",
+      "value": null,
+      "expected": null,
+      "group": "Does weight move the right way?"
+    },
+    {
+      "name": "accelerating_transfers_load_rearward",
+      "passed": true,
+      "detail": "accelerating at 5 m/s2: front 7202 -> 5987 N, rear 6135 -> 7350 N",
+      "severity": "gate",
+      "value": null,
+      "expected": null,
+      "group": "Does weight move the right way?"
+    },
+    {
+      "name": "loads_sum_to_mg_under_acceleration",
+      "passed": true,
+      "detail": "longitudinal transfer moves load between axles without creating any",
+      "severity": "gate",
+      "value": null,
+      "expected": null,
+      "group": "Does weight move the right way?"
+    },
+    {
+      "name": "transfer_proportional_to_com_height",
+      "passed": true,
+      "detail": "2 x vs 2 x (abs err 1.55e-15, tol 1e-09)",
+      "severity": "gate",
+      "value": 1.9999999999999984,
+      "expected": 2.0,
+      "group": "Does weight move the right way?"
+    },
+    {
+      "name": "left_turn_needs_negative_slip_angles",
+      "passed": true,
+      "detail": "turning left at 0.76 g: alpha_f -3.12 deg, alpha_r -2.91 deg \u2014 both negative, so both tires push left, which is where the car is turning",
+      "severity": "gate",
+      "value": null,
+      "expected": null,
+      "group": "Do the forces point the right way?"
+    },
+    {
+      "name": "lateral_force_opposes_slip_angle",
+      "passed": true,
+      "detail": "Fy_front +5530 N, Fy_rear +4692 N \u2014 positive (leftward) against negative slip angles, per the schema convention",
+      "severity": "gate",
+      "value": null,
+      "expected": null,
+      "group": "Do the forces point the right way?"
+    },
+    {
+      "name": "lateral_force_balances_mass_times_acceleration",
+      "passed": true,
+      "detail": "Fy resolved into the body frame 10200.0 N vs m*a_y 10200.0 N. The front axle's force acts along the steered wheel, so it contributes Fy_f*cos(delta) = 5530*0.9960, not Fy_f.",
+      "severity": "gate",
+      "value": null,
+      "expected": null,
+      "group": "Do the forces point the right way?"
+    },
+    {
+      "name": "steer_is_positive_for_a_left_turn",
+      "passed": true,
+      "detail": "5.12 deg of road-wheel angle for a left-hand circle",
+      "severity": "gate",
+      "value": null,
+      "expected": null,
+      "group": "Do the forces point the right way?"
+    },
+    {
+      "name": "zero_steer_stays_straight",
+      "passed": true,
+      "detail": "after 2 s: yaw rate 0.00e+00 rad/s, v_y 0.00e+00 m/s, heading 0.00e+00 rad. Exactly zero because the offsets are gone (FINDINGS D1); the as-shipped tire would have drifted.",
+      "severity": "gate",
+      "value": null,
+      "expected": null,
+      "group": "Does it go straight when you let go?"
+    },
+    {
+      "name": "drag_slows_a_coasting_car",
+      "passed": true,
+      "detail": "25.0 -> 24.679 m/s in 2 s coasting, from aerodynamic drag alone",
+      "severity": "gate",
+      "value": null,
+      "expected": null,
+      "group": "Does it go straight when you let go?"
+    },
+    {
+      "name": "no_free_thrust",
+      "passed": true,
+      "detail": "longitudinal acceleration is never positive with zero drive force",
+      "severity": "gate",
+      "value": null,
+      "expected": null,
+      "group": "Does it go straight when you let go?"
+    },
+    {
+      "name": "mirror_test_stays_inside_the_envelope",
+      "passed": true,
+      "detail": "peak 0.26 g, worst slip angle 1.0 deg \u2014 inside the imposed bounds, so the comparison means something",
+      "severity": "gate",
+      "value": null,
+      "expected": null,
+      "group": "Is left the mirror of right?"
+    },
+    {
+      "name": "mirror_symmetry_within_tolerance",
+      "passed": true,
+      "detail": "+1 deg vs -1 deg step steer at 20 m/s: worst lateral-acceleration mismatch 0.1293% of peak. Tolerance is 0.5%, set from the retained Ey term rather than from hope: with ey_camber_asymmetry=False the same test mismatches by exactly 0.",
+      "severity": "gate",
+      "value": 0.0012930336879721986,
+      "expected": null,
+      "group": "Is left the mirror of right?"
+    },
+    {
+      "name": "mirror_error_grows_sharply_outside_the_envelope",
+      "passed": true,
+      "detail": "The same test driven to 1.05 g and 7 deg of slip \u2014 well past the imposed 12 deg bound \u2014 mismatches by 0.9%, against 0.1293% inside it. Verified to be entirely the Ey term: with ey_camber_asymmetry=False the same test mismatches by 0.0000%. This is a concrete example of why the envelope discipline exists \u2014 the model's left/right symmetry is a property of the region you drive it in.",
+      "severity": "note",
+      "value": {
+        "inside": 0.0012930336879721986,
+        "outside": 0.00854999959633208
+      },
+      "expected": null,
+      "group": "Is left the mirror of right?"
+    },
+    {
+      "name": "timestep_converged_at_2ms",
+      "passed": true,
+      "detail": "yaw rate error vs dt=0.5 ms: 1.20e-06% at dt=2 ms, 1.61e-06% at dt=4 ms",
+      "severity": "gate",
+      "value": 1.2028180216397185e-08,
+      "expected": null,
+      "group": "Is the integrator converged?"
+    },
+    {
+      "name": "trim_is_an_equilibrium_of_the_integrator",
+      "passed": true,
+      "detail": "at the solved trim, driven with the 539 N the trim says holds speed, the integrator's own equations give dv_y/dt = 3.43e-13 m/s2 and dr/dt = 2.97e-13 rad/s2 \u2014 the two code paths agree to machine precision",
+      "severity": "gate",
+      "value": {
+        "dv_y": 3.4283687000424834e-13,
+        "dr": 2.966351950397858e-13
+      },
+      "expected": null,
+      "group": "Do the solver and the simulator agree?"
+    },
+    {
+      "name": "trim_and_integrator_agree_on_longitudinal_acceleration",
+      "passed": true,
+      "detail": "0.03341 m/s2 vs 0.03341 m/s2 (abs err 3.47e-17, tol 1e-06)",
+      "severity": "gate",
+      "value": 0.03340761179162207,
+      "expected": 0.033407611791622036,
+      "group": "Do the solver and the simulator agree?"
+    },
+    {
+      "name": "coasting_trim_is_also_an_equilibrium",
+      "passed": true,
+      "detail": "the coasting variant of the same corner needs no drive force and decelerates at -0.356 m/s2 = -0.036 g",
+      "severity": "gate",
+      "value": -0.3564141861979529,
+      "expected": null,
+      "group": "Do the solver and the simulator agree?"
+    },
+    {
+      "name": "the_skidpad_protocol_changes_the_answer",
+      "passed": true,
+      "detail": "A steered front tire's grip points partly backwards, so a coasting car in this corner decelerates at -0.036 g with no brakes and no drag. Holding speed instead \u2014 which is what a real SAE J266 test does, and what trim_skidpad now defaults to \u2014 needs 539 N of drive and produces no longitudinal load transfer at all. That is not a rounding difference: coasting shifts load forward, unloads the rear, and tips the car into terminal oversteer at 86% of its grip, while holding speed keeps it understeering to 99%. See FINDINGS F17. The drive force is 7.3% of the lateral force here, so ignoring its grip cost (combined slip, open item O2) is a small omission \u2014 but it is an omission, and it grows near the limit.",
+      "severity": "note",
+      "value": {
+        "coast_a_x": -0.3564141861979529,
+        "drive_force_N": 539.4170174024911,
+        "drive_fraction": 0.07258867953442649
+      },
+      "expected": null,
+      "group": "Do the solver and the simulator agree?"
+    },
+    {
+      "name": "wheel_log_reports_real_slip_ratios",
+      "passed": true,
+      "detail": "under 6 kN of braking the logger reports kappa_f = -0.0218. It used to hardcode zero here, which made slip-ratio envelope violations invisible through Backend.envelope_violated().",
+      "severity": "gate",
+      "value": -0.021818161010742188,
+      "expected": null,
+      "group": "Does the envelope logger actually work?"
+    },
+    {
+      "name": "envelope_flags_each_violation_channel",
+      "passed": true,
+      "detail": "slip ratio 0.9, slip angle 30 deg and load 50 N are each flagged; a clean sample is not",
+      "severity": "gate",
+      "value": null,
+      "expected": null,
+      "group": "Does the envelope logger actually work?"
+    },
+    {
+      "name": "a_wild_manoeuvre_is_flagged_in_the_rollout",
+      "passed": true,
+      "detail": "a 10 deg step at 30 m/s runs past 12 deg of slip and is flagged on 347/500 steps \u2014 the instrumentation fires end to end, not just on synthetic inputs",
+      "severity": "gate",
+      "value": 347,
+      "expected": null,
+      "group": "Does the envelope logger actually work?"
+    },
+    {
+      "name": "driven_path_radius_matches_command",
+      "passed": true,
+      "detail": "30 m vs 30 m (abs err 0.000298, tol 0.001)",
+      "severity": "gate",
+      "value": 30.00029761679591,
+      "expected": 30.0,
+      "group": "Does the car go where it says it goes?"
+    },
+    {
+      "name": "driven_path_is_a_circle_not_a_spiral",
+      "passed": true,
+      "detail": "radius varies by 2.98e-11 m over a full lap",
+      "severity": "gate",
+      "value": 2.97717406283482e-11,
+      "expected": null,
+      "group": "Does the car go where it says it goes?"
+    },
+    {
+      "name": "heading_closes_after_one_lap",
+      "passed": true,
+      "detail": "360 deg vs 360 deg (abs err 0.0106, tol 0.05)",
+      "severity": "gate",
+      "value": 359.9893826806612,
+      "expected": 360.0,
+      "group": "Does the car go where it says it goes?"
+    },
+    {
+      "name": "constant_speed_trim_actually_holds_speed",
+      "passed": true,
+      "detail": "speed after a full lap: +0.00e+00 m/s. Holding speed means dv_x/dt = 0, which requires a_x = -v_y*r rather than a_x = 0 \u2014 in a circle with sideslip the centripetal acceleration has a small body-x component. Forcing a_x = 0 instead drifted 0.19% off the commanded radius over one lap.",
+      "severity": "gate",
+      "value": 0.0,
+      "expected": null,
+      "group": "Does the car go where it says it goes?"
+    },
+    {
+      "name": "steady_state_independent_of_izz",
+      "passed": true,
+      "detail": "doubling I_zz leaves the steady-state trim identical, as it must \u2014 inertia is a transient effect only",
+      "severity": "gate",
+      "value": null,
+      "expected": null,
+      "group": "Is yaw inertia wired in?"
+    },
+    {
+      "name": "higher_izz_responds_more_slowly",
+      "passed": true,
+      "detail": "90% yaw-response rise time: 197 ms at nominal I_zz, 397 ms at double. Gate 1 invariant 7.",
+      "severity": "gate",
+      "value": {
+        "nominal_s": 0.197,
+        "double_s": 0.397
+      },
+      "expected": null,
+      "group": "Is yaw inertia wired in?"
+    },
+    {
+      "name": "K_increases_with_front_weight",
+      "passed": true,
+      "detail": "K rises monotonically: 0.45->-0.209, 0.50->+0.012, 0.54->+0.188, 0.60->+0.452 deg/g. Gate 1 invariant 2.",
+      "severity": "gate",
+      "value": {
+        "0.45": -0.20852041020434828,
+        "0.5": 0.011887274481940996,
+        "0.54": 0.18804927619088158,
+        "0.6": 0.451902056497344
+      },
+      "expected": null,
+      "group": "Does moving weight forward add understeer?"
+    },
+    {
+      "name": "asymmetric_drive_produces_a_yaw_moment",
+      "passed": true,
+      "detail": "putting 3000 N through the right rear wheel alone produces 2242 N.m of yaw moment \u2014 1.15 rad/s2. This read exactly 0.0 for the whole of Seasons 1-3 (F72), which would have made every torque-vectoring result in Season 4 a silent null.",
+      "severity": "gate",
+      "value": 2242.5,
+      "expected": null,
+      "group": "Does asymmetric drive rotate the car?"
+    },
+    {
+      "name": "driving_the_right_wheel_turns_the_car_left",
+      "passed": true,
+      "detail": "right wheel alone gives +2242 N.m, left wheel alone -2242 N.m. Under ISO 8855 a left turn is positive yaw, and pushing the right-hand side of the car forward rotates the nose left. A sign error here would render a plausible picture of a car doing the opposite of what it did (F36).",
+      "severity": "gate",
+      "value": {
+        "right": 2242.5,
+        "left": -2242.5
+      },
+      "expected": null,
+      "group": "Does asymmetric drive rotate the car?"
+    },
+    {
+      "name": "a_symmetric_split_produces_no_yaw",
+      "passed": true,
+      "detail": "the same 3000 N split evenly gives 0.00e+00 N.m. This is why adding the term moved no Season 1-3 result that used a symmetric split, and it is asserted rather than assumed.",
+      "severity": "gate",
+      "value": 0.0,
+      "expected": null,
+      "group": "Does asymmetric drive rotate the car?"
+    },
+    {
+      "name": "the_moment_arm_is_half_the_track",
+      "passed": true,
+      "detail": "2242.5 N.m against 3000 N x 1.495 m / 2 = 2242.5 N.m. Closed-form, and it distinguishes the rear track from the front, so using the wrong one would fail.",
+      "severity": "gate",
+      "value": 0.0,
+      "expected": null,
+      "group": "Does asymmetric drive rotate the car?"
+    },
+    {
+      "name": "at_part_throttle_a_locking_differential_pushes_wide",
+      "passed": true,
+      "detail": "at 1000 N of demand in a 9 m/s2 corner, a welded differential produces -2057 N.m \u2014 negative, yawing the car OUT of the corner. Neither wheel is saturated, so kinematics decides: the outside wheel travels further, turns faster, and loses torque to the inside. This is the locked-diff push, and it is the outside check on the model (rule 2) \u2014 the sign is not ours to choose.",
+      "severity": "gate",
+      "value": -2057.147051658733,
+      "expected": null,
+      "group": "Does a locking differential push the car wide?"
+    },
+    {
+      "name": "at_full_throttle_the_same_device_turns_the_car_in",
+      "passed": true,
+      "detail": "at 6000 N the same differential gives +1585 N.m, the other way. The inside wheel has saturated and is spinning, so it is now the FASTER wheel and torque flows outboard to the one that still grips. Same rule, opposite outcome \u2014 a model with a fixed bias direction can only produce one of these two, and F77 was exactly that mistake.",
+      "severity": "gate",
+      "value": 1584.9792596461164,
+      "expected": null,
+      "group": "Does a locking differential push the car wide?"
+    },
+    {
+      "name": "more_locking_means_more_push",
+      "passed": true,
+      "detail": "part-throttle yaw moment: open +0, limited-slip -1029, welded -2057 N.m. Ordered, which is what this model can claim (rule 6).",
+      "severity": "gate",
+      "value": {
+        "open": 0.0,
+        "lsd": -1028.5735258293664,
+        "locked": -2057.147051658733
+      },
+      "expected": null,
+      "group": "Does a locking differential push the car wide?"
+    },
+    {
+      "name": "an_open_differential_steers_the_car_neither_way",
+      "passed": true,
+      "detail": "an open differential gives +0.00 N.m at part throttle and +0.00 at full: it feeds both wheels equally and resists no speed difference, so it has no handling effect to have. That is the baseline the other two are measured against.",
+      "severity": "gate",
+      "value": 0.0,
+      "expected": null,
+      "group": "Does a locking differential push the car wide?"
+    },
+    {
+      "name": "an_open_differential_wastes_tractive_force",
+      "passed": true,
+      "detail": "of 6000 N demanded with the inside wheel down to 1555 N of load, an open differential delivers 3880 N, a limited-slip 4850 N and a welded one 6000 N. The open diff must feed both wheels equally, so it is limited by twice the weaker.",
+      "severity": "gate",
+      "value": {
+        "open": 3879.6264085001785,
+        "lsd": 4849.533010625223,
+        "locked": 6000.0
+      },
+      "expected": null,
+      "group": "Does a locking differential push the car wide?"
+    },
+    {
+      "name": "differential_parameters_are_ASSUMED",
+      "passed": true,
+      "detail": "The LSD's torque bias ratio (1.5) and locking fraction (0.5) are [ASSUMED]; a real clutch pack's locking varies with torque and with coast versus drive, which this does not model. Rung 2 (rule 15): the mechanism and the ordering, not any particular hardware.",
+      "severity": "note",
+      "value": null,
+      "expected": null,
+      "group": "Does a locking differential push the car wide?"
+    },
+    {
+      "name": "track_width_is_only_LIKELY",
+      "passed": true,
+      "detail": "Track width is [LIKELY], not measured. At +/-3% the moment moves 67 N.m either way; every torque-vectoring magnitude claim must be re-run at both bounds with the CONCLUSION intact.",
+      "severity": "note",
+      "value": null,
+      "expected": null,
+      "group": "Does a locking differential push the car wide?"
+    }
+  ],
+  "data": {
+    "schema_version": "0.1.0",
+    "tire": {
+      "file": "Sedan_Pac02Tire.tir",
+      "fz0_prime": 3928.5000000000005,
+      "scaling": {
+        "lfzo": 0.81,
+        "lcx": 1.0,
+        "lmux": 1.0,
+        "lex": 1.0,
+        "lkx": 1.0,
+        "lhx": 1.0,
+        "lvx": 1.0,
+        "lcy": 1.0,
+        "lmuy": 1.0,
+        "ley": 1.0,
+        "lky": 1.0,
+        "lhy": 1.0,
+        "lvy": 1.0,
+        "lgay": 1.0
+      },
+      "offsets_removed": true,
+      "ey_camber_asymmetry": true
+    },
+    "vehicle": {
+      "mass": 1360.0,
+      "wheelbase": 2.575,
+      "front_mass_fraction": 0.54,
+      "com_height": 0.46,
+      "i_zz": 1950.0
+    },
+    "K_vs_front_fraction": {
+      "0.45": -0.20852041020434828,
+      "0.5": 0.011887274481940996,
+      "0.54": 0.18804927619088158,
+      "0.6": 0.451902056497344
+    }
+  }
+}

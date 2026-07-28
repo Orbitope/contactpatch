@@ -1,0 +1,451 @@
+"""A driving environment for Season 3 — a car, a road, and a stopwatch.
+
+Everything before this episode was an *optimiser*: it saw the whole road, solved
+for the best inputs, and could not be surprised. This is the other kind of driver.
+It gets one instant at a time, has to choose a steering rate and a throttle from
+what it can currently sense, and finds out what happens next by doing it.
+
+Deliberate design decisions, each of which is a modelling choice and is recorded
+here because the episode turns on them:
+
+**The slip envelope is NOT enforced.** Every minimum-time solve in Seasons 1 and 2
+constrains slip angle to ±12°, because a solver handed an unconstrained Magic
+Formula will drive at 30° of slip where the fit is extrapolating and return a lap
+time that is a statement about our curve fit. That constraint is absent here, on
+purpose. The envelope is *instrumented* — every step records slip angle, slip
+ratio and load, and whether they left the region the tire file supports — but
+nothing stops the policy going there. Episode 9's subject is what a learner does
+with a physics model that is wrong in a place nobody told it not to go. Putting
+the constraint in would hide exactly the thing worth showing. See CLAUDE.md rule 4:
+instrumentation is core-loop, and lap times from outside the envelope are
+discarded, not celebrated.
+
+**The reward is progress, and nothing else.** No reward for staying on the road,
+no shaping toward a racing line, no penalty for slip. Distance advanced along the
+track per step, minus a terminal penalty for leaving the road. "Just a stopwatch"
+in the series plan is meant literally: any behaviour more sophisticated than
+"go forwards" has to be discovered rather than encoded. It also means every
+unintended behaviour is genuinely unintended.
+
+**The observation is what a driver could plausibly know.** Speed, how far off the
+centreline the car is, how much its heading differs from the road's, yaw rate,
+sideslip, current steer angle — and a short preview of the curvature ahead,
+because a driver can see. It does NOT include the whole road, the lap time so far,
+or anything about the tire model. A policy that could see the full road would be a
+worse-conditioned optimal-control solver, not a driver.
+
+This module is numpy-only and has no learning code in it, so the physics can be
+tested without a training framework installed.
+"""
+
+from __future__ import annotations
+
+import math
+from dataclasses import dataclass, field, replace
+
+import numpy as np
+
+from physics import schema
+from physics.double_track import DoubleTrackBackend
+from physics.tire import default_tire
+from physics.track import Track, long_exit
+
+#: Simulation step. 50 Hz — fast enough that a 200 deg/s steering rate moves the
+#: wheel 4 degrees in a step, slow enough that a 400 m corner is ~650 steps.
+DT = 0.02
+
+#: Steering and drive-force authority the policy commands, matching the
+#: optimal-control actuator limits so a learned driver and a solved one are given
+#: the same car. [ASSUMED], as they are there.
+STEER_RATE_MAX = math.radians(200.0)
+STEER_MAX = math.radians(30.0)
+DRIVE_MAX = 4500.0
+BRAKE_MAX = 12000.0
+
+#: The slip bound every minimum-time solve in Seasons 1-2 enforces, and the edge
+#: of the region the tire file was fitted over. Ours, not the file's.
+ENVELOPE_SLIP_MAX = math.radians(12.0)
+
+#: How far ahead the policy can see, in metres. Six points spread over ~55 m at
+#: 30 m/s is a bit under two seconds of road, which is roughly what a driver
+#: reads. [ASSUMED] — and worth a sensitivity check before any claim rests on it.
+PREVIEW_DISTANCES = (5.0, 12.0, 20.0, 30.0, 42.0, 55.0)
+
+
+@dataclass
+class EnvConfig:
+    """Everything about the task, separate from the car."""
+
+    track: Track = field(default_factory=long_exit)
+    params: schema.VehicleParams = field(default_factory=lambda: schema.RV_1)
+    dt: float = DT
+    #: Speed at the start line.
+    #:
+    #: **15 m/s, not the 32 m/s the optimal-control episodes use, and the
+    #: difference is a task-design choice worth stating.** The corner is 40 m
+    #: radius and the car makes 0.97 g, so the fastest it can physically be taken
+    #: is 19.5 m/s. Starting at 32 m/s means the very first thing a driver must
+    #: do is shed 12.5 m/s — about 1.3 s of hard braking — beginning two seconds
+    #: before the corner arrives. A solver that sees the whole road plans that in
+    #: one shot. A learner has to discover it by trial and error, and braking
+    #: *reduces* the progress reward at the moment it is applied while the payoff
+    #: arrives seconds later. Configured that way the policy never once completed
+    #: the corner in 250k steps; it simply drove off the road at 65 m every time.
+    #:
+    #: Starting below the corner speed makes the task learnable without any
+    #: reward shaping: the policy first learns to steer, and the progress reward
+    #: then pushes it faster until braking becomes necessary on its own terms.
+    #: The curriculum is in the task, not in the reward. See FINDINGS F52.
+    entry_speed: float = 15.0
+    #: Terminal penalty for putting a wheel off the road, in reward units. Large
+    #: enough that leaving the track is never worth the progress it buys.
+    off_track_penalty: float = 50.0
+    #: Cost per step for operating outside the slip envelope, scaled by how far
+    #: outside. **0.0 reproduces Episode 9 exactly**, where the envelope is
+    #: instrumented and deliberately unenforced.
+    #:
+    #: Episode 10 onward sets this, and the reason is measured rather than
+    #: assumed: sliding beyond the ±12° fit covers ground at 21.0 m/s against
+    #: 20.2 m/s inside it, so the unconstrained reward's optimum is genuinely to
+    #: slide, and more training finds that faster (F62). A conditioned policy
+    #: sliding at 121° tells you nothing about weight distribution.
+    #:
+    #: This is a **protocol change, recorded as one** (CLAUDE.md rule 9). It does
+    #: not fix a bug — the unconstrained environment was doing exactly what it
+    #: said. It changes the question from "what will a learner do with an
+    #: unguarded model?" (Episode 9's subject) to "how does a car's design affect
+    #: a driver who stays inside the physics we can defend?" (Episode 10's).
+    #:
+    #: Scaled so one degree past the bound costs about as much as a step's
+    #: progress: excess/12 x this, against ~0.4 m of progress per step.
+    envelope_penalty: float = 0.0
+    #: Give up if the car is crawling; otherwise a policy that stops still
+    #: collects zero reward forever and wastes the rollout.
+    min_speed: float = 3.0
+    #: Hard cap on episode length, in steps. 2000 steps at 50 Hz is 40 s, and
+    #: the 393 m track takes 26 s at the 15 m/s entry speed — so a slow but
+    #: competent lap finishes, and only a genuinely stuck car times out.
+    max_steps: int = 2000
+    #: Randomise the start along the track so the policy cannot memorise one
+    #: opening sequence. 0 disables it.
+    start_jitter_m: float = 0.0
+    #: --- Episode 12: the differential. ``"open"`` is what Episodes 9-11 drove and
+    #: is the default, so every Season 3 result is reproducible unchanged.
+    diff: str = "open"
+    #: Override the device's torque bias ratio / locking fraction, for the
+    #: sensitivity sweeps the [ASSUMED] LSD numbers require (F76).
+    torque_bias_ratio: float | None = None
+    locking: float | None = None
+
+    #: --- Episode 11: perturbations. Both default to off, so every Episode 9 and
+    #: 10 result is produced by exactly the environment those episodes describe.
+    #:
+    #: Standard deviation of zero-mean Gaussian noise added to the commanded
+    #: STEERING action each step, in units of the normalised action. This is the
+    #: driver's hands and the steering system, not the policy's own exploration:
+    #: it is applied after the policy has chosen, and it is present at deployment.
+    #: [ASSUMED] — a real figure would come from steering-robot repeatability data.
+    steer_noise: float = 0.0
+    #: Multiplier on the tire's peak lateral friction, applied per episode through
+    #: the file's ``[SCALING_COEFFICIENTS]`` (``LMUY``) and NEVER by touching a
+    #: ``P*`` coefficient. 1.0 is the tire every other episode drives.
+    #:
+    #: Drawn uniformly from ``[1 - grip_spread, 1 + grip_spread]`` at each reset
+    #: when ``grip_spread`` is non-zero: one surface per lap, not per step, which
+    #: is what a damp patch or a cold track actually looks like.
+    grip_spread: float = 0.0
+    #: Vehicle parameters the policy is CONDITIONED ON. Naming one here does two
+    #: things at once, and they belong together: the parameter is resampled from
+    #: its documented design-sweep range at every reset, and its current value is
+    #: appended to the observation, normalised to [-1, 1] over that range.
+    #:
+    #: Episode 9's policy could drive one car. Comparing designs with a driver
+    #: that has to be retrained for each one measures the retraining as much as
+    #: the car — every run lands somewhere different, and Season 2's comparisons
+    #: were only fair because it was the same solver every time. A policy that
+    #: sees the car it is driving can be trained once and asked about any of
+    #: them, which is what makes an RL-versus-optimal-control cross-check
+    #: possible at all. Empty tuple = Episode 9 behaviour, one fixed car.
+    design_keys: tuple[str, ...] = ()
+    #: Override the sampling range for a conditioned parameter. Defaults to the
+    #: documented ``schema.DESIGN_SWEEP`` entry.
+    #:
+    #: Worth having because the design-sweep range and the range you want a
+    #: policy trained over are not the same thing. ``DESIGN_SWEEP`` says
+    #: 0.35-0.65 front mass, but Episode 7 only ever evaluates 0.40-0.65 — so
+    #: training below 0.40 spends samples on cars nobody asks about, and those
+    #: are the hardest cars in the range (K reaches -0.43 deg/g at 0.40 and gets
+    #: worse). Narrowing to the evaluated range is a training decision, not a
+    #: change to what the design sweep means, so it lives here rather than in
+    #: the schema.
+    design_ranges: dict[str, tuple[float, float]] | None = None
+
+
+class DrivingEnv:
+    """One car on one road, stepped at fixed dt. Gym-like but not gym-dependent.
+
+    Not a ``gym.Env`` subclass on purpose: the interface needed here is four
+    methods, and taking the dependency would buy nothing but a version pin.
+    """
+
+    def __init__(self, config: EnvConfig | None = None, seed: int | None = None):
+        self.cfg = config or EnvConfig()
+        self.backend = DoubleTrackBackend(
+            self.cfg.params, diff=self.cfg.diff,
+            torque_bias_ratio=self.cfg.torque_bias_ratio,
+            locking=self.cfg.locking)
+        self.rng = np.random.default_rng(seed)
+        self._pinned: dict[str, float] | None = None
+        self._ref_s = np.linspace(0.0, self.cfg.track.length, 4000)
+        _, self._ref_x, self._ref_y, self._ref_head = \
+            self.cfg.track.centreline(4000)
+        self.reset()
+
+    # -- geometry ---------------------------------------------------------
+    @property
+    def obs_dim(self) -> int:
+        return 6 + len(PREVIEW_DISTANCES) + len(self.cfg.design_keys)
+
+    def _design_vector(self) -> np.ndarray:
+        """The conditioned parameters, normalised to [-1, 1] over their range."""
+        out = []
+        for k in self.cfg.design_keys:
+            lo, hi = self._range(k)
+            v = getattr(self.backend.params, k)
+            out.append(2.0 * (v - lo) / (hi - lo) - 1.0)
+        return np.asarray(out, dtype=float)
+
+    def _range(self, key: str) -> tuple[float, float]:
+        over = (self.cfg.design_ranges or {}).get(key)
+        return tuple(over) if over else schema.DESIGN_SWEEP[key]
+
+    def _sample_design(self) -> schema.VehicleParams:
+        p = self.cfg.params
+        if not self.cfg.design_keys:
+            return p
+        draw = {k: float(self.rng.uniform(*self._range(k)))
+                for k in self.cfg.design_keys}
+        draw.update(self._pinned or {})
+        return replace(p, **draw)
+
+    @property
+    def act_dim(self) -> int:
+        return 2
+
+    def _road_heading(self, s: float) -> float:
+        return float(np.interp(s % self.cfg.track.length, self._ref_s,
+                               self._ref_head))
+
+    def _curvature_ahead(self) -> np.ndarray:
+        return np.array([self.cfg.track.curvature(
+            min(self.s + d, self.cfg.track.length)) for d in PREVIEW_DISTANCES])
+
+    # -- the loop ---------------------------------------------------------
+    def _tire_for(self, grip: float):
+        """The tire at ``grip`` x nominal peak lateral friction.
+
+        Retargeted through ``[SCALING_COEFFICIENTS]``, never by editing a ``P*``
+        coefficient — that is a hard invariant of this project, because the ``P*``
+        values are a published fit and a hand-edited one is no longer traceable to
+        anything. ``LMUY`` is the sanctioned knob and it composes with whatever the
+        file already carries.
+        """
+        base = default_tire()
+        if grip == 1.0:
+            return base
+        return base.rescaled(lmuy=base.scaling.lmuy * grip)
+
+    def reset(self, seed: int | None = None) -> np.ndarray:
+        if seed is not None:
+            self.rng = np.random.default_rng(seed)
+        self.s = float(self.rng.uniform(0.0, self.cfg.start_jitter_m)
+                       if self.cfg.start_jitter_m > 0 else 0.0)
+        self.n = 0.0
+        self.xi = 0.0
+        # One surface per lap. Drawn before the backend is built so the design
+        # resample and the grip draw cannot disagree about which tire is fitted.
+        self.grip = 1.0
+        if self.cfg.grip_spread:
+            self.grip = float(self.rng.uniform(1.0 - self.cfg.grip_spread,
+                                               1.0 + self.cfg.grip_spread))
+        if self.cfg.design_keys or self.cfg.grip_spread:
+            base = self._sample_design() if self.cfg.design_keys else self.cfg.params
+            self.backend = DoubleTrackBackend(
+                base, tire=self._tire_for(self.grip), diff=self.cfg.diff,
+                torque_bias_ratio=self.cfg.torque_bias_ratio,
+                locking=self.cfg.locking)
+        self.backend.reset(self.cfg.entry_speed)
+        self.steps = 0
+        self.done = False
+        self.log = {k: [] for k in
+                    ("s", "n", "xi", "speed", "steer", "drive", "reward",
+                     "alpha_max_deg", "kappa_max", "load_min", "load_max",
+                     "envelope_violation")}
+        return self.observe()
+
+    def observe(self) -> np.ndarray:
+        st = self.backend.state
+        speed = math.hypot(st.v_x, st.v_y)
+        beta = math.atan2(st.v_y, max(st.v_x, 1e-3))
+        return np.concatenate([
+            np.array([
+                speed / 50.0,               # normalised, schema-style
+                self.n / self.cfg.track.half_width,
+                self.xi / math.radians(60.0),
+                st.yaw_rate / 2.0,
+                beta / math.radians(30.0),
+                st.steer / STEER_MAX,
+            ], dtype=float),
+            self._curvature_ahead() * 40.0,   # ~1 at the corner radius
+            self._design_vector(),
+        ])
+
+    def step(self, action: np.ndarray) -> tuple[np.ndarray, float, bool, dict]:
+        """One control interval. ``action`` is [steer_rate, drive_force], in [-1, 1]."""
+        if self.done:
+            raise RuntimeError("step() after done; call reset()")
+        a = np.clip(np.asarray(action, dtype=float), -1.0, 1.0)
+        # Steering noise is added AFTER the policy has chosen and after the clip,
+        # then re-clipped: it is the hands and the linkage, not the policy. It is
+        # therefore present at deployment, which is the whole point — Episode 9's
+        # exploration noise was an artefact of training and vanished on the car
+        # you would ship; this does not vanish. Steering only: throttle jitter is
+        # a different mechanism and mixing them would make the result
+        # unattributable.
+        if self.cfg.steer_noise:
+            a = a.copy()
+            a[0] = np.clip(a[0] + self.rng.normal(0.0, self.cfg.steer_noise),
+                           -1.0, 1.0)
+        act = self.backend.act_space.pack(
+            steer_rate=a[0] * STEER_RATE_MAX,
+            drive_force=(a[1] * DRIVE_MAX if a[1] >= 0 else a[1] * BRAKE_MAX),
+        )
+        _, info = self.backend.step(act, self.cfg.dt)
+        st = self.backend.state
+        speed = math.hypot(st.v_x, st.v_y)
+
+        # Curvilinear kinematics, the same relations physics/optimal_control.py
+        # integrates in the distance domain:
+        #
+        #     s_dot  = (v_x cos xi - v_y sin xi) / (1 - n * kappa)
+        #     n_dot  =  v_x sin xi + v_y cos xi
+        #     xi_dot =  r - kappa * s_dot
+        #
+        # All three rates come from the state BEFORE any of them is integrated.
+        # An earlier version advanced xi first and then used it to compute s_dot,
+        # and used kappa*speed rather than kappa*s_dot for the road's own turn
+        # rate — both wrong, and both the sort of wrong that still produces a
+        # plausible-looking lap.
+        kappa = float(self.cfg.track.curvature(self.s))
+        s_dot = ((st.v_x * math.cos(self.xi) - st.v_y * math.sin(self.xi))
+                 / max(1.0 - self.n * kappa, 1e-3))
+        n_dot = st.v_x * math.sin(self.xi) + st.v_y * math.cos(self.xi)
+        xi_dot = st.yaw_rate - kappa * s_dot
+        ds = s_dot
+        self.s += s_dot * self.cfg.dt
+        self.n += n_dot * self.cfg.dt
+        self.xi = self._wrap(self.xi + xi_dot * self.cfg.dt)
+
+        self.steps += 1
+        off = abs(self.n) > self.cfg.track.half_width
+        finished = self.s >= self.cfg.track.length
+        stalled = speed < self.cfg.min_speed
+        timeout = self.steps >= self.cfg.max_steps
+        self.done = bool(off or finished or stalled or timeout)
+
+        # reward: progress, a penalty for falling off, and — from Episode 10 on —
+        # a cost for operating where the tire model has no fit.
+        reward = ds * self.cfg.dt
+        if off:
+            reward -= self.cfg.off_track_penalty
+        if self.cfg.envelope_penalty > 0.0:
+            sl = self.backend.slip_angles()
+            worst = math.degrees(max(abs(v) for v in sl.values()))
+            excess = max(0.0, worst - math.degrees(ENVELOPE_SLIP_MAX))
+            if excess > 0.0:
+                reward -= self.cfg.envelope_penalty * excess / math.degrees(
+                    ENVELOPE_SLIP_MAX)
+
+        # Log the reward the learner actually receives, penalty included. An
+        # earlier version logged only the progress term, so every training
+        # summary read back a healthy positive return for episodes that had just
+        # driven off the road and been penalised 50 for it.
+        self._record(ds, a, speed, info, reward)
+        return self.observe(), float(reward), self.done, {
+            "s": self.s, "n": self.n, "speed": speed, "off_track": off,
+            "finished": finished, "stalled": stalled, "timeout": timeout,
+            "envelope_violation": bool(info.envelope_violation),
+        }
+
+    @staticmethod
+    def _wrap(a: float) -> float:
+        return (a + math.pi) % (2.0 * math.pi) - math.pi
+
+    def _record(self, ds, a, speed, info, reward) -> None:
+        """Everything CLAUDE.md rule 4 demands, every step, no exceptions."""
+        sl = self.backend.slip_angles()
+        loads = self.backend.wheel_loads(info.a_x, info.a_y)
+        self.log["s"].append(self.s)
+        self.log["n"].append(self.n)
+        self.log["xi"].append(self.xi)
+        self.log["speed"].append(speed)
+        self.log["steer"].append(self.backend.state.steer)
+        self.log["drive"].append(float(a[1]))
+        self.log["reward"].append(float(reward))
+        self.log["alpha_max_deg"].append(
+            math.degrees(max(abs(v) for v in sl.values())))
+        self.log["kappa_max"].append(0.0)
+        self.log["load_min"].append(min(loads.values()))
+        self.log["load_max"].append(max(loads.values()))
+        self.log["envelope_violation"].append(bool(info.envelope_violation))
+
+    def set_design(self, **kw) -> None:
+        """Pin the conditioned parameters instead of resampling them.
+
+        Used for evaluation: train across the whole design range, then ask the
+        one policy about a specific car. Takes effect at the next ``reset``.
+
+        Pinning has to survive ``reset``, which is where the resampling happens.
+        An earlier version cleared ``design_keys`` to stop the draw and then put
+        it back so the observation stayed the right width — which simply re-armed
+        the resampling, and every "pinned" evaluation silently ran on a random
+        car. The pin is now separate state that ``reset`` checks.
+        """
+        unknown = set(kw) - set(self.cfg.design_keys)
+        assert not unknown, f"not conditioned on {sorted(unknown)}"
+        self._pinned = dict(kw)
+
+    def history(self) -> dict[str, np.ndarray]:
+        return {k: np.asarray(v) for k, v in self.log.items()}
+
+
+def rollout(env: DrivingEnv, policy, seed: int | None = None) -> dict:
+    """Drive one episode with ``policy(obs) -> action`` and return the history.
+
+    Metrics are computed downstream from the logged arrays, never inside the
+    loop (CLAUDE.md rule 7) — "what counts as the apex" gets redefined three
+    times and re-running a training job to answer it is not acceptable.
+    """
+    obs = env.reset(seed)
+    total = 0.0
+    while not env.done:
+        obs, r, done, info = env.step(policy(obs))
+        total += r
+    h = env.history()
+    return {
+        **h,
+        "return": total,
+        "steps": int(env.steps),
+        "finished": bool(h["s"][-1] >= env.cfg.track.length),
+        "off_track": bool(abs(h["n"][-1]) > env.cfg.track.half_width),
+        "distance_m": float(h["s"][-1]),
+        "lap_time_s": float(env.steps * env.cfg.dt),
+        "worst_slip_deg": float(np.max(h["alpha_max_deg"])),
+        "envelope_occupancy": float(np.mean(h["envelope_violation"])),
+        "slip_over_12deg_fraction": float(np.mean(h["alpha_max_deg"] > 12.0)),
+    }
+
+
+__all__ = ["DrivingEnv", "EnvConfig", "rollout", "DT", "PREVIEW_DISTANCES",
+           "ENVELOPE_SLIP_MAX",
+           "STEER_RATE_MAX", "STEER_MAX", "DRIVE_MAX", "BRAKE_MAX"]

@@ -1,0 +1,14 @@
+# virtualenv and caches
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.DS_Store
+
+# Nothing else is ignored on purpose.
+#
+# Generated outputs ARE committed: experiments/*/out/ and diagnostics/out/ hold the
+# figures and results.json every episode draft cites. The articles reference them by
+# path, so a checkout without them has broken links and unverifiable numbers. They
+# are regenerable — that is what each run.py is for — but the point of committing
+# them is that you can read the series without a solver licence or an hour of CPU.

@@ -1,0 +1,14 @@
+# Contact Patch — Season 1 dependencies.
+#
+#   python -m venv .venv && .venv/bin/pip install -r requirements.txt
+#
+# Deliberately thin. torch arrives with Episode 9 (PPO). Figures are
+# hand-written SVG via viz/lib.py, so there is no plotting dependency.
+numpy>=2.0
+pytest>=8.0
+# Optimal control, Episode 4 onward. Ships its own IPOPT build.
+casadi>=3.7
+# PPO, Episode 9 onward. CPU is enough: the environment is a few hundred
+# floating-point operations per step and the policy is a small MLP, so the
+# bottleneck is the physics loop, not the network.
+torch>=2.0

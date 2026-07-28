@@ -1,0 +1,356 @@
+{
+  "entry_speed_ms": 32.0,
+  "n_nodes": 100,
+  "track": "long exit",
+  "pair_front_mass_fraction": 0.43,
+  "pair_multipliers": [
+    0.8,
+    1.22
+  ],
+  "pair": {
+    "0.80": {
+      "rise_time": 0.20149999999999998,
+      "peak_time": 0.976,
+      "overshoot": 0.0022627028110078218,
+      "settling_time": 0.3865,
+      "final": 0.1463969435737604,
+      "i_zz": 1560.0,
+      "i_zz_multiplier": 0.8
+    },
+    "1.22": {
+      "rise_time": 0.3035,
+      "peak_time": 1.234,
+      "overshoot": 0.0014398241379354193,
+      "settling_time": 0.5595,
+      "final": 0.14644008662000693,
+      "i_zz": 2379.0,
+      "i_zz_multiplier": 1.22
+    }
+  },
+  "pair_understeer_gradient_deg_per_g": -0.24262910496613366,
+  "surface_front": [
+    0.38,
+    0.43,
+    0.48,
+    0.53,
+    0.58,
+    0.62
+  ],
+  "surface_izz": [
+    0.75,
+    0.9,
+    1.05,
+    1.2,
+    1.4
+  ],
+  "surface": {
+    "0.38_0.75": {
+      "rise_time": 0.227,
+      "peak_time": 1.093,
+      "overshoot": 0.002443954566423434,
+      "settling_time": 0.4575,
+      "final": 0.15573169258511807
+    },
+    "0.38_0.90": {
+      "rise_time": 0.2685,
+      "peak_time": 1.1835,
+      "overshoot": 0.002063018849041809,
+      "settling_time": 0.5225,
+      "final": 0.1557557730868125
+    },
+    "0.38_1.05": {
+      "rise_time": 0.3095,
+      "peak_time": 1.2790000000000001,
+      "overshoot": 0.0016663464289643493,
+      "settling_time": 0.589,
+      "final": 0.15577839840972676
+    },
+    "0.38_1.20": {
+      "rise_time": 0.35,
+      "peak_time": 1.3780000000000001,
+      "overshoot": 0.0012686047154510938,
+      "settling_time": 0.656,
+      "final": 0.15579819412500429
+    },
+    "0.38_1.40": {
+      "rise_time": 0.40349999999999997,
+      "peak_time": 1.5135,
+      "overshoot": 0.000769394733140194,
+      "settling_time": 0.746,
+      "final": 0.1558165171749912
+    },
+    "0.43_0.75": {
+      "rise_time": 0.189,
+      "peak_time": 0.9480000000000001,
+      "overshoot": 0.0023499822506016788,
+      "settling_time": 0.366,
+      "final": 0.14639165508557084
+    },
+    "0.43_0.90": {
+      "rise_time": 0.226,
+      "peak_time": 1.034,
+      "overshoot": 0.0020796539715317586,
+      "settling_time": 0.4275,
+      "final": 0.14640748477172025
+    },
+    "0.43_1.05": {
+      "rise_time": 0.2625,
+      "peak_time": 1.1255,
+      "overshoot": 0.0017873919303252883,
+      "settling_time": 0.489,
+      "final": 0.14642309714099241
+    },
+    "0.43_1.20": {
+      "rise_time": 0.2985,
+      "peak_time": 1.221,
+      "overshoot": 0.0014811943530637084,
+      "settling_time": 0.551,
+      "final": 0.14643815181660766
+    },
+    "0.43_1.40": {
+      "rise_time": 0.347,
+      "peak_time": 1.353,
+      "overshoot": 0.0010685158299177377,
+      "settling_time": 0.634,
+      "final": 0.14645617514669207
+    },
+    "0.48_0.75": {
+      "rise_time": 0.165,
+      "peak_time": 0.7745,
+      "overshoot": 0.002286431124794097,
+      "settling_time": 0.2975,
+      "final": 0.1382277981800602
+    },
+    "0.48_0.90": {
+      "rise_time": 0.1985,
+      "peak_time": 0.869,
+      "overshoot": 0.002063226245990535,
+      "settling_time": 0.356,
+      "final": 0.13823845667675289
+    },
+    "0.48_1.05": {
+      "rise_time": 0.23149999999999998,
+      "peak_time": 0.968,
+      "overshoot": 0.001819998271674006,
+      "settling_time": 0.41400000000000003,
+      "final": 0.1382490947349462
+    },
+    "0.48_1.20": {
+      "rise_time": 0.2645,
+      "peak_time": 1.07,
+      "overshoot": 0.0015651459267200796,
+      "settling_time": 0.47250000000000003,
+      "final": 0.13825965930723888
+    },
+    "0.48_1.40": {
+      "rise_time": 0.308,
+      "peak_time": 1.207,
+      "overshoot": 0.0012185252293028803,
+      "settling_time": 0.55,
+      "final": 0.13827334191672402
+    },
+    "0.53_0.75": {
+      "rise_time": 0.151,
+      "peak_time": 0.512,
+      "overshoot": 0.003032969721082024,
+      "settling_time": 0.2545,
+      "final": 0.13100247385481625
+    },
+    "0.53_0.90": {
+      "rise_time": 0.181,
+      "peak_time": 0.6365000000000001,
+      "overshoot": 0.002448537996843081,
+      "settling_time": 0.3075,
+      "final": 0.13100997248818108
+    },
+    "0.53_1.05": {
+      "rise_time": 0.2115,
+      "peak_time": 0.7655000000000001,
+      "overshoot": 0.002027149940613704,
+      "settling_time": 0.3615,
+      "final": 0.131017459584441
+    },
+    "0.53_1.20": {
+      "rise_time": 0.242,
+      "peak_time": 0.8925000000000001,
+      "overshoot": 0.0016961591504194296,
+      "settling_time": 0.41600000000000004,
+      "final": 0.13102494193645056
+    },
+    "0.53_1.40": {
+      "rise_time": 0.2825,
+      "peak_time": 1.0545,
+      "overshoot": 0.0013259630548516643,
+      "settling_time": 0.4895,
+      "final": 0.1310348863835417
+    },
+    "0.58_0.75": {
+      "rise_time": 0.1435,
+      "peak_time": 0.4045,
+      "overshoot": 0.005702878653803589,
+      "settling_time": 0.2305,
+      "final": 0.12454563644484637
+    },
+    "0.58_0.90": {
+      "rise_time": 0.172,
+      "peak_time": 0.497,
+      "overshoot": 0.0041536547085523345,
+      "settling_time": 0.279,
+      "final": 0.12455116439750498
+    },
+    "0.58_1.05": {
+      "rise_time": 0.20049999999999998,
+      "peak_time": 0.6,
+      "overshoot": 0.003037192169782932,
+      "settling_time": 0.329,
+      "final": 0.12455667010442677
+    },
+    "0.58_1.20": {
+      "rise_time": 0.22949999999999998,
+      "peak_time": 0.715,
+      "overshoot": 0.0022560573337895296,
+      "settling_time": 0.38,
+      "final": 0.12456216458099727
+    },
+    "0.58_1.40": {
+      "rise_time": 0.268,
+      "peak_time": 0.8865000000000001,
+      "overshoot": 0.001574938805473991,
+      "settling_time": 0.449,
+      "final": 0.12456950801597781
+    },
+    "0.62_0.75": {
+      "rise_time": 0.142,
+      "peak_time": 0.374,
+      "overshoot": 0.00821923062967711,
+      "settling_time": 0.2215,
+      "final": 0.11984732872296464
+    },
+    "0.62_0.90": {
+      "rise_time": 0.16949999999999998,
+      "peak_time": 0.4525,
+      "overshoot": 0.00608170976628486,
+      "settling_time": 0.2675,
+      "final": 0.11985180666059936
+    },
+    "0.62_1.05": {
+      "rise_time": 0.1975,
+      "peak_time": 0.5385,
+      "overshoot": 0.004422144055731714,
+      "settling_time": 0.315,
+      "final": 0.11985625648705117
+    },
+    "0.62_1.20": {
+      "rise_time": 0.2255,
+      "peak_time": 0.635,
+      "overshoot": 0.0031771272182468113,
+      "settling_time": 0.3635,
+      "final": 0.11986068451221192
+    },
+    "0.62_1.40": {
+      "rise_time": 0.2625,
+      "peak_time": 0.7825,
+      "overshoot": 0.002041353181771788,
+      "settling_time": 0.4295,
+      "final": 0.1198665941011695
+    }
+  },
+  "K_deg_per_g": {
+    "0.38": -0.4545874962655957,
+    "0.43": -0.24262910496613366,
+    "0.48": -0.03169969201673218,
+    "0.53": 0.17822969075568734,
+    "0.58": 0.38709674383539894,
+    "0.62": 0.5532478028381652
+  },
+  "archetypes": {
+    "front_fwd": {
+      "rise_time": 0.2345,
+      "peak_time": 0.6695,
+      "overshoot": 0.0028424494401595446,
+      "settling_time": 0.3795,
+      "final": 0.11986215871936608,
+      "front_mass_fraction": 0.62,
+      "i_zz_multiplier": 1.25,
+      "drive": "fwd",
+      "understeer_gradient_deg_per_g": 0.5341606610145079,
+      "time_s": 12.067739217926148,
+      "solver_status": "Solve_Succeeded",
+      "converged": true,
+      "envelope_occupancy": 0.0
+    },
+    "front_rwd": {
+      "rise_time": 0.236,
+      "peak_time": 0.8140000000000001,
+      "overshoot": 0.0018402798144085963,
+      "settling_time": 0.3995,
+      "final": 0.1283551655679007,
+      "front_mass_fraction": 0.55,
+      "i_zz_multiplier": 1.2,
+      "drive": "rwd",
+      "understeer_gradient_deg_per_g": 0.26191308793559337,
+      "time_s": 12.0985209925233,
+      "solver_status": "Solve_Succeeded",
+      "converged": true,
+      "envelope_occupancy": 0.0
+    },
+    "front_mid_rwd": {
+      "rise_time": 0.20149999999999998,
+      "peak_time": 0.7225,
+      "overshoot": 0.002154680970286371,
+      "settling_time": 0.3435,
+      "final": 0.13101496466691478,
+      "front_mass_fraction": 0.53,
+      "i_zz_multiplier": 1.0,
+      "drive": "rwd",
+      "understeer_gradient_deg_per_g": 0.17822969075568734,
+      "time_s": 12.078363623821469,
+      "solver_status": "Solve_Succeeded",
+      "converged": true,
+      "envelope_occupancy": 0.0
+    },
+    "mid_rwd": {
+      "rise_time": 0.20149999999999998,
+      "peak_time": 0.976,
+      "overshoot": 0.0022627028110078218,
+      "settling_time": 0.3865,
+      "final": 0.1463969435737604,
+      "front_mass_fraction": 0.43,
+      "i_zz_multiplier": 0.8,
+      "drive": "rwd",
+      "understeer_gradient_deg_per_g": -0.24262910496613366,
+      "time_s": 12.042826727659227,
+      "solver_status": "Solve_Succeeded",
+      "converged": true,
+      "envelope_occupancy": 0.0
+    },
+    "rear_rwd": {
+      "rise_time": 0.3555,
+      "peak_time": 1.391,
+      "overshoot": 0.0012164502923848186,
+      "settling_time": 0.665,
+      "final": 0.1558005173480959,
+      "front_mass_fraction": 0.38,
+      "i_zz_multiplier": 1.22,
+      "drive": "rwd",
+      "understeer_gradient_deg_per_g": -0.4545874962655957,
+      "time_s": 12.078687601259817,
+      "solver_status": "Solve_Succeeded",
+      "converged": true,
+      "envelope_occupancy": 0.0
+    }
+  },
+  "held_fixed": "mass, wheelbase, track, CoM height, tires, roll stiffness distribution. Balance and yaw inertia are the two axes and they move independently, which is the point -- a real layout change moves both at once.",
+  "note": "Transient metrics use the bicycle model, matching D4, which validated its step response against an exactly integrated linear model to 3%. Yaw inertia is a rigid-body property and lateral load transfer does not change it. Lap times use the four-wheel model as Episodes 6 and 7 do.",
+  "archetypes_converged": [
+    "front_fwd",
+    "front_mid_rwd",
+    "front_rwd",
+    "mid_rwd",
+    "rear_rwd"
+  ],
+  "archetypes_not_converged": [],
+  "archetype_time_span_s": 0.05569426486407281,
+  "archetype_time_span_is_converged_only": true,
+  "archetype_rise_span_ms": 154.0
+}

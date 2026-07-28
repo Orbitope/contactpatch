@@ -3122,6 +3122,69 @@ reported rather than acted on — the decision to spend that much wall-clock,
 or to look for a smaller production step count first, is not this session's
 to make alone.
 
+### F92 · Production training (3 seeds × 2 variants, 5,000,000 steps): neither RL variant reliably agrees with the classical controller, and the seeds disagree with each other. · 2026-07-28
+
+**Source:** `[MEASURED]` — `experiments/ep14/run.py --variant={H,E} --seed={0,1,2}`,
+5,000,000 steps each, `envelope_penalty=0.5`, aggregated via `--aggregate`.
+Full detail in `experiments/ep14/out/results.json` and `production_report.json`;
+per-seed D6 reports in `diagnostics/out/D6-ep14-{H,E}_seed{0,1,2}.md`.
+
+| Variant | Seed | Wall-clock | D6 | Finished | Distance | Peak lat. g | Worst slip | Envelope occupancy |
+|---|---|---|---|---|---|---|---|---|
+| H | 0 | 13,552 s (3.76 h) | FAILED (critic, tire model) | True | 393 m (100%) | 1.00 | 14.8° | 4.0% |
+| H | 1 | 14,501 s (4.03 h) | FAILED (greedy/stochastic agree, tire model) | True | 393 m (100%) | 0.96 | 10.5° | 0.0% |
+| H | 2 | 13,880 s (3.86 h) | FAILED (deployed-policy, greedy/stochastic agree) | False | 136 m (35%) | 0.98 | 9.4° | 0.0% |
+| E | 0 | 7,167 s (1.99 h) | FAILED (6 checks) | False | 131 m (33%) | 1.01 | 13.5° | 24.7% |
+| E | 1 | 7,119 s (1.98 h) | FAILED (5 checks) | False | 353 m (90%) | 1.01 | 16.8° | 3.5% |
+| E | 2 | 7,097 s (1.97 h) | **PASSED** | True | 393 m (100%) | 0.98 | 8.8° | 0.0% |
+
+**H's D6 pass rate is 0/3; E's is 1/3.** Neither variant converges to a policy
+this project's own training-health battery calls clean, at this budget, this
+reward, this envelope penalty.
+
+**The two variants fail differently, and the difference is informative.** H's
+three seeds cluster near the tire's own ±12° fit (9.4–14.8°) and its failures
+are the mild kind — an optimistic critic, the greedy and sampled policies
+disagreeing with each other — not a policy that has run away from the physics.
+Two of its three seeds finish the full corner. E's three seeds split sharply:
+one (seed 2) trains cleanly, passes every D6 check, and finishes; the other two
+find a way to operate substantially outside the tire's own fit (13.5° and
+16.8°, up to 24.7% of the run spent past the bound) and neither finishes —
+**the same tire-model exploit Episode 9 first found (F53/F56), reappearing
+under the identical envelope penalty (0.5) Episode 10's protocol and this
+episode both use.** An end-to-end action space with no allocator to constrain
+it is, on this evidence, more prone to finding that exploit than a policy whose
+lower layer is fixed to the classical allocator — itself a real result about
+*where* an allocator helps, which is the sharper question this episode set out
+to ask.
+
+**The representative-seed rule (median by finish distance, not best-of-N —
+F71) surfaces its own point here.** E's three finish distances are 131 m, 353 m
+and 393 m; the median is seed 1 at 353 m — one of the two exploit seeds, NOT
+the one clean pass (seed 2, which would be picked by any best-of-N rule and
+would flatter the result). Every E figure and number in this episode that says
+"representative" is seed 1's trace, not seed 2's, on purpose.
+
+**Methodological correction made before publishing, not after:** the first
+draft of the friction-circle figure (`envelope_escape_figure`) picked each
+seed's peak-*utilisation* instant to snapshot, which need not be the same
+step as that seed's worst *slip angle* — and briefly showed a smaller angle
+on the figure than `worst_slip_deg` already reported elsewhere for the same
+seed (rule 3: an internal disagreement between two numbers describing the
+same thing). Fixed by picking `argmax(alpha_max_deg)` instead, the same step
+`worst_slip_deg` is computed from, so the figure and the number it sits next
+to now describe the identical instant. See `experiments/ep14/run.py::production_report`.
+
+**What this is not.** Not a claim that RL cannot do torque vectoring, and not
+a claim that the classical controller "won" — no lap-time race was run, and
+CLAUDE.md rule 6 forbids comparing absolute lap times across methods anyway.
+It is a report of what THIS training budget, THIS reward, and THIS envelope
+penalty actually produced: a hybrid action space that stays close to the
+physics but does not fully converge, and an end-to-end action space that
+mostly finds the same tire-model exploit Season 3 already documented, with one
+seed in three finding a clean answer instead. Longer training, a different
+seed count, or a stronger envelope penalty are all still open.
+
 ---
 
 # Decisions

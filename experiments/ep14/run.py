@@ -54,6 +54,7 @@ cost the better part of a day::
 from __future__ import annotations
 
 import json
+import math
 import sys
 import time
 from pathlib import Path
@@ -194,6 +195,95 @@ def figures(out: Path, name: str = "results.json",
     write(out / fig_name, rl_tv_figures.pilot_sanity_figure(results))
 
 
+def full_trace(out: Path, variant: str, seed: int) -> dict:
+    """Re-roll the DEPLOYED policy for one (variant, seed) to recover the
+    per-corner fx/fy/fz arrays the compact ``result_*.json`` doesn't keep
+    (only their downstream summaries do). Same policy file, same env config,
+    same seed=0 rollout ``evaluate_variant`` already used — this reproduces
+    that run's own s/mz/peak_a_y_g bit for bit, it just keeps more of it.
+
+    Cached to ``full_trace_{variant}_seed{n}.npz`` so the figure step doesn't
+    re-roll a policy every time a caption wording changes.
+    """
+    tag = f"{variant}_seed{seed}"
+    cache = out / f"full_trace_{tag}.npz"
+    if cache.exists():
+        return dict(np.load(cache))
+    cfg = _env_config(variant)
+    model, _ = _policy_from(out, tag, cfg)
+    env = DrivingEnv(cfg)
+    tr = rollout(env, greedy_policy(model), seed=0)
+    keys = ("s", "a_y", "utilisation_max", "alpha_max_deg") + tuple(
+        f"{f}_{c}" for f in ("fx", "fy", "fz") for c in CORNERS)
+    data = {k: np.asarray(tr[k]) for k in keys}
+    np.savez(cache, **data)
+    return data
+
+
+def production_report(out: Path) -> dict:
+    """Per-seed friction-ellipse detail for the figures that ask 'did each
+    seed's policy stay inside the tire it was fitted on' — the compact
+    aggregate in ``results.json`` keeps only the representative seed's trace.
+
+    Peak-g instant (for the control-surfaces comparison) and worst-SLIP
+    instant (for the envelope-escape figure) are picked from the SAME logged
+    arrays every other metric in this episode comes from (rule 7) — nothing
+    here is computed inside a rollout loop. The worst-slip instant is
+    ``argmax(alpha_max_deg)``, not ``argmax(utilisation_max)`` — the two need
+    not coincide, and picking utilisation would let the friction-circle
+    snapshot show a smaller angle than the ``worst_slip_deg`` already
+    reported in ``result_*.json`` and the seed-scorecard figure, which is
+    exactly the kind of disagreeing-numbers bug rule 3 exists to catch.
+    """
+    from physics import schema
+    backend = DoubleTrackBackend(schema.RV_1)
+    report = {"variants": {}}
+    for variant in ("H", "E"):
+        seeds = []
+        for seed in range(3):
+            rp = out / f"result_{variant}_seed{seed}.json"
+            if not rp.exists():
+                continue
+            tr = full_trace(out, variant, seed)
+            i_peak = int(np.argmax(np.abs(tr["a_y"])))
+            i_slip = int(np.argmax(tr["alpha_max_deg"]))
+
+            def _corners(i):
+                out2 = {}
+                for c in CORNERS:
+                    fx, fy = float(tr[f"fx_{c}"][i]), float(tr[f"fy_{c}"][i])
+                    fz = max(float(tr[f"fz_{c}"][i]), 1.0)
+                    fx_p = float(backend.tire.peak_fx(fz))
+                    fy_p = float(backend.tire.peak_fy(fz))
+                    out2[c] = {"fx": fx, "fy": fy, "fz": fz,
+                              "util": math.hypot(fx / fx_p, fy / fy_p)}
+                return out2
+
+            fracs = {}
+            for c in CORNERS:
+                fz = max(float(tr[f"fz_{c}"][i_slip]), 1.0)
+                fx_p = float(backend.tire.peak_fx(fz))
+                fy_p = float(backend.tire.peak_fy(fz))
+                fracs[c] = {"fx_frac": float(tr[f"fx_{c}"][i_slip]) / fx_p,
+                           "fy_frac": float(tr[f"fy_{c}"][i_slip]) / fy_p}
+            seeds.append({
+                "seed": seed,
+                "peak_instant": {"s": float(tr["s"][i_peak]),
+                                 "a_y_g": float(tr["a_y"][i_peak] / schema.G),
+                                 "corners": _corners(i_peak)},
+                "worst_slip_instant": {
+                    "s": float(tr["s"][i_slip]),
+                    "utilisation_max": float(tr["utilisation_max"][i_slip]),
+                    "alpha_max_deg": float(tr["alpha_max_deg"][i_slip]),
+                    "fracs": fracs,
+                },
+            })
+        report["variants"][variant] = seeds
+    (out / "production_report.json").write_text(
+        json.dumps(report, indent=2) + "\n")
+    return report
+
+
 def _run_one(out: Path, variant: str, seed: int, steps: int, pilot: bool,
              eval_only: bool) -> dict:
     """Train (or load) and evaluate ONE (variant, seed) combination.
@@ -244,19 +334,53 @@ def _run_one(out: Path, variant: str, seed: int, steps: int, pilot: bool,
 
 def _load_classical_c(results: dict) -> None:
     """Episode 13, reused — not retrained, not re-evaluated."""
+    from physics import schema
     ep13 = episode_dir(13) / "results.json"
     if ep13.exists():
         c = json.loads(ep13.read_text())
+        tv4 = c["traces"]["tv4"]
+        i_peak = int(np.argmax(np.abs(tv4["a_y"])))
         results["classical_c"] = {
             "source": "experiments/ep13/out/results.json",
-            "s": c["traces"]["tv4"]["s"],
+            "s": tv4["s"],
             "mz_demand": c["traces"]["tv4_control"]["mz_demand"],
             "mz_delivered": c["traces"]["tv4_control"]["mz_delivered"],
+            "peak_instant": {
+                "s": tv4["s"][i_peak],
+                "a_y_g": tv4["a_y"][i_peak] / schema.G,
+                "corners": {c2: {"fx": tv4[f"fx_{c2}"][i_peak],
+                                "fz": tv4[f"fz_{c2}"][i_peak],
+                                "util": tv4[f"util_{c2}"][i_peak]}
+                           for c2 in CORNERS},
+            },
         }
         print("  classical C loaded from experiments/ep13/out/results.json")
     else:
         print("  classical C not found — run experiments/ep13/run.py first "
               "for the three-way comparison")
+
+
+def build_final_figures(out: Path, results: dict) -> None:
+    """The four production figures (rule 1: pictorial+technical pairs),
+    built from ``results.json`` and the per-seed friction-ellipse detail in
+    ``production_report.json``. Re-runnable from cached traces alone — no
+    retraining — so a caption or colour tweak costs seconds, not hours.
+    """
+    report = production_report(out)
+    from viz import rl_tv_figures
+    write(out / "01-same-wheels-different-drivers.svg",
+         rl_tv_figures.control_surfaces_figure(results, report))
+    write(out / "02-yaw-moment-along-the-road.svg",
+         rl_tv_figures.yaw_moment_figure(results))
+    write(out / "03-did-it-stay-on-the-map.svg",
+         rl_tv_figures.envelope_escape_figure(results, report))
+    write(out / "04-seed-by-seed.svg",
+         rl_tv_figures.seed_scorecard_figure(results))
+    print("  production_report.json")
+    print("  01-same-wheels-different-drivers.svg")
+    print("  02-yaw-moment-along-the-road.svg")
+    print("  03-did-it-stay-on-the-map.svg")
+    print("  04-seed-by-seed.svg")
 
 
 def aggregate(out: Path, seeds: range) -> int:
@@ -293,6 +417,13 @@ def aggregate(out: Path, seeds: range) -> int:
             "mean_utilisation_by_seed":
                 {e["seed"]: e["mean_utilisation"] for e in per_seed},
             "finished_by_seed": {e["seed"]: e["finished"] for e in per_seed},
+            "worst_slip_deg_by_seed":
+                {e["seed"]: e["worst_slip_deg"] for e in per_seed},
+            "envelope_occupancy_by_seed":
+                {e["seed"]: e["evaluation"]["greedy"]["envelope_occupancy"]
+                 for e in per_seed},
+            "d6_failures_by_seed":
+                {e["seed"]: e["d6_failures"] for e in per_seed},
             "representative_seed": rep["seed"],
             "d6_passed": rep["d6_passed"],
             "d6_failures": rep["d6_failures"],
@@ -309,7 +440,8 @@ def aggregate(out: Path, seeds: range) -> int:
     _load_classical_c(results)
     (out / "results.json").write_text(json.dumps(results, indent=2) + "\n")
     print(f"\n  {(out / 'results.json').name}")
-    figures(out, fig_name="01-production-sanity.svg")
+    build_final_figures(out, results)
+
     ok = all(v.get("d6_pass_rate", 0.0) > 0.0 for v in results["variants"].values())
     return 0 if ok else 1
 
@@ -325,7 +457,11 @@ def main() -> int:
         return default
 
     if "--figures-only" in argv:
-        figures(out)
+        results = json.loads((out / "results.json").read_text())
+        if results.get("pilot", True):
+            figures(out)
+        else:
+            build_final_figures(out, results)
         return 0
 
     if "--aggregate" in argv:

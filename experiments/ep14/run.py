@@ -39,6 +39,16 @@ Run::
 
     python -m experiments.ep14.run --pilot
     python -m experiments.ep14.run --pilot --figures-only
+
+Production, one (variant, seed) per process so seeds run in parallel rather
+than serially — rule 5 wants 3-5 seeds per configuration, and at ~4.8h/seed
+for H and ~2.4h/seed for E (linear-scaled from the pilot, F91) serial would
+cost the better part of a day::
+
+    python -m experiments.ep14.run --variant=H --seed=0
+    python -m experiments.ep14.run --variant=H --seed=1
+    ...
+    python -m experiments.ep14.run --aggregate     # after all seeds finish
 """
 
 from __future__ import annotations
@@ -84,26 +94,34 @@ VARIANTS = {
 }
 
 
+def _tag(variant: str, seed: int, pilot: bool) -> str:
+    """Filename fragment for one (variant, seed) run. Pilot artifacts keep the
+    unsuffixed names they already have on disk (F91) rather than being
+    silently overwritten by seed-suffixed production ones."""
+    return variant if pilot else f"{variant}_seed{seed}"
+
+
 def _env_config(variant: str) -> EnvConfig:
     return EnvConfig(tv_mode=VARIANTS[variant]["tv_mode"],
                      envelope_penalty=ENVELOPE_PENALTY)
 
 
-def _policy_from(out: Path, variant: str, cfg: EnvConfig):
+def _policy_from(out: Path, tag: str, cfg: EnvConfig):
     probe = DrivingEnv(cfg)
-    train_cfg = json.loads((out / f"train_config_{variant}.json").read_text())
+    train_cfg = json.loads((out / f"train_config_{tag}.json").read_text())
     model = ActorCritic(probe.obs_dim, probe.act_dim, train_cfg["hidden"],
                         train_cfg["init_log_std"])
-    model.load_state_dict(torch.load(out / f"policy_{variant}.pt"))
+    model.load_state_dict(torch.load(out / f"policy_{tag}.pt"))
     return model, train_cfg
 
 
-def train_variant(out: Path, variant: str, steps: int) -> dict:
+def train_variant(out: Path, variant: str, steps: int, seed: int,
+                  tag: str) -> dict:
     cfg = _env_config(variant)
     ppo_cfg = PPOConfig(total_steps=steps, n_envs=8, rollout_steps=512,
                         epochs=10, init_log_std=VARIANTS[variant]["init_log_std"],
-                        seed=SEED)
-    print(f"  variant {variant}: {steps:,} steps, act_dim="
+                        seed=seed)
+    print(f"  variant {variant} seed {seed}: {steps:,} steps, act_dim="
           f"{DrivingEnv(cfg).act_dim}, envelope_penalty={ENVELOPE_PENALTY:g}")
     t0 = time.time()
     res = train(lambda i: DrivingEnv(
@@ -111,24 +129,24 @@ def train_variant(out: Path, variant: str, steps: int) -> dict:
                   envelope_penalty=ENVELOPE_PENALTY), seed=i), ppo_cfg)
     wall_s = time.time() - t0
     print(f"    trained in {wall_s:.0f}s ({len(res['history'])} updates)")
-    torch.save(res["model"].state_dict(), out / f"policy_{variant}.pt")
-    (out / f"train_config_{variant}.json").write_text(
+    torch.save(res["model"].state_dict(), out / f"policy_{tag}.pt")
+    (out / f"train_config_{tag}.json").write_text(
         json.dumps(res["config"], indent=2) + "\n")
-    (out / f"history_{variant}.json").write_text(
+    (out / f"history_{tag}.json").write_text(
         json.dumps(res["history"], indent=2) + "\n")
     return {**res, "wall_s": wall_s}
 
 
-def evaluate_variant(out: Path, variant: str, model, cfg: EnvConfig,
+def evaluate_variant(out: Path, tag: str, model, cfg: EnvConfig,
                      history: list, train_cfg: dict) -> dict:
     report = Report(
-        f"D6-ep14-{variant}", f"Episode 14 variant {variant} — training health",
+        f"D6-ep14-{tag}", f"Episode 14 {tag} — training health",
         "The same ten Season 3 checks, plus the exploration-scale check this "
         "episode's larger action space adds.")
     payload = D6.run_checks(report, history, model, cfg, train_cfg)
     ev = payload["evaluation"]
     md = report.write_markdown(
-        command=f"python -m experiments.ep14.run  # variant {variant}")
+        command=f"python -m experiments.ep14.run  # {tag}")
     report.write()
     print(f"    D6: {'PASSED' if report.ok else f'FAILED ({len(report.failures)})'}"
           f" — {md.name}")
@@ -169,73 +187,63 @@ def realized_mz(trace: dict, params) -> np.ndarray:
     return mz
 
 
-def figures(out: Path) -> None:
+def figures(out: Path, name: str = "results.json",
+           fig_name: str = "01-pilot-sanity.svg") -> None:
     from viz import rl_tv_figures
-    results = json.loads((out / "results.json").read_text())
-    write(out / "01-pilot-sanity.svg", rl_tv_figures.pilot_sanity_figure(results))
+    results = json.loads((out / name).read_text())
+    write(out / fig_name, rl_tv_figures.pilot_sanity_figure(results))
 
 
-def main() -> int:
+def _run_one(out: Path, variant: str, seed: int, steps: int, pilot: bool,
+             eval_only: bool) -> dict:
+    """Train (or load) and evaluate ONE (variant, seed) combination.
+
+    Deliberately a single-variant, single-seed unit: rule 5's 3-5 seeds per
+    configuration cost, linear-scaled from the pilot (F91), the better part of
+    a day if run serially in one process. Each call to this function is meant
+    to be one OS process, so seeds run in parallel across cores instead.
+    """
     from physics import schema
 
-    out = episode_dir(14)
-    argv = sys.argv[1:]
-    if "--figures-only" in argv:
-        figures(out)
-        return 0
+    tag = _tag(variant, seed, pilot)
+    cfg = _env_config(variant)
+    if eval_only:
+        model, train_cfg = _policy_from(out, tag, cfg)
+        history = json.loads((out / f"history_{tag}.json").read_text())
+        wall_s = None
+        print(f"  reusing cached policy_{tag}.pt — no training")
+    else:
+        res = train_variant(out, variant, steps, seed, tag)
+        model, history, train_cfg, wall_s = (
+            res["model"], res["history"], res["config"], res["wall_s"])
 
-    pilot = "--pilot" in argv
-    eval_only = "--eval-only" in argv
-    steps = PILOT_STEPS if pilot else PRODUCTION_STEPS
+    ev = evaluate_variant(out, tag, model, cfg, history, train_cfg)
+    tr = ev.pop("deployed_trace")
+    mz = realized_mz(tr, schema.RV_1)
+    entry = {
+        **ev,
+        "variant": variant, "seed": seed, "wall_s": wall_s,
+        "peak_a_y_g": float(np.max(np.abs(tr["a_y"])) / schema.G),
+        "mean_utilisation": float(np.mean(tr["utilisation_max"])),
+        "worst_slip_deg": float(np.max(tr["alpha_max_deg"])),
+        "finished": bool(tr["finished"]),
+        "distance_m": float(tr["distance_m"]),
+        "s": tr["s"].tolist(),
+        "mz": mz.tolist(),
+    }
+    (out / f"result_{tag}.json").write_text(json.dumps(entry, indent=2) + "\n")
+    np.savez(out / f"trace_{tag}.npz",
+            s=tr["s"], mz=mz, a_y=tr["a_y"],
+            utilisation_max=tr["utilisation_max"],
+            **{f"fx_{c}": tr[f"fx_{c}"] for c in CORNERS},
+            **{f"fy_{c}": tr[f"fy_{c}"] for c in CORNERS})
+    print(f"  {tag}: peak {entry['peak_a_y_g']:.3f} g, mean utilisation "
+          f"{entry['mean_utilisation']:.2f}, finished={entry['finished']}\n")
+    return entry
 
-    print("Episode 14 — what the machine found instead")
-    print(f"  {'PILOT' if pilot else 'PRODUCTION'} run, {steps:,} steps per "
-          f"variant, seed {SEED}\n")
 
-    results = {"pilot": pilot, "steps": steps, "seed": SEED,
-              "envelope_penalty": ENVELOPE_PENALTY, "variants": {}}
-    for variant in ("H", "E"):
-        print(f"Variant {variant} ({VARIANTS[variant]['tv_mode']})")
-        cfg = _env_config(variant)
-        if eval_only:
-            model, train_cfg = _policy_from(out, variant, cfg)
-            history = json.loads((out / f"history_{variant}.json").read_text())
-            wall_s = None
-            print(f"  reusing cached policy_{variant}.pt — no training")
-        else:
-            res = train_variant(out, variant, steps)
-            model, history, train_cfg, wall_s = (
-                res["model"], res["history"], res["config"], res["wall_s"])
-
-        ev = evaluate_variant(out, variant, model, cfg, history, train_cfg)
-        tr = ev.pop("deployed_trace")
-        mz = realized_mz(tr, schema.RV_1)
-        results["variants"][variant] = {
-            **ev,
-            "wall_s": wall_s,
-            "peak_a_y_g": float(np.max(np.abs(tr["a_y"])) / schema.G),
-            "mean_utilisation": float(np.mean(tr["utilisation_max"])),
-            "worst_slip_deg": float(np.max(tr["alpha_max_deg"])),
-            "finished": bool(tr["finished"]),
-            "distance_m": float(tr["distance_m"]),
-            # Small enough (one pilot rollout, a few hundred steps) to store
-            # inline rather than in a side-car npz, so the sanity figure reads
-            # everything from one results.json like classical C already does.
-            "s": tr["s"].tolist(),
-            "mz": mz.tolist(),
-        }
-        np.savez(out / f"trace_{variant}.npz",
-                s=tr["s"], mz=mz, a_y=tr["a_y"],
-                utilisation_max=tr["utilisation_max"],
-                **{f"fx_{c}": tr[f"fx_{c}"] for c in CORNERS},
-                **{f"fy_{c}": tr[f"fy_{c}"] for c in CORNERS})
-        print(f"  peak {results['variants'][variant]['peak_a_y_g']:.3f} g, "
-              f"mean utilisation {results['variants'][variant]['mean_utilisation']:.2f}, "
-              f"finished={results['variants'][variant]['finished']}\n")
-
-    # Classical C, reused from Episode 13 — not retrained, not re-evaluated.
-    # If it is missing, the pilot still reports on H and E alone; the
-    # comparison figure just has two lines instead of three.
+def _load_classical_c(results: dict) -> None:
+    """Episode 13, reused — not retrained, not re-evaluated."""
     ep13 = episode_dir(13) / "results.json"
     if ep13.exists():
         c = json.loads(ep13.read_text())
@@ -250,6 +258,104 @@ def main() -> int:
         print("  classical C not found — run experiments/ep13/run.py first "
               "for the three-way comparison")
 
+
+def aggregate(out: Path, seeds: range) -> int:
+    """Collect every ``result_{variant}_seed{n}.json`` this session produced
+    into one results.json — the seed loop rule 5 asks for, read back rather
+    than reported per-process. Every seed's D6 verdict is kept individually
+    (not just an aggregate pass rate): a single failing seed is information,
+    not noise to average away."""
+    results = {"pilot": False, "seeds": list(seeds),
+              "envelope_penalty": ENVELOPE_PENALTY, "variants": {}}
+    for variant in ("H", "E"):
+        per_seed = []
+        for seed in seeds:
+            p = out / f"result_{variant}_seed{seed}.json"
+            if not p.exists():
+                print(f"  missing {p.name} — skipping seed {seed} for {variant}")
+                continue
+            per_seed.append(json.loads(p.read_text()))
+        if not per_seed:
+            print(f"  no completed seeds for variant {variant}")
+            continue
+        d6_pass = [e["d6_passed"] for e in per_seed]
+        # The deployed (F61) representative trace for the comparison figure:
+        # the median seed by finish distance, not the best — the best-of-N is
+        # an extreme-value statistic and never a bound (F71's lesson).
+        by_distance = sorted(per_seed, key=lambda e: e["distance_m"])
+        rep = by_distance[len(by_distance) // 2]
+        results["variants"][variant] = {
+            "n_seeds": len(per_seed),
+            "d6_pass_rate": float(np.mean(d6_pass)),
+            "d6_passed_seeds": [e["seed"] for e in per_seed if e["d6_passed"]],
+            "d6_failed_seeds": [e["seed"] for e in per_seed if not e["d6_passed"]],
+            "peak_a_y_g_by_seed": {e["seed"]: e["peak_a_y_g"] for e in per_seed},
+            "mean_utilisation_by_seed":
+                {e["seed"]: e["mean_utilisation"] for e in per_seed},
+            "finished_by_seed": {e["seed"]: e["finished"] for e in per_seed},
+            "representative_seed": rep["seed"],
+            "d6_passed": rep["d6_passed"],
+            "d6_failures": rep["d6_failures"],
+            "peak_a_y_g": rep["peak_a_y_g"],
+            "mean_utilisation": rep["mean_utilisation"],
+            "finished": rep["finished"],
+            "distance_m": rep["distance_m"],
+            "s": rep["s"], "mz": rep["mz"],
+        }
+        print(f"  {variant}: {len(per_seed)} seed(s), D6 pass rate "
+              f"{100*np.mean(d6_pass):.0f}%, representative seed "
+              f"{rep['seed']} (median finish distance)")
+
+    _load_classical_c(results)
+    (out / "results.json").write_text(json.dumps(results, indent=2) + "\n")
+    print(f"\n  {(out / 'results.json').name}")
+    figures(out, fig_name="01-production-sanity.svg")
+    ok = all(v.get("d6_pass_rate", 0.0) > 0.0 for v in results["variants"].values())
+    return 0 if ok else 1
+
+
+def main() -> int:
+    out = episode_dir(14)
+    argv = sys.argv[1:]
+
+    def _arg(flag, default=None):
+        for a in argv:
+            if a.startswith(flag + "="):
+                return a.split("=", 1)[1]
+        return default
+
+    if "--figures-only" in argv:
+        figures(out)
+        return 0
+
+    if "--aggregate" in argv:
+        lo, hi = (int(x) for x in _arg("--seeds", "0,3").split(","))
+        return aggregate(out, range(lo, hi))
+
+    pilot = "--pilot" in argv
+    eval_only = "--eval-only" in argv
+    steps = PILOT_STEPS if pilot else PRODUCTION_STEPS
+    variant_arg = _arg("--variant")
+    seed = int(_arg("--seed", "0"))
+    variants = [variant_arg] if variant_arg else ["H", "E"]
+
+    print("Episode 14 — what the machine found instead")
+    print(f"  {'PILOT' if pilot else 'PRODUCTION'} run, {steps:,} steps, "
+          f"variant(s) {variants}, seed {seed}\n")
+
+    results = {"pilot": pilot, "steps": steps, "seed": seed,
+              "envelope_penalty": ENVELOPE_PENALTY, "variants": {}}
+    for variant in variants:
+        print(f"Variant {variant} ({VARIANTS[variant]['tv_mode']})")
+        results["variants"][variant] = _run_one(out, variant, seed, steps,
+                                                pilot, eval_only)
+
+    _load_classical_c(results)
+
+    # Single-process convenience path (pilot, or an ad hoc --variant=H run):
+    # write a results.json usable by figures() directly. The multi-process
+    # production path uses --aggregate instead, once every seed has landed
+    # its own result_{variant}_seed{n}.json.
     (out / "results.json").write_text(json.dumps(results, indent=2) + "\n")
     print(f"\n  {(out / 'results.json').name}")
     figures(out)
@@ -258,7 +364,8 @@ def main() -> int:
         print("\n  PILOT COMPLETE. Do not read these numbers as a result —")
         print("  report wall-clock time and D6 status back before scaling to")
         print("  a production, multi-seed run (CLAUDE.md rule 5).")
-    return 0 if all(results["variants"][v]["d6_passed"] for v in ("H", "E")) else 1
+    return 0 if all(results["variants"][v]["d6_passed"]
+                    for v in results["variants"]) else 1
 
 
 if __name__ == "__main__":

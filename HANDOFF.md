@@ -851,10 +851,31 @@ of the balance, not the disturbance, and stands.
 
 **O10 is closed. O9 is not**, and is now the oldest outstanding correctness item.
 
-**Next, unchanged and now unblocked:** `TRACKS.md` staging step 1 —
-`SampledTrack` + the round-trip curvature test, resolving the CasADi question
-above first. O9's scripted-policy test is small and would sit naturally
-alongside it.
+### Session 19 — the power review supersedes the track work as next
+
+**Season 2's nulls are suspected artefacts, and Episode 15 is blocked on
+resolving that.** See **`POWER-REVIEW.md`** — the full plan. The short form:
+F44 (balance: lap time flat) and F49 (layout: lap time flat) were measured only
+at the 4.5 kN drive cap, which F43 proved is near the bottom of the power curve
+where design effects vanish (no tire above 63% utilisation); the full-lap
+metric is ~2/3 power-limited straight (Ep 13's `section_time` exists because of
+this and Eps 6–8 lack it); and the brake caps (12–15 kN) appear to be *below*
+tire grip (~20 kN), which would make the braking phase design-blind everywhere
+— unaudited, Phase 0 checks it. Also unresolved: F43 internally quotes both
+0.02 s and 0.08 s as the convergence floor, and F49's whole spread (0.03 s)
+sits between them.
+
+Plan: Phase 0 recomputes section metrics from the **existing** traces.npz
+(rule 7 — no re-runs) and settles the floor + brake audit; Phase 1 re-measures
+Eps 7/8 at {RV-1, RV-1P ≈ 2× power} × 3 corner radii, convergence-gated;
+Phase 2 re-measures Eps 12/13 (TV's worth grows with saturation, and Ep 15
+needs that number); Phase 3 conditionally retrains Ep 10/11 on the batched env;
+Phase 4 is Episode 15 itself. Decisions D-A–D-D (power model, RV-1P level,
+section definition, track set) are in the plan with recommendations, **not yet
+ratified — start there.**
+
+`TRACKS.md` staging and O9's scripted-policy test are unchanged but now queue
+behind this; O9 is small enough to do alongside Phase 0.
 
 ### Superseded — Episode 13 planning notes
 

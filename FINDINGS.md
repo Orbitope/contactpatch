@@ -3122,7 +3122,15 @@ reported rather than acted on — the decision to spend that much wall-clock,
 or to look for a smaller production step count first, is not this session's
 to make alone.
 
-### F92 · Production training (3 seeds × 2 variants, 5,000,000 steps): neither RL variant reliably agrees with the classical controller, and the seeds disagree with each other. · 2026-07-28
+### F92 · ~~Production training (3 seeds × 2 variants, 5,000,000 steps): neither RL variant reliably agrees with the classical controller, and the seeds disagree with each other.~~ **RETRACTED by F93 — read that instead.** · 2026-07-28
+
+> **This entry's conclusion is withdrawn.** Every per-seed number below is
+> correctly measured, but all six describe the *last* checkpoint of a run that
+> was never checkpoint-selected, and every one of the six seeds had already
+> passed through a clean, in-envelope, full-distance window that was discarded.
+> The D6 pass rates and the "end-to-end is more prone to the tire-model
+> exploit" reading are therefore artefacts of model selection. Kept unedited
+> as the record of what was published and why it was wrong. See **F93**.
 
 **Source:** `[MEASURED]` — `experiments/ep14/run.py --variant={H,E} --seed={0,1,2}`,
 5,000,000 steps each, `envelope_penalty=0.5`, aggregated via `--aggregate`.
@@ -3184,6 +3192,90 @@ physics but does not fully converge, and an end-to-end action space that
 mostly finds the same tire-model exploit Season 3 already documented, with one
 seed in three finding a clean answer instead. Longer training, a different
 seed count, or a stronger envelope penalty are all still open.
+
+---
+
+### F93 · Episode 14's production run kept the last checkpoint instead of the best one, and its headline conclusion is retracted. **Defect, and the correction of record.** · 2026-07-28
+
+**Source:** `[MEASURED]` — re-analysis of `experiments/ep14/out/history_{H,E}_seed{0,1,2}.json`,
+the six 5,000,000-step production runs recorded in F92.
+
+**The claim being retracted.** F92 and the first draft of Episode 14 reported
+that neither RL variant reliably converges — H passing D6 in 0 of 3 seeds, E in
+1 of 3 — and drew a conclusion about end-to-end action spaces being prone to a
+tire-model exploit. **That conclusion was an artefact of model selection, not a
+property of the variants.**
+
+**What actually happened.** `physics/ppo.train` returned the weights it happened
+to hold after the final update, and `experiments/ep14/run.py` saved those. No
+checkpoint was ever scored during training. Re-reading the six training
+histories, **every one of the six seeds passed through a sustained window in
+which it drove the full 393 m with a worst slip angle inside the tire's own
+±12° fit and a ~0% off-track rate** — and in five of six that window was
+nowhere near the end of the run:
+
+| Seed | Best clean window at | Distance | Worst slip | Off-track | Clean updates | FINAL weights reported instead |
+|---|---|---|---|---|---|---|
+| H seed 0 | update 429 (35%) | 393 m | 9.1° | 0.00 | 463 | 14.8°, D6 FAILED |
+| H seed 1 | update 1009 (83%) | 381 m | 7.4° | 0.04 | 11 | 10.5°, D6 FAILED |
+| H seed 2 | update 655 (54%) | 393 m | 12.0° | 0.00 | 65 | 9.4°, did not finish |
+| E seed 0 | update 298 (24%) | 393 m | 9.2° | 0.00 | 127 | 13.5°, D6 FAILED |
+| E seed 1 | update 612 (50%) | 393 m | 10.4° | 0.00 | 150 | 16.8°, D6 FAILED |
+| E seed 2 | update 248 (20%) | 393 m | 8.4° | 0.00 | 227 | 8.8°, D6 PASSED |
+
+"Clean" = a 20-update window averaging >370 m, <12° worst slip, <10% off-track.
+H seed 0 was clean for **463 consecutive updates** and we reported the weights
+from update 1219.
+
+**PPO itself was healthy the whole time.** Median approximate KL 0.0041–0.0050
+against a 0.01–0.02 norm, clip fraction 4–6%. The updates were not too
+aggressive and the runs were not diverging — they were wandering, which is what
+an unselected policy does, and nothing was watching.
+
+**Two mechanisms, both fixed.**
+
+1. *No model selection.* The project already had the rule that would have
+   caught this — F61, "a reinforcement-learning result is the DEPLOYED policy's
+   performance" — but applied it **once at the end** instead of throughout.
+   `PPOConfig.eval_every` now scores the deployed policy on held-out seeds and
+   keeps the best checkpoint, selecting on mean deployed **return** (the
+   objective the reward already defines) and deliberately *not* on "did it stay
+   inside the envelope", which is what D6 then checks independently.
+2. *The exploration scale never annealed.* Final `log_std` sat within ~0.2 log
+   units of its initialisation on all six seeds after 5,000,000 steps, so the
+   mean-action policy that gets shipped stayed a different driver from the
+   sampled one the training curves describe — which is precisely D6's
+   `greedy_and_stochastic_agree` failure, seen on 4 of 6 seeds.
+   `PPOConfig.entropy_anneal` decays the entropy bonus to zero.
+
+Both default to **off**, and `tests/test_ppo.py` pins that the untouched path is
+bit-for-bit what Seasons 3 produced, and that switching evaluation on does not
+perturb the run it is watching.
+
+**Why it survived to publication.** Two reasons worth recording, because
+neither is about RL:
+
+- **The pilot gated on the wrong thing.** It was built to answer "does the
+  pipeline work", and "work" was defined as *produces a D6 verdict and a
+  figure*. The right definition was *produces a policy we would keep*.
+  Checkpointing is the first thing a multi-hour training run needs, and a pilot
+  that does not exercise it has not de-risked the run.
+- **`physics/ppo.py` had no tests at all** — the module every Season 3 and
+  Season 4 result comes out of. `tests/test_ppo.py` now exists (12 tests).
+
+**Stated as a limitation, because this is the failure mode being corrected:**
+the clean windows above are measured on *training* rollouts — sampled actions,
+jittered starts. D6 scores the *deployed* policy on clean starts. So the table
+is strong evidence that good policies existed and were discarded, **not proof
+that those checkpoints would pass D6.** The re-run with selection enabled is
+what settles it, and its result is reported separately rather than assumed here.
+
+**Carried implication for Season 3, not yet acted on.** Episodes 10 and 11 used
+the same final-checkpoint-only path, and Episode 10's saved policy has the
+identical frozen-`log_std` signature (final `[-2.24, -1.08]`) alongside a D6 that
+fails `exploration_is_not_growing`. **Those results are likely understated by
+the same mechanism.** Recorded here rather than fixed, so the scope of this
+correction stays honest about what has and has not been re-measured.
 
 ---
 

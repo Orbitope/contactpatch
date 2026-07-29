@@ -4,6 +4,26 @@
 
 ---
 
+> ## ⚠️ THIS DRAFT IS RETRACTED AND IS BEING REWRITTEN
+>
+> Everything below rests on a result that was wrong. The six training runs it
+> reports were never checkpoint-selected: `train()` returned whatever weights
+> the policy held after its final update, and that is what was evaluated and
+> published. Re-reading the training histories, **all six seeds had already
+> driven the full 393 m inside the tire's own ±12° fit with a ~0% off-track
+> rate** — and those policies were thrown away.
+>
+> So the conclusion this draft draws — "neither variant reliably converges",
+> "removing the allocator removed the thing keeping the policy honest" — is a
+> statement about model selection, not about reinforcement learning or torque
+> vectoring.
+>
+> The fix (deployed-policy evaluation, best-checkpoint retention, entropy
+> annealing) is in, and the six seeds are being re-run. See **FINDINGS F93**
+> for the defect and the correction of record.
+
+---
+
 ## The question
 
 Episode 13 ended with a question, not a conclusion. We built the classical

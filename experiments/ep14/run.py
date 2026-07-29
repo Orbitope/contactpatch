@@ -88,6 +88,15 @@ PRODUCTION_STEPS = 5_000_000
 #: torque-vectoring policy is not measuring torque vectoring.
 ENVELOPE_PENALTY = 0.5
 
+#: Score the DEPLOYED policy every this many updates and keep the best.
+#: 20 updates is ~82,000 training steps; at 1,220 updates that is 61
+#: evaluations of 4 laps each, about 6% of wall-clock. See FINDINGS F93 — the
+#: first production run had none of this, kept the final weights, and reported
+#: six policies that had each already driven a clean lap as "RL does not
+#: converge."
+EVAL_EVERY = 20
+EVAL_EPISODES = 4
+
 VARIANTS = {
     "H": {"tv_mode": "hybrid", "init_log_std": (-2.5, -1.0, -1.5)},
     "E": {"tv_mode": "end_to_end",
@@ -121,15 +130,31 @@ def train_variant(out: Path, variant: str, steps: int, seed: int,
     cfg = _env_config(variant)
     ppo_cfg = PPOConfig(total_steps=steps, n_envs=8, rollout_steps=512,
                         epochs=10, init_log_std=VARIANTS[variant]["init_log_std"],
-                        seed=seed)
+                        seed=seed, eval_every=EVAL_EVERY,
+                        eval_episodes=EVAL_EPISODES, entropy_anneal=True)
     print(f"  variant {variant} seed {seed}: {steps:,} steps, act_dim="
-          f"{DrivingEnv(cfg).act_dim}, envelope_penalty={ENVELOPE_PENALTY:g}")
+          f"{DrivingEnv(cfg).act_dim}, envelope_penalty={ENVELOPE_PENALTY:g}, "
+          f"eval every {EVAL_EVERY} updates")
     t0 = time.time()
     res = train(lambda i: DrivingEnv(
         EnvConfig(tv_mode=VARIANTS[variant]["tv_mode"], start_jitter_m=10.0,
-                  envelope_penalty=ENVELOPE_PENALTY), seed=i), ppo_cfg)
+                  envelope_penalty=ENVELOPE_PENALTY), seed=i), ppo_cfg,
+        # Scored on the environment the result is REPORTED on: no start
+        # jitter, same config D6 and evaluate_variant use. Selecting on the
+        # training distribution would select for something else.
+        make_eval_env=lambda: DrivingEnv(_env_config(variant)))
     wall_s = time.time() - t0
     print(f"    trained in {wall_s:.0f}s ({len(res['history'])} updates)")
+    if "best_update" in res:
+        ev = res["best_eval"]
+        print(f"    best deployed checkpoint: update {res['best_update']}"
+              f"/{res['n_updates']} — return {ev['eval_return']:.1f}, "
+              f"distance {ev['eval_distance']:.0f} m, "
+              f"finish {ev['eval_finish_rate']:.0%}")
+        # The final weights are kept too, because "the last checkpoint is not
+        # the best one" is this episode's own correction of record (F93) and
+        # it has to stay checkable rather than asserted.
+        torch.save(res["final_state"], out / f"policy_{tag}_final.pt")
     torch.save(res["model"].state_dict(), out / f"policy_{tag}.pt")
     (out / f"train_config_{tag}.json").write_text(
         json.dumps(res["config"], indent=2) + "\n")

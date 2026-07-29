@@ -19,6 +19,7 @@ was that?" is the question you cannot answer three months later.
 
 from __future__ import annotations
 
+import copy
 import math
 import time
 from dataclasses import asdict, dataclass, field
@@ -71,6 +72,45 @@ class PPOConfig:
     seed: int = 0
     #: Linearly decay the learning rate to zero over training.
     anneal_lr: bool = True
+
+    # --- Episode 14: model selection. Both default to OFF, so every Season 3
+    # result is reproduced bit-for-bit by the code path it was produced with.
+    #
+    #: Evaluate the DEPLOYED (mean-action) policy every N updates and keep the
+    #: best checkpoint. 0 disables it and ``train`` returns the final weights,
+    #: which is what Episodes 9-11 did.
+    #:
+    #: **This exists because not doing it produced a wrong published result.**
+    #: Episode 14's first production run trained six policies, every one of
+    #: which passed through a window where it drove the full 393 m inside the
+    #: tire's own +/-12 deg fit with a ~0% off-track rate — and then kept
+    #: drifting, because nothing was watching. Only the final weights were
+    #: saved, so six healthy policies were reported as "RL does not converge."
+    #: The project already had the rule that would have caught it (F61: a
+    #: reinforcement-learning result is the DEPLOYED policy's performance); it
+    #: was applied once at the end instead of throughout. See FINDINGS F93.
+    #:
+    #: Selection is on mean deployed **return** — the objective the reward
+    #: already defines, envelope penalty included — and NOT on "did it stay
+    #: inside the envelope". Selecting on the envelope would be selecting on
+    #: the thing D6 then independently checks, which is how a gate becomes a
+    #: formality.
+    eval_every: int = 0
+    #: Deployed-policy evaluation episodes per checkpoint. Each is a full lap,
+    #: so this is the dominant cost of turning evaluation on (~6% of wall-clock
+    #: at ``eval_every=20``).
+    eval_episodes: int = 4
+    #: First seed for evaluation episodes. Held out from training by being far
+    #: outside the range ``train`` draws its own reset seeds from, so a policy
+    #: cannot be selected on a start it was trained on.
+    eval_seed0: int = 1_000_000
+    #: Decay the entropy bonus linearly to zero over training. Off reproduces
+    #: Season 3. On, the policy can actually sharpen late: with a constant
+    #: bonus the log standard deviation sits where it was initialised for the
+    #: whole run (measured, Episodes 10 and 14 alike), which leaves the
+    #: mean-action policy you would ship a different driver from the sampled
+    #: one the training curves describe — D6's ``greedy_and_stochastic_agree``.
+    entropy_anneal: bool = False
 
 
 class ActorCritic(nn.Module):
@@ -150,24 +190,69 @@ def _gae(rewards, values, dones, last_value, gamma, lam):
     return adv, adv + values
 
 
-def train(make_env, cfg: PPOConfig | None = None, on_update=None) -> dict:
+def _evaluate_deployed(model, env, episodes: int, seed0: int) -> dict:
+    """Roll the DEPLOYED (mean-action) policy on held-out seeds.
+
+    Deliberately uses only ``reset``/``step``, so this stays as
+    environment-agnostic as the rest of this module. Consumes neither the
+    training RNG nor torch's, so turning evaluation on cannot change the
+    trajectory of the run it is watching.
+    """
+    rets, dists, fins = [], [], []
+    for k in range(episodes):
+        o = env.reset(seed0 + k)
+        done, total, info = False, 0.0, {}
+        while not done:
+            with torch.no_grad():
+                a = model.actor(torch.as_tensor(o, dtype=torch.float32)).numpy()
+            o, r, done, info = env.step(a)
+            total += r
+        rets.append(total)
+        dists.append(float(info.get("s", float("nan"))))
+        fins.append(float(bool(info.get("finished", False))))
+    return {"eval_return": float(np.mean(rets)),
+            "eval_distance": float(np.mean(dists)),
+            "eval_finish_rate": float(np.mean(fins))}
+
+
+def train(make_env=None, cfg: PPOConfig | None = None, on_update=None,
+          make_eval_env=None, make_batched_env=None) -> dict:
     """Train a policy. ``make_env(i)`` builds environment ``i``.
 
     Returns the trained model plus a per-update history — the raw material D6
     reads. Nothing here decides whether training *went well*; that judgement is
     the diagnostic's job, computed downstream from this history (CLAUDE.md
     rule 7).
+
+    ``make_eval_env()`` builds the environment the deployed policy is scored
+    on when ``cfg.eval_every > 0``. It should be the environment the policy
+    will actually be *evaluated* in — no start jitter, no training-only
+    perturbation — because a checkpoint selected on the training distribution
+    is not selected on the thing being reported.
+
+    With ``cfg.eval_every == 0`` (the default) this is exactly the function
+    Episodes 9-11 called: no evaluation, no selection, final weights returned.
     """
     cfg = cfg or PPOConfig()
     torch.manual_seed(cfg.seed)
     rng = np.random.default_rng(cfg.seed)
 
-    envs = [make_env(i) for i in range(cfg.n_envs)]
-    obs_dim, act_dim = envs[0].obs_dim, envs[0].act_dim
+    # Two rollout paths, one learning algorithm. ``make_batched_env`` builds an
+    # environment that steps all ``cfg.n_envs`` cars per call
+    # (``physics/batched_env.py``); without it the original list-of-envs loop
+    # runs, unchanged, and every Season 3 and Season 4 result reproduces.
+    batched = make_batched_env(cfg.n_envs) if make_batched_env is not None else None
+    if batched is not None:
+        envs = []
+        obs_dim, act_dim = batched.obs_dim, batched.act_dim
+    else:
+        envs = [make_env(i) for i in range(cfg.n_envs)]
+        obs_dim, act_dim = envs[0].obs_dim, envs[0].act_dim
     model = ActorCritic(obs_dim, act_dim, cfg.hidden, cfg.init_log_std)
     opt = torch.optim.Adam(model.parameters(), lr=cfg.lr, eps=1e-5)
 
-    obs = np.stack([e.reset(int(rng.integers(1 << 30))) for e in envs])
+    obs = (batched.reset(int(rng.integers(1 << 30))) if batched is not None
+           else np.stack([e.reset(int(rng.integers(1 << 30))) for e in envs]))
     n_updates = max(cfg.total_steps // (cfg.n_envs * cfg.rollout_steps), 1)
     history: list[dict] = []
     # Episode statistics have to be collected as episodes end, because an
@@ -178,10 +263,23 @@ def train(make_env, cfg: PPOConfig | None = None, on_update=None) -> dict:
     finished_offtrack: list[float] = []
     t_start = time.time()
 
+    eval_env = None
+    if cfg.eval_every > 0:
+        if make_eval_env is None:
+            raise ValueError(
+                "cfg.eval_every > 0 needs make_eval_env — the environment the "
+                "DEPLOYED policy is scored on. Reusing a training env would "
+                "select the checkpoint on the training distribution (start "
+                "jitter and all), which is not what gets reported.")
+        eval_env = make_eval_env()
+    best = {"score": -float("inf"), "state": None, "update": -1, "eval": None}
+
     for update in range(n_updates):
         if cfg.anneal_lr:
             for g in opt.param_groups:
                 g["lr"] = cfg.lr * (1.0 - update / n_updates)
+        ent_coef = (cfg.entropy_coef * (1.0 - update / n_updates)
+                    if cfg.entropy_anneal else cfg.entropy_coef)
 
         buf_obs = np.zeros((cfg.rollout_steps, cfg.n_envs, obs_dim))
         buf_act = np.zeros((cfg.rollout_steps, cfg.n_envs, act_dim))
@@ -198,18 +296,30 @@ def train(make_env, cfg: PPOConfig | None = None, on_update=None) -> dict:
             buf_obs[t], buf_act[t] = obs, a_np
             buf_logp[t], buf_val[t] = logp.numpy(), v.numpy()
 
-            for i, e in enumerate(envs):
-                o, r, done, info = e.step(a_np[i])
-                buf_rew[t, i] = r
-                buf_done[t, i] = float(done)
-                if done:
-                    h = e.history()
-                    finished_returns.append(float(np.sum(h["reward"])))
-                    finished_distance.append(float(h["s"][-1]))
-                    finished_slip.append(float(np.max(h["alpha_max_deg"])))
-                    finished_offtrack.append(float(bool(info["off_track"])))
-                    o = e.reset(int(rng.integers(1 << 30)))
-                obs[i] = o
+            if batched is not None:
+                obs, r, done, info = batched.step(a_np)
+                buf_rew[t], buf_done[t] = r, done.astype(float)
+                # The batched env auto-resets and reports the terminal values
+                # of whatever ended this step, so these are the same statistics
+                # the single-instance path reads off each env's own log.
+                finished_returns.extend(info["episode_return"].tolist())
+                finished_distance.extend(info["episode_distance"].tolist())
+                finished_slip.extend(info["episode_worst_slip_deg"].tolist())
+                finished_offtrack.extend(
+                    info["episode_off_track"].astype(float).tolist())
+            else:
+                for i, e in enumerate(envs):
+                    o, r, done, info = e.step(a_np[i])
+                    buf_rew[t, i] = r
+                    buf_done[t, i] = float(done)
+                    if done:
+                        h = e.history()
+                        finished_returns.append(float(np.sum(h["reward"])))
+                        finished_distance.append(float(h["s"][-1]))
+                        finished_slip.append(float(np.max(h["alpha_max_deg"])))
+                        finished_offtrack.append(float(bool(info["off_track"])))
+                        o = e.reset(int(rng.integers(1 << 30)))
+                    obs[i] = o
 
         with torch.no_grad():
             last_v = model.value(
@@ -240,7 +350,7 @@ def train(make_env, cfg: PPOConfig | None = None, on_update=None) -> dict:
                 pol_loss = -torch.min(l1, l2).mean()
                 val_loss = ((v - b_ret[j]) ** 2).mean()
                 loss = (pol_loss + cfg.value_coef * val_loss
-                        - cfg.entropy_coef * ent.mean())
+                        - ent_coef * ent.mean())
                 opt.zero_grad()
                 loss.backward()
                 # Clip the actor and the critic SEPARATELY. Clipping them
@@ -287,12 +397,38 @@ def train(make_env, cfg: PPOConfig | None = None, on_update=None) -> dict:
             "distance_mean": _tail_mean(finished_distance),
             "worst_slip_mean_deg": _tail_mean(finished_slip),
             "off_track_rate": _tail_mean(finished_offtrack),
+            "entropy_coef": ent_coef,
         }
+
+        # Score the deployed policy and keep the best one. The last update is
+        # always evaluated, so "best" is never worse than the final weights
+        # this function used to return unconditionally.
+        if eval_env is not None and (update % cfg.eval_every == 0
+                                     or update == n_updates - 1):
+            ev = _evaluate_deployed(model, eval_env, cfg.eval_episodes,
+                                    cfg.eval_seed0)
+            rec.update(ev)
+            if ev["eval_return"] > best["score"]:
+                best = {"score": ev["eval_return"],
+                        "state": copy.deepcopy(model.state_dict()),
+                        "update": update, "eval": ev}
+
         history.append(rec)
         if on_update is not None:
             on_update(rec)
 
-    return {"model": model, "history": history, "config": asdict(cfg)}
+    out = {"model": model, "history": history, "config": asdict(cfg)}
+    if best["state"] is not None:
+        # ``model`` is left holding the SELECTED weights, so every caller that
+        # simply used the returned model gets the checkpoint that was chosen.
+        # The final weights stay reachable for the comparison that shows why
+        # selection was needed at all.
+        out["final_state"] = copy.deepcopy(model.state_dict())
+        model.load_state_dict(best["state"])
+        out["best_update"] = best["update"]
+        out["best_eval"] = best["eval"]
+        out["n_updates"] = n_updates
+    return out
 
 
 def _tail_mean(xs, n: int = 50) -> float:

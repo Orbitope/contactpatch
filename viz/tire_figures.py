@@ -12,6 +12,14 @@ Three figures, each built to be understood before any axis is read:
     named. Answers "is this in line with what the industry says?" rather than
     "does the code match itself?".
 
+Plus the technical companion Episode 2 was missing:
+
+``mu_vs_load_figure``
+    Peak friction coefficient against load — literally the graph the episode is
+    titled after — plus the split-loss curve it implies. `load_split_figure`
+    shows three snapshots of this; this is the curve itself, the reference an
+    informed reader wants after the pictorial version (rule 1).
+
 Every one of them ends with a plain sentence stating what the reader just saw.
 """
 
@@ -282,6 +290,120 @@ def load_split_figure(tire, total_n: float = 6000.0) -> str:
         f"Even split {baseline:,.0f} N; "
         + "; ".join(f"{r[0]/1000:g}+{r[1]/1000:g} {100*(r[4]-baseline)/baseline:+.1f}%"
                     for r in results[1:]) + ".",
+    )
+
+
+class _Ax:
+    def __init__(self, L, R, T, B, x0, x1, y0, y1):
+        self.L, self.R, self.T, self.B = L, R, T, B
+        self.x0, self.x1, self.y0, self.y1 = x0, x1, y0, y1
+
+    def x(self, v):
+        return self.L + (self.R - self.L) * (v - self.x0) / (self.x1 - self.x0)
+
+    def y(self, v):
+        return self.B - (self.B - self.T) * (v - self.y0) / (self.y1 - self.y0)
+
+    def pts(self, xs, ys):
+        return [(self.x(a), self.y(b)) for a, b in zip(xs, ys)]
+
+
+def mu_vs_load_figure(tire, loads_kn=None, total_n: float = 6000.0) -> str:
+    """The graph Episode 2 is titled after, drawn as an actual line chart.
+
+    ``load_split_figure`` shows three snapshots of what this curve implies; this
+    is the curve. Two panels: peak friction coefficient against load, with the
+    linear fit `load_split_figure`'s caption quotes drawn through it, and what
+    that curve costs a pair of tires as the same total load is shared less and
+    less evenly between them — the accelerating-penalty shape a table of three
+    numbers cannot show as clearly as a line that visibly steepens.
+    """
+    if loads_kn is None:
+        loads_kn = np.linspace(0.5, 9.5, 60)
+    loads_n = loads_kn * 1000.0
+    peaks = [tire.peak_lateral(float(f)) for f in loads_n]
+    mus = np.array([p.mu_peak for p in peaks])
+    slope, intercept = np.polyfit(loads_kn, mus, 1)
+    resid = mus - (slope * loads_kn + intercept)
+    r_squared = 1.0 - float(np.sum(resid ** 2)) / float(np.sum((mus - mus.mean()) ** 2))
+
+    # the split-loss curve: total load fixed, sweep how unevenly it is shared
+    imbalance_kn = np.linspace(0.0, total_n / 1000.0 - 2.0, 60)
+    loss_pct = []
+    for d in imbalance_kn:
+        hi, lo = total_n / 2 + d * 500.0, total_n / 2 - d * 500.0
+        tot = tire.peak_lateral(hi).fy_peak + tire.peak_lateral(lo).fy_peak
+        even = tire.peak_lateral(total_n / 2).fy_peak * 2
+        loss_pct.append(100 * (even - tot) / even)
+    loss_pct = np.array(loss_pct)
+    # the three snapshots load_split_figure shows, so a reader can find them here
+    snapshots_kn = (0.0, 2.0, 4.0)
+
+    W, H = 1480, 620
+    s = V.head(
+        W, H,
+        "The most important graph in vehicle dynamics",
+        f"Peak friction coefficient falls as load rises — steadily, by "
+        f"{-slope:.3f} per additional kN — and that single fact is why sharing "
+        f"load evenly beats sharing it any other way.",
+    )
+
+    a = _Ax(100, 700, 130, 470, 0.0, 10.0, 0.75, 1.25)
+    s += D.panel_title(100, 112, "A · Peak grip against load",
+                       "one tire, swept from 0.5 to 9.5 kN")
+    s = V.grid(s, a.L, a.R, a.T, a.B, 5, 4)
+    xt = [(f"{v:g}", a.x(v)) for v in (0, 2, 4, 6, 8, 10)]
+    yt = [(f"{v:.2f}", a.y(v)) for v in (0.80, 0.90, 1.00, 1.10, 1.20)]
+    s = V.axes(s, a.L, a.R, a.T, a.B, "load (kN)", "peak μ (Fy_peak / Fz)",
+               xt, yt)
+    s += (f'<path d="{V.path(a.pts(loads_kn, mus))}" fill="none" '
+          f'stroke="{V.COR}" stroke-width="2.8"/>')
+    fit_x = np.array([0.5, 9.5])
+    s += (f'<path d="{V.path(a.pts(fit_x, slope * fit_x + intercept))}" '
+          f'fill="none" stroke="{V.AMB}" stroke-width="1.6" '
+          f'stroke-dasharray="6 4"/>')
+    for kn in (1.0, 9.0):
+        mu = float(tire.peak_lateral(kn * 1000.0).mu_peak)
+        s += f'<circle cx="{a.x(kn):.1f}" cy="{a.y(mu):.1f}" r="4.5" fill="{V.FG}"/>'
+        s += D.text(a.x(kn), a.y(mu) - 12, f"{mu:.2f} at {kn:g} kN", V.FG, 11,
+                    "middle", weight="600", mono=True)
+    s += D.text(a.L + 12, a.T + 18, "if grip scaled with load, this line would "
+                "be flat", V.MUT, 11, style="italic")
+
+    b = _Ax(830, 1400, 130, 470, 0.0, imbalance_kn[-1], 0.0,
+            float(loss_pct.max()) * 1.15)
+    s += D.panel_title(830, 112, "B · What that costs a pair",
+                       f"{total_n/1000:g} kN shared between two tires, "
+                       f"increasingly unevenly")
+    s = V.grid(s, b.L, b.R, b.T, b.B, 5, 4)
+    xt2 = [(f"{v:g}", b.x(v)) for v in range(0, int(imbalance_kn[-1]) + 1, 1)]
+    yt2 = [(f"{v:.0f}%", b.y(v)) for v in
+           np.linspace(0, float(loss_pct.max()), 5)]
+    s = V.axes(s, b.L, b.R, b.T, b.B, "kN moved from one tire to the other",
+               "grip lost, pair total (%)", xt2, yt2)
+    s += (f'<path d="{V.path(b.pts(imbalance_kn, loss_pct))}" fill="none" '
+          f'stroke="{V.VIO}" stroke-width="2.8"/>')
+    for kn in snapshots_kn:
+        i = int(np.argmin(np.abs(imbalance_kn - kn)))
+        s += (f'<circle cx="{b.x(imbalance_kn[i]):.1f}" '
+              f'cy="{b.y(loss_pct[i]):.1f}" r="4.5" fill="{V.FG}" '
+              f'stroke="{V.BG}" stroke-width="1.5"/>')
+    s += D.text(b.L + 12, b.B - 14,
+                "curves upward — twice the imbalance costs more than twice",
+                V.MUT, 11, style="italic")
+    s += D.text(b.R - 8, b.T + 18, "the three dots are the split_load_figure "
+                "snapshots above", V.MUT, 10.5, "end")
+
+    s += _stamp(H - 40, tire,
+                f"fit is peak μ = {slope:.4f}·kN + {intercept:.3f}, "
+                f"R²={r_squared:.4f} over the swept range — the curve is not "
+                f"actually linear, this line is a reading aid; panel B holds "
+                f"total load fixed at {total_n/1000:g} kN")
+    return s + V.foot(
+        W, H,
+        "Panel A is one tire; panel B is two, sharing the same total. Neither "
+        "curve is a straight line, and that is the entire reason weight "
+        "transfer matters to a car.",
     )
 
 

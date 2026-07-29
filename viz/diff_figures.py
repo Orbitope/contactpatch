@@ -6,6 +6,10 @@
     the force it is carrying. At part throttle the outside arrow points BACKWARDS.
     You do not need to know what a slip ratio is to see that one wheel is being
     dragged while the other pushes, or which way that twists the car.
+``traction_figure``
+    Three cars, one throttle opening: what each device actually delivers of the
+    6,000 N asked for. The sharpest number in the episode — the open differential
+    throws away 35% of it — had no dedicated visual; this is it.
 ``decomposition_figure``
     The technical version: yaw moment against throttle for all three devices, with
     the crossover where each one changes its mind.
@@ -150,6 +154,89 @@ def mechanism_figure(results) -> str:
         "Arrow length is longitudinal force at the contact patch, to scale between "
         "the panels. Teal pushes the car forwards, red drags it back. Contact-patch "
         "shading is static load; the car is drawn nose-up and is turning left.",
+    )
+
+
+def traction_figure(results) -> str:
+    """Three devices, one throttle opening: what each actually delivers.
+
+    ``mechanism_figure`` shows the welded differential changing its mind between
+    part and full throttle. This is the comparison it does not make: side by
+    side, at the SAME demand, how much of the 6,000 N asked for each device
+    actually puts on the road. The open differential's 35% shortfall is the
+    sharpest number in the episode and previously lived only in a caption.
+    """
+    demand = results["full_throttle_N"]
+    full = results["full"]
+    devices = results["devices"]
+
+    W, H = 1540, 920
+    s = V.head(
+        W, H,
+        "Which device actually delivers the force you asked for?",
+        f"The same {demand:.0f} N asked of the rear axle, at the same corner, "
+        f"through three devices. Only the split changes.",
+    )
+
+    max_force = max(max(full[d]["inside_N"], full[d]["outside_N"])
+                    for d in devices)
+    scale = 130.0 / max_force
+    y0, dy = 260, 78
+
+    for i, d in enumerate(devices):
+        r = full[d]
+        cy = y0
+        cx = 90 + i * 500
+        s += D.text(cx, 152, results["labels"][d], V.FG, 17, weight="600")
+        s += D.car_plan(cx + 210, cy + 140, length=230, width=108,
+                        wheel_len=52, wheel_w=22, steer_deg=0.0,
+                        loads=(0.55, 0.75, 0.55, 0.75), body=V.MUT)
+
+        for lbl, force, dxw in (("inside", r["inside_N"], -1),
+                                ("outside", r["outside_N"], 1)):
+            wx = cx + 210 + dxw * 84
+            wy = cy + 140 + 96
+            length = force * scale
+            colour = V.TEAL if force >= 0 else V.COR
+            s += D.arrow(wx, wy, wx, wy - length, colour, 5.0, 13)
+            s += D.text(wx + (16 if dxw > 0 else -16), wy - length / 2,
+                        f"{force:+.0f} N", colour, 12.5,
+                        "start" if dxw > 0 else "end", weight="600", mono=True)
+
+        by = cy + 340
+        pct = 100 * r["delivered_N"] / demand
+        bw, bh = 340, 30
+        bx = cx + 40
+        s += (f'<rect x="{bx}" y="{by}" width="{bw}" height="{bh}" rx="5" '
+              f'fill="{V.GRID}" opacity="0.6"/>')
+        fill_colour = V.GRN if pct > 95 else (V.AMB if pct > 75 else V.COR)
+        s += (f'<rect x="{bx}" y="{by}" width="{bw * min(pct, 100) / 100:.1f}" '
+              f'height="{bh}" rx="5" fill="{fill_colour}" opacity="0.85"/>')
+        s += D.text(bx, by + bh + 24,
+                    f"{r['delivered_N']:.0f} of {demand:.0f} N delivered "
+                    f"({pct:.0f}%)", V.FG, 13.5, weight="600")
+        if r["shortfall_N"] > 1.0:
+            s += D.text(bx, by + bh + 46,
+                        f"{r['shortfall_N']:.0f} N thrown away", V.COR, 12.5)
+        else:
+            s += D.text(bx, by + bh + 46, "nothing thrown away", V.GRN, 12.5)
+
+    s += D.rule(60, 730, W - 120, V.GRID)
+    for i, line in enumerate(_wrap(
+            "The open differential must feed both wheels equally, so it is "
+            "limited by twice whatever the lighter inside wheel can hold — and "
+            "the inside wheel is light because the corner has already put the "
+            "weight on the outside one. The other two devices recover that "
+            "force by sending the outside wheel more than the inside one, "
+            "which is the same asymmetry that steers the car.", 148)):
+        s += D.text(60, 764 + 21 * i, line, V.MUT, 12.5)
+
+    s += _stamp(H - 40, results)
+    return s + V.foot(
+        W, H,
+        "Arrow length is longitudinal force at the contact patch, one scale "
+        "across all three cars. Contact-patch shading is static load; the "
+        "corner is a steady left-hander at the load in the stamp below.",
     )
 
 

@@ -152,6 +152,8 @@ def _ep07_reference() -> dict | None:
 
 
 def figures(out) -> None:
+    from viz import review_figures
+
     results = json.loads((out / "results.json").read_text())
     history = json.loads((out / "history.json").read_text())
     traces = dict(np.load(out / "traces.npz"))
@@ -161,6 +163,27 @@ def figures(out) -> None:
           conditioned_figures.crosscheck_figure(results))
     write(out / "03-conditioned-card.svg",
           conditioned_figures.conditioned_card(results, history))
+
+    fracs = results["eval_fractions"]
+    runs = {}
+    for ff in fracs:
+        tag = dkey(ff).replace(".", "")
+        runs[ff] = {k: traces[f"f{tag}_{k}"] for k in
+                    ("s", "n", "xi", "speed", "alpha_max_deg", "finished")}
+        runs[ff]["finished"] = bool(runs[ff]["finished"])
+    write(out / "05-five-lines.svg",
+          conditioned_figures.line_family_figure(runs, results))
+    write(out / "04-path-review.svg",
+          review_figures.path_review(
+              [{"label": f"{100*ff:.0f}% front", "sub": "deployed policy",
+                "trace": runs[ff], "ok": runs[ff]["finished"]}
+               for ff in fracs],
+              "What the deployed policy does",
+              "The same conditioned policy, driving each weight distribution "
+              "as its deployed (mean) action.",
+              stamp="[MEASURED] design-conditioned PPO policy, greedy action, "
+                    f"envelope_penalty={results['envelope_penalty']:g}",
+              cols=3))
 
 
 def main() -> int:
@@ -386,8 +409,11 @@ def main() -> int:
         # deployed policy is the result (F61), so it is what gets drawn. F68.
         r = rollout(env, greedy_policy(res["model"]), seed=0)
         tag = dkey(ff).replace(".", "")
-        for k in ("s", "n", "speed", "alpha_max_deg"):
+        for k in ("s", "n", "xi", "speed", "alpha_max_deg"):
             tr[f"f{tag}_{k}"] = r[k]
+        # A scalar, not a trace, but np.savez does not mind. path_review and
+        # line_family_figure both branch on whether the lap actually finished.
+        tr[f"f{tag}_finished"] = np.array(r["finished"])
     np.savez(out / "traces.npz", **tr)
 
     md = report.write_markdown(command="python -m experiments.ep10.run")

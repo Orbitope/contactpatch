@@ -45,15 +45,15 @@
   "across_designs": {
     "0.40": {
       "stochastic": {
-        "distance_mean": 371.2078728452562,
-        "distance_std": 72.41709873983775,
-        "finish_rate": 0.9166666666666666,
-        "progress_rate_mean": 18.988522715748385,
-        "progress_rate_std": 0.3640875710144773,
-        "lap_time_mean": 20.663636363636364,
-        "lap_time_std": 0.3827952865500812,
-        "n_finished": 11,
-        "worst_slip_deg": 8.783393209763629,
+        "distance_mean": 393.0950604131238,
+        "distance_std": 0.13273561275068652,
+        "finish_rate": 1.0,
+        "progress_rate_mean": 19.107676862891292,
+        "progress_rate_std": 0.2685932727297036,
+        "lap_time_mean": 20.576666666666668,
+        "lap_time_std": 0.2876147114148063,
+        "n_finished": 12,
+        "worst_slip_deg": 7.065093662981672,
         "slip_over_bound": 0.0
       },
       "greedy": {
@@ -71,15 +71,15 @@
     },
     "0.47": {
       "stochastic": {
-        "distance_mean": 393.00858825692256,
-        "distance_std": 0.12853596156930872,
+        "distance_mean": 393.0548434431793,
+        "distance_std": 0.10571679957015027,
         "finish_rate": 1.0,
-        "progress_rate_mean": 18.797592349883484,
-        "progress_rate_std": 0.35799063134144504,
-        "lap_time_mean": 20.915000000000003,
-        "lap_time_std": 0.39976034487344203,
+        "progress_rate_mean": 18.665928548029893,
+        "progress_rate_std": 0.45285972430805654,
+        "lap_time_mean": 21.07,
+        "lap_time_std": 0.5220153254455275,
         "n_finished": 12,
-        "worst_slip_deg": 6.957711696724762,
+        "worst_slip_deg": 6.30942930131107,
         "slip_over_bound": 0.0
       },
       "greedy": {
@@ -97,15 +97,15 @@
     },
     "0.54": {
       "stochastic": {
-        "distance_mean": 393.0074965684633,
-        "distance_std": 0.07263851239737461,
+        "distance_mean": 392.9610153331778,
+        "distance_std": 0.08372771635215577,
         "finish_rate": 1.0,
-        "progress_rate_mean": 18.146153157549108,
-        "progress_rate_std": 0.45882093248261024,
-        "lap_time_mean": 21.671666666666667,
-        "lap_time_std": 0.5447603958520562,
+        "progress_rate_mean": 18.223230319866243,
+        "progress_rate_std": 0.38295107741464457,
+        "lap_time_mean": 21.573333333333334,
+        "lap_time_std": 0.4566058353644737,
         "n_finished": 12,
-        "worst_slip_deg": 7.260872278195067,
+        "worst_slip_deg": 7.162744523968529,
         "slip_over_bound": 0.0
       },
       "greedy": {
@@ -123,15 +123,15 @@
     },
     "0.61": {
       "stochastic": {
-        "distance_mean": 393.0228820958028,
-        "distance_std": 0.11419313449828225,
+        "distance_mean": 392.9772951309669,
+        "distance_std": 0.09302233693928853,
         "finish_rate": 1.0,
-        "progress_rate_mean": 17.785955247855828,
-        "progress_rate_std": 0.44742360778028545,
-        "lap_time_mean": 22.111666666666665,
-        "lap_time_std": 0.568416416214576,
+        "progress_rate_mean": 17.615340902909193,
+        "progress_rate_std": 0.39231342468437086,
+        "lap_time_mean": 22.319999999999997,
+        "lap_time_std": 0.5025269478678067,
         "n_finished": 12,
-        "worst_slip_deg": 8.901102878443538,
+        "worst_slip_deg": 7.140381148415247,
         "slip_over_bound": 0.0
       },
       "greedy": {
@@ -149,15 +149,15 @@
     },
     "0.65": {
       "stochastic": {
-        "distance_mean": 392.98145950647154,
-        "distance_std": 0.11386217681807986,
+        "distance_mean": 393.01591640599605,
+        "distance_std": 0.08278625828919023,
         "finish_rate": 1.0,
-        "progress_rate_mean": 17.263327915489494,
-        "progress_rate_std": 0.40787985051198883,
-        "lap_time_mean": 22.77666666666667,
-        "lap_time_std": 0.5386299492436548,
+        "progress_rate_mean": 17.2958429462299,
+        "progress_rate_std": 0.6161696012015813,
+        "lap_time_mean": 22.75166666666667,
+        "lap_time_std": 0.8013512893162955,
         "n_finished": 12,
-        "worst_slip_deg": 7.148331638673407,
+        "worst_slip_deg": 6.516208320311913,
         "slip_over_bound": 0.0
       },
       "greedy": {
@@ -179,7 +179,7 @@
       "time_s": 12.05850035482482,
       "understeer_gradient_deg_per_g": -0.3696779239490755,
       "apex_fraction_through_corner": 0.5552431670344532,
-      "brake_release_s": 67.45597476990434,
+      "brake_release_s": 71.09170550441652,
       "min_speed_ms": 23.31379043896843,
       "exit_speed_ms": 46.58437688588963,
       "mean_utilisation_in_corner": {
@@ -203,7 +203,7 @@
       "time_s": 12.046886393317699,
       "understeer_gradient_deg_per_g": -0.07380531863624101,
       "apex_fraction_through_corner": 0.5641719819280314,
-      "brake_release_s": 63.487976254027615,
+      "brake_release_s": 66.08804731231882,
       "min_speed_ms": 23.394202073851048,
       "exit_speed_ms": 46.63996249306062,
       "mean_utilisation_in_corner": {
@@ -227,7 +227,7 @@
       "time_s": 12.086446365084006,
       "understeer_gradient_deg_per_g": 0.2200929220118136,
       "apex_fraction_through_corner": 0.5639910486753851,
-      "brake_release_s": 67.45597476990434,
+      "brake_release_s": 69.15451700181625,
       "min_speed_ms": 23.452073473746495,
       "exit_speed_ms": 46.54710457059686,
       "mean_utilisation_in_corner": {
@@ -251,7 +251,7 @@
       "time_s": 12.172941649501132,
       "understeer_gradient_deg_per_g": 0.5118042990990551,
       "apex_fraction_through_corner": 0.5608737067620269,
-      "brake_release_s": 71.42397328578107,
+      "brake_release_s": 72.01016615412496,
       "min_speed_ms": 23.391773508437037,
       "exit_speed_ms": 46.35621797770563,
       "mean_utilisation_in_corner": {
@@ -275,7 +275,7 @@
       "time_s": 12.252242834283756,
       "understeer_gradient_deg_per_g": 0.6771085472223186,
       "apex_fraction_through_corner": 0.5536787391048854,
-      "brake_release_s": 75.39197180165779,
+      "brake_release_s": 75.88517731522073,
       "min_speed_ms": 23.30201718906843,
       "exit_speed_ms": 46.170335215106576,
       "mean_utilisation_in_corner": {

@@ -364,7 +364,7 @@ class _Ax:
 def balance_card(results, meta) -> str:
     fracs = np.array(results["front_fractions"])
     lo, hi = results["sourced_range"]
-    W, H = 1520, 790
+    W, H = 1520, 1160
     s = V.head(
         W, H,
         "Episode 7 - front mass fraction sweep",
@@ -381,8 +381,13 @@ def balance_card(results, meta) -> str:
         ("C - Apex position", "% through the corner",
          lambda d: [100 * _row(results, d, ff)["apex_fraction_through_corner"]
                     for ff in fracs], 1020, 1340),
+        ("D - Brake release point", "distance along track (m)",
+         lambda d: [_row(results, d, ff)["brake_release_s"] for ff in fracs],
+         100, 420, 560, 870),
     ]
-    for title, ylab, get, L, R in panels:
+    for panel in panels:
+        title, ylab, get, L, R = panel[:5]
+        T, B = panel[5:7] if len(panel) > 5 else (150, 460)
         if get is None:
             ks = [results["K_deg_per_g"][f"{ff:.2f}"] for ff in fracs]
             y0, y1 = min(ks) - 0.05, max(ks) + 0.05
@@ -390,11 +395,12 @@ def balance_card(results, meta) -> str:
             vals = get("rwd") + get("fwd")
             pad = 0.05 * (max(vals) - min(vals) or 1.0)
             y0, y1 = min(vals) - pad, max(vals) + pad
-        ax = _Ax(L, R, 150, 460, fracs.min() - 0.01, fracs.max() + 0.01, y0, y1)
-        s += D.panel_title(L, 132, title)
+        ax = _Ax(L, R, T, B, fracs.min() - 0.01, fracs.max() + 0.01, y0, y1)
+        s += D.panel_title(L, T - 18, title)
         s = V.grid(s, ax.L, ax.R, ax.T, ax.B, 4, 4)
         xt = [(f"{100*v:.0f}", float(ax.x(v))) for v in fracs]
-        yt = [(f"{v:.2f}", float(ax.y(v))) for v in np.linspace(y0, y1, 4)]
+        yt = [(f"{v:.2f}" if ylab != "distance along track (m)" else f"{v:.0f}",
+               float(ax.y(v))) for v in np.linspace(y0, y1, 4)]
         s = V.axes(s, ax.L, ax.R, ax.T, ax.B, "front mass fraction (%)", ylab,
                    xt, yt)
         s += (f'<rect x="{float(ax.x(lo)):.1f}" y="{ax.T}" '
@@ -419,6 +425,22 @@ def balance_card(results, meta) -> str:
                           f'fill="{colour if conv else V.BG}" '
                           f'stroke="{colour}" stroke-width="1.5"/>')
 
+    # Panel D's own spread, stated the same way panels A-C's are below: against
+    # the four node spacings that are this solve's own resolution floor (F47).
+    brs = [_row(results, drive, ff)["brake_release_s"]
+           for drive in ("rwd", "fwd") for ff in fracs]
+    node_spacing = results["track_length_m"] / results["n_nodes"]
+    s += D.text(560, 622,
+                f"Brake release spans {max(brs) - min(brs):.1f} m across the "
+                f"sweep, against a {node_spacing:.1f} m node spacing — "
+                f"{(max(brs)-min(brs))/node_spacing:.0f} node spacings, and "
+                f"monotonic: more weight on the front, later braking.",
+                V.MUT, 11.5)
+    s += D.text(560, 644,
+                "Contrast panel C: apex position barely moves. Where you brake "
+                "is the car's business; where you apex is the road's.",
+                V.MUT, 11.5)
+
     # Report ties, not a single winner. argmin always names one point even when
     # the next is a millisecond behind, and after the re-solve both drivetrains
     # have two settings inside the floor of each other (rule 5).
@@ -430,23 +452,23 @@ def balance_card(results, meta) -> str:
 
     tr, tf = _tied("rwd"), _tied("fwd")
     fmt = lambda xs: " and ".join(f"{100*x:.0f}%" for x in sorted(xs))
-    s += D.text(100, 556,
+    s += D.text(100, 926,
                 "Hollow markers are solves that stopped on the iteration limit; "
                 "their times are not evidence (FINDINGS F39). Filled markers "
                 "converged cleanly.", V.MUT, 11.5)
-    s += D.text(100, 578,
+    s += D.text(100, 948,
                 f"Within the {NOISE_FLOOR_S:.2f} s these solves resolve, rear "
                 f"drive is fastest at {fmt(tr)} front and front drive at "
                 f"{fmt(tf)} — each wants the end of the range that loads the "
                 f"wheels it drives.", V.MUT, 11.5)
-    s += D.text(100, 600,
+    s += D.text(100, 970,
                 f"Understeer gradient runs "
                 f"{results['K_deg_per_g'][f'{fracs[0]:.2f}']:+.2f} to "
                 f"{results['K_deg_per_g'][f'{fracs[-1]:.2f}']:+.2f} deg/g across the "
                 f"same sweep, against a 0.2 deg/g measurement floor — five times "
                 f"the resolution, where the lap times are barely one.",
                 V.MUT, 11.5)
-    s += D.text(100, 622,
+    s += D.text(100, 992,
                 "Yaw inertia is held fixed, so this isolates balance. A real "
                 "engine move would change polar moment too — Episode 8.",
                 V.MUT, 11.5)

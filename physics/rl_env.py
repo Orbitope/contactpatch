@@ -36,6 +36,25 @@ worse-conditioned optimal-control solver, not a driver.
 
 This module is numpy-only and has no learning code in it, so the physics can be
 tested without a training framework installed.
+
+**Episode 14 adds three action-space modes** (``EnvConfig.tv_mode``), all
+routed through ``DoubleTrackBackend.attach_torque_vectoring`` — the same hook
+``physics/driver.py`` uses for Episode 13's classical controller:
+
+* ``"none"`` — every Episode 9-11 result, byte-for-bit unchanged.
+* ``"hybrid"`` (variant H) — the policy adds one action, an `Mz` DEMAND, fed
+  through the identical QP allocator Episode 13's classical controller uses.
+  The only thing that differs from the classical variant is where the moment
+  demand comes from.
+* ``"end_to_end"`` (variant E) — the policy's action REPLACES the net
+  drive-force channel with four raw per-wheel force fractions and there is no
+  allocator at all — see ``docs/vehicle-codesign-research-plan.md`` Phase 4b
+  for the variant table this reproduces exactly.
+
+Also added: per-step lateral acceleration and per-wheel friction-ellipse
+utilisation logging, absent from this file since Season 3 and flagged in
+`HANDOFF.md` as the reason there was previously no way to verify a
+torque-vectoring result was measuring anything a saturated tire actually did.
 """
 
 from __future__ import annotations
@@ -46,8 +65,9 @@ from dataclasses import dataclass, field, replace
 import numpy as np
 
 from physics import schema
-from physics.double_track import DoubleTrackBackend
+from physics.double_track import CORNERS, DoubleTrackBackend
 from physics.tire import default_tire
+from physics.torque_vectoring import Allocator
 from physics.track import Track, long_exit
 
 #: Simulation step. 50 Hz — fast enough that a 200 deg/s steering rate moves the
@@ -70,6 +90,56 @@ ENVELOPE_SLIP_MAX = math.radians(12.0)
 #: 30 m/s is a bit under two seconds of road, which is roughly what a driver
 #: reads. [ASSUMED] — and worth a sensitivity check before any claim rests on it.
 PREVIEW_DISTANCES = (5.0, 12.0, 20.0, 30.0, 42.0, 55.0)
+
+#: Episode 14, variant H. The bound the hybrid policy's Mz action is scaled
+#: against, matching ``torque_vectoring.YawController``'s own default clip —
+#: the same ceiling the classical PID is held to, so neither controller is
+#: structurally freer than the other to ask for more moment than the tires
+#: could plausibly deliver.
+MZ_MAX = 6000.0
+
+
+class _HybridTVAdapter:
+    """Episode 14, variant H: the policy outputs an Mz DEMAND; the same QP
+    allocator Episode 13's classical controller uses decides which wheels pay
+    for it. This is deliberately the only thing that differs from variant C —
+    swap this adapter's ``mz_command`` source for a PID and you have C back.
+
+    Held for the whole control interval (RK4 substeps), same zero-order-hold
+    ``physics/driver.py``'s ``TorqueVectoring`` established for Episode 13.
+    """
+
+    __slots__ = ("allocator", "mz_command")
+
+    def __init__(self, allocator: Allocator):
+        self.allocator = allocator
+        self.mz_command = 0.0
+
+    def forces(self, demand, loads, state, lateral=None):
+        return self.allocator.allocate(
+            demand, self.mz_command, loads, steer=state.steer,
+            lateral=lateral).forces
+
+
+class _EndToEndTVAdapter:
+    """Episode 14, variant E: the policy outputs four raw per-wheel force
+    FRACTIONS directly, in [-1, 1], each scaled by that wheel's own grip-based
+    capacity. No allocator call, no shared-demand reconciliation — matching
+    the research plan's "none" lower layer for this variant exactly. The
+    ``Allocator`` is reused only for its ``capacities()`` method (the friction
+    ellipse, not the QP), so a policy action of +1 means "everything this tire
+    has left," not an arbitrary fixed force.
+    """
+
+    __slots__ = ("allocator", "fractions")
+
+    def __init__(self, allocator: Allocator):
+        self.allocator = allocator
+        self.fractions = {c: 0.0 for c in CORNERS}
+
+    def forces(self, demand, loads, state, lateral=None):
+        caps = self.allocator.capacities(loads, lateral)
+        return {c: self.fractions[c] * caps[c] for c in CORNERS}
 
 
 @dataclass
@@ -119,6 +189,26 @@ class EnvConfig:
     #: Scaled so one degree past the bound costs about as much as a step's
     #: progress: excess/12 x this, against ~0.4 m of progress per step.
     envelope_penalty: float = 0.0
+    #: Cost per step for tire workload — the mean over the four wheels of
+    #: squared friction-ellipse utilisation. **0.0 reproduces every Episode
+    #: 9-14 result**, which is what it must do, because this changes the
+    #: question rather than fixing a bug (rule 9).
+    #:
+    #: Added because Episode 14 compared two variants on tire utilisation and
+    #: the comparison turned out to be meaningless: on the exit straight the
+    #: reward is progress alone — no off-track penalty, worst slip 0.02-1.08
+    #: deg against a 12 deg bound so no envelope penalty either — and summed
+    #: per-wheel LATERAL force ranged 83 N to 3,199 N across seeds at identical
+    #: reward. Wheels shoving against each other was free, so "does the policy
+    #: allocate efficiently" was being asked of an objective that had never
+    #: mentioned efficiency. See FINDINGS F95.
+    #:
+    #: Squared rather than linear so that one saturated wheel costs more than
+    #: four half-used ones — which is the same shape as the QP allocator's own
+    #: objective (``physics/torque_vectoring.py``), deliberately: the point is
+    #: to give BOTH variants the goal the allocator was built around and see
+    #: which reaches it, not to hand it to the variant that already has it.
+    workload_penalty: float = 0.0
     #: Give up if the car is crawling; otherwise a policy that stops still
     #: collects zero reward forever and wastes the rollout.
     min_speed: float = 3.0
@@ -141,7 +231,18 @@ class EnvConfig:
     #: 10 result is produced by exactly the environment those episodes describe.
     #:
     #: Standard deviation of zero-mean Gaussian noise added to the commanded
-    #: STEERING action each step, in units of the normalised action. This is the
+    #: STEERING action each step, in units of the normalised action.
+    #:
+    #: **Units trap, measured: this is a fraction of STEER_RATE_MAX at the ROAD
+    #: WHEEL, and a driver holds the STEERING WHEEL.** Through a ~13.5:1 rack
+    #: [ASSUMED], the closed-loop RMS steer deviation this produces is:
+    #:
+    #:   0.01 -> 1.6 deg at the steering wheel   (attentive: micro-corrections)
+    #:   0.03 -> 4.7 deg                         (distracted: visual-task band)
+    #:   0.15 -> 23.4 deg                        (no physical interpretation)
+    #:
+    #: Episodes 11 and 13 both used 0.15 and both describe it as the driver's
+    #: hands. Prefer 0.01, or 0.03 for a loaded driver. See FINDINGS F96. This is the
     #: driver's hands and the steering system, not the policy's own exploration:
     #: it is applied after the policy has chosen, and it is present at deployment.
     #: [ASSUMED] — a real figure would come from steering-robot repeatability data.
@@ -180,6 +281,20 @@ class EnvConfig:
     #: the schema.
     design_ranges: dict[str, tuple[float, float]] | None = None
 
+    #: --- Episode 14: torque vectoring. ``"none"`` is every Episode 9-11
+    #: result unchanged — no allocator is constructed, no adapter is attached,
+    #: and the action vector stays exactly [steer_rate, drive_force]. Pinned
+    #: by a seal test, the same pattern ``diff="open"`` and ``steer_noise=0.0``
+    #: already establish for every other mode this file adds.
+    #:
+    #: ``"hybrid"`` (variant H) — the policy's third action is an Mz DEMAND,
+    #: fed through the same QP allocator variant C's classical controller
+    #: uses. ``"end_to_end"`` (variant E) — the policy's action REPLACES
+    #: drive_force with four raw per-wheel force fractions and there is no
+    #: allocator at all. See ``docs/vehicle-codesign-research-plan.md`` Phase
+    #: 4b for the variant table this reproduces.
+    tv_mode: str = "none"
+
 
 class DrivingEnv:
     """One car on one road, stepped at fixed dt. Gym-like but not gym-dependent.
@@ -190,6 +305,7 @@ class DrivingEnv:
 
     def __init__(self, config: EnvConfig | None = None, seed: int | None = None):
         self.cfg = config or EnvConfig()
+        assert self.cfg.tv_mode in ("none", "hybrid", "end_to_end"), self.cfg.tv_mode
         self.backend = DoubleTrackBackend(
             self.cfg.params, diff=self.cfg.diff,
             torque_bias_ratio=self.cfg.torque_bias_ratio,
@@ -199,12 +315,29 @@ class DrivingEnv:
         self._ref_s = np.linspace(0.0, self.cfg.track.length, 4000)
         _, self._ref_x, self._ref_y, self._ref_head = \
             self.cfg.track.centreline(4000)
+        self._tv_adapter = self._build_tv_adapter()
+        self.backend.attach_torque_vectoring(self._tv_adapter)
         self.reset()
 
     # -- geometry ---------------------------------------------------------
     @property
     def obs_dim(self) -> int:
         return 6 + len(PREVIEW_DISTANCES) + len(self.cfg.design_keys)
+
+    def _build_tv_adapter(self):
+        """The Episode 14 hook. ``None`` (mode "none") leaves the backend
+        exactly as Episodes 9-11 found it — ``attach_torque_vectoring(None)``
+        is a no-op, pinned by ``test_torque_vectoring.py``'s own seal test.
+        Rebuilt whenever ``self.backend`` is, since the ``Allocator`` caches
+        the car's params/tire at construction and a resampled design would
+        make a stale one silently wrong.
+        """
+        if self.cfg.tv_mode == "none":
+            return None
+        allocator = Allocator(params=self.backend.params, tire=self.backend.tire)
+        if self.cfg.tv_mode == "hybrid":
+            return _HybridTVAdapter(allocator)
+        return _EndToEndTVAdapter(allocator)
 
     def _design_vector(self) -> np.ndarray:
         """The conditioned parameters, normalised to [-1, 1] over their range."""
@@ -230,7 +363,13 @@ class DrivingEnv:
 
     @property
     def act_dim(self) -> int:
-        return 2
+        # "none": [steer_rate, drive_force]                            = 2
+        # "hybrid": [steer_rate, drive_force, mz_command]               = 3
+        # "end_to_end": [steer_rate, w_fl, w_fr, w_rl, w_rr]            = 5
+        # drive_force does not exist in "end_to_end" — there is no shared
+        # demand to reconcile against, per the "none" lower layer in
+        # docs/vehicle-codesign-research-plan.md Phase 4b.
+        return {"none": 2, "hybrid": 3, "end_to_end": 5}[self.cfg.tv_mode]
 
     def _road_heading(self, s: float) -> float:
         return float(np.interp(s % self.cfg.track.length, self._ref_s,
@@ -274,13 +413,24 @@ class DrivingEnv:
                 base, tire=self._tire_for(self.grip), diff=self.cfg.diff,
                 torque_bias_ratio=self.cfg.torque_bias_ratio,
                 locking=self.cfg.locking)
+            # The Allocator caches params/tire at construction, so a resampled
+            # design needs a fresh one — reusing the old adapter here would be
+            # silently wrong in exactly the way F72 was silently wrong.
+            self._tv_adapter = self._build_tv_adapter()
+        self.backend.attach_torque_vectoring(self._tv_adapter)
         self.backend.reset(self.cfg.entry_speed)
         self.steps = 0
         self.done = False
         self.log = {k: [] for k in
                     ("s", "n", "xi", "speed", "steer", "drive", "reward",
                      "alpha_max_deg", "kappa_max", "load_min", "load_max",
-                     "envelope_violation")}
+                     "envelope_violation", "a_y", "utilisation_max")}
+        for c in CORNERS:
+            self.log[f"fx_{c}"] = []
+            self.log[f"fy_{c}"] = []
+            self.log[f"fz_{c}"] = []
+        if self.cfg.tv_mode != "none":
+            self.log["tv_extra_action"] = []
         return self.observe()
 
     def observe(self) -> np.ndarray:
@@ -301,7 +451,14 @@ class DrivingEnv:
         ])
 
     def step(self, action: np.ndarray) -> tuple[np.ndarray, float, bool, dict]:
-        """One control interval. ``action`` is [steer_rate, drive_force], in [-1, 1]."""
+        """One control interval.
+
+        ``action`` is [steer_rate, drive_force] in "none" mode (Episodes 9-11,
+        unchanged); [steer_rate, drive_force, mz_command] in "hybrid" mode
+        (Episode 14 variant H); [steer_rate, w_fl, w_fr, w_rl, w_rr] in
+        "end_to_end" mode (variant E, no drive_force channel — see ``act_dim``).
+        All components in [-1, 1].
+        """
         if self.done:
             raise RuntimeError("step() after done; call reset()")
         a = np.clip(np.asarray(action, dtype=float), -1.0, 1.0)
@@ -316,9 +473,27 @@ class DrivingEnv:
             a = a.copy()
             a[0] = np.clip(a[0] + self.rng.normal(0.0, self.cfg.steer_noise),
                            -1.0, 1.0)
+
+        # Update the Episode 14 adapter's held command BEFORE stepping the
+        # backend, so it is in place for all four RK4 substeps — the same
+        # zero-order hold physics/driver.py's TorqueVectoring uses. "none"
+        # mode never reaches here (act_dim 2, no a[2:]).
+        if self.cfg.tv_mode == "hybrid":
+            self._tv_adapter.mz_command = float(a[2]) * MZ_MAX
+        elif self.cfg.tv_mode == "end_to_end":
+            for i, c in enumerate(CORNERS):
+                self._tv_adapter.fractions[c] = float(a[1 + i])
+
+        drive_action = 0.0 if self.cfg.tv_mode == "end_to_end" else float(a[1])
         act = self.backend.act_space.pack(
             steer_rate=a[0] * STEER_RATE_MAX,
-            drive_force=(a[1] * DRIVE_MAX if a[1] >= 0 else a[1] * BRAKE_MAX),
+            # In "end_to_end" mode this net demand is never read — the
+            # attached adapter ignores it entirely (there is no shared demand
+            # to reconcile against). Passed as 0.0 rather than reusing a
+            # wheel-fraction slot, so nothing here can be mistaken for meaning
+            # something it does not.
+            drive_force=(drive_action * DRIVE_MAX if drive_action >= 0
+                        else drive_action * BRAKE_MAX),
         )
         _, info = self.backend.step(act, self.cfg.dt)
         st = self.backend.state
@@ -365,12 +540,26 @@ class DrivingEnv:
             if excess > 0.0:
                 reward -= self.cfg.envelope_penalty * excess / math.degrees(
                     ENVELOPE_SLIP_MAX)
+        if self.cfg.workload_penalty > 0.0:
+            # Mean squared friction-ellipse utilisation over the four wheels.
+            # Computed from the SAME per-wheel forces _record logs, so the
+            # reward and the reported metric cannot describe different things.
+            wheels = self.backend._last_wheels
+            if wheels:
+                acc = 0.0
+                for c in CORNERS:
+                    w = wheels[c]
+                    fz = max(w.fz, 1.0)
+                    u = math.hypot(w.fx / float(self.backend.tire.peak_fx(fz)),
+                                   w.fy / float(self.backend.tire.peak_fy(fz)))
+                    acc += u * u
+                reward -= self.cfg.workload_penalty * acc / len(CORNERS)
 
         # Log the reward the learner actually receives, penalty included. An
         # earlier version logged only the progress term, so every training
         # summary read back a healthy positive return for episodes that had just
         # driven off the road and been penalised 50 for it.
-        self._record(ds, a, speed, info, reward)
+        self._record(ds, a, speed, info, reward, drive_action)
         return self.observe(), float(reward), self.done, {
             "s": self.s, "n": self.n, "speed": speed, "off_track": off,
             "finished": finished, "stalled": stalled, "timeout": timeout,
@@ -381,16 +570,26 @@ class DrivingEnv:
     def _wrap(a: float) -> float:
         return (a + math.pi) % (2.0 * math.pi) - math.pi
 
-    def _record(self, ds, a, speed, info, reward) -> None:
-        """Everything CLAUDE.md rule 4 demands, every step, no exceptions."""
+    def _record(self, ds, a, speed, info, reward, drive_action) -> None:
+        """Everything CLAUDE.md rule 4 demands, every step, no exceptions.
+
+        Extended for Episode 14 with lateral acceleration and per-wheel
+        friction-ellipse utilisation — the fields ``HANDOFF.md`` flagged this
+        environment as missing, and the only way to verify a torque-vectoring
+        result is measuring anything real rather than an under-driving policy
+        that never saturates a tire. Same fields ``physics/driver.py``'s
+        ``drive_lap()`` already logs for Episode 13, so the two can share
+        plotting code.
+        """
         sl = self.backend.slip_angles()
         loads = self.backend.wheel_loads(info.a_x, info.a_y)
+        wheels = self.backend._last_wheels
         self.log["s"].append(self.s)
         self.log["n"].append(self.n)
         self.log["xi"].append(self.xi)
         self.log["speed"].append(speed)
         self.log["steer"].append(self.backend.state.steer)
-        self.log["drive"].append(float(a[1]))
+        self.log["drive"].append(float(drive_action))
         self.log["reward"].append(float(reward))
         self.log["alpha_max_deg"].append(
             math.degrees(max(abs(v) for v in sl.values())))
@@ -398,6 +597,23 @@ class DrivingEnv:
         self.log["load_min"].append(min(loads.values()))
         self.log["load_max"].append(max(loads.values()))
         self.log["envelope_violation"].append(bool(info.envelope_violation))
+        self.log["a_y"].append(float(info.a_y))
+        util = []
+        for c in CORNERS:
+            w = wheels.get(c) if wheels else None
+            fx, fy, fz = (w.fx, w.fy, w.fz) if w else (0.0, 0.0, loads[c])
+            self.log[f"fx_{c}"].append(float(fx))
+            self.log[f"fy_{c}"].append(float(fy))
+            self.log[f"fz_{c}"].append(float(fz))
+            fz_safe = max(fz, 1.0)
+            fx_p = float(self.backend.tire.peak_fx(fz_safe))
+            fy_p = float(self.backend.tire.peak_fy(fz_safe))
+            util.append(math.hypot(fx / fx_p, fy / fy_p))
+        self.log["utilisation_max"].append(max(util))
+        if self.cfg.tv_mode != "none":
+            self.log["tv_extra_action"].append(np.asarray(a[2:], dtype=float)
+                                               if self.cfg.tv_mode == "hybrid"
+                                               else np.asarray(a[1:], dtype=float))
 
     def set_design(self, **kw) -> None:
         """Pin the conditioned parameters instead of resampling them.
@@ -443,9 +659,17 @@ def rollout(env: DrivingEnv, policy, seed: int | None = None) -> dict:
         "worst_slip_deg": float(np.max(h["alpha_max_deg"])),
         "envelope_occupancy": float(np.mean(h["envelope_violation"])),
         "slip_over_12deg_fraction": float(np.mean(h["alpha_max_deg"] > 12.0)),
+        # Episode 14: is this rollout anywhere near the tire's limit at all?
+        # Torque vectoring only acts where there is saturated lateral grip to
+        # trade against — a policy that never approaches peak_a_y_g measures
+        # nothing about torque vectoring, whatever else it measures. Same two
+        # properties physics.driver.Lap exposes for Episode 13, so a TV result
+        # can be checked the same way regardless of which controller made it.
+        "peak_a_y_g": float(np.max(np.abs(h["a_y"])) / schema.G),
+        "mean_utilisation": float(np.mean(h["utilisation_max"])),
     }
 
 
 __all__ = ["DrivingEnv", "EnvConfig", "rollout", "DT", "PREVIEW_DISTANCES",
-           "ENVELOPE_SLIP_MAX",
+           "ENVELOPE_SLIP_MAX", "MZ_MAX",
            "STEER_RATE_MAX", "STEER_MAX", "DRIVE_MAX", "BRAKE_MAX"]

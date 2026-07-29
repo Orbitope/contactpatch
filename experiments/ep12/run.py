@@ -121,6 +121,8 @@ def figures(out) -> None:
           diff_figures.mechanism_figure(results))
     write(out / "02-traction-and-handling.svg",
           diff_figures.decomposition_figure(results))
+    write(out / "03-who-delivers-the-force.svg",
+          diff_figures.traction_figure(results))
 
 
 def main() -> int:

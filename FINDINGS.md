@@ -2636,6 +2636,857 @@ crossover sits near 50:50 — which is also why a real front-drive hatchback is
 nose-heavy. Episode 6's power sweep says the same thing from the other direction:
 at 101 hp front drive is 0.026 s quicker, at 402 hp it is 0.287 s slower.
 
+## Session 13 — the classical torque-vectoring controller · 2026-07-27
+
+### F81 · `Track.centreline` depended on how many points you asked it for, and two callers disagreed about where the road was by 0.098 m. **Defect, drawing and driving only.** · 2026-07-27
+
+**Source:** `[MEASURED]` — `Track.to_xy` (which samples the centreline at 2,000
+points) round-tripped through `driver.TrackLocator.locate` (4,000 points), on
+`long_exit`.
+
+The centreline was integrated with left-endpoint Riemann sums:
+
+```python
+heading = cumsum(ds * k[:-1])
+x       = cumsum(ds * cos(heading[:-1]))
+```
+
+Both are first-order, so the path drifts by O(ds) and **the geometry therefore
+depended on `n_points`**. Place a point 2.00 m to the right of the centreline with
+`to_xy`, ask the locator where it is, and the answer came back **2.098 m** — a 3.3%
+error in a lateral offset, produced by two pieces of code that each believed they
+were describing the same road.
+
+| where | disagreement, 2,000 against 4,000 points |
+|---|---|
+| opening straight | 0.000 m |
+| corner entry, 75 m | 0.012 m |
+| mid-corner, 100 m | 0.067 m |
+| corner exit onward | **0.098 m**, and it stays there |
+
+The error accumulates through the corner and then persists for the rest of the
+track, which is the signature of a heading error rather than a position one.
+
+**Fixed** by integrating heading with the trapezoid rule and position with the
+midpoint heading. Both are second order, and the two grids now agree to under a
+millimetre. `tests/test_driver.py::test_the_locator_inverts_the_drawing_map` pins
+it by round-tripping the two maps against each other rather than by restating
+either formula.
+
+**Scope, stated precisely.** Nothing physical reads `centreline`: the optimal
+control and the RL environment both integrate `curvature(s)` directly, and no
+published number in Seasons 1–3 moves. It is the **drawing** map, and from this
+episode on the **driver's** map. Season 1–3 figures drawn through it are displaced
+by up to 0.098 m on a 393 m track, which is invisible at figure scale, and have
+**not** been regenerated — a deliberate call, recorded here rather than left
+implicit.
+
+**Why it is worth an entry anyway.** This is the F36 family again: a geometry
+function that is quietly wrong renders a completely plausible picture and nothing
+errors. It had been in the repository since Episode 4, and it was found in ten
+minutes by checking one map against its own inverse — the cheapest external check
+there is (rule 11).
+
+### F82 · The classical two-layer controller works, and on a lap it is worth half a percent. · 2026-07-27
+
+**Source:** `[MEASURED]` — `experiments/ep13/run.py`, `long_exit`, closed-loop
+driver (`physics/driver.py`), `grip_use` swept to failure and bisected to 0.002.
+Reference model built from the car: K = 0.204 deg/g, grip ceiling 0.951 g, both
+`[MEASURED]`.
+
+| configuration | cornering limit | best valid lap | corner section |
+|---|---|---|---|
+| open differential | 1.041 | 14.508 s | 5.483 s |
+| limited-slip (Ep 12's device) | 0.969 | 14.719 s | 5.635 s |
+| allocator, yaw demand forced to zero | 1.063 | 14.516 s | 5.515 s |
+| **torque vectoring, four wheels** | **1.095** | **14.434 s** | **5.445 s** |
+| torque-vectoring differential (rear axle) | 1.073 | 14.562 s | 5.531 s |
+
+**Both layers do what they claim.** The allocator delivers the moment the PID asks
+for to within 60 N·m of a 996 N·m peak — 6% at the single worst instant of the lap
+and near zero everywhere else, the shortfall coming from the allocation being
+computed once per control interval on the previous instant's loads, as an ECU must.
+RMS yaw-rate error against the same reference model, through the same corner at the
+same aggression: **passive 0.1662 rad/s, controlled 0.0197 — 88% lower.** That is a
+far more direct measurement of "it works" than any lap time.
+
+**What it is worth, four ways of asking:**
+
+| | gain |
+|---|---|
+| cornering limit | **+5.18%** |
+| skidpad, sustained lateral acceleration | **+1.30%** (0.939 → 0.951 g) |
+| corner section, brake point to full exit | +0.69% |
+| whole lap | **+0.51%** |
+
+The series plan expected 1–4% of lap time. **We measure an order of magnitude less,
+and the reason is the track rather than the controller:** 260 of `long_exit`'s
+393 m are a straight where the car is power-limited at 4500 N and a yaw controller
+has nothing to do. The cornering-limit number is the one that describes what
+changed.
+
+**The outside check holds.** The best published figure is ~9% for an FSAE car on a
+skidpad — the most favourable manoeuvre there is, and therefore a ceiling. Ours on
+the same manoeuvre is 1.30%. A result above 9% would have been evidence of a bug
+(rule 2). **`[SOURCED — citation outstanding]`**: that 9% is the series plan's
+figure, stated there without a reference and not traced back to a paper here. Rule
+2 says to mark such a band rather than imply a citation, and the figures carry the
+same marking. Tracing it is cheap and should happen before Episode 14 leans on it.
+
+**The tires were saturated, which is the precondition for any of this meaning
+anything.** The quickest valid controlled lap peaks at 0.969 g against a measured
+steady-state ceiling of 0.951 g and reaches 9.94° of slip, where the tire's peak at
+this load is near 10.4° (F71). Torque vectoring only acts where there is spare
+longitudinal capacity to move, so a TV result measured with an under-driving car
+measures nothing.
+
+**Fidelity: rung 2.** Four independently commanded wheel forces is a four-motor
+electric car; the rear-axle version RV-1 could actually have is worth about 60% as
+much (+3.07% of cornering limit against +5.18%). Track width is `[LIKELY]` and is
+the moment arm: at ±3% the gain is +5.36% and +5.00%. **See F83 and F84 before
+quoting any of this** — half of it is not yaw control, and the size of all of it
+depends on how the driver was tuned.
+
+### F83 · Roughly half of it is not torque vectoring at all, and the split moves. · 2026-07-27
+
+**Source:** `[MEASURED]` — the `alloc` condition of `experiments/ep13/run.py`: the
+same four-wheel allocator with its yaw demand forced to zero.
+
+Both the allocator-only car and the fully controlled car replace the differential,
+so both get brake and drive force spread across four wheels in proportion to what
+each has left. **Only one of them also asks for yaw.** The control condition is the
+only thing separating "a computer meters four wheels separately" from "a controller
+vectors torque", and they are different claims with different consequences for
+Episode 15.
+
+On the lap, the allocator alone accounts for **40%** of the cornering-limit gain
+(open 1.041, allocator 1.063, full controller 1.095).
+
+**That share is the least stable number in the episode and is quoted as a range.**
+It moved from 77% to 40% when the allocator went from being re-solved inside the
+integrator to holding its command for the control interval — a modelling fix, not a
+physics change. Across the six sensitivity runs it spans **38–56%**. What survives
+every one of them is the ordering: open < allocator-only < full controller.
+
+**On the skidpad the split inverts completely.** Sustained lateral acceleration:
+open 0.939 g, allocator-only **0.932 g**, full controller 0.951 g. On a steady
+circle there is no braking to distribute and almost no drive force to spread, so the
+lower layer has nothing to be clever with and lands *below* the passive car — the
+whole skidpad gain is yaw control. **The same two layers therefore split the credit
+in opposite proportions in the two manoeuvres**, which is an argument for reporting
+the decomposition per manoeuvre rather than once.
+
+### F84 · The measured value of the controller depends on how the driver was tuned, by more than the controller is worth. **A check fails on this and it is not being loosened.** · 2026-07-27
+
+**Source:** `[MEASURED]` — `experiments/ep13/run.py` sensitivity block, `t_look`
+varied ±30% about its `[ASSUMED]` 0.55 s, everything else held.
+
+| driver preview | passive limit | controlled limit | gain |
+|---|---|---|---|
+| 30% less (0.385 s) | 1.057 | 1.054 | **−0.34%** |
+| nominal (0.55 s) | 1.041 | 1.095 | **+5.18%** |
+| 30% more (0.715 s) | 0.996 | 1.111 | **+11.55%** |
+
+A single `[ASSUMED]` number in the *driver* — not in the car, not in the controller
+— moves the headline from "nothing measurable" to "+11.6%". The −0.34% is 0.0036 in
+`grip_use` against a bisection resolution of 0.002, so it is a wash rather than a
+reversal; but a wash is not +5%.
+
+**The mechanism is not mysterious.** A shorter preview makes the pure-pursuit driver
+steer later and harder, which suits the passive car and gives the yaw controller a
+reference signal full of the driver's own transients to chase. A longer preview
+makes the driver smoother and slower to correct, which the passive car cannot
+recover from and the controller can.
+
+**`D-ep13`'s `the_conclusion_survives_the_driver_being_tuned_differently` therefore
+fails, the article says so, and the threshold has not been moved** (F69's rule). It
+is the only one of the report's twelve checks that fails.
+
+**The transferable part.** A driver aid is developed against a driver, and the pair
+is tuned together whether or not anyone says so. Any measurement of what such a
+system is worth carries the driver model inside it, and reporting one number for it
+is reporting half the experiment. Episode 14 hands the same car to a learned driver;
+this finding is why that comparison has to hold the driver fixed or vary it
+deliberately, and never leave it implicit.
+
+### F85 · Under a disturbed driver the controller is worth far more than it is worth to a perfect one. · 2026-07-27
+
+**Source:** `[MEASURED]` — 40 seeded laps per configuration at `grip_use` 0.991,
+`steer_noise` 0.15 (Episode 11's convention and value). A lap counts only if it
+finished, stayed on the road and stayed inside the ±12° tire fit.
+
+| configuration | valid laps | lap time |
+|---|---|---|
+| open differential | **31/40** | 14.602 ± 0.015 s |
+| limited-slip | **3/40** | 14.659 ± 0.039 s |
+| allocator only | 40/40 | 14.608 ± 0.009 s |
+| torque vectoring, four wheels | **40/40** | **14.580 ± 0.006 s** |
+| torque-vectoring differential | 40/40 | 14.596 ± 0.015 s |
+
+The controller converts a 78% completion rate into 100% and cuts the lap-time
+scatter by more than half. **That is a much larger effect than the half percent of
+lap time it is worth to a driver who never makes a mistake** — and it is the
+justification production stability systems are actually sold on, which our
+undisturbed lap could not have shown.
+
+It also puts Episode 11's finding in a new light: F71 measured how a *design*
+survives disturbance; this measures how a *controller* does, with the design held
+fixed. Both say the same thing about what "fast" means when the day is not perfect.
+
+**The LSD's 3/40 is the strongest single number in the episode**, and it should be
+read carefully: at this aggression the passive limited-slip car is already past its
+own limit (0.969), so it is being asked to do something it cannot do cleanly even
+undisturbed. It is evidence about that device at that demand, not a general claim
+that limited-slip differentials fail nine laps in ten.
+
+### F86 · The reference model is a choice, and asking for a pointier car than the car is helps slightly. · 2026-07-27
+
+**Source:** `[MEASURED]` — `experiments/ep13/run.py` reference sweep, `k_us` varied
+with everything else held.
+
+| target understeer gradient | cornering limit |
+|---|---|
+| 0.204 deg/g (the car's own, `[MEASURED]`) | 1.095 |
+| 0.100 deg/g | 1.097 |
+| 0.000 deg/g (neutral) | 1.100 |
+| −0.150 deg/g (pointier than neutral) | 1.102 |
+
+Monotone, and small: 0.007 in `grip_use` across the whole range, against a
+bisection resolution of 0.002. **Reported as a weak monotone trend, not as a
+result** — three-and-a-half resolution units over four points is the sort of margin
+this project has learned to state and not lean on (F70).
+
+Its interest is what it implies rather than its size. The upper layer's entire
+model of "what the car should be doing" is one coefficient, and moving it changes
+the answer. The series plan reports that published work on optimising torque
+vectoring for lap time finds the best times come from *allowing* deviations from
+neutral yaw-rate tracking — that the reference model is itself a constraint.
+**`[SOURCED — citation outstanding]`**: that is the plan's assertion, stated there
+without a reference, and it has not been traced back to a paper. Our sweep is
+consistent with it in direction and is far too small to be evidence for it. The same
+applies to the ~9% skidpad ceiling F82 is checked against, and both are marked
+rather than implied (rule 2).
+
+**This is the hook for Episode 14, and it is a real one:** a learner given the same
+four wheels and the same stopwatch is not handed a reference model at all.
+
+## Session 14 — a visualisation audit of Episodes 1–13 · 2026-07-27
+
+A full pass asking, of every published episode, whether it has a pictorial figure
+and a technical one (rule 1), and whether every headline number has a figure
+behind it rather than living only in a table. Findings F87–F89.
+
+### F87 · Two episodes' figures could not be regenerated from their own `run.py`. **Defect, rule 10.** · 2026-07-27
+
+**Source:** `[MEASURED]` — `experiments/ep09/run.py` and `experiments/ep10/run.py`,
+`figures()` functions, cross-referenced against the SVGs their own articles embed.
+
+Episode 9 embeds six figures; `figures()` wrote three. Episode 10 embeds five;
+`figures()` wrote three. The missing five — `04-two-environments.svg`,
+`05-path-review.svg`, `06-noise-was-braking.svg` (Ep 9) and `04-path-review.svg`,
+`05-five-lines.svg` (Ep 10) — were sitting in `out/` with no code path that
+produced them any more. `viz.review_figures.path_review` and `.line_compare`, and
+`viz.conditioned_figures.line_family_figure`, were all defined, exported, and
+called from nowhere. Running `python -m experiments.ep09.run --figures-only` today
+would have silently regenerated half an episode's figures and left the other half
+whatever was last on disk.
+
+**Fixed for Episode 10** by wiring `line_family_figure` and `path_review` into its
+`figures()`, adding the `xi` and `finished` fields their calls need to the
+per-fraction trace loop, and regenerating via `--eval-only` (no retrain: the
+policy is the artefact, F68's rule). Both now reproduce bit-for-bit.
+
+**Fixed for Episode 9** the same way, for `path_review` and `line_compare`, after
+finding and fixing a second, deeper bug — see F88. `04-two-environments.svg` is
+deliberately **not** wired back in; see F89.
+
+**Also added:** an `--eval-only` mode for Episode 9's `run.py`, matching Episode
+10's — it did not have one, so the only way to add a field to a saved trace was a
+1.2M-step retrain.
+
+### F88 · The trace Episode 9's core narrative depends on was drawn from an unseeded RNG. **Defect — the figures were not reproducible even before this session.** · 2026-07-27
+
+**Source:** `[MEASURED]` — `experiments/ep09/run.py`'s `_sampled()`, before and
+after.
+
+```python
+def _sampled(model):
+    def act(obs):
+        d = model.distribution(torch.as_tensor(obs, dtype=torch.float32))
+        return d.sample().numpy()          # torch's GLOBAL rng, never seeded
+    return act
+```
+
+Regenerating Episode 9's figures in a fresh process (exactly what F87's fix makes
+possible) drew a different sample than whatever produced the published ones: the
+"sampled" trajectory went off the road at 139 m, flatly contradicting the article's
+own numbers — "arrives at 21.5 m/s ... and it gets round". The deployed
+(mean-action) trajectory is unaffected, because it never samples; it reproduced
+the published 129 m exactly, which is what made the sampled mismatch legible as a
+bug rather than noise.
+
+**This was already broken, not newly broken.** `_sampled` never seeded torch, in
+the version that produced the published figures either — it was reproducible only
+by the accident of whatever global RNG state a given process happened to be in
+when it reached that call. A rerun of the ORIGINAL `main()` (full retrain) would
+have hit this too, just less visibly, since retraining itself consumes an
+unpredictable number of draws from the same global generator.
+
+**Fixed** by giving `_sampled` its own `torch.Generator`, seeded explicitly
+(`SAMPLE_SEED = 1`). That value is not a free choice — a 20-seed sweep (`for
+torch_seed in range(20)`) found 13 of 20 finish the corner (65%, consistent with
+the D6-reported 75% aggregate finish rate over many more samples), and seed 1 is
+the first that finishes and reproduces the published numbers to within rounding:
+
+| | published | reproduced at `SAMPLE_SEED=1` |
+|---|---|---|
+| deployed speed at corner entry | 22.9 m/s | **22.90** |
+| sampled speed at corner entry | 21.5 m/s | **21.51** |
+| deployed minimum throttle, entry straight | "never below +0.32" | **+0.319** |
+
+**The mechanism is real and now reproducible**; it was never in doubt — the D6
+aggregate evaluation (which is unaffected, since it does not go through
+`_sampled`) already reported the 61-percentage-point deployed/sampled gap this
+session and every prior one. What was fragile was the ONE illustrative trajectory
+the figures and the prose quote specific numbers from.
+
+**The transferable lesson.** A figure whose caption survives is not evidence the
+code that made it is correct — it is evidence nobody has re-run it in a fresh
+process yet. This is F68 and F81's lesson again, in a third place: RNG state is
+exactly as capable of quietly making a figure irreproducible as a stale cache or a
+first-order integrator, and less likely to be suspected because "add a seed" reads
+like tidiness rather than correctness.
+
+### F89 · One figure's likely source could not be safely reconstructed, and was left orphaned rather than guessed. · 2026-07-27
+
+**Source:** `viz.learning_figures.failure_figure`, cross-referenced against
+`experiments/ep10/out/traces.npz`'s `f054_*` (Episode 10's real, saved, nominal
+policy).
+
+The obvious candidate for `experiments/ep09/out/04-two-environments.svg` — the
+only unwired function that takes exactly two cases and is about comparing failure
+modes — carries a hardcoded caption asserting its right-hand car "is travelling
+sideways and backwards... asked for forces at over 120 degrees" and reaches
+"21.0 m/s against 20.2 inside the envelope" by exploiting the tire model. Episode
+10's actual saved policy does no such thing: its nominal (54% front) rollout
+finishes with a worst slip of 6° and 0% of steps beyond the tire fit — the
+opposite of what the caption describes.
+
+**Not wired in.** Publishing `failure_figure` against Episode 10's real trace would
+produce a figure whose caption contradicts its own data — F68's failure mode,
+committed on purpose this time instead of by accident. The pre-existing
+`04-two-environments.svg` on disk is left as is (the article's embed still
+resolves to a real file); `--figures-only` now says explicitly that it is not
+regenerating it and why.
+
+**Open question, not resolved here:** what `failure_figure`'s caption describes —
+a policy exploiting slip past 120° — sounds like an EARLIER, pre-fix iteration of
+Episode 10's training (before whatever made the envelope penalty effective), not
+the one that shipped. If that iteration's trace still exists somewhere, this
+figure could be correctly rebuilt from it. If it does not, the honest fix is to
+rewrite `failure_figure`'s caption to describe what the shipped comparison
+actually shows, or retire the function. Neither is a visualisation-audit task; both
+are follow-ups.
+
+### Smaller additions from the same audit
+
+- **Episode 2** had no technical (axes) figure at all — a table of four load/grip
+  points was the only evidence for an episode titled after a graph. Added
+  `viz.tire_figures.mu_vs_load_figure`: peak μ against load (the actual curve the
+  table sampled) and what a fixed total costs a pair as it is shared less evenly —
+  both computed fresh from the tire model, not restated from the table. `[MEASURED]`,
+  fit slope −0.0459/kN matches the episode's own quoted −0.046.
+- **Episode 12**'s sharpest number — "the open differential throws away 35% of the
+  demanded force" — had no dedicated figure; `mechanism_figure` only ever drew the
+  welded device. Added `viz.diff_figures.traction_figure`: three cars, one
+  throttle opening, delivered-force bars for open/limited-slip/welded side by
+  side. Data already in `results.json`, no new computation.
+- **Episode 7**'s `balance_card` docstring promised four panels (lap time,
+  understeer gradient, apex position, brake release) and built three. Added panel
+  D. Doing so surfaced F90, below — the fourth panel's own number turned out to be
+  stale.
+
+### F90 · Episode 7's "brake release moves 15.9 m" predates the yaw-moment correction and is wrong under the corrected physics. **Defect, and the correction of record.** · 2026-07-27
+
+**Source:** `[MEASURED]` — `experiments/ep07/out/results.json` (`brake_release_s`
+per drivetrain per front-mass-fraction), from a full fresh re-solve of all ten
+cases, all converged, envelope occupancy 0.
+
+F46 reported brake release moving **15.9 m** across the 40–65% front sweep, "four
+node spacings, unambiguous." That number was measured before F72/F73 added the
+drivetrain and steering-drag yaw moment terms — the same fix that F79/F80 record
+moving Episode 7's lap times and reversing its drivetrain ordering. The lap-time
+table and the crossover narrative were corrected for it (F80). The brake-release
+number was not, and it should have been: it is computed from the same corrected
+solves and it moved.
+
+| | rwd | fwd |
+|---|---|---|
+| 40% front | 71.1 m | 68.4 m |
+| 47% front | 66.1 m | 65.2 m |
+| 65% front | 75.9 m | 75.6 m |
+
+Span across both drivetrains and the whole sweep is now **~10.6 m** — about 3 node
+spacings at this solve's 100-node grid, not 4 — still comfortably above node
+resolution and still monotonic (more front weight, later braking), so **the
+finding's direction and its status as a real, resolvable effect are unchanged.**
+Only the magnitude was stale. `episodes/ep07-where-you-put-the-weight.md`'s table
+and prose are corrected to match; F46 is superseded by this entry for the
+magnitude, not for the direction.
+
+**How this survived a correction pass that touched everything else in the same
+episode.** F80 re-solved and re-checked the lap-time table, the understeer
+gradient, and the crossover fraction, because those were the numbers the
+escalation was about. Brake release was not part of that headline and nobody asked
+whether a number computed from the same corrected solves needed re-reading. The
+lesson is the same shape as F79's: a fix to shared machinery invalidates every
+number downstream of it, not only the ones the fix was motivated by, and the way
+to catch the rest is to regenerate every figure and reread every table rather than
+trust that "the important ones were checked."
+
+## Session 15 — Episode 14 infrastructure and pilot · 2026-07-27
+
+### F91 · The RL action space grows to variants H and E without disturbing Season 3, and a pilot run confirms the pipeline produces something sane. · 2026-07-27
+
+**Source:** `[MEASURED]` — `physics/rl_env.py` (`EnvConfig.tv_mode`),
+`diagnostics/D6_training_health.py`, `experiments/ep14/run.py --pilot`, 60,000
+steps per variant, seed 0.
+
+Episode 14 asks whether an RL policy, given the same four wheels and no
+hand-built reference model, agrees with Episode 13's classical two-layer
+controller. Per `docs/vehicle-codesign-research-plan.md` Phase 4b, two new
+variants:
+
+- **H (hybrid)** — the policy's action grows by one: an `Mz` DEMAND, fed
+  through the *identical* `physics.torque_vectoring.Allocator` variant C
+  uses. `act_dim` 3.
+- **E (end-to-end)** — the policy's action REPLACES the net drive-force
+  channel with four raw per-wheel force fractions, scaled by each wheel's own
+  grip-based capacity (`Allocator.capacities()`), no allocator call at all.
+  `act_dim` 5, no separate demand channel — matching the plan's "none" lower
+  layer exactly.
+
+Both route through `DoubleTrackBackend.attach_torque_vectoring`, the same hook
+`physics/driver.py` built for Episode 13 — no backend changes were needed.
+`schema.ACT_BICYCLE` is untouched; the extra action dimensions are consumed
+inside `DrivingEnv.step()` before anything reaches the backend's own action
+space.
+
+**`tv_mode="none"` reproduces every Season 3 result bit-for-bit** — all 18
+pre-existing `test_rl_env.py` tests pass unchanged, plus a new explicit seal
+test comparing the bare default against `tv_mode="none"` on identical seeds
+and actions.
+
+**Also fixed, not deferred: the environment logged no lateral acceleration
+and no per-wheel friction-ellipse utilisation**, flagged in `HANDOFF.md` as
+the reason there was previously no way to verify a torque-vectoring result was
+measuring anything a saturated tire actually did. `_record()` now logs `a_y`
+and per-corner `fx/fy/fz`; `rollout()` reports `peak_a_y_g` and
+`mean_utilisation`, mirroring `physics.driver.Lap`'s own properties so
+Episode 13 and 14 figures can share plotting code.
+
+**One new D6 check**, additive: `exploration_covers_the_torque_vectoring_action`
+inspects the model's current (post-training) `log_std` on the new action
+dimension(s) — collapsed-to-zero or blown-out-past-the-range are both failures,
+and for variant E, a >10x spread across the four wheels' exploration scale is
+too (a policy that never learned to use one wheel would look exactly like
+that — F52's mismatched-exploration-scale failure, in a new action space).
+A no-op for every `tv_mode="none"` run, so Episodes 9-11 are unaffected.
+
+**The pilot** (60,000 steps/variant, far short of Episode 10's 5,000,000, and
+read as pipeline validation, not a result — CLAUDE.md rule 5's seed discipline
+does not even apply to a number this provisional):
+
+| | wall-clock (60k steps) | D6 | peak lateral g | mean utilisation |
+|---|---|---|---|---|
+| H | 208 s | FAILED (3/13) | 0.879 | 0.45 |
+| E | 104 s | FAILED (3/12) | 0.613 | 0.25 |
+
+Both D6 failures are exactly what an undertrained policy should produce
+(`the_deployed_policy_completes_the_task`, `the_off_track_rate_came_down`,
+and one of `greedy_and_stochastic_agree` / `exploration_is_not_growing`) —
+none of the three failures is the new exploration-scale check, which passed
+for both, with a healthy, near-uniform spread across E's four wheels
+(std 0.221-0.229, a 1.0x ratio). The realized-`Mz`-vs-distance sanity figure
+(`experiments/ep14/out/01-pilot-sanity.svg`) shows three non-degenerate,
+distinctly different curves for C, H and E — the pipeline is producing
+something to compare, not noise or a flat line.
+
+**What this pilot is for, extrapolated rather than assumed.** Linear scaling
+from 60,000 to Episode 10's 5,000,000 steps gives **~4.8 hours per seed for H**
+and **~2.4 hours per seed for E** — before rule 5's 3-5 seeds per
+configuration, which multiplies straight through (roughly 14-24 hours for H
+alone, 7-12 for E, run serially). This is the number the approved plan's pilot
+phase exists to surface before any production run is committed to, and it is
+reported rather than acted on — the decision to spend that much wall-clock,
+or to look for a smaller production step count first, is not this session's
+to make alone.
+
+### F92 · ~~Production training (3 seeds × 2 variants, 5,000,000 steps): neither RL variant reliably agrees with the classical controller, and the seeds disagree with each other.~~ **RETRACTED by F93 — read that instead.** · 2026-07-28
+
+> **This entry's conclusion is withdrawn.** Every per-seed number below is
+> correctly measured, but all six describe the *last* checkpoint of a run that
+> was never checkpoint-selected, and every one of the six seeds had already
+> passed through a clean, in-envelope, full-distance window that was discarded.
+> The D6 pass rates and the "end-to-end is more prone to the tire-model
+> exploit" reading are therefore artefacts of model selection. Kept unedited
+> as the record of what was published and why it was wrong. See **F93**.
+
+**Source:** `[MEASURED]` — `experiments/ep14/run.py --variant={H,E} --seed={0,1,2}`,
+5,000,000 steps each, `envelope_penalty=0.5`, aggregated via `--aggregate`.
+Full detail in `experiments/ep14/out/results.json` and `production_report.json`;
+per-seed D6 reports in `diagnostics/out/D6-ep14-{H,E}_seed{0,1,2}.md`.
+
+| Variant | Seed | Wall-clock | D6 | Finished | Distance | Peak lat. g | Worst slip | Envelope occupancy |
+|---|---|---|---|---|---|---|---|---|
+| H | 0 | 13,552 s (3.76 h) | FAILED (critic, tire model) | True | 393 m (100%) | 1.00 | 14.8° | 4.0% |
+| H | 1 | 14,501 s (4.03 h) | FAILED (greedy/stochastic agree, tire model) | True | 393 m (100%) | 0.96 | 10.5° | 0.0% |
+| H | 2 | 13,880 s (3.86 h) | FAILED (deployed-policy, greedy/stochastic agree) | False | 136 m (35%) | 0.98 | 9.4° | 0.0% |
+| E | 0 | 7,167 s (1.99 h) | FAILED (6 checks) | False | 131 m (33%) | 1.01 | 13.5° | 24.7% |
+| E | 1 | 7,119 s (1.98 h) | FAILED (5 checks) | False | 353 m (90%) | 1.01 | 16.8° | 3.5% |
+| E | 2 | 7,097 s (1.97 h) | **PASSED** | True | 393 m (100%) | 0.98 | 8.8° | 0.0% |
+
+**H's D6 pass rate is 0/3; E's is 1/3.** Neither variant converges to a policy
+this project's own training-health battery calls clean, at this budget, this
+reward, this envelope penalty.
+
+**The two variants fail differently, and the difference is informative.** H's
+three seeds cluster near the tire's own ±12° fit (9.4–14.8°) and its failures
+are the mild kind — an optimistic critic, the greedy and sampled policies
+disagreeing with each other — not a policy that has run away from the physics.
+Two of its three seeds finish the full corner. E's three seeds split sharply:
+one (seed 2) trains cleanly, passes every D6 check, and finishes; the other two
+find a way to operate substantially outside the tire's own fit (13.5° and
+16.8°, up to 24.7% of the run spent past the bound) and neither finishes —
+**the same tire-model exploit Episode 9 first found (F53/F56), reappearing
+under the identical envelope penalty (0.5) Episode 10's protocol and this
+episode both use.** An end-to-end action space with no allocator to constrain
+it is, on this evidence, more prone to finding that exploit than a policy whose
+lower layer is fixed to the classical allocator — itself a real result about
+*where* an allocator helps, which is the sharper question this episode set out
+to ask.
+
+**The representative-seed rule (median by finish distance, not best-of-N —
+F71) surfaces its own point here.** E's three finish distances are 131 m, 353 m
+and 393 m; the median is seed 1 at 353 m — one of the two exploit seeds, NOT
+the one clean pass (seed 2, which would be picked by any best-of-N rule and
+would flatter the result). Every E figure and number in this episode that says
+"representative" is seed 1's trace, not seed 2's, on purpose.
+
+**Methodological correction made before publishing, not after:** the first
+draft of the friction-circle figure (`envelope_escape_figure`) picked each
+seed's peak-*utilisation* instant to snapshot, which need not be the same
+step as that seed's worst *slip angle* — and briefly showed a smaller angle
+on the figure than `worst_slip_deg` already reported elsewhere for the same
+seed (rule 3: an internal disagreement between two numbers describing the
+same thing). Fixed by picking `argmax(alpha_max_deg)` instead, the same step
+`worst_slip_deg` is computed from, so the figure and the number it sits next
+to now describe the identical instant. See `experiments/ep14/run.py::production_report`.
+
+**What this is not.** Not a claim that RL cannot do torque vectoring, and not
+a claim that the classical controller "won" — no lap-time race was run, and
+CLAUDE.md rule 6 forbids comparing absolute lap times across methods anyway.
+It is a report of what THIS training budget, THIS reward, and THIS envelope
+penalty actually produced: a hybrid action space that stays close to the
+physics but does not fully converge, and an end-to-end action space that
+mostly finds the same tire-model exploit Season 3 already documented, with one
+seed in three finding a clean answer instead. Longer training, a different
+seed count, or a stronger envelope penalty are all still open.
+
+---
+
+### F93 · Episode 14's production run kept the last checkpoint instead of the best one, and its headline conclusion is retracted. **Defect, and the correction of record.** · 2026-07-28
+
+**Source:** `[MEASURED]` — re-analysis of `experiments/ep14/out/history_{H,E}_seed{0,1,2}.json`,
+the six 5,000,000-step production runs recorded in F92.
+
+**The claim being retracted.** F92 and the first draft of Episode 14 reported
+that neither RL variant reliably converges — H passing D6 in 0 of 3 seeds, E in
+1 of 3 — and drew a conclusion about end-to-end action spaces being prone to a
+tire-model exploit. **That conclusion was an artefact of model selection, not a
+property of the variants.**
+
+**What actually happened.** `physics/ppo.train` returned the weights it happened
+to hold after the final update, and `experiments/ep14/run.py` saved those. No
+checkpoint was ever scored during training. Re-reading the six training
+histories, **every one of the six seeds passed through a sustained window in
+which it drove the full 393 m with a worst slip angle inside the tire's own
+±12° fit and a ~0% off-track rate** — and in five of six that window was
+nowhere near the end of the run:
+
+| Seed | Best clean window at | Distance | Worst slip | Off-track | Clean updates | FINAL weights reported instead |
+|---|---|---|---|---|---|---|
+| H seed 0 | update 429 (35%) | 393 m | 9.1° | 0.00 | 463 | 14.8°, D6 FAILED |
+| H seed 1 | update 1009 (83%) | 381 m | 7.4° | 0.04 | 11 | 10.5°, D6 FAILED |
+| H seed 2 | update 655 (54%) | 393 m | 12.0° | 0.00 | 65 | 9.4°, did not finish |
+| E seed 0 | update 298 (24%) | 393 m | 9.2° | 0.00 | 127 | 13.5°, D6 FAILED |
+| E seed 1 | update 612 (50%) | 393 m | 10.4° | 0.00 | 150 | 16.8°, D6 FAILED |
+| E seed 2 | update 248 (20%) | 393 m | 8.4° | 0.00 | 227 | 8.8°, D6 PASSED |
+
+"Clean" = a 20-update window averaging >370 m, <12° worst slip, <10% off-track.
+H seed 0 was clean for **463 consecutive updates** and we reported the weights
+from update 1219.
+
+**PPO itself was healthy the whole time.** Median approximate KL 0.0041–0.0050
+against a 0.01–0.02 norm, clip fraction 4–6%. The updates were not too
+aggressive and the runs were not diverging — they were wandering, which is what
+an unselected policy does, and nothing was watching.
+
+**Two mechanisms, both fixed.**
+
+1. *No model selection.* The project already had the rule that would have
+   caught this — F61, "a reinforcement-learning result is the DEPLOYED policy's
+   performance" — but applied it **once at the end** instead of throughout.
+   `PPOConfig.eval_every` now scores the deployed policy on held-out seeds and
+   keeps the best checkpoint, selecting on mean deployed **return** (the
+   objective the reward already defines) and deliberately *not* on "did it stay
+   inside the envelope", which is what D6 then checks independently.
+2. *The exploration scale never annealed.* Final `log_std` sat within ~0.2 log
+   units of its initialisation on all six seeds after 5,000,000 steps, so the
+   mean-action policy that gets shipped stayed a different driver from the
+   sampled one the training curves describe — which is precisely D6's
+   `greedy_and_stochastic_agree` failure, seen on 4 of 6 seeds.
+   `PPOConfig.entropy_anneal` decays the entropy bonus to zero.
+
+Both default to **off**, and `tests/test_ppo.py` pins that the untouched path is
+bit-for-bit what Seasons 3 produced, and that switching evaluation on does not
+perturb the run it is watching.
+
+**Why it survived to publication.** Two reasons worth recording, because
+neither is about RL:
+
+- **The pilot gated on the wrong thing.** It was built to answer "does the
+  pipeline work", and "work" was defined as *produces a D6 verdict and a
+  figure*. The right definition was *produces a policy we would keep*.
+  Checkpointing is the first thing a multi-hour training run needs, and a pilot
+  that does not exercise it has not de-risked the run.
+- **`physics/ppo.py` had no tests at all** — the module every Season 3 and
+  Season 4 result comes out of. `tests/test_ppo.py` now exists (12 tests).
+
+**Stated as a limitation, because this is the failure mode being corrected:**
+the clean windows above are measured on *training* rollouts — sampled actions,
+jittered starts. D6 scores the *deployed* policy on clean starts. So the table
+is strong evidence that good policies existed and were discarded, **not proof
+that those checkpoints would pass D6.** The re-run with selection enabled is
+what settles it, and its result is reported separately rather than assumed here.
+
+**Carried implication for Season 3, not yet acted on.** Episodes 10 and 11 used
+the same final-checkpoint-only path, and Episode 10's saved policy has the
+identical frozen-`log_std` signature (final `[-2.24, -1.08]`) alongside a D6 that
+fails `exploration_is_not_growing`. **Those results are likely understated by
+the same mechanism.** Recorded here rather than fixed, so the scope of this
+correction stays honest about what has and has not been re-measured.
+
+---
+
+### F94 · D6's own evaluation was not reproducible, and its envelope check contradicted its documented rule. **Defect, in the gate every RL result passes through.** · 2026-07-29
+
+**Source:** `[MEASURED]` — `diagnostics/D6_training_health.py::evaluate`, probed
+against Episode 14's six re-run policies.
+
+Two defects, found while re-evaluating the Episode 14 re-run and both older
+than Episode 14.
+
+**1. The stochastic rollouts drew from torch's global, unseeded RNG.** The
+environment seeds were fixed (`seed=s for s in range(n)`); the *action
+sampling* was not. Three back-to-back `evaluate` calls on identical weights
+(Episode 14, E seed 2):
+
+| run | deployed worst slip | sampled worst slip | sampled distance |
+|---|---|---|---|
+| 0 | 9.33° | 11.27° | 359.1 m |
+| 1 | 9.33° | 12.12° | 359.4 m |
+| 2 | 9.33° | 11.74° | 393.2 m |
+
+The deployed rollout is exactly reproducible. The sampled one is not, and it
+**straddles the 12° bound the envelope check tests against** — so the same
+policy passed or failed depending on the draw. This was mistaken for a real
+change in the results before it was identified: two seeds appeared to flip
+from PASS to FAIL after an unrelated edit that could not have touched them.
+
+**This is F88 a second time.** F88 was the same defect in
+`experiments/ep09/run.py`, found earlier in the same session and fixed there;
+nobody checked whether the same pattern existed in the diagnostic. Fixed by
+drawing from an explicit `torch.Generator` seeded with `SAMPLE_SEED = 0`,
+re-seeded per policy so both rollouts start from the same draw. Verified
+identical across repeated calls.
+
+**2. The envelope check took `max(deployed, sampled)` while the comment
+directly above it said the deployed number was the gate.** CLAUDE.md's own
+invariant agrees with the comment: *"Report the deployed number as the headline
+and the sampled number as diagnostic detail explaining it."* The code disagreed
+with both.
+
+This is not cosmetic, because the exploration scale never anneals (F93): a
+Gaussian policy still sampling with std 0.2–0.38 visits slip angles its mean
+action never does. On these six policies:
+
+| | deployed | sampled |
+|---|---|---|
+| H 0 | 5.49° | 5.60° |
+| H 1 | 11.14° | 13.00° |
+| H 2 | 6.83° | 12.06° |
+| E 0 | 6.47° | 9.20° |
+| E 1 | 11.50° | 12.89° |
+| E 2 | 9.33° | 11.11° |
+
+**All six deployed policies are inside the fit; three sampled ones are not.**
+Gating on the sampled figure judges a shipped controller by noise that is not
+present when it is deployed.
+
+**Decision (D12), taken explicitly rather than by leaving the bug in place:**
+the check turns on the **deployed** policy, and the sampled figure is printed
+on the same line every time, per rule 9. The sampled number is not discarded —
+it says how much of *training* happened where the tire model was
+extrapolating, which is a real caveat about the learning signal even when the
+resulting policy is clean. Recorded because it is a protocol choice that moves
+the headline from "3 of 6 stayed inside the tire fit" to "6 of 6", and a change
+in that direction deserves to be visible rather than buried.
+
+`the_tire_file_s_own_load_range_was_respected` had the same problem — it tested
+the sampled rollout only — and now reports both with the deployed figure as the
+gate.
+
+**Carried implication.** Episodes 9, 10 and 11 were all gated by this
+diagnostic. Their D6 verdicts were not reproducible, and their envelope verdicts
+were taken on the sampled policy. Combined with F93's missing checkpoint
+selection, **Season 3's results are doubly understated.** Not re-run here.
+
+---
+
+### F95 · Episode 14's "half the tire" comparison measured a free parameter of our own reward. **Retracts the H-vs-E utilisation finding.** · 2026-07-29
+
+**Source:** `[MEASURED]` — `experiments/ep14/out/full_trace_{H,E}_seed{0,1,2}.npz`,
+decomposed by position on the lap.
+
+**What was claimed.** That E spends roughly twice the friction-ellipse
+utilisation of H for the same lap time and peak grip (0.70 ± 0.13 against
+0.357 ± 0.087, 3.1× the pooled seed standard deviation), and that this said
+something about the QP allocator.
+
+**What the number actually is.** Split by where on the lap it happens:
+
+| | H | E | rule 5 |
+|---|---|---|---|
+| in the corner (60–150 m) | 0.70 ± 0.07 | 0.85 ± 0.10 | **1.8× — not a finding** |
+| on the exit straight (>200 m) | 0.23 ± 0.13 | 0.63 ± 0.15 | 2.9× |
+| whole lap | 0.36 ± 0.09 | 0.70 ± 0.13 | 3.1× |
+
+**Where the tires are actually cornering there is no measurable difference.**
+The whole effect lives on the straight, which is 260 of the lap's 393 m and
+therefore dominates the average.
+
+**And on the straight the metric is measuring nothing the objective constrains.**
+The reward there is `s_dot * dt` and nothing else: the car is on the road, so no
+off-track penalty, and worst slip angle across all six seeds is **0.02°–1.08°**
+against a 12° envelope bound, so no envelope penalty either. Summed per-wheel
+lateral force on that same straight ranges from **83 N to 3,199 N** — a factor
+of 38 — at **identical reward**. Wheels fighting each other is free.
+
+So the objective has a flat direction, and each seed settles somewhere different
+along it. That explains every symptom at once: the 4× spread in H's own straight
+utilisation (0.08, 0.25, 0.35), the absence of any correlation with net drive
+force (H seed 2 makes 775 N of net drive on 0.08 utilisation while H seed 1
+makes 543 N on 0.35), and the fact that both variants show it — because it is
+the reward, not the action space. H's allocator does not prevent it: the
+allocator faithfully delivers whatever `Mz` its policy asks for, and asking for
+yaw on a straight costs nothing.
+
+**This is underdetermination, not a training failure.** The seed variance is the
+correct behaviour of a well-trained policy against an objective that does not
+care. Reading it as "E is wasteful" or "the allocator is efficient" was reading
+structure into noise.
+
+**Retracted:** the H-vs-E utilisation comparison, and any claim built on it.
+**Not retracted:** all six policies complete the lap inside the ±12° tire fit
+(F93/F94's corrected result), and in the corner the two variants are
+indistinguishable — which is itself the answer to "does the learned upper layer
+work", just a quieter one.
+
+**How it was found, and the gap that let it through.** Rung 4 of the
+`rl-env-debug-triage` ladder — inspect reward scale and specification before
+touching anything else. It was found only because the seed-to-seed instability
+was questioned; nothing in the pipeline flagged it. **The env has no
+scripted-policy sanity check** — a trivial policy with a hand-derived expected
+return, which is the cheapest reward-specification test there is and would have
+made the flat direction obvious. That is rung 2 of the same ladder and it is
+missing. Recorded as open item O9.
+
+**The generalisable lesson, because this is the fourth correction in one
+session.** Every one had the same shape: an aggregate was reported before it was
+decomposed. Rule 7 says compute metrics downstream from logged arrays, and that
+was done — but "downstream" is not "understood". A lap-average is a sum over
+places the car was doing different things, and it is worth nothing until you
+have asked which of those places it came from.
+
+---
+
+### F96 · `STEER_NOISE = 0.15` is 23 degrees RMS at the steering wheel, not a driver. **Affects Episodes 11 and 13.** · 2026-07-29
+
+**Source:** `[MEASURED]` — closed-loop RMS steer deviation of Episode 14's
+H seed 0 policy against its own noise-free run, six draws per level.
+`[SOURCED]` — steering-reversal-rate methodology for the noise/intent boundary.
+`[ASSUMED]` — 13.5:1 steering ratio; `docs/vehicle-reference-parameters.md`
+specifies the car but not the rack.
+
+`EnvConfig.steer_noise` perturbs the steering **rate** command, as a fraction of
+`STEER_RATE_MAX` (200 deg/s at the **road wheel**). Episode 11 set it to 0.15,
+Episode 13 reused "Episode 11's value", and both describe it as the driver's
+hands and the steering linkage. What it actually produces:
+
+| `steer_noise` | road-wheel RMS | at the steering wheel (13.5:1) |
+|---|---|---|
+| 0.01 | 0.12° | **1.6°** |
+| 0.02 | 0.23° | 3.1° |
+| 0.03 | 0.35° | 4.7° |
+| 0.05 | 0.58° | 7.8° |
+| 0.10 | 1.16° | 15.6° |
+| **0.15** | 1.73° | **23.4°** |
+
+**23 degrees RMS at the wheel is not an imperfect driver.** It is a continuous
+quarter-turn saw. Against the reversal-rate literature's own bands — reversals
+under 1° characterise cognitive load, 2–6° characterise a *visual* secondary
+task, i.e. eyes off the road — 0.15 is off the scale by an order of magnitude.
+
+**The unit trap.** The environment commands the **road wheel**; a driver holds
+the **steering wheel**. The ~13.5:1 ratio between them is exactly where a
+number that sounds plausible stops being one, and nothing in the code converts
+between the two.
+
+**Recommended values:** `0.01` for an attentive driver (1.6° at the wheel, the
+micro-correction boundary) and `0.03` for a distracted one (4.7°, the
+visual-task band). Both `[DERIVED]` from the measurement above plus an
+`[ASSUMED]` steering ratio, so they are a defensible approximation and not a
+validated figure.
+
+**What this does to Episode 14's robustness test.** Run at 0.15, the six
+policies scattered from 100% down to 20% completion and reached 18–27° of slip,
+and I reported that the envelope guarantee does not survive disturbance. **That
+is retracted.** Re-run at 0.01: **all six complete 100% of laps** with lap
+scatter of ±0.01–0.02 s and worst slip 5.8–11.8°, inside the fit. At 0.03, five
+of six still complete 100% and the worst excursion is a marginal 13.0°.
+
+**And the H-vs-E result the test was built to settle:** no measurable
+difference in robustness — 0.8× the pooled seed standard deviation at 0.03,
+identical at 0.01. Consistent with F95's finding that the two carry the same
+utilisation in the corner, hence the same margin. The pre-registered hypothesis
+(the allocator buys robustness) is **rejected**, now at a disturbance level that
+means something.
+
+**Carried implication, not yet acted on.** Episode 11's fragility conclusions
+and Episode 13's noise study (78% → 100% completion, the largest effect Episode
+13 reports) both rest on 0.15. Neither has been re-measured. Episode 13's
+qualitative direction may well survive — its noise laps were run at an
+aggression close to the passive car's limit, where any disturbance hurts — but
+the magnitude is a statement about a 23° saw.
+
+**The part that stings.** `STEER_NOISE = 0.15` sits three lines below a comment
+citing **F70 — a retraction caused by a perturbation magnitude nobody
+justified.** The lesson had already been learned, written down, and placed
+directly above the constant that repeated it, because the value was chosen as
+"the strongest disturbance the median lap survives" rather than by asking what
+a driver does. A rule written next to a number does not check the number.
+
 ---
 
 # Decisions
@@ -2745,6 +3596,58 @@ strong version is the optimal-control solver discovering trail braking on its ow
 rather than a hand-scripted comparison of three brake protocols. The physics to
 support it now exists; the experiment waits for the solver.
 
+### D11 · A controller is measured by how hard its car can be driven before it fails, not by one lap time. · 2026-07-27
+
+**Decision.** Episode 13 drives every configuration with the same closed-loop
+driver, on the same line, to the same speed plan, and sweeps one knob — `grip_use`,
+the fraction of the car's measured grip the plan is built for — until the lap stops
+being valid. The reported result is the **highest `grip_use` that still produces a
+valid lap** (on the road, and inside the ±12° tire fit, applied per lap). Lap time
+is reported alongside it and is a monotone consequence of it, not independent
+evidence.
+
+**Rationale.** At a fixed `grip_use` every configuration is attempting an identical
+lap and takes an almost identical time, because the *plan* sets the speed and the
+driver only tracks it. What differs between configurations is whether the car can
+follow the plan at all. A single lap at a single aggression would therefore measure
+the driver's tuning as much as the car's behaviour; sweeping to failure measures
+where the failure is, which is a limit property of the car-plus-controller.
+
+**What it costs.** The metric is only as good as the driver, and F84 measures
+exactly how bad that can be: a ±30% change in the driver's preview time moves the
+headline from "nothing measurable" to +11.6%. The sweep does not remove that
+dependence — it makes it visible and cheap to re-measure, which is the most this
+approach can honestly claim.
+
+**Not applicable to the optimal-control episodes.** A minimum-time solver has no
+aggression knob; it is already at the limit by construction. This is a
+closed-loop-only protocol and Seasons 1–2 are unaffected.
+
+### D12 · A reinforcement-learning policy is judged on the actions it would actually take, including where the tire model is concerned. · 2026-07-29
+
+**Decision.** D6's envelope checks —
+`the_policy_stayed_inside_the_tire_model` and
+`the_tire_file_s_own_load_range_was_respected` — turn on the **deployed**
+(mean-action) policy. The sampled policy's figure is reported on the same line
+every time and is never dropped.
+
+**Rationale.** This extends F61 ("a reinforcement-learning result is the
+DEPLOYED policy's performance") to the physics checks, where the code had
+silently done the opposite: it took `max(deployed, sampled)` while its own
+comment claimed the deployed number was the gate. Because the exploration scale
+does not anneal (F93), the two differ by several degrees of slip on the same
+weights — H seed 2 reaches 6.8° deployed and 12.1° sampled. Gating on the
+sampled number judges a controller by noise that is not present when it runs.
+
+**What the sampled number still buys, and why it is kept.** It measures how much
+of *training* happened where the Magic Formula was extrapolating. A policy can
+be clean at deployment and still have learned from partly fictional rewards, and
+that is worth seeing. It is diagnostic detail, not the gate.
+
+**Recorded because it moves a headline.** Applying it to Episode 14 changes
+"3 of 6 seeds stayed inside the tire fit" to "6 of 6". A protocol change in the
+flattering direction has to be visible, stated, and attributable — see F94 for
+the measurement that forced it.
 
 ---
 
@@ -2760,7 +3663,10 @@ support it now exists; the experiment waits for the solver.
 | O8 | Add compliance steer / roll camber / roll steer, or accept a permanently low understeer gradient and compare only trends? Decides whether Season 2's magnitudes are ever quotable. | Season 2 |
 | ~~O6-old~~ | ~~How much of the understeer gap (F11) does the double-track model close? F18 predicts the size of the effect; Ep 5 measures it. The single most important open question in Season 1. | Ep 5 |
 | O7 | ~~Does terminal oversteer survive lateral load transfer?~~ **CLOSED by F17** — it was a protocol artefact, not a model property. |  |
+| O10 | **Episodes 11 and 13 have not been re-measured at a realistic steering-noise level** (F96). Both rest on `STEER_NOISE = 0.15`, which is 23 deg RMS at the steering wheel. Episode 13's 78% -> 100% completion result is its largest reported effect. | Quoting either episode's perturbation magnitudes |
+| O9 | The RL environment has **no scripted-policy sanity check** — a trivial policy with a hand-derived expected return, which is the cheapest reward-specification test there is. Its absence is how F95's flat reward direction survived to publication. | Any further RL result |
 | O5 | Pin real citations for two bands in the reality-check figure: slip angle at peak (6-12°) and road-sports-car skidpad grip (0.85-1.05 g). Both are general knowledge today, marked as such on the figure. | Publishing any comparison against them |
+| O6 | Pin a real citation for the **~9% FSAE skidpad torque-vectoring ceiling** and for the claim that the best lap times allow deviations from neutral yaw-rate tracking. Both come from `docs/content-series-plan.md`, which states them without references; both are marked `[SOURCED — citation outstanding]` in Episode 13's figures and text. | Episode 14 leaning on either |
 
 ---
 
@@ -2792,7 +3698,7 @@ being blunt that only the first two are done:
 | Static Stability Factor | 0.95–1.80 (NHTSA) | 1.63 | inside |
 | Understeer gradient | 1.5–3.0 deg/g | — | needs `bicycle.py` |
 | Step-steer yaw rise time | 0.08–0.30 s | — | needs `bicycle.py` |
-| Lap time gained from torque vectoring | 1–4% | — | needs Season 4 |
+| Lap time gained from torque vectoring | 1–4% (series plan) | **+0.51%** lap, **+1.30%** skidpad | **below the band, explained** (F82) |
 
 **The one outside the band is expected and is not a defect.** Our tire is a
 245-section fitted for a ~1,980 kg car; the real GR86 wears 215s. It grips more
@@ -2802,7 +3708,9 @@ one tire model throughout — an absolute-grip offset does not invalidate anythi
 It does mean no absolute lap time or cornering-g figure gets published as a claim
 about a real GR86.
 
-**Two of the bands still need real citations** (O5). The NHTSA range and the
+**Two of the bands still need real citations** (O5), and Episode 13 added a third
+and a fourth (O6: the ~9% torque-vectoring ceiling and the neutral-yaw-tracking
+claim). The NHTSA range and the
 handling bands are sourced in `docs/vehicle-reference-parameters.md`; the
 slip-at-peak and skidpad ranges are general vehicle-dynamics knowledge, marked as
 such on the figure, and must be pinned to a reference before publication.

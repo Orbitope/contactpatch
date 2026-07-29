@@ -78,12 +78,26 @@ class Track:
         return k
 
     def centreline(self, n_points: int = 600):
-        """``(s, x, y, heading)`` of the centreline, for drawing."""
+        """``(s, x, y, heading)`` of the centreline, for drawing.
+
+        Integrated by the trapezoid and midpoint rules rather than by left
+        endpoints, so the geometry does not depend on ``n_points``. It used to:
+        the left-endpoint sum put the 2000-point centreline **0.098 m** to one side
+        of the 4000-point one by the corner exit, and kept it there for the rest of
+        the track. Nothing physical reads this function — it is the drawing map and
+        the driver's idea of where the road is — but two pieces of code that
+        disagree about where the centreline runs by a tenth of a metre is exactly
+        the silent-frame-error family this project keeps paying for (F36), and it
+        showed up as a 5% error in a lateral offset the first time two of them were
+        compared. See FINDINGS F81.
+        """
         s = np.linspace(0.0, self.length, n_points)
-        k = self.curvature(s)
-        heading = np.concatenate([[0.0], np.cumsum(np.diff(s) * k[:-1])])
-        x = np.concatenate([[0.0], np.cumsum(np.diff(s) * np.cos(heading[:-1]))])
-        y = np.concatenate([[0.0], np.cumsum(np.diff(s) * np.sin(heading[:-1]))])
+        ds = np.diff(s)
+        k = np.asarray(self.curvature(s), dtype=float)
+        heading = np.concatenate([[0.0], np.cumsum(ds * 0.5 * (k[:-1] + k[1:]))])
+        h_mid = 0.5 * (heading[:-1] + heading[1:])
+        x = np.concatenate([[0.0], np.cumsum(ds * np.cos(h_mid))])
+        y = np.concatenate([[0.0], np.cumsum(ds * np.sin(h_mid))])
         return s, x, y, heading
 
     def to_xy(self, s, n):

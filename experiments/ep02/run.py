@@ -34,6 +34,8 @@ def main() -> int:
 
     write(out / "01-why-weight-transfer-costs-grip.svg",
           tire_figures.load_split_figure(tire, TOTAL))
+    write(out / "02-mu-vs-load.svg",
+          tire_figures.mu_vs_load_figure(tire, total_n=TOTAL))
 
     loads = np.array([1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000],
                      dtype=float)

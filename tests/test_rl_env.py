@@ -342,3 +342,133 @@ def test_steer_noise_perturbs_steering_and_leaves_throttle_untouched():
     assert np.std(noisy.log["steer"]) > 1e-4
     # commanded drive is identical: same action, same throttle path
     assert np.allclose(quiet.log["drive"], noisy.log["drive"])
+
+
+# --- Episode 14: torque-vectoring action-space modes --------------------------
+#
+# Three modes share one environment. "none" must reproduce every Season 3
+# result unchanged; "hybrid" and "end_to_end" are new and checked against
+# something that does not already assume they are right (rule 11).
+
+
+def test_tv_mode_none_is_the_default_and_attaches_nothing():
+    env = DrivingEnv(EnvConfig())
+    assert env.cfg.tv_mode == "none"
+    assert env.act_dim == 2
+    assert env.backend.tv is None
+
+
+def test_tv_mode_none_reproduces_every_prior_result_bit_for_bit():
+    """The Episode 14 risk stated plainly: growing the action space must not
+    move a single number Episodes 9-11 published. Explicit ``tv_mode="none"``
+    against the bare default, same seed, same actions, same everything."""
+    a = DrivingEnv(EnvConfig(), seed=3)
+    b = DrivingEnv(EnvConfig(tv_mode="none"), seed=3)
+    ra = rollout(a, lambda o: np.array([0.15, 0.4]), seed=3)
+    rb = rollout(b, lambda o: np.array([0.15, 0.4]), seed=3)
+    for key in ("distance_m", "lap_time_s", "worst_slip_deg", "return"):
+        assert ra[key] == rb[key], key
+    assert np.array_equal(ra["s"], rb["s"])
+
+
+def test_hybrid_action_dim_and_wiring():
+    env = DrivingEnv(EnvConfig(tv_mode="hybrid"))
+    assert env.act_dim == 3
+    assert env.backend.tv is not None
+
+
+def test_hybrid_mode_delivers_the_allocator_s_own_answer():
+    """External check (rule 11): the adapter's output is compared against a
+    freshly constructed ``Allocator.allocate`` call for the same inputs, not
+    against the adapter's own internals restated."""
+    from physics.torque_vectoring import Allocator
+
+    env = DrivingEnv(EnvConfig(tv_mode="hybrid"), seed=0)
+    env.reset(0)
+    for _ in range(15):
+        obs, _, done, _ = env.step(np.array([0.1, 0.6, 0.4]))
+        if done:
+            break
+    st = env.backend.state
+    loads = env.backend.wheel_loads(env.backend._last["a_x"],
+                                    env.backend._last["a_y"])
+    lateral = {c: w.fy for c, w in env.backend._last_wheels.items()}
+    demand = 0.4 * 4500.0          # a[1]=0.4, positive => DRIVE_MAX scaling
+    mz = 0.4 * 6000.0              # a[2]=0.4 => MZ_MAX scaling
+    direct = Allocator(params=env.backend.params, tire=env.backend.tire).allocate(
+        demand, mz, loads, steer=st.steer, lateral=lateral)
+    got = env._tv_adapter.forces(demand, loads, st, lateral)
+    for c in direct.forces:
+        assert got[c] == pytest.approx(direct.forces[c], rel=1e-9)
+
+
+def test_end_to_end_action_dim_and_wiring():
+    env = DrivingEnv(EnvConfig(tv_mode="end_to_end"))
+    assert env.act_dim == 5
+    assert env.backend.tv is not None
+
+
+def test_end_to_end_never_exceeds_the_wheel_s_own_capacity():
+    """A raw action of +/-1 must mean 'everything this tire has left', not an
+    arbitrary constant that could exceed what the friction ellipse allows."""
+    env = DrivingEnv(EnvConfig(tv_mode="end_to_end"), seed=0)
+    env.reset(0)
+    for _ in range(15):
+        obs, _, done, _ = env.step(np.array([0.1, 1.0, -1.0, 1.0, -1.0]))
+        if done:
+            break
+    st = env.backend.state
+    loads = env.backend.wheel_loads(env.backend._last["a_x"],
+                                    env.backend._last["a_y"])
+    lateral = {c: w.fy for c, w in env.backend._last_wheels.items()}
+    caps = env._tv_adapter.allocator.capacities(loads, lateral)
+    forces = env._tv_adapter.forces(0.0, loads, st, lateral)
+    for c in forces:
+        assert abs(forces[c]) <= caps[c] + 1e-6
+
+
+def test_end_to_end_drive_force_channel_does_not_exist():
+    """There is no net-demand action in variant E — four wheels, nothing else
+    (docs/vehicle-codesign-research-plan.md Phase 4b: "none" lower layer)."""
+    env = DrivingEnv(EnvConfig(tv_mode="end_to_end"))
+    with pytest.raises((IndexError, ValueError)):
+        env.reset(0)
+        env.step(np.array([0.0, 0.0, 0.0, 0.0]))     # one short of act_dim
+
+
+def test_lateral_acceleration_and_utilisation_are_logged_every_step():
+    """Episode 14's whole premise depends on being able to verify saturation —
+    the environment used to log neither (HANDOFF's stated gap)."""
+    env = _straight_env(tv_mode="hybrid")
+    env.reset(0)
+    for _ in range(30):
+        env.step(np.array([0.1, 0.5, 0.2]))
+        if env.done:
+            break
+    h = env.history()
+    for key in ("a_y", "utilisation_max", "fx_fl", "fy_fl", "fz_fl"):
+        assert len(h[key]) == env.steps, f"{key} not logged every step"
+        assert np.all(np.isfinite(h[key].astype(float)))
+    assert "tv_extra_action" in h
+    assert h["tv_extra_action"].shape == (env.steps, 1)     # hybrid: one extra
+
+
+def test_rollout_reports_peak_a_y_and_mean_utilisation():
+    env = _straight_env(tv_mode="end_to_end")
+    r = rollout(env, lambda o: np.array([0.1, 0.3, 0.3, 0.3, 0.3]), seed=0)
+    assert r["peak_a_y_g"] >= 0.0
+    assert 0.0 <= r["mean_utilisation"]
+
+
+def test_a_fresh_design_resample_rebuilds_the_allocator_too():
+    """The Allocator caches params/tire at construction; if it were not
+    rebuilt alongside a resampled design it would silently score capacities
+    against the WRONG car — the same class of bug F72 was."""
+    env = DrivingEnv(EnvConfig(tv_mode="hybrid",
+                               design_keys=("front_mass_fraction",)), seed=0)
+    seen = set()
+    for i in range(6):
+        env.reset(100 + i)
+        seen.add(round(env._tv_adapter.allocator.params.front_mass_fraction, 6))
+        assert env._tv_adapter.allocator.params is env.backend.params
+    assert len(seen) > 1, "design never varied across resets"

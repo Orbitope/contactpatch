@@ -148,13 +148,22 @@ doesn't.
 |---|---|
 | Apex position, rear drive | moves **0.9** percentage points |
 | Apex position, front drive | moves **1.5** points |
-| **Brake release point** | moves **15.9 m** |
+| **Brake release point** | moves **~10.6 m** |
+
+Panel D of the balance card above is this table as a curve, and it makes the
+shape obvious in one look: it dips at 47% and then climbs almost straight
+through the sourced range and past it.
 
 A point of apex movement is below what this setup can resolve, so it is not a
-result. The braking point moving 15.9 m is unambiguous — four node spacings — and
-it moves monotonically: **more weight on the front, later braking.** More front
-grip to brake against, so the car carries the brakes deeper. At 61–65% front it is
-still braking well after it has turned in.
+result. The braking point moving ~10.6 m is unambiguous — about three node
+spacings at this solve's grid — and it moves monotonically: **more weight on the
+front, later braking.** More front grip to brake against, so the car carries the
+brakes deeper. At 61–65% front it is still braking well after it has turned in.
+
+*Corrected from an earlier draft that reported 15.9 m, measured before the
+drivetrain yaw-moment fix (F72/F73) that also reversed this episode's drivetrain
+ordering (F80). The direction and the conclusion are unchanged; only the
+magnitude moved, along with everything else downstream of that fix. See F90.*
 
 Set that against Episode 4, where changing what came *after* the corner moved the
 apex about 6 points. **The apex is set by the corner's context, not by the car's

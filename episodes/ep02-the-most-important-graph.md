@@ -53,6 +53,18 @@ rubber, not an artefact of our model. It comes from the contact patch: press
 harder and it grows, but the rubber in it also works harder per unit area, and
 the second effect wins.
 
+Four points make a table. Here is the whole curve, and what it does to a pair
+sharing a fixed total:
+
+![The most important graph in vehicle dynamics](../experiments/ep02/out/02-mu-vs-load.svg)
+
+Panel A is the falling line the table above sampled at four points — a title
+this episode has earned but never actually drawn until now. Panel B is what it
+implies for two tires with a fixed total between them: not a straight-line
+penalty for sharing unevenly, but a curve that bends upward, which is the
+"fourteen times the penalty for four times the transfer" below stated as a
+shape instead of two numbers.
+
 ## The experiment, part two: what that costs
 
 Now the split. Two tires, 6 kN between them, shared three ways:

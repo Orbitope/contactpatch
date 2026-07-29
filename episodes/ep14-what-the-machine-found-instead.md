@@ -48,36 +48,54 @@ So the headline is not "RL fails" and not "RL wins." Both formulations learn to
 drive the corner at the limit without ever being told what a yaw moment is for.
 The interesting result is *where they differ*, and it is sharper than expected.
 
-### Same grip, twice the tire
+### Same lap, same grip, half the tire
 
 | | H (allocator kept) | E (allocator deleted) | separation |
 |---|---|---|---|
+| Lap time | 19.80 ± 0.45 s | 18.89 ± 2.71 s | 0.5× seed sd — **not a finding** |
 | Peak lateral acceleration | 0.915 ± 0.059 g | 0.976 ± 0.028 g | 1.3× seed sd — **not a finding** |
 | Mean tire utilisation | **0.357 ± 0.087** | **0.701 ± 0.130** | 3.1× seed sd — **reportable** |
 
-All `[MEASURED]`, 3 seeds each, deployed policy. This project's own rule is that
-a trend smaller than twice the seed standard deviation is not a finding
-(CLAUDE.md rule 5), and these two land on opposite sides of it.
+All `[MEASURED]`, 3 seeds each, deployed policy. This project's rule is that a
+trend smaller than twice the seed standard deviation is not a finding
+(CLAUDE.md rule 5), and these land on opposite sides of it.
 
-**The two variants reach the same grip.** The 0.06 g between them is inside seed
-noise and is reported as "no measurable difference," not as a small one.
+**The two variants get round in the same time, at the same peak grip.** Both
+gaps are inside seed noise and are reported as no measurable difference, not as
+small ones.
 
-**They pay very differently for it.** E spends roughly **twice** the
-friction-ellipse utilisation — how much of each tire's available grip is being
-used at once — to achieve the same lateral acceleration. The three H seeds
-(0.27, 0.35, 0.45) and the three E seeds (0.55, 0.77, 0.78) do not overlap.
+**They spend very differently doing it.** E uses roughly **twice** the
+friction-ellipse utilisation — how much of each tire's available grip is in use
+at once. The three H seeds (0.27, 0.35, 0.45) and the three E seeds (0.55, 0.77,
+0.78) do not overlap.
 
-That is the QP allocator's objective, visible in the result. Its whole job is to
-meet the demanded force and moment *while minimising tire workload* — spreading
-the load so no tire is asked for a much larger share of what it has left than
-its neighbours. H inherits that for free, because its lower layer is that
-optimiser. E had to discover it, and didn't.
+**And E is far less repeatable.** Its lap times spread ±2.71 s against H's
+±0.45 s — six times the seed-to-seed variation, from 16.34 s to 21.74 s. With
+three seeds that spread is suggestive rather than established, but it points the
+same way as the utilisation: the variant with a fixed lower layer lands in a
+narrower band.
 
-**So the learned upper layer is fine, and the hand-designed lower layer is not
-free.** A policy can work out how much to rotate the car without a reference
-model. Working out which wheels should pay for it — the convex problem with a
-unique answer — is the part end-to-end learning did not rediscover in five
-million steps.
+**Where the gap actually is, which is not where I first assumed.** Broken down
+along the lap, H and E are *both* near the limit through the corner — 0.83–0.94
+against 0.91–1.00 in the 40 m either side of the apex. The whole difference is
+on the **exit straight**, where H falls to 0.08–0.35 and E stays at 0.47–0.77.
+Since 260 of this lap's 393 m are straight, the straight dominates the average.
+
+**What that does and does not establish.** It is consistent with the QP
+allocator's objective — its job is to meet the demanded force and moment *while
+minimising tire workload*, and H inherits that for free — but the per-seed force
+decomposition does not cleanly support that as the mechanism. On the straight,
+H seed 1 puts out 4,165 N of summed per-wheel longitudinal force for 543 N of
+net drive, an efficiency of 13%; E seed 0 manages 15%. The variant with the
+allocator is not reliably the tidier one wheel-by-wheel, because H's allocator
+faithfully produces whatever opposing forces its policy's `Mz` demand asks for,
+including on a straight where no yaw is needed.
+
+So the honest statement is the measurement, not the mechanism: **removing the
+allocator costs about twice the tire for the same lap time, and the cost is paid
+on the straight.** Why is not settled by these six runs, and the obvious next
+experiment — feed H's policy a forced-zero `Mz` on the straight and see whether
+its utilisation advantage survives — has not been run.
 
 ### The learners are far more aggressive than the engineers
 

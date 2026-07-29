@@ -215,8 +215,8 @@ def _evaluate_deployed(model, env, episodes: int, seed0: int) -> dict:
             "eval_finish_rate": float(np.mean(fins))}
 
 
-def train(make_env, cfg: PPOConfig | None = None, on_update=None,
-          make_eval_env=None) -> dict:
+def train(make_env=None, cfg: PPOConfig | None = None, on_update=None,
+          make_eval_env=None, make_batched_env=None) -> dict:
     """Train a policy. ``make_env(i)`` builds environment ``i``.
 
     Returns the trained model plus a per-update history — the raw material D6
@@ -237,12 +237,22 @@ def train(make_env, cfg: PPOConfig | None = None, on_update=None,
     torch.manual_seed(cfg.seed)
     rng = np.random.default_rng(cfg.seed)
 
-    envs = [make_env(i) for i in range(cfg.n_envs)]
-    obs_dim, act_dim = envs[0].obs_dim, envs[0].act_dim
+    # Two rollout paths, one learning algorithm. ``make_batched_env`` builds an
+    # environment that steps all ``cfg.n_envs`` cars per call
+    # (``physics/batched_env.py``); without it the original list-of-envs loop
+    # runs, unchanged, and every Season 3 and Season 4 result reproduces.
+    batched = make_batched_env(cfg.n_envs) if make_batched_env is not None else None
+    if batched is not None:
+        envs = []
+        obs_dim, act_dim = batched.obs_dim, batched.act_dim
+    else:
+        envs = [make_env(i) for i in range(cfg.n_envs)]
+        obs_dim, act_dim = envs[0].obs_dim, envs[0].act_dim
     model = ActorCritic(obs_dim, act_dim, cfg.hidden, cfg.init_log_std)
     opt = torch.optim.Adam(model.parameters(), lr=cfg.lr, eps=1e-5)
 
-    obs = np.stack([e.reset(int(rng.integers(1 << 30))) for e in envs])
+    obs = (batched.reset(int(rng.integers(1 << 30))) if batched is not None
+           else np.stack([e.reset(int(rng.integers(1 << 30))) for e in envs]))
     n_updates = max(cfg.total_steps // (cfg.n_envs * cfg.rollout_steps), 1)
     history: list[dict] = []
     # Episode statistics have to be collected as episodes end, because an
@@ -286,18 +296,30 @@ def train(make_env, cfg: PPOConfig | None = None, on_update=None,
             buf_obs[t], buf_act[t] = obs, a_np
             buf_logp[t], buf_val[t] = logp.numpy(), v.numpy()
 
-            for i, e in enumerate(envs):
-                o, r, done, info = e.step(a_np[i])
-                buf_rew[t, i] = r
-                buf_done[t, i] = float(done)
-                if done:
-                    h = e.history()
-                    finished_returns.append(float(np.sum(h["reward"])))
-                    finished_distance.append(float(h["s"][-1]))
-                    finished_slip.append(float(np.max(h["alpha_max_deg"])))
-                    finished_offtrack.append(float(bool(info["off_track"])))
-                    o = e.reset(int(rng.integers(1 << 30)))
-                obs[i] = o
+            if batched is not None:
+                obs, r, done, info = batched.step(a_np)
+                buf_rew[t], buf_done[t] = r, done.astype(float)
+                # The batched env auto-resets and reports the terminal values
+                # of whatever ended this step, so these are the same statistics
+                # the single-instance path reads off each env's own log.
+                finished_returns.extend(info["episode_return"].tolist())
+                finished_distance.extend(info["episode_distance"].tolist())
+                finished_slip.extend(info["episode_worst_slip_deg"].tolist())
+                finished_offtrack.extend(
+                    info["episode_off_track"].astype(float).tolist())
+            else:
+                for i, e in enumerate(envs):
+                    o, r, done, info = e.step(a_np[i])
+                    buf_rew[t, i] = r
+                    buf_done[t, i] = float(done)
+                    if done:
+                        h = e.history()
+                        finished_returns.append(float(np.sum(h["reward"])))
+                        finished_distance.append(float(h["s"][-1]))
+                        finished_slip.append(float(np.max(h["alpha_max_deg"])))
+                        finished_offtrack.append(float(bool(info["off_track"])))
+                        o = e.reset(int(rng.integers(1 << 30)))
+                    obs[i] = o
 
         with torch.no_grad():
             last_v = model.value(

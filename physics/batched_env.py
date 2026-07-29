@@ -159,6 +159,12 @@ class BatchedDrivingEnv:
         self.wheel_fy = np.zeros((self.n, 4), dtype=float)
         self.alpha = np.zeros((self.n, 4), dtype=float)
         self._fractions = np.zeros((self.n, 4), dtype=float)
+        # Per-episode accumulators. The single-instance env keeps a full log and
+        # reads these off it when the episode ends; a batched env auto-resets in
+        # place and that log is gone, so the statistics D6 reads have to be
+        # accumulated as the episode runs.
+        self._ep_return = np.zeros(self.n, dtype=float)
+        self._ep_max_slip = np.zeros(self.n, dtype=float)
 
     # -- reset -----------------------------------------------------------
 
@@ -391,16 +397,27 @@ class BatchedDrivingEnv:
             reward = reward - (self.cfg.envelope_penalty * excess
                                / math.degrees(ENVELOPE_SLIP_MAX))
 
+        self._ep_return += reward
+        self._ep_max_slip = np.maximum(self._ep_max_slip, worst_deg)
+
         info = {
             "s": self.s.copy(), "n": self.n_off.copy(),
             "speed": speed, "off_track": off, "finished": finished,
             "stalled": stalled, "timeout": timeout,
             "alpha_max_deg": worst_deg,
             "a_y": self.a_y.copy(),
+            # Completed episodes only — the terminal values, captured before the
+            # reset wipes them. Empty arrays on a step where nothing ended.
+            "episode_return": self._ep_return[done].copy(),
+            "episode_distance": self.s[done].copy(),
+            "episode_worst_slip_deg": self._ep_max_slip[done].copy(),
+            "episode_off_track": off[done].copy(),
         }
         # Terminal values are captured above; the observation returned for a
         # terminated instance is the FIRST of its next episode.
         if done.any():
+            self._ep_return = np.where(done, 0.0, self._ep_return)
+            self._ep_max_slip = np.where(done, 0.0, self._ep_max_slip)
             self._reset_mask(done)
         return self.observe(), reward, done, info
 

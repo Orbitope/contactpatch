@@ -103,16 +103,25 @@ right as measurement practice but wrong as a spec change: RV-1's validation
 targets (D1 reality-check rows, understeer band, SSF) are anchored to the GR86,
 and silently re-powering it breaks rule 2's chain.
 
-**Recommendation: keep RV-1 as the anchor; add a named performance variant.**
-- **RV-1** — GR86 power (P = 174 kW). The validation anchor. Every diagnostic
-  keeps passing against it.
-- **RV-1P** — same chassis, ~2× power (P ≈ 350 kW / ~470 hp, `[ASSUMED]`,
-  motivated: the power where F43 showed design effects at 4–5× amplitude;
-  comparable to the sports-car tier the series keeps referencing).
-- Every design question from here is answered as a **pair or a curve**: the
-  GR86-power answer and the RV-1P answer, with the power conditional stated in
-  the finding, F43-style. "Rear drive is faster *at a given power*" was the
-  most useful sentence in Season 2; this makes that structure the default.
+**Recommendation: keep RV-1 as the anchor; measure on a three-point power
+curve, not a pair.** A pair can only say "different"; a curve can say
+*monotone*, which is what made F43 credible — its four points growing in order
+is why the trend is trusted even where individual solves didn't converge.
+
+- **RV-1 (1×)** — GR86 power, P = 174 kW / 228 hp `[SOURCED]`. The validation
+  anchor. Every diagnostic keeps passing against it.
+- **1.5×** — P ≈ 260 kW / ~350 hp. The ordinary sports-car tier (Supra,
+  Cayman S class). Arguably the most *relevant* point: if effects express here,
+  they matter for cars people actually drive, not just for the top of the range.
+- **RV-1P (2×)** — P ≈ 350 kW / ~470 hp `[ASSUMED]`. The amplification end,
+  where F43 showed design effects at 4–5× their 1× size.
+
+Every design question from here is answered as the **curve**, with the shape
+reported: an effect that grows smoothly through 1.5× is a different (and more
+useful) claim than one that only exists at 2×. Headline number at the level
+where the effect expresses, conditional stated in the finding, F43-style.
+"Rear drive is faster *at a given power*" was the most useful sentence in
+Season 2; this makes that structure the default.
 
 ### D-C · The section metric — "ignore the straights once it's evened out"
 
@@ -172,43 +181,54 @@ re-measured (7, 8); single-track spot checks elsewhere.
 ### Phase 1 — Season 2 re-measured (Episodes 6, 7, 8)
 
 OC solves only; hours, not days. For each of Ep 7's balance grid and Ep 8's
-layout grid: {RV-1, RV-1P} × {hairpin, long_exit, fast_sweep}, section metric
+layout grid: {1×, 1.5×, 2×} × {hairpin, long_exit, fast_sweep}, section metric
 headline, **every solve required to converge** (F39 gate — raise `max_iter`,
 prefer the grid where everything converges; at 2× power expect to need it).
+The 1.5× row doubles as the convergence hedge: if 2× solves fight the
+iteration limit, the 1×→1.5× leg still establishes the trend direction on
+fully converged solves rather than losing the phase to F39.
 Envelope occupancy must stay 0 (higher power pushes slip ratio toward the
 ±0.20 bound; if solves start riding it, that is reported, not clipped away).
 Ep 6 needs only a confirmation pass: F43 already contains its power sweep;
 re-express it on the section metric and under D-A's power model.
 
 **Pre-registered outcomes (rule 9), stated before running:**
-- *If* balance/layout spreads stay within the (re-derived) floor at RV-1P on
-  the section metric: the nulls are real, and they get **stronger** — currently
-  they are one-power-point claims; they become power-robust claims. F44/F49
-  stand with upgraded evidence.
-- *If* spreads emerge at RV-1P: F44 and F49's lap-time claims are corrected
-  F43-style ("balance barely matters *at 181 hp*"), Episode 7 and 8's articles
-  gain the power conditional, and Episode 15 inherits a design-sensitivity
-  baseline that actually varies — which it needs to exist.
-- Either way the finding is publishable; this is not a fishing trip.
+- *If* balance/layout spreads stay within the (re-derived) floor at all three
+  powers on the section metric: the nulls are real, and they get **stronger** —
+  currently they are one-power-point claims; they become power-robust claims
+  across a 2× range. F44/F49 stand with upgraded evidence.
+- *If* spreads emerge and grow monotonically along 1× → 1.5× → 2×: F44 and
+  F49's lap-time claims are corrected F43-style ("balance barely matters *at
+  228 hp*"), with the curve shape saying whether the effect is already alive at
+  ordinary sports-car power or only at the top; Episode 7 and 8's articles gain
+  the power conditional, and Episode 15 inherits a design-sensitivity baseline
+  that actually varies — which it needs to exist.
+- *If* spreads appear but **non-monotonically**, that is a flag on the
+  instrument (convergence, envelope riding), not a finding — investigate before
+  quoting anything. Monotonicity is the same credibility test F43 passed.
+- Any of the three is publishable; this is not a fishing trip.
 
 ### Phase 2 — Season 4 classical (Episodes 12, 13)
 
-Closed-loop; ~15 min per configuration set. Re-run Ep 12's diff comparison and
-Ep 13's five-configuration study at RV-1P (D-A model, section metric). The
-specific number Episode 15 needs from this phase: **TV's worth at the power
-where design differences express.** Expect the +5.18% / +0.51% pair to move;
-per F43's mechanism the corner-section gain should grow with saturation.
-Ep 13's driver-preview sensitivity check (F84) is re-run at RV-1P — if the
-preview dependence grows with power, Episode 15's protocol must fix the driver
-before it compares anything.
+Closed-loop; ~15 min per configuration set, so the full curve is affordable
+here too. Re-run Ep 12's diff comparison and Ep 13's five-configuration study
+at {1×, 1.5×, 2×} (D-A model, section metric). The specific number Episode 15
+needs from this phase: **TV's worth as a function of power** — per F43's
+mechanism the corner-section gain should grow with saturation, and the curve
+shape tells Episode 15 which power its comparison lives at. Ep 13's
+driver-preview sensitivity check (F84) is re-run at 2× — if the preview
+dependence grows with power, Episode 15's protocol must fix the driver before
+it compares anything.
 
 ### Phase 3 — Season 3 RL (Episodes 9–11) — conditional, cheapest last
 
 No retraining until Phases 0–2 land. Then:
 - Ep 9: re-caveat only (training-pathology story is power-independent).
-- Ep 10/11: retrain the design-conditioned policy at RV-1P with the batched env
-  (29× throughput makes this an overnight job, not a week). Re-verify: (a) the
-  RL-vs-OC trend cross-check at the new power, (b) F98's fragility ordering.
+- Ep 10/11: retrain the design-conditioned policy with the batched env (29×
+  throughput makes this an overnight job, not a week). RL training is the one
+  place the full curve is not affordable — retrain at **2× only**, and lean on
+  Phase 1/2's curves for shape. Re-verify: (a) the RL-vs-OC trend cross-check
+  at the new power, (b) F98's fragility ordering.
   Pre-registered: the fragility gap should widen with power (more rear-axle
   demand on corner exit); if it instead closes, F98 gains a power conditional.
 

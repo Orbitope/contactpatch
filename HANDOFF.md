@@ -867,7 +867,7 @@ sits between them.
 
 Plan: Phase 0 recomputes section metrics from the **existing** traces.npz
 (rule 7 — no re-runs) and settles the floor + brake audit; Phase 1 re-measures
-Eps 7/8 at {RV-1, RV-1P ≈ 2× power} × 3 corner radii, convergence-gated;
+Eps 7/8 on a {1×, 1.5×, 2×} power curve × 3 corner radii, convergence-gated;
 Phase 2 re-measures Eps 12/13 (TV's worth grows with saturation, and Ep 15
 needs that number); Phase 3 conditionally retrains Ep 10/11 on the batched env;
 Phase 4 is Episode 15 itself. Decisions D-A–D-D (power model, RV-1P level,

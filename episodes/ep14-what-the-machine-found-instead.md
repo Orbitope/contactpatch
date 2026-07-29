@@ -50,6 +50,8 @@ The interesting result is *where they differ*, and it is sharper than expected.
 
 ### Same lap, same grip, half the tire
 
+![Same lap, same grip, half the tire](../experiments/ep14/out/05-same-lap-half-the-tire.svg)
+
 | | H (allocator kept) | E (allocator deleted) | separation |
 |---|---|---|---|
 | Lap time | 19.80 ± 0.45 s | 18.89 ± 2.71 s | 0.5× seed sd — **not a finding** |
@@ -80,6 +82,11 @@ along the lap, H and E are *both* near the limit through the corner — 0.83–0
 against 0.91–1.00 in the 40 m either side of the apex. The whole difference is
 on the **exit straight**, where H falls to 0.08–0.35 and E stays at 0.47–0.77.
 Since 260 of this lap's 393 m are straight, the straight dominates the average.
+
+![Where the tire actually goes](../experiments/ep14/out/06-where-the-tire-goes.svg)
+
+All six seeds, and the shape is the same on every one: the two variants sit on
+top of each other through the corner and separate the moment it ends.
 
 **What that does and does not establish.** It is consistent with the QP
 allocator's objective — its job is to meet the demanded force and moment *while

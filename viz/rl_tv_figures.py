@@ -610,6 +610,190 @@ def seed_scorecard_figure(results) -> str:
     )
 
 
+def _seed_stats(results, variant, key):
+    d = results["variants"][variant][key]
+    return np.array([d[k] for k in sorted(d, key=int)], dtype=float)
+
+
+def tire_spend_figure(results, report) -> str:
+    """The pictorial hero for what this episode actually found.
+
+    Two variants x two places on the lap. **The second column is the point.**
+    At the apex H and E look the same — both tires nearly full — and a figure
+    drawn only there would tell the reader the opposite of the result. On the
+    exit straight, where two thirds of the lap is, H's circles empty out and
+    E's do not.
+    """
+    W, H = 1560, 1000
+    s = V.head(
+        W, H,
+        "Same lap, same grip, half the tire",
+        "Each wheel's friction circle — the ring is everything that tire has "
+        "at that instant, the fill is how much of it is being spent. Both "
+        "variants reach the apex at the same grip and get round in the same "
+        "time. What differs is what they spend on the straight afterwards.",
+    )
+
+    cols = [("at the apex", "peak_instant",
+             "Hardest cornering. Both variants are near the limit; there is "
+             "almost nothing to choose between them here."),
+            ("on the exit straight", "straight_instant",
+             "Going in a straight line. H has let the tires go; E is still "
+             "spending most of what they have.")]
+
+    for ci, (title, key, blurb) in enumerate(cols):
+        cx0 = 300 + ci * 760
+        s += D.text(cx0, 150, title, V.FG, 19, "middle", weight="600")
+        for i, line in enumerate(D_wrap(blurb, 52)):
+            s += D.text(cx0, 176 + 18 * i, line, V.MUT, 12, "middle")
+
+        for ri, variant in enumerate(("H", "E")):
+            e = _rep_seed_report(report, results, variant)
+            if e is None or key not in e:
+                continue
+            cy = 380 + ri * 300
+            corners = e[key]["corners"]
+            if ci == 0:
+                s += D.text(70, cy - 96, LABEL[variant], COLOUR[variant], 15,
+                            weight="600")
+                s += D.text(70, cy - 74,
+                            f"seed {results['variants'][variant]['representative_seed']}",
+                            V.MUT, 12, mono=True)
+            s += D.car_plan(cx0, cy, length=118, width=54, wheel_len=26,
+                            wheel_w=11, loads=(0.5,) * 4, body=V.MUT)
+            us = []
+            for c2, dx, dy in (("fl", -1, -1), ("fr", 1, -1),
+                              ("rl", -1, 1), ("rr", 1, 1)):
+                w = corners[c2]
+                u = float(w["util"])
+                us.append(u)
+                s += D.friction_circle(
+                    cx0 + dx * 96, cy + dy * 46, 30,
+                    float(w["fx_frac"]), float(w["fy_frac"]),
+                    colour=(V.COR if u > 0.9 else (V.AMB if u > 0.5 else V.TEAL)),
+                    label=f"{100*u:.0f}%")
+            s += D.text(cx0, cy + 116, f"average {100*np.mean(us):.0f}% of grip in use",
+                        V.FG, 14, "middle", weight="600", mono=True)
+
+    lap_h, lap_e = (_seed_stats(results, v, "lap_time_by_seed")
+                    if "lap_time_by_seed" in results["variants"][v] else None
+                    for v in ("H", "E"))
+    util_h = _seed_stats(results, "H", "mean_utilisation_by_seed")
+    util_e = _seed_stats(results, "E", "mean_utilisation_by_seed")
+
+    s += D.rule(60, 800, W - 120, V.GRID)
+    lines = [
+        f"Averaged over the whole lap, H spends {util_h.mean():.0%} of the "
+        f"available grip and E spends {util_e.mean():.0%} — and the three seeds "
+        f"of each do not overlap. They get round in the same time and reach the "
+        f"same peak cornering force while doing it, so this is not H driving "
+        f"more slowly.",
+        "The gap is not in the corner. It is on the straight, which is 260 of "
+        "this lap's 393 m. Why is not settled: H's allocator will happily "
+        "produce opposing wheel forces on a straight if its policy asks for a "
+        "yaw moment there, and on some seeds it does.",
+    ]
+    y = 834
+    for para in lines:
+        for line in D_wrap(para, 148):
+            s += D.text(60, y, line, V.MUT, 12.5)
+            y += 20
+        y += 8
+
+    s += D.text(40, H - 40,
+               "[MEASURED] friction-ellipse utilisation = hypot(Fx/Fx_peak, "
+               "Fy/Fy_peak) per wheel, deployed policy, representative seed "
+               "(median finish distance) · RUNG 2 (rule 15)", V.MUT, 9.5)
+    return s + V.foot(
+        W, H,
+        "Arrow direction inside each circle is where that tire's force points; "
+        "length and percentage are how much of its capacity is spent.")
+
+
+def utilisation_along_the_lap_figure(out_dir, results) -> str:
+    """The technical companion: every seed's tire usage against distance.
+
+    The pictorial figure shows two instants. This shows that those instants are
+    representative rather than cherry-picked — the separation opens up after
+    the corner and holds for the rest of the lap, on all six seeds.
+    """
+    import numpy as _np
+    from pathlib import Path
+    W, H = 1480, 900
+    s = V.head(
+        W, H,
+        "Where the tire actually goes",
+        "Friction-ellipse utilisation against distance, all six deployed "
+        "policies. The corner is where both variants work hardest and where "
+        "they agree; the straight afterwards is where they part company.",
+    )
+
+    series = {}
+    for v in ("H", "E"):
+        for seed in sorted(results["variants"][v]["mean_utilisation_by_seed"],
+                           key=int):
+            p = Path(out_dir) / f"full_trace_{v}_seed{seed}.npz"
+            if p.exists():
+                d = _np.load(p)
+                series[(v, int(seed))] = (d["s"], d["utilisation_max"])
+    if not series:
+        s += D.text(60, 200, "no traces available", V.MUT, 14)
+        return s + V.foot(W, H, "")
+
+    ax = _Ax(100, 1380, 170, 520, 0.0, 400.0, 0.0, 1.05)
+    s = V.grid(s, ax.L, ax.R, ax.T, ax.B, 8, 4)
+    xt = [(f"{v:.0f}", float(ax.x(v))) for v in range(0, 401, 50)]
+    yt = [(f"{v:.0%}", float(ax.y(v))) for v in (0.0, 0.25, 0.5, 0.75, 1.0)]
+    s = V.axes(s, ax.L, ax.R, ax.T, ax.B, "distance along the lap (m)",
+              "share of each tire's grip in use", xt, yt)
+
+    # The corner, shaded, so "in the corner" and "on the straight" are visible
+    # rather than asserted in the caption.
+    x0, x1 = float(ax.x(60.0)), float(ax.x(150.0))
+    s += (f'<rect x="{x0:.0f}" y="{ax.T}" width="{x1-x0:.0f}" '
+          f'height="{ax.B-ax.T}" fill="{V.FG}" opacity="0.05"/>')
+    s += D.text((x0 + x1) / 2, ax.T - 8, "the corner", V.MUT, 12, "middle")
+    s += D.text((x1 + ax.R) / 2, ax.T - 8, "the exit straight", V.MUT, 12,
+                "middle")
+
+    for (v, seed), (sd, u) in series.items():
+        k = max(1, len(sd) // 400)
+        pts = ax.pts(sd[::k], _np.clip(u[::k], 0.0, 1.05))
+        s += (f'<path d="{V.path(pts)}" fill="none" stroke="{COLOUR[v]}" '
+              f'stroke-width="1.9" opacity="0.85"/>')
+
+    for i, v in enumerate(("H", "E")):
+        y = 570 + i * 24
+        s += (f'<line x1="100" y1="{y-4}" x2="140" y2="{y-4}" '
+              f'stroke="{COLOUR[v]}" stroke-width="3"/>')
+        util = _seed_stats(results, v, "mean_utilisation_by_seed")
+        s += D.text(150, y, f"{LABEL[v]} — 3 seeds, lap average "
+                    f"{util.mean():.0%}", COLOUR[v], 13)
+
+    s += D.rule(60, 640, W - 120, V.GRID)
+    uh = _seed_stats(results, "H", "mean_utilisation_by_seed")
+    ue = _seed_stats(results, "E", "mean_utilisation_by_seed")
+    pooled = float(np.sqrt((uh.var(ddof=1) + ue.var(ddof=1)) / 2))
+    ratio = abs(ue.mean() - uh.mean()) / pooled if pooled else float("nan")
+    for i, line in enumerate(D_wrap(
+            f"Lap-average utilisation is {uh.mean():.0%} for H and "
+            f"{ue.mean():.0%} for E, a gap of {ratio:.1f}x the seed-to-seed "
+            f"standard deviation. CLAUDE.md rule 5 asks for more than 2x before "
+            f"a difference counts as a finding, so this one does — while the "
+            f"lap times and peak cornering forces, which sit at 0.5x and 1.3x, "
+            f"are reported as no measurable difference at all.", 148)):
+        s += D.text(60, 674 + 20 * i, line, V.MUT, 12.5)
+
+    s += D.text(40, H - 40,
+               "[MEASURED] per-step max over the four wheels of "
+               "hypot(Fx/Fx_peak, Fy/Fy_peak), deployed policy, 3 seeds per "
+               "variant · RUNG 2 (rule 15)", V.MUT, 9.5)
+    return s + V.foot(
+        W, H,
+        "One line per seed. Traces end where that policy's lap ends.")
+
+
 __all__ = ["pilot_sanity_figure", "control_surfaces_figure",
            "yaw_moment_figure", "envelope_escape_figure",
-           "seed_scorecard_figure"]
+           "seed_scorecard_figure", "tire_spend_figure",
+           "utilisation_along_the_lap_figure"]

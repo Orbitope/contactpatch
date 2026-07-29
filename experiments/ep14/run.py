@@ -283,7 +283,13 @@ def production_report(out: Path) -> dict:
                     fz = max(float(tr[f"fz_{c}"][i]), 1.0)
                     fx_p = float(backend.tire.peak_fx(fz))
                     fy_p = float(backend.tire.peak_fy(fz))
+                    # The fractions are stored, not just the scalar utilisation
+                    # they combine into: a friction-circle figure needs the two
+                    # axes separately to point its arrow, and reconstructing
+                    # them from the magnitude in the drawing code would be the
+                    # figure inventing a number the physics never produced.
                     out2[c] = {"fx": fx, "fy": fy, "fz": fz,
+                              "fx_frac": fx / fx_p, "fy_frac": fy / fy_p,
                               "util": math.hypot(fx / fx_p, fy / fy_p)}
                 return out2
 
@@ -294,8 +300,21 @@ def production_report(out: Path) -> dict:
                 fy_p = float(backend.tire.peak_fy(fz))
                 fracs[c] = {"fx_frac": float(tr[f"fx_{c}"][i_slip]) / fx_p,
                            "fy_frac": float(tr[f"fy_{c}"][i_slip]) / fy_p}
+            # A representative point on the EXIT STRAIGHT. The H-vs-E
+            # utilisation gap is not in the corner — both variants are at
+            # 0.83-1.00 through the apex — it is here, where 260 of the lap's
+            # 393 m are, and where H falls away and E does not. A figure drawn
+            # only at the apex would show the two looking identical and would
+            # be telling the reader the opposite of the result.
+            straight = np.where(tr["s"] > 250.0)[0]
+            i_str = int(straight[len(straight) // 2]) if len(straight) else i_peak
+
             seeds.append({
                 "seed": seed,
+                "lap_time_s": float(len(tr["s"]) * 0.02),
+                "straight_instant": {"s": float(tr["s"][i_str]),
+                                     "a_y_g": float(tr["a_y"][i_str] / schema.G),
+                                     "corners": _corners(i_str)},
                 "peak_instant": {"s": float(tr["s"][i_peak]),
                                  "a_y_g": float(tr["a_y"][i_peak] / schema.G),
                                  "corners": _corners(i_peak)},
@@ -442,6 +461,10 @@ def build_final_figures(out: Path, results: dict) -> None:
          rl_tv_figures.envelope_escape_figure(results, report))
     write(out / "04-seed-by-seed.svg",
          rl_tv_figures.seed_scorecard_figure(results))
+    write(out / "05-same-lap-half-the-tire.svg",
+         rl_tv_figures.tire_spend_figure(results, report))
+    write(out / "06-where-the-tire-goes.svg",
+         rl_tv_figures.utilisation_along_the_lap_figure(out, results))
     print("  production_report.json")
     print("  01-same-wheels-different-drivers.svg")
     print("  02-yaw-moment-along-the-road.svg")
@@ -485,6 +508,8 @@ def aggregate(out: Path, seeds: range) -> int:
             "finished_by_seed": {e["seed"]: e["finished"] for e in per_seed},
             "worst_slip_deg_by_seed":
                 {e["seed"]: e["worst_slip_deg"] for e in per_seed},
+            "lap_time_by_seed":
+                {e["seed"]: e.get("lap_time_s", float("nan")) for e in per_seed},
             "envelope_occupancy_by_seed":
                 {e["seed"]: e["evaluation"]["greedy"]["envelope_occupancy"]
                  for e in per_seed},

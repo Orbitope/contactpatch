@@ -85,28 +85,46 @@ JITTER_M = 8.0
 #: on anything. A whole conclusion was built on it and had to be retracted. See
 #: FINDINGS F70.
 #:
-#: The levels below are the strongest disturbance under which the MEDIAN lap stays
-#: comfortably inside the fit, with per-lap filtering (see ``trial``) handling the
-#: minority of laps that excurse. ``beyond`` is deliberately harder and is reported
-#: for direction only.
-STEER_NOISE = 0.15
+#: **0.15 was itself retracted, by F96.** It was chosen as "the strongest
+#: disturbance the median lap survives" and described as the driver's hands and
+#: linkage; measured against a 13.5:1 steering ratio it is 23 deg RMS at the
+#: steering wheel — a continuous quarter-turn saw, not an imperfect driver.
+#: `STEER_ATTENTIVE`/`STEER_DISTRACTED` are F96's own calibration (road-wheel RMS
+#: converted through the same ratio): 1.6 deg and 4.7 deg at the wheel,
+#: bracketing the reversal-rate literature's cognitive-load / visual-secondary-task
+#: bands. `STEER_RETRACTED` keeps the original 0.15 in the grid, unquotable, so the
+#: correction is a comparison in the data rather than a claim about it.
+STEER_ATTENTIVE = 0.01
+STEER_DISTRACTED = 0.03
+STEER_RETRACTED = 0.15
 GRIP_SPREAD = 0.20
 STEER_BEYOND = 0.25
 GRIP_BEYOND = 0.30
 
 CONDITIONS = (
     ("nominal", 0.0, 0.0, "no perturbation — Episode 10's measurement"),
-    ("steer", STEER_NOISE, 0.0,
-     f"steering noise, sigma = {STEER_NOISE}"),
+    ("steer", STEER_ATTENTIVE, 0.0,
+     f"steering noise, attentive driver, sigma = {STEER_ATTENTIVE} (1.6 deg at the wheel)"),
     ("grip", 0.0, GRIP_SPREAD,
      f"grip varied +/-{GRIP_SPREAD:.0%} per lap"),
-    ("both", STEER_NOISE, GRIP_SPREAD, "both together"),
+    ("both", STEER_ATTENTIVE, GRIP_SPREAD,
+     "both together, attentive driver"),
+    ("distracted", STEER_DISTRACTED, GRIP_SPREAD,
+     f"both together, distracted driver, sigma = {STEER_DISTRACTED} (4.7 deg at the wheel)"),
+    ("retracted_015", STEER_RETRACTED, GRIP_SPREAD,
+     "the ORIGINAL noise level (F96) — 23 deg at the wheel, not a driver; kept "
+     "only so the correction is visible in the data"),
     ("beyond", STEER_BEYOND, GRIP_BEYOND,
-     "both, harder — most laps leave the fit; direction only"),
+     "both, harder still — most laps leave the fit; direction only"),
 )
 
-#: The conditions any claim may rest on. ``beyond`` is deliberately excluded.
-QUOTABLE = ("nominal", "steer", "grip", "both")
+#: The conditions any claim may rest on. ``retracted_015`` and ``beyond`` are
+#: deliberately excluded — the first is F96's retracted value, kept only for
+#: comparison; the second was never claimed to be realistic.
+#:
+#: Condition names avoid "." on purpose: they are joined with "_" into trace keys,
+#: so a dotted name ("retracted_0.15") makes those keys awkward to parse back.
+QUOTABLE = ("nominal", "steer", "grip", "both", "distracted")
 
 
 def dkey(ff) -> str:
@@ -228,7 +246,13 @@ def trial(model, ff: float, steer_noise: float, grip_spread: float,
 #: two conditions and four designs actually carry the claim.
 N_DEEP = 120
 FRACTIONS_DEEP = (0.47, 0.54, 0.61, 0.65)      # the designs the policy can drive
-CONDITIONS_DEEP = ("nominal", "both")
+#: ``both`` (attentive driver) is the corrected headline; ``distracted`` re-asks
+#: the same question at F96's harsher realistic level, since the correction
+#: could plausibly have gone either way.
+CONDITIONS_DEEP = ("nominal", "both", "distracted")
+#: Conditions the multiple-comparison test is actually run on — everything in
+#: CONDITIONS_DEEP except the uncontested baseline.
+PERTURBED_DEEP = tuple(c for c in CONDITIONS_DEEP if c != "nominal")
 
 
 def fisher_exact_two_sided(x1: int, n1: int, x2: int, n2: int) -> float:
@@ -272,51 +296,63 @@ def deep(out) -> int:
     print(f"\n  {time.time()-t0:.0f}s\n")
 
     # --- does the effect survive a correction for multiple comparisons? -------
+    # Run once per perturbed condition: the correction at the attentive level
+    # (F96's realistic value) is the headline, and at the distracted level is
+    # the check that it is not an artefact of picking the gentler one.
     ks = [dkey(f) for f in FRACTIONS_DEEP]
-    pairs = []
-    for i, a in enumerate(ks):
-        for b in ks[i + 1:]:
-            ca, cb = cells[f"both|{a}"], cells[f"both|{b}"]
-            pv = fisher_exact_two_sided(
-                ca["failures_inside_fit"], ca["n_inside_fit"],
-                cb["failures_inside_fit"], cb["n_inside_fit"])
-            pairs.append({"a": a, "b": b, "p": pv})
-    # Holm-Bonferroni: same family-wise guarantee as Bonferroni, uniformly more
-    # powerful, so it is the honest choice rather than the harshest one.
-    order = sorted(pairs, key=lambda d: d["p"])
-    m, sig = len(order), []
-    for i, d in enumerate(order):
-        thresh = 0.05 / (m - i)
-        d["holm_threshold"] = thresh
-        d["significant"] = bool(d["p"] <= thresh)
-        if not d["significant"]:
-            for later in order[i:]:
-                later["significant"] = False
-                later.setdefault("holm_threshold", 0.05 / (m - i))
-            break
-    sig = [d for d in order if d.get("significant")]
-    print("  pairwise, Holm-Bonferroni corrected at family-wise 0.05:")
-    for d in order:
-        print(f"    {d['a']} vs {d['b']}   p = {d['p']:.4f}  vs threshold "
-              f"{d['holm_threshold']:.4f}   "
-              f"{'SIGNIFICANT' if d.get('significant') else 'not significant'}")
-
-    verdict = ("the fastest design is measurably more fragile than at least one "
-               "other, after correction" if sig else
-               "no pair of designs is distinguishable after correction; the "
-               "effect is directional only")
-    print(f"\n  VERDICT: {verdict}")
+    by_condition = {}
+    for cond in PERTURBED_DEEP:
+        pairs = []
+        for i, a in enumerate(ks):
+            for b in ks[i + 1:]:
+                ca, cb = cells[f"{cond}|{a}"], cells[f"{cond}|{b}"]
+                pv = fisher_exact_two_sided(
+                    ca["failures_inside_fit"], ca["n_inside_fit"],
+                    cb["failures_inside_fit"], cb["n_inside_fit"])
+                pairs.append({"a": a, "b": b, "p": pv})
+        # Holm-Bonferroni: same family-wise guarantee as Bonferroni, uniformly
+        # more powerful, so it is the honest choice rather than the harshest one.
+        order = sorted(pairs, key=lambda d: d["p"])
+        m = len(order)
+        for i, d in enumerate(order):
+            thresh = 0.05 / (m - i)
+            d["holm_threshold"] = thresh
+            d["significant"] = bool(d["p"] <= thresh)
+            if not d["significant"]:
+                for later in order[i:]:
+                    later["significant"] = False
+                    later.setdefault("holm_threshold", 0.05 / (m - i))
+                break
+        sig = [d for d in order if d.get("significant")]
+        print(f"  {cond}: pairwise, Holm-Bonferroni corrected at family-wise 0.05:")
+        for d in order:
+            print(f"    {d['a']} vs {d['b']}   p = {d['p']:.4f}  vs threshold "
+                  f"{d['holm_threshold']:.4f}   "
+                  f"{'SIGNIFICANT' if d.get('significant') else 'not significant'}")
+        verdict = (
+            "the fastest design is measurably more fragile than at least one "
+            "other, after correction" if sig else
+            "no pair of designs is distinguishable after correction; the "
+            "effect is directional only")
+        print(f"  VERDICT ({cond}): {verdict}\n")
+        by_condition[cond] = {"pairwise": order, "n_significant_pairs": len(sig),
+                              "verdict": verdict}
 
     res = {
         "policy": POLICY, "n_trials": N_DEEP,
         "fractions": list(FRACTIONS_DEEP),
         "conditions": list(CONDITIONS_DEEP),
-        "steer_noise": STEER_NOISE, "grip_spread": GRIP_SPREAD,
-        "cells": cells, "pairwise": order,
-        "n_significant_pairs": len(sig),
-        "verdict": verdict,
+        "steer_noise": {name: look[name][1] for name in CONDITIONS_DEEP},
+        "grip_spread": GRIP_SPREAD,
+        "cells": cells, "by_condition": by_condition,
+        # Back-compat top-level fields, from the attentive ("both") condition —
+        # the headline the article quotes.
+        "pairwise": by_condition["both"]["pairwise"],
+        "n_significant_pairs": by_condition["both"]["n_significant_pairs"],
+        "verdict": by_condition["both"]["verdict"],
         "correction": "Holm-Bonferroni, family-wise alpha 0.05, "
-                      f"{len(order)} pairwise Fisher exact tests",
+                      f"{len(by_condition['both']['pairwise'])} pairwise Fisher "
+                      "exact tests, per condition",
         "why_this_run_exists": (
             "The 5x5 grid at n=40 gave in-fit rates of 12/0/0/0 with the closest "
             "pair at p=0.045 uncorrected -- nothing after correction. Breadth was "
@@ -559,7 +595,11 @@ def main() -> int:
         "trained_here": False,
         "n_trials": n,
         "jitter_m": JITTER_M,
-        "steer_noise": STEER_NOISE,
+        # The headline value — attentive driver, F96's calibration. The figures'
+        # captions quote this one; distracted and retracted are in "conditions".
+        "steer_noise": STEER_ATTENTIVE,
+        "steer_noise_distracted": STEER_DISTRACTED,
+        "steer_noise_retracted_F96": STEER_RETRACTED,
         "grip_spread": GRIP_SPREAD,
         "envelope_penalty": ENVELOPE_PENALTY,
         "fractions": list(fracs),
@@ -593,22 +633,41 @@ def main() -> int:
     }
     (out / "results.json").write_text(json.dumps(results, indent=2) + "\n")
 
-    # traces: one representative rollout per design per condition, for the paths
+    # traces: the first 8 rollouts per design per condition for the path fan, PLUS
+    # every lap that left the +/-12 deg fit in a quotable perturbed condition.
+    #
+    # The second part is not optional. The recovery figure needs a lap that went
+    # past the fit and came back beside one that went past and did not, and at a
+    # realistic disturbance (F96/F98) those laps are RARE — 12 in 120 for the
+    # fastest design and 1-4 for the others. Saving only seeds 0-7 captured none of
+    # them, so the figure silently drew two laps that never left the fit at all
+    # while its caption said they had. Which seeds qualify is read from the cell's
+    # own per-lap arrays, so this cannot disagree with the reported rates.
+    def trace_rollout(tr, name, sn, gs, ff, k):
+        tag = f"{name}_{dkey(ff).replace('.', '')}_{k}"
+        if f"{tag}_s" in tr:
+            return
+        env = DrivingEnv(EnvConfig(
+            design_keys=DESIGN_KEYS, design_ranges=DESIGN_RANGES,
+            envelope_penalty=ENVELOPE_PENALTY, start_jitter_m=JITTER_M,
+            steer_noise=sn, grip_spread=gs), seed=k)
+        env.set_design(front_mass_fraction=ff)
+        r = rollout(env, greedy_policy(model), seed=k)
+        for key in ("s", "n", "speed", "alpha_max_deg"):
+            tr[f"{tag}_{key}"] = r[key]
+        tr[f"{tag}_finished"] = np.array([float(r["finished"])])
+
     tr = {}
     for name, sn, gs, _d in CONDITIONS:
         for ff in fracs:
-            keep = min(8, n)
-            for k in range(keep):
-                env = DrivingEnv(EnvConfig(
-                    design_keys=DESIGN_KEYS, design_ranges=DESIGN_RANGES,
-                    envelope_penalty=ENVELOPE_PENALTY, start_jitter_m=JITTER_M,
-                    steer_noise=sn, grip_spread=gs), seed=k)
-                env.set_design(front_mass_fraction=ff)
-                r = rollout(env, greedy_policy(model), seed=k)
-                tag = f"{name}_{dkey(ff).replace('.', '')}_{k}"
-                for key in ("s", "n", "speed", "alpha_max_deg"):
-                    tr[f"{tag}_{key}"] = r[key]
-                tr[f"{tag}_finished"] = np.array([float(r["finished"])])
+            for k in range(min(8, n)):
+                trace_rollout(tr, name, sn, gs, ff, k)
+            if name == "nominal" or name not in QUOTABLE:
+                continue
+            slips = cells[f"{name}|{dkey(ff)}"]["per_lap_worst_slip_deg"]
+            over = [k for k, v in enumerate(slips) if v > 12.0]
+            for k in over:
+                trace_rollout(tr, name, sn, gs, ff, k)
     np.savez(out / "traces.npz", **tr)
 
     md = report.write_markdown(command="python -m experiments.ep11.run")

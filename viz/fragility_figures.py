@@ -28,6 +28,13 @@ def dkey(ff) -> str:
 
 
 RAMP = (V.TEAL, V.GRN, V.AMB, V.COR, V.VIO)
+
+#: Laps that must have left the fitted region before a recover-or-crash fraction
+#: over them is reported as a percentage. Below this it is a count. F98 retracted
+#: a version of this table that quoted 100% and 0% over 1 and 4 laps; F70 is the
+#: same trap a season earlier. 10 is where a single lap moves the figure by less
+#: than 10 points.
+MIN_EXPOSURE = 10
 #: The window every panel uses. Fixed on the corner and the corrections just after
 #: it, never widened to fit a lap that happened to finish — a crop that adapts to
 #: the data frames failures tightly and successes loosely and makes the failures
@@ -314,7 +321,8 @@ def condition_card(results) -> str:
     """Which perturbation did what — so each contribution is attributable."""
     fracs = results["fractions"]
     conds = results["conditions"]
-    W, H = 1480, 820
+    x0, colw, y0, rowh = 300, 210, 210, 92
+    W, H = 1480, y0 + len(conds) * rowh + 150
     s = V.head(
         W, H,
         "Which disturbance did the damage",
@@ -323,7 +331,6 @@ def condition_card(results) -> str:
         "what the car was actually sensitive to.",
     )
 
-    x0, colw, y0, rowh = 300, 210, 210, 92
     for j, ff in enumerate(fracs):
         s += D.text(x0 + j * colw + 60, y0 - 26, f"{100*ff:.0f}%",
                     RAMP[j % len(RAMP)], 14, weight="600", anchor="middle")
@@ -373,13 +380,68 @@ def condition_card(results) -> str:
     )
 
 
+#: Conditions the recovery pair may be drawn from. `beyond` is excluded for the
+#: same reason it is excluded from every claim — most of its laps are outside the
+#: tire fit, so a "recovery" there is a statement about our extrapolation. Ordered
+#: gentlest first, so the pair comes from the mildest disturbance that produced one.
+_PAIR_CONDITIONS = ("both", "distracted", "grip", "steer")
+
+
+def _pick_recovery_pair(traces, fracs):
+    """Find one lap that exceeded the fit and recovered, and one that did not.
+
+    Both must come from the same condition, so the pair differs in the car rather
+    than in what was done to it. Among candidates, prefers the pair whose peak slip
+    is closest — the figure's whole claim is "equally far over the edge, opposite
+    outcome", and a recovered lap at 13 degrees against a crashed one at 25 would
+    illustrate the opposite of that.
+
+    Slip is measured **inside the drawn window only** (S_LO..S_HI). A lap whose
+    excursion happens outside it would be selected on evidence the panel does not
+    show, and its caption would assert an excursion the reader cannot see — the
+    same defect as hardcoding the number, arrived at differently. This also keeps
+    the subtitle and the on-car label reporting one quantity rather than two.
+    """
+    for cond in _PAIR_CONDITIONS:
+        over = []
+        for ff in fracs:
+            pre = f"{cond}_{dkey(ff).replace('.', '')}_"
+            for key in traces:
+                if not (key.startswith(pre) and key.endswith("_finished")):
+                    continue
+                tag = key[:-len("_finished")]
+                sa = traces[f"{tag}_s"]
+                m = (sa >= S_LO) & (sa <= S_HI)
+                if not m.any():
+                    continue
+                sl = float(np.max(np.abs(traces[f"{tag}_alpha_max_deg"])[m]))
+                if sl <= 12.0:
+                    continue
+                over.append({"tag": tag, "ff": float(ff), "slip": sl,
+                             "finished": bool(traces[key][0])})
+        good = [o for o in over if o["finished"]]
+        bad = [o for o in over if not o["finished"]]
+        if not good or not bad:
+            continue
+        g, b = min(((g, b) for g in good for b in bad),
+                   key=lambda pair: abs(pair[0]["slip"] - pair[1]["slip"]))
+        # Which condition the pair came from travels WITH it. The provenance stamp
+        # quotes results["steer_noise"], the headline level; if the only available
+        # pair came from `grip` or `distracted` the stamp would describe a
+        # disturbance these two laps were not run under.
+        g["cond"] = b["cond"] = cond
+        return g, b
+    return None, None
+
+
 def recovery_figure(results, traces) -> str:
     """The mechanism, in two REAL laps: the same limit, two different outcomes.
 
-    Not a schematic. The 61%-front car in the left panel reached 13.4 degrees of
-    slip — further past the tire's fitted region than the 47% car in the right
-    panel, which reached 12.0 — and completed the lap anyway. The fast car did not
-    go further over the edge. It failed to come back from going over it.
+    Not a schematic. The 61%-front car in the left panel goes at least as far past
+    the tire's fitted region as the 47% car in the right panel and completes the
+    lap anyway. The fast car does not go further over the edge; it fails to come
+    back from going over it. Every slip figure in the labels is read from the
+    trace, so the panels cannot drift from the run that produced them.
 
     That is the whole episode, and it needed measured trajectories rather than
     drawings, because a drawing of this would just be an assertion.
@@ -404,25 +466,63 @@ def recovery_figure(results, traces) -> str:
     s = V.head(
         W, H,
         "When it lets go, does it come back?",
-        "Every one of these cars gets pushed past the tire's fitted limit by the "
-        "disturbance, and they all get pushed past it about equally often. What "
-        "separates them is what happens next — and these are two real laps.",
+        "Two real laps that went equally far past the tire's fitted limit, on two "
+        "different cars. What separates them is not how far over they went — it is "
+        "what happened next.",
     )
 
     # --- pictorial: two measured laps, both past the limit, opposite outcomes ---
-    CASES = (
-        ("061", 2, 0.61, "61% front", "reached 13.4 deg of slip — and got round",
-         "The nose gives up first. The car runs wide, and running wide scrubs "
-         "speed, which is what saves it.", V.TEAL, True),
-        ("047", 2, 0.47, "47% front", "reached 12.0 deg of slip — and did not",
-         "The tail gives up first. The car rotates, and rotating points the tires "
-         "further from where they need to be.", V.COR, False),
-    )
-    for i_c, (tag3, k, ff, title, sub, note, colour, ok) in enumerate(CASES):
+    # SELECTED from the traces, never hardcoded. The previous version named
+    # "seed 2 of the 61% and 47% cars" and wrote their slip figures into the
+    # labels; when F96 corrected the disturbance level those two laps stopped
+    # exceeding the fit at all and the panel drew two ordinary laps under a caption
+    # claiming both had gone over the limit. A figure that picks its own examples
+    # by the property it is illustrating cannot do that.
+    recovered, crashed = _pick_recovery_pair(traces, fracs)
+    if recovered is None or crashed is None:
+        s += D.text(50, 150, "No pair of laps to show", V.FG, 16, weight="600")
+        for li, line in enumerate(_wrap(
+                "This panel needs one lap that went past the tire's fitted region "
+                "and came back beside one that went past and did not, both at a "
+                "quotable disturbance. The current run produced no such pair: at a "
+                "realistic disturbance level (F96) laps past the fit are rare. The "
+                "mechanism is described on the right and in the article; it is not "
+                "illustrated here rather than illustrated with laps that do not "
+                "show it.", 60)):
+            s += D.text(50, 186 + 21 * li, line, V.MUT, 12.5)
+        CASES = ()
+    else:
+        # The mechanism captions are only true if the lap that recovered belongs to
+        # the more FRONT-biased car — that is the whole causal claim. Selection is
+        # from data, so check it rather than assume it; if the pattern is inverted
+        # the panel describes what happened and withholds the mechanism.
+        as_expected = recovered["ff"] > crashed["ff"]
+        if as_expected:
+            note_ok = ("The nose gives up first. The car runs wide, and running "
+                       "wide scrubs speed, which is what saves it.")
+            note_bad = ("The tail gives up first. The car rotates, and rotating "
+                        "points the tires further from where they need to be.")
+        else:
+            note_ok = ("This lap recovered. Note it is the more REAR-biased of the "
+                       "two, which is not the direction the mechanism predicts.")
+            note_bad = ("This lap did not recover, on the more front-biased car. "
+                        "The pair is shown as measured; it does not illustrate the "
+                        "mechanism described below.")
+        CASES = (
+            (recovered, note_ok, V.TEAL, True),
+            (crashed, note_bad, V.COR, False),
+        )
+    for i_c, (pick, note, colour, ok) in enumerate(CASES):
         L = 50 + i_c * 500
-        tag = f"both_{tag3}_{k}"
+        tag, ff = pick["tag"], pick["ff"]
+        title = f"{100*ff:.0f}% front"
+        outcome = "and got round" if ok else "and did not"
         sa, nn = traces[f"{tag}_s"], traces[f"{tag}_n"]
         sl = np.abs(traces[f"{tag}_alpha_max_deg"])
+        # pick["slip"] is the in-window peak, which is what the on-car label below
+        # also reports. Using the whole-lap max here would print one number in the
+        # subtitle and a different one on the car, for the same lap.
+        sub = f"reached {pick['slip']:.1f} deg of slip — {outcome}"
         s += D.text(L, 150, title, colour, 16, weight="600")
         s += D.text(L, 172, sub, V.FG, 12.5)
         back, to_px, _ = track_backdrop(track, S_LO, S_HI, L, L + 430, 200, 660)
@@ -491,9 +591,16 @@ def recovery_figure(results, traces) -> str:
               f'height="17" fill="{V.COR}"/>')
         s += D.text(x0 + 100 + bw + 12, y, f"{df:2d}/{dl:<2d}", V.FG, 12,
                     mono=True)
-        s += D.text(x0 + 100 + bw + 74, y, f"{df/max(dl,1):3.0%}",
-                    V.COR if df / max(dl, 1) > 0.5 else V.MUT, 12.5, mono=True,
-                    weight="600")
+        # A percentage over 1 or 4 laps is not a rate — F70's small-n trap and
+        # F98's retraction of exactly this table. Show the fraction only where
+        # there is enough exposure to mean something, and say so otherwise.
+        if dl >= MIN_EXPOSURE:
+            s += D.text(x0 + 100 + bw + 74, y, f"{df/dl:3.0%}",
+                        V.COR if df / dl > 0.5 else V.MUT, 12.5, mono=True,
+                        weight="600")
+        else:
+            s += D.text(x0 + 100 + bw + 74, y, "too few", V.MUT, 11,
+                        style="italic")
     ly = y0 + 74 + len(fracs) * rowh + 10
     s += (f'<rect x="{x0+100}" y="{ly}" width="20" height="12" '
           f'fill="{V.MUT}" opacity="0.35"/>')
@@ -501,18 +608,38 @@ def recovery_figure(results, traces) -> str:
     s += (f'<rect x="{x0+100}" y="{ly+22}" width="20" height="12" '
           f'fill="{V.COR}"/>')
     s += D.text(x0 + 128, ly + 33, "left the fit, crashed", V.MUT, 11)
-    s += D.text(x0, ly + 78, "Same exposure. Opposite outcome.", V.FG, 13,
-                weight="600")
-    for li, line in enumerate(_wrap(
-            "The 61% car left the limit MORE often than the 47% car — 18 laps "
-            "against 16 — and crashed once against thirteen.", 44)):
+    # Every number in this caption comes from the data, because the previous
+    # version hardcoded "18 laps against 16 — and crashed once against thirteen"
+    # and those numbers stopped being true the moment the disturbance level was
+    # corrected (F96/F98). CLAUDE.md rule 10: never hardcode what the model can
+    # supply.
+    fast = dkey(min(fracs))
+    cf = results["cells"][f"both|{fast}"]
+    enough = [f for f in fracs
+              if results["cells"][f"both|{dkey(f)}"]["discarded_laps"]
+              >= MIN_EXPOSURE]
+    if len(enough) > 1:
+        headline = "Same exposure. Opposite outcome."
+        body = (f"The {100*max(enough):.0f}% car left the limit about as often as "
+                f"the {100*min(enough):.0f}% car and came back from it far more "
+                f"often.")
+    else:
+        headline = "Only one car goes over the edge often enough to say."
+        body = (f"At a realistic disturbance the {100*float(fast):.0f}%-front car "
+                f"left the fitted region {cf['discarded_laps']} times in "
+                f"{n_head} laps and crashed on {cf['discarded_failures']} of "
+                f"them. The other designs left it too rarely for a rate — that is "
+                f"the finding's limit, not a result about them.")
+    s += D.text(x0, ly + 78, headline, V.FG, 13, weight="600")
+    for li, line in enumerate(_wrap(body, 44)):
         s += D.text(x0, ly + 102 + 19 * li, line, V.MUT, 12)
 
     s += D.rule(50, 830, W - 100, V.GRID)
     for i, line in enumerate([
-        "So the fast car is not fragile because it runs closer to the edge. Both "
-        "cars go over the edge about as often. It is fragile because going over is "
-        "a one-way trip.",
+        "So the fast car is not fragile because it runs closer to the edge. It is "
+        "fragile because going over is a one-way trip — the left panel is two real "
+        "laps that went equally far over,",
+        "and only one came back.",
         "",
         "That is Season 2's understeer mechanism showing up as a robustness "
         "property rather than a lap-time one. A car that loses the front pushes "
@@ -523,12 +650,29 @@ def recovery_figure(results, traces) -> str:
     ]):
         s += D.text(50, 866 + 21 * i, line, V.MUT, 12.5)
 
+    # The left panel's provenance describes the laps ACTUALLY drawn — which
+    # condition they came from and which seeds — because the previous version said
+    # "seed 2 of each" as a literal string and kept saying it after the selection
+    # changed. If there is no pair, it says that instead of describing laps that
+    # are not on the page.
+    if recovered is None:
+        pair_note = "left panel: no qualifying pair in this run — see the panel"
+        pair_sigma = results["steer_noise"]
+    else:
+        cond = recovered["cond"]
+        by_name = {c["name"]: c for c in results["conditions"]}
+        pair_sigma = by_name.get(cond, {}).get("steer_noise",
+                                              results["steer_noise"])
+        seeds = "/".join(p["tag"].rsplit("_", 1)[1] for p in (recovered, crashed))
+        pair_note = (f"left panel: two real laps from the `{cond}` condition, "
+                     f"seeds {seeds}, selected as the closest-matched pair over "
+                     f"the fit")
     s += D.text(40, H - 40, "  -  ".join([
         f"[MEASURED] Episode 10's policy, DEPLOYED, nothing retrained",
         f"{n_head} rollouts per design, both disturbances",
-        f"[ASSUMED] steering noise sigma {results['steer_noise']}, "
+        f"[ASSUMED] steering noise sigma {pair_sigma}, "
         f"grip +/-{results['grip_spread']:.0%} per lap",
-        "left panel: two real laps, seed 2 of each",
+        pair_note,
     ]), V.MUT, 9.5)
     return s + V.foot(
         W, H,

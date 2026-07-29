@@ -10,9 +10,9 @@
     {
       "name": "perturbation_changes_the_outcome",
       "passed": true,
-      "detail": "across the 4 designs that complete the lap unperturbed, mean failure rate 0% -> 8% once perturbed. Measured on those designs only: a car that already fails 100% of the time fails 100% under perturbation too, and averaging it in hides whether the disturbance does anything at all.",
+      "detail": "across the 4 designs that complete the lap unperturbed, mean failure rate 0% -> 4% once perturbed. Measured on those designs only: a car that already fails 100% of the time fails 100% under perturbation too, and averaging it in hides whether the disturbance does anything at all.",
       "severity": "gate",
-      "value": 0.08125000000000002,
+      "value": 0.037500000000000006,
       "expected": null,
       "group": "Is the perturbation actually perturbing anything?"
     },
@@ -37,16 +37,16 @@
     {
       "name": "most_laps_are_inside_the_fit",
       "passed": true,
-      "detail": "the leanest quotable cell keeps 78% of its laps inside the +/-12 deg fit, and the highest median worst-slip across them is 9.2 deg. Laps that excurse are discarded individually rather than disqualifying their whole condition (rule 4 is a per-lap rule).",
+      "detail": "the leanest quotable cell keeps 85% of its laps inside the +/-12 deg fit, and the highest median worst-slip across them is 7.8 deg. Laps that excurse are discarded individually rather than disqualifying their whole condition (rule 4 is a per-lap rule).",
       "severity": "gate",
-      "value": 0.775,
+      "value": 0.85,
       "expected": null,
       "group": "Is enough of the data inside the tire model to use?"
     },
     {
       "name": "discarded_failures_are_declared",
       "passed": true,
-      "detail": "9 of 20 quotable cells discarded at least one lap that BOTH failed and left the fit. For those cells the in-fit failure rate is a LOWER BOUND \u2014 the discarded crashes are real crashes we cannot attribute to the car rather than to our extrapolation. This check always passes; it exists to put the number in the report.",
+      "detail": "9 of 25 quotable cells discarded at least one lap that BOTH failed and left the fit. For those cells the in-fit failure rate is a LOWER BOUND \u2014 the discarded crashes are real crashes we cannot attribute to the car rather than to our extrapolation. This check always passes; it exists to put the number in the report.",
       "severity": "gate",
       "value": 9,
       "expected": null,
@@ -55,27 +55,27 @@
     {
       "name": "the_beyond_condition_really_is_beyond",
       "passed": true,
-      "detail": "the `beyond` condition reaches 37.3 deg of slip. It is reported and excluded from every claim. This check exists so the exclusion is justified by measurement rather than by assertion \u2014 if `beyond` turned out to stay inside the fit, it would be quotable and the episode's conclusion would change.",
+      "detail": "the `beyond` condition reaches 28.6 deg of slip. It is reported and excluded from every claim. This check exists so the exclusion is justified by measurement rather than by assertion \u2014 if `beyond` turned out to stay inside the fit, it would be quotable and the episode's conclusion would change.",
       "severity": "gate",
-      "value": 37.34989149498054,
+      "value": 28.575421435847495,
       "expected": null,
       "group": "Is enough of the data inside the tire model to use?"
     },
     {
       "name": "a_speed_fragility_tradeoff_is_measurable_inside_the_fit",
       "passed": true,
-      "detail": "the worst in-fit failure rate on a drivable car is 12%. At 0% there would be no fragility to rank and the Pareto front this episode set out to measure would not exist at any defensible disturbance. An earlier 10-rollout calibration said exactly that and was wrong \u2014 see FINDINGS F70.",
+      "detail": "the worst in-fit failure rate on a drivable car is 8%. At 0% there would be no fragility to rank and the Pareto front this episode set out to measure would not exist at any defensible disturbance. An earlier 10-rollout calibration said exactly that and was wrong \u2014 see FINDINGS F70.",
       "severity": "gate",
-      "value": 0.12121212121212122,
+      "value": 0.07894736842105263,
       "expected": null,
       "group": "Is there any disturbance that breaks it inside the fit?"
     },
     {
       "name": "the_faster_car_is_the_more_fragile_one",
       "passed": true,
-      "detail": "in-fit failure rate falls monotonically as the cars get slower: 0.47 12% -> 0.54 0% -> 0.61 0% -> 0.65 0%. This is the episode's claim; if the ordering were scrambled there would be a tradeoff in magnitude but not one you could act on.",
+      "detail": "in-fit failure rate falls monotonically as the cars get slower: 0.47 8% -> 0.54 0% -> 0.61 0% -> 0.65 0%. This is the episode's claim; if the ordering were scrambled there would be a tradeoff in magnitude but not one you could act on.",
       "severity": "gate",
-      "value": 0.12121212121212122,
+      "value": 0.07894736842105263,
       "expected": null,
       "group": "Is there any disturbance that breaks it inside the fit?"
     }

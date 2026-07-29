@@ -3489,6 +3489,195 @@ a driver does. A rule written next to a number does not check the number.
 
 ---
 
+### F97 · Episode 13's steering-noise robustness result, re-measured at F96's realistic levels, is retracted. · 2026-07-29
+
+**Source:** `[MEASURED]` — `experiments/ep13/out/results.json`, `noise` and
+`noise_distracted` blocks, 40 seeds each, same `grip_use` (0.991) and lap as the
+original run.
+
+**What was claimed.** That steering noise (`sigma = 0.15`, described as "the
+same magnitude" as Episode 11) is where torque vectoring earns its keep: the
+open differential completed 31/40 laps against the four-wheel controller's
+40/40, "a far larger effect than the half percent it is worth to a perfect
+driver."
+
+**Re-measured at F96's calibrated levels — attentive driver (`sigma = 0.01`,
+1.6° at the wheel) and distracted driver (`sigma = 0.03`, 4.7° at the wheel),
+40 seeds each:**
+
+| | old (retracted, σ=0.15) | attentive (σ=0.01) | distracted (σ=0.03) |
+|---|---|---|---|
+| open differential | 31/40 · 14.602 ± 0.015 s | **40/40** · 14.589 ± 0.001 s | **40/40** · 14.590 ± 0.003 s |
+| limited-slip | 3/40 · 14.659 ± 0.039 s | 0/40 · — | 0/40 · — |
+| allocator only | 40/40 · 14.608 ± 0.009 s | 40/40 · 14.599 ± 0.000 s | 40/40 · 14.600 ± 0.002 s |
+| TV, four wheels | 40/40 · 14.580 ± 0.006 s | 40/40 · 14.572 ± 0.001 s | 40/40 · 14.573 ± 0.001 s |
+| TV, rear axle | 40/40 · 14.596 ± 0.015 s | 40/40 · 14.592 ± 0.001 s | 40/40 · 14.591 ± 0.003 s |
+
+**At a disturbance level that means something, the open differential is not
+measurably more fragile than any TV configuration.** All four of the
+configurations that could drive this lap at all complete 100% of laps at both
+realistic noise levels, and the lap-time scatter across seeds (0.001–0.003 s)
+is far below the deterministic gap between configurations. The pre-registered
+claim — that a driver who makes mistakes gets far more value from TV than a
+perfect one does — is **rejected**, in exactly the shape F96 found for Episode
+14: the effect was real, but only at a disturbance nobody's hands produce.
+
+**The limited-slip car's 0/40 is not a new problem.** It was already past its
+own aggression limit (0.969, against the 0.991 this study drives at) — the
+original article's own caveat. At `sigma = 0.15` it occasionally survived by
+being randomly nudged off a knife-edge it cannot hold deterministically; at the
+much smaller realistic noise levels there is nothing to nudge it, so it fails
+consistently. This is evidence about a device already asked to do something it
+cannot do cleanly, not a new finding about noise.
+
+**Not retracted.** Every result upstream of the noise study — the +5.18%
+cornering-limit gain, the +1.30% skidpad gain, the 88% yaw-tracking-error
+reduction, the allocator accounting for ~40% of the gain, and the
+driver-preview-time sensitivity (D-ep13's one pre-existing, expected failure) —
+does not involve `steer_noise` and is unaffected.
+
+**Closes O10 for Episode 13.** Episode 11's half of O10 is tracked separately
+(see F98) because it uses a different policy and a different disturbance
+protocol (deployed RL policy against a designed-conditioned car, not a
+closed-loop classical controller).
+
+---
+
+### F98 · Episode 11's fragility ordering survives F96's correction — but steering noise turns out to have contributed almost nothing to it. · 2026-07-29
+
+**Source:** `[MEASURED]` — `experiments/ep11/out/results.json` (5 designs × 7
+conditions × 40 deployed rollouts) and `results_deep.json` (4 designs × 3
+conditions × 120 deployed rollouts, seeds identical to the original deep run).
+
+**Re-measured at F96's calibrated levels — attentive driver (`sigma = 0.01`,
+1.6° at the wheel) and distracted driver (`sigma = 0.03`, 4.7° at the wheel),
+both combined with the unchanged ±20% grip variation:**
+
+| design | old (retracted, σ=0.15+grip) | attentive (σ=0.01+grip) | distracted (σ=0.03+grip) |
+|---|---|---|---|
+| 47% front — the quickest | 9/104 · 8.7% [4.6–15.6%] | **10/108 · 9.3%** [5.1–16.2%] | **10/108 · 9.3%** [5.1–16.2%] |
+| 54% front | 0/114 · 0% | 0/119 · 0% | 0/119 · 0% |
+| 61% front | 0/102 · 0% | 0/116 · 0% | 0/116 · 0% |
+| 65% front | 0/105 · 0% | 0/119 · 0% | 0/119 · 0% |
+
+Holm-Bonferroni corrected (family-wise 0.05), 47% against each other design:
+all three comparisons at **p = 0.0005** (below every threshold), both at the
+attentive and the distracted level. **The episode's headline claim survives:
+the fastest design is measurably more fragile than the others, at a
+disturbance magnitude that means something.** This is the opposite outcome
+from F95 and F97 — the same bug, but this time the correction does not
+overturn the conclusion.
+
+**Why it survives, and the part that does not survive unchanged.** In the deep
+run the attentive and distracted cells come out **identical in every reported
+integer** — same in-fit rate, same discarded-lap count, same discarded-failure
+count, at all four designs.
+
+**That identity is about outcomes, not trajectories, and the distinction
+matters.** Directly measured (`sigma` 0.01 vs 0.03 on the same seeds): the paths
+genuinely differ and peak slip moves by **0.2–0.7°**. What does not change is
+whether any lap crosses the two thresholds the metric counts — 12° of slip, and
+leaving the road. So the honest statement is *steering noise at a realistic
+magnitude does not change any lap's verdict in this experiment*, *not* that it
+does nothing measurable. This was checked because the identical counts are
+equally consistent with the noise never reaching the simulator, which would have
+been a defect rather than a finding; it is wired correctly.
+
+**What this does retract is the attribution.** The article's framing — "two
+disturbances, applied separately and then together so each one's contribution is
+attributable" — implied steering noise carried part of the effect. It does not:
+the `steer`-only condition (0.01, no grip) produces the same 0% failure rate as
+`nominal` at every drivable design, and every bit of the fragility signal comes
+from the ±20% grip variation, which F96 did not touch. **Episode 11 is a
+grip-variation result and should be read as one.**
+
+**What this means for the old 0.15 run, looking back.** It was not that
+steering noise was doing the work and got corrected away (F97's pattern). It
+was already, mostly, the grip-variation experiment wearing a steering-noise
+label. The unrealistic magnitude inflated how often cars left the fit — the
+three non-fastest designs discarded **6, 18 and 15** laps of 120 at the old
+value against **1, 4 and 1** now — and inflated the severity when they did, with
+worst slip reaching **35°** on the 65%-front car against 13–15° now. At 35° the
+Magic Formula is pure extrapolation, so those were never laps about a car. What
+the old magnitude did *not* do is manufacture the ranking.
+
+**Retracted: the population-level recovery-mechanism table.** "It isn't
+margin, it's whether you get it back" reported, per design, how many laps left
+the fit and what fraction of those crashed (81%/33%/6%/7% for 47/54/61/65%
+front, from 16/6/18/15 discarded laps). At the corrected noise level the
+non-fastest designs leave the fit far less often — **1, 4, and 1 laps** out of
+120 for 54/61/65% front. F70's own lesson applies directly: a percentage
+computed from 1 or 4 samples is not a rate, and re-quoting 100%/0%/0% from
+those counts would repeat exactly the mistake this project has already
+retracted twice. **Not retracted:** the mechanism itself — a front-limited car
+pushes wide and self-corrects, a rear-limited car rotates and diverges — is a
+property of the vehicle, not of the disturbance magnitude.
+
+**A third defect, found while regenerating the figure, and it is the worst of
+the three.** `03-when-it-lets-go.svg` drew two named laps — "seed 2 of the 61%
+car" and "seed 2 of the 47% car" — with their peak slip angles, 13.4° and 12.0°,
+**written into the caption as literal strings.** At the corrected disturbance
+those same two laps peak at **7.3° and 7.6°** and never approach the fit at all.
+The figure therefore rendered two unremarkable laps beneath a caption asserting
+that both had gone past the tire's fitted limit, and beneath a headline reading
+"Same exposure. Opposite outcome." **Nothing failed.** The numbers were text, so
+they could not disagree with the arrays beside them.
+
+This is CLAUDE.md rule 10 — *do not hardcode a number into a figure that the
+model can supply* — and the figure had violated it in three separate places
+(both slip labels, and a summary sentence reading "18 laps against 16 — and
+crashed once against thirteen"). All three are now computed. Two further changes
+were needed to make the figure honest rather than merely current:
+
+1. **It selects its own examples.** `_pick_recovery_pair` scans the traces for a
+   lap that exceeded 12° and finished beside one that exceeded 12° and did not,
+   from the same condition, preferring the pair with the closest peak slip —
+   because "equally far over the edge, opposite outcome" is the claim. If no such
+   pair exists the panel says so and draws nothing.
+2. **It checks the mechanism before asserting it.** The captions ("the nose gives
+   up first") are only true if the recovered lap is the more front-biased car. It
+   now tests that and withholds the explanation if the selected pair inverts it.
+3. **It only counts excursions it actually draws.** Slip is measured inside the
+   panel's own `s` window. The first version of this fix measured the whole lap,
+   which would have let a lap qualify on an excursion happening off-panel — the
+   caption asserting an excursion the reader cannot see. That is the original
+   defect reached through a different door, and it also made the subtitle and the
+   on-car label report two different numbers for one lap.
+
+**What the corrected figure shows.** A pair does exist at the attentive level:
+the **65%-front car reached 12.9° and completed the lap; the 47%-front car
+reached 13.6° and left the road** (seeds 25 and 31, both named on the figure).
+The pairing is mechanism-consistent — most nose-heavy recovers, most tail-heavy
+does not — and it makes the point more cleanly than the retracted version, since
+the car that crashed went *further* over the limit rather than less far. The
+undriveable 40%-front car is excluded because the figure draws from the deep
+run's design list.
+
+**And the trace-retention bug underneath.** Only seeds 0–7 of each cell were
+saved, while the laps that leave the fit at a realistic disturbance are rare —
+12 of 120 for the fastest design, 1–4 for the others — so **none of them were in
+the file.** `run.py` now additionally saves every lap that exceeded the fit in a
+quotable condition, choosing which by reading the cell's own
+`per_lap_worst_slip_deg`, so the figure and the reported rates cannot disagree.
+
+**The lesson, and it is the same one as F95's.** Every correction in this cluster
+was a number that had stopped being checked against the thing it described — a
+lap-average nobody decomposed (F95), a constant nobody converted to
+driver-facing units (F96), and here a measurement nobody re-read after the run
+that produced it changed. A figure generated from a parameterised builder is not
+automatically a figure that cannot lie; it is only as honest as the fraction of
+it that is actually computed.
+
+**Closes O10.** Both halves of Episode 11 and Episode 13's noise studies are
+now re-measured at a realistic disturbance level (F97, F98). The general
+lesson from F96 — check a perturbation's real-world magnitude before trusting
+what it seems to prove — held for one episode's headline (F97, retracted) and
+not the other's (F98, survived), which is itself worth keeping: a corrected
+bug does not have a predetermined direction of effect, and both outcomes were
+real until measured.
+
+---
+
 # Decisions
 
 ### D1 · The project drives an offset-free tire. · 2026-07-25
@@ -3663,7 +3852,7 @@ the measurement that forced it.
 | O8 | Add compliance steer / roll camber / roll steer, or accept a permanently low understeer gradient and compare only trends? Decides whether Season 2's magnitudes are ever quotable. | Season 2 |
 | ~~O6-old~~ | ~~How much of the understeer gap (F11) does the double-track model close? F18 predicts the size of the effect; Ep 5 measures it. The single most important open question in Season 1. | Ep 5 |
 | O7 | ~~Does terminal oversteer survive lateral load transfer?~~ **CLOSED by F17** — it was a protocol artefact, not a model property. |  |
-| O10 | **Episodes 11 and 13 have not been re-measured at a realistic steering-noise level** (F96). Both rest on `STEER_NOISE = 0.15`, which is 23 deg RMS at the steering wheel. Episode 13's 78% -> 100% completion result is its largest reported effect. | Quoting either episode's perturbation magnitudes |
+| ~~O10~~ | ~~Episodes 11 and 13 have not been re-measured at a realistic steering-noise level~~ **CLOSED by F97/F98.** Episode 13's 78%->100% result is retracted (F97); Episode 11's fastest-is-most-fragile ordering survives (F98), though its recovery-mechanism percentage table does not (small-n). | |
 | O9 | The RL environment has **no scripted-policy sanity check** — a trivial policy with a hand-derived expected return, which is the cheapest reward-specification test there is. Its absence is how F95's flat reward direction survived to publication. | Any further RL result |
 | O5 | Pin real citations for two bands in the reality-check figure: slip angle at peak (6-12°) and road-sports-car skidpad grip (0.85-1.05 g). Both are general knowledge today, marked as such on the figure. | Publishing any comparison against them |
 | O6 | Pin a real citation for the **~9% FSAE skidpad torque-vectoring ceiling** and for the claim that the best lap times allow deviations from neutral yaw-rate tracking. Both come from `docs/content-series-plan.md`, which states them without references; both are marked `[SOURCED — citation outstanding]` in Episode 13's figures and text. | Episode 14 leaning on either |

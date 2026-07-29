@@ -169,7 +169,7 @@
     {
       "name": "what_the_disturbance_study_found",
       "passed": true,
-      "detail": "open diff: 31/40 valid, 14.60 +/- 0.01 s \u00b7 LSD: 3/40 valid, 14.66 +/- 0.04 s \u00b7 allocator only: 40/40 valid, 14.61 +/- 0.01 s \u00b7 TV (4 wheels): 40/40 valid, 14.58 +/- 0.01 s \u00b7 TV (rear axle): 40/40 valid, 14.60 +/- 0.02 s \u2014 all at grip_use 0.991.",
+      "detail": "open diff: 40/40 valid, 14.59 +/- 0.00 s \u00b7 LSD: 0/40 valid, nan +/- nan s \u00b7 allocator only: 40/40 valid, 14.60 +/- 0.00 s \u00b7 TV (4 wheels): 40/40 valid, 14.57 +/- 0.00 s \u00b7 TV (rear axle): 40/40 valid, 14.59 +/- 0.00 s \u2014 all at grip_use 0.991.",
       "severity": "note",
       "value": null,
       "expected": null,

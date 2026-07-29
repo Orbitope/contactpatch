@@ -44,7 +44,7 @@ sustained lateral acceleration: open 0.939 g, allocator-only 0.932 g, full contr
 
 ### what_the_disturbance_study_found
 
-open diff: 31/40 valid, 14.60 +/- 0.01 s · LSD: 3/40 valid, 14.66 +/- 0.04 s · allocator only: 40/40 valid, 14.61 +/- 0.01 s · TV (4 wheels): 40/40 valid, 14.58 +/- 0.01 s · TV (rear axle): 40/40 valid, 14.60 +/- 0.02 s — all at grip_use 0.991.
+open diff: 40/40 valid, 14.59 +/- 0.00 s · LSD: 0/40 valid, nan +/- nan s · allocator only: 40/40 valid, 14.60 +/- 0.00 s · TV (4 wheels): 40/40 valid, 14.57 +/- 0.00 s · TV (rear axle): 40/40 valid, 14.59 +/- 0.00 s — all at grip_use 0.991.
 
 ### the_two_headline_numbers_are_not_independent
 

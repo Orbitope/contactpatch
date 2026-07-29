@@ -310,33 +310,58 @@ whether or not anyone says so.** Any measurement of what such a system is worth 
 a driver model inside it. The check stays failed and the threshold has not been
 moved.
 
-## What it is worth to a driver who makes mistakes
+## What it is worth to a driver who makes mistakes — first pass, and it was wrong
 
-All of the above is a driver who does exactly the same thing every lap. Add
-Episode 11's steering noise — the same magnitude, applied the same way — and run 40
-seeded laps of each configuration at an aggression all of them can handle
-undisturbed:
+All of the above is a driver who does exactly the same thing every lap. I added
+steering noise at `sigma = 0.15` — Episode 11's convention at the time — and ran 40
+seeded laps of each configuration. The open differential completed 31/40, every TV
+configuration completed 40/40, and I wrote this up as the episode's second result: a
+far larger effect than the half percent TV is worth to a perfect driver, and closer
+to what production stability systems are actually sold on.
 
-| | valid laps | lap time |
+**That number is retracted.** `sigma = 0.15` is not a driver's hands. Measured against
+a 13.5:1 steering ratio it is 23 degrees of RMS motion at the steering wheel — a
+continuous quarter-turn saw, not an imperfect driver — and the retraction is
+[F96](../FINDINGS.md) in the project's record. Once it was found, this episode's
+result had to be re-measured rather than merely footnoted, because the 31/40 number
+is exactly the kind of thing F96 was about: a disturbance magnitude nobody checked
+against what a driver actually does.
+
+## What it is worth to a driver who makes mistakes — re-measured
+
+Same 40 seeded laps, same configurations, same aggression — at `sigma = 0.01`
+(an attentive driver, 1.6° at the wheel) and `sigma = 0.03` (a distracted one,
+4.7° at the wheel), both F96's own calibration:
+
+| | attentive (σ=0.01) | distracted (σ=0.03) |
 |---|---|---|
-| open differential | **31/40** | 14.602 ± 0.015 s |
-| limited-slip | **3/40** | 14.659 ± 0.039 s |
-| allocator only | 40/40 | 14.608 ± 0.009 s |
-| **torque vectoring, four wheels** | **40/40** | **14.580 ± 0.006 s** |
-| torque-vectoring differential | 40/40 | 14.596 ± 0.015 s |
+| open differential | **40/40** · 14.589 ± 0.001 s | **40/40** · 14.590 ± 0.003 s |
+| limited-slip | 0/40 · — | 0/40 · — |
+| allocator only | 40/40 · 14.599 ± 0.000 s | 40/40 · 14.600 ± 0.002 s |
+| **torque vectoring, four wheels** | 40/40 · 14.572 ± 0.001 s | 40/40 · 14.573 ± 0.001 s |
+| torque-vectoring differential | 40/40 · 14.592 ± 0.001 s | 40/40 · 14.591 ± 0.003 s |
 
-All `[MEASURED]`, 40 seeds each at `grip_use` 0.991; the noise magnitude is
-`[ASSUMED]` and is Episode 11's.
+All `[MEASURED]`. **At a disturbance level that means something, the open
+differential is not measurably more fragile than any TV configuration.** Every
+configuration that can drive this lap at all completes 100% of it at both
+realistic noise levels, and the lap-time scatter across seeds (0.001–0.003 s) is
+far below the deterministic gap the configurations already had unperturbed.
 
-A 78% completion rate becomes 100%, and the lap-time scatter is cut by more than
-half. **That is a far larger effect than the half percent it is worth to a perfect
-driver** — and it is what production stability systems are actually sold on. The
-undisturbed lap could not have shown it.
+**The claim that TV is worth much more to a driver who makes mistakes does not
+survive at a realistic mistake.** It survives at 23° of continuous steering-wheel
+motion, which is not a mistake a driver makes — it is closer to a fault. This
+project's own rule 5 says a trend smaller than the seed noise is "no measurable
+effect, never a small effect"; here the effect was measurable, but only at a
+disturbance magnitude that was never checked against anything a driver does. See
+[F96](../FINDINGS.md) and [F97](../FINDINGS.md) for the full account.
 
-(The limited-slip car's 3/40 wants care: at this aggression it is already past its
-own limit of 0.969, so it is being asked to do something it cannot do cleanly even
-undisturbed. It is evidence about that device at that demand, not a general claim
-about limited-slip differentials.)
+(The limited-slip car's 0/40 at both realistic levels is not a new problem. At this
+aggression it is already past its own limit of 0.969 — the same caveat as before —
+and at `sigma = 0.15` it occasionally survived by being randomly nudged off a
+knife-edge it cannot hold deterministically. At the much smaller realistic noise
+there is nothing to nudge it, so it fails consistently instead of intermittently.
+That is evidence about a device already asked to do something it cannot do cleanly,
+not a new claim about noise.)
 
 ## The differential loses to no differential
 
@@ -426,8 +451,9 @@ Does it agree with us?
 python -m experiments.ep13.run
 ```
 
-About six minutes: roughly 700 closed-loop laps, no solver and no training.
-`--figures-only` redraws from `results.json`; `--quick` runs a coarser sweep.
+About twelve minutes: roughly 1,100 closed-loop laps (two noise studies since F96,
+not one), no solver and no training. `--figures-only` redraws from `results.json`;
+`--quick` runs a coarser sweep.
 
 **New code this episode.** `physics/torque_vectoring.py` (reference model, PID,
 allocator) and `physics/driver.py` (the closed-loop driver). The backend's

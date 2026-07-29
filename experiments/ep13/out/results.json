@@ -27053,52 +27053,110 @@
     "open": {
       "n": 40,
       "grip_use": 0.991,
-      "valid": 31,
-      "valid_rate": 0.775,
-      "mean_lap": 14.60160451327817,
-      "sd_lap": 0.014674130969536929,
-      "worst_slip_deg": 51.465052703299804
+      "steer_noise": 0.01,
+      "valid": 40,
+      "valid_rate": 1.0,
+      "mean_lap": 14.588935211567403,
+      "sd_lap": 0.0011904226939363249,
+      "worst_slip_deg": 7.790917921646575
     },
     "lsd": {
       "n": 40,
       "grip_use": 0.991,
-      "valid": 3,
-      "valid_rate": 0.075,
-      "mean_lap": 14.658663709055702,
-      "sd_lap": 0.03860932501788303,
-      "worst_slip_deg": 52.02191946084335
+      "steer_noise": 0.01,
+      "valid": 0,
+      "valid_rate": 0.0,
+      "mean_lap": NaN,
+      "sd_lap": NaN,
+      "worst_slip_deg": 50.57412396712671
     },
     "alloc": {
       "n": 40,
       "grip_use": 0.991,
+      "steer_noise": 0.01,
       "valid": 40,
       "valid_rate": 1.0,
-      "mean_lap": 14.607624740516219,
-      "sd_lap": 0.008982406951280471,
-      "worst_slip_deg": 11.871393366779845
+      "mean_lap": 14.599455931848954,
+      "sd_lap": 4.13873834764471e-05,
+      "worst_slip_deg": 9.11588413417379
     },
     "tv4": {
       "n": 40,
       "grip_use": 0.991,
+      "steer_noise": 0.01,
       "valid": 40,
       "valid_rate": 1.0,
-      "mean_lap": 14.579801169944194,
-      "sd_lap": 0.0055790505351596305,
-      "worst_slip_deg": 9.326878303190284
+      "mean_lap": 14.57214237155551,
+      "sd_lap": 0.0008628662991332863,
+      "worst_slip_deg": 7.247544928705457
     },
     "tvrear": {
       "n": 40,
       "grip_use": 0.991,
+      "steer_noise": 0.01,
       "valid": 40,
       "valid_rate": 1.0,
-      "mean_lap": 14.596345452232288,
-      "sd_lap": 0.01501683227181749,
-      "worst_slip_deg": 10.354392235461782
+      "mean_lap": 14.592362835754312,
+      "sd_lap": 0.0012096712974457532,
+      "worst_slip_deg": 7.703560895942388
     }
   },
-  "steer_noise": 0.15,
+  "noise_distracted": {
+    "open": {
+      "n": 40,
+      "grip_use": 0.991,
+      "steer_noise": 0.03,
+      "valid": 40,
+      "valid_rate": 1.0,
+      "mean_lap": 14.589529502420977,
+      "sd_lap": 0.0031591769498150856,
+      "worst_slip_deg": 8.482177755610955
+    },
+    "lsd": {
+      "n": 40,
+      "grip_use": 0.991,
+      "steer_noise": 0.03,
+      "valid": 0,
+      "valid_rate": 0.0,
+      "mean_lap": NaN,
+      "sd_lap": NaN,
+      "worst_slip_deg": 51.04356941622308
+    },
+    "alloc": {
+      "n": 40,
+      "grip_use": 0.991,
+      "steer_noise": 0.03,
+      "valid": 40,
+      "valid_rate": 1.0,
+      "mean_lap": 14.599701400330497,
+      "sd_lap": 0.002099967332064749,
+      "worst_slip_deg": 9.425939452846286
+    },
+    "tv4": {
+      "n": 40,
+      "grip_use": 0.991,
+      "steer_noise": 0.03,
+      "valid": 40,
+      "valid_rate": 1.0,
+      "mean_lap": 14.572673554322767,
+      "sd_lap": 0.0012088186288974779,
+      "worst_slip_deg": 7.674401849982723
+    },
+    "tvrear": {
+      "n": 40,
+      "grip_use": 0.991,
+      "steer_noise": 0.03,
+      "valid": 40,
+      "valid_rate": 1.0,
+      "mean_lap": 14.591188548326931,
+      "sd_lap": 0.003182444352880842,
+      "worst_slip_deg": 8.01971624861142
+    }
+  },
+  "steer_noise": 0.01,
+  "steer_noise_distracted": 0.03,
   "fidelity": "Rung 2 \u2014 double-track, four commanded wheel forces. Shows the mechanism and the two-layer split; does not model roll camber, roll steer or compliance steer, which are most of a real car's understeer. Ordering and trend only (rules 6, 15).",
-  "wall_clock_s": 369.96392798423767,
+  "wall_clock_s": 697.7570521831512,
   "checks_passed": false,
   "check_failures": [
     "the_conclusion_survives_the_driver_being_tuned_differently"

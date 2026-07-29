@@ -105,9 +105,16 @@ GU_LO, GU_HI = 0.82, 1.28
 #: The section of the lap that contains the corner: brake point to full exit.
 SECTION = (55.0, 165.0)
 
-#: Steering disturbance for the robustness study — Episode 11's convention and
-#: Episode 11's value, so "noise" means the same thing in both seasons.
-STEER_NOISE = 0.15
+#: Steering disturbance for the robustness study — Episode 11's convention.
+#: Both episodes originally used 0.15 (F70's convention), which F96 found is 23
+#: deg RMS at the steering wheel: a continuous quarter-turn saw, not a driver.
+#: `STEER_ATTENTIVE`/`STEER_DISTRACTED` are F96's own calibration through the
+#: same 13.5:1 steering ratio — 1.6 deg and 4.7 deg at the wheel, the
+#: reversal-rate literature's cognitive-load / visual-secondary-task bands.
+#: The attentive level is the headline (feeds ``results["noise"]`` and the
+#: published figure); the distracted level is reported alongside in the text.
+STEER_ATTENTIVE = 0.01
+STEER_DISTRACTED = 0.03
 N_SEEDS = 40          # a failure rate needs samples, not repeats (F70)
 
 #: Target understeer gradients the reference model is asked for, deg/g. The first
@@ -373,24 +380,39 @@ def main() -> int:
 
     # -- 6. does it help a driver who is not perfect? ------------------------
     print(f"  Steering disturbance, {N_SEEDS} seeds "
-          f"(steer_noise={STEER_NOISE}, Episode 11's value)")
+          f"(steer_noise={STEER_ATTENTIVE}, attentive driver, F96)")
     n_seeds = 8 if quick else N_SEEDS
     gu_noise = round(min(limits["open"], limits["tv4"]) - 0.05, 4)
-    noise = {}
+
+    def noise_study(sn: float) -> dict:
+        out = {}
+        for c in CONDITIONS:
+            rows = [lap(cars[c], track, ref, gu_noise, seed=k,
+                        steer_noise=sn) for k in range(n_seeds)]
+            good = [r for r in rows if r.valid]
+            times = [r.lap_time for r in good]
+            out[c] = {
+                "n": n_seeds, "grip_use": gu_noise, "steer_noise": sn,
+                "valid": len(good), "valid_rate": len(good) / n_seeds,
+                "mean_lap": float(np.mean(times)) if times else math.nan,
+                "sd_lap": float(np.std(times, ddof=1)) if len(times) > 1 else math.nan,
+                "worst_slip_deg": float(np.max([r.worst_slip_deg for r in rows])),
+            }
+        return out
+
+    noise = noise_study(STEER_ATTENTIVE)
     for c in CONDITIONS:
-        rows = [lap(cars[c], track, ref, gu_noise, seed=k,
-                    steer_noise=STEER_NOISE) for k in range(n_seeds)]
-        good = [r for r in rows if r.valid]
-        times = [r.lap_time for r in good]
-        noise[c] = {
-            "n": n_seeds, "grip_use": gu_noise,
-            "valid": len(good), "valid_rate": len(good) / n_seeds,
-            "mean_lap": float(np.mean(times)) if times else math.nan,
-            "sd_lap": float(np.std(times, ddof=1)) if len(times) > 1 else math.nan,
-            "worst_slip_deg": float(np.max([r.worst_slip_deg for r in rows])),
-        }
         print(f"    {SHORT[c]:16s} {noise[c]['valid']:3d}/{n_seeds} valid  "
               f"lap {noise[c]['mean_lap']:.3f} +/- {noise[c]['sd_lap']:.3f} s")
+    print()
+
+    print(f"  Steering disturbance, {N_SEEDS} seeds "
+          f"(steer_noise={STEER_DISTRACTED}, distracted driver, F96)")
+    noise_distracted = noise_study(STEER_DISTRACTED)
+    for c in CONDITIONS:
+        n = noise_distracted[c]
+        print(f"    {SHORT[c]:16s} {n['valid']:3d}/{n_seeds} valid  "
+              f"lap {n['mean_lap']:.3f} +/- {n['sd_lap']:.3f} s")
     print()
 
     # -- checks -------------------------------------------------------------
@@ -647,7 +669,9 @@ def main() -> int:
         "reference_sweep": ref_sweep,
         "sensitivity": sens,
         "noise": noise,
-        "steer_noise": STEER_NOISE,
+        "noise_distracted": noise_distracted,
+        "steer_noise": STEER_ATTENTIVE,
+        "steer_noise_distracted": STEER_DISTRACTED,
         "fidelity": ("Rung 2 — double-track, four commanded wheel forces. Shows "
                      "the mechanism and the two-layer split; does not model roll "
                      "camber, roll steer or compliance steer, which are most of a "

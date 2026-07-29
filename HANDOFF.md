@@ -769,6 +769,93 @@ against the scalar implementation plus a batch-independence test.
 
 Training budget is ~2× oversized: median seed peaked at ~45% of 5M steps.
 
+### Session 18 — the batched env, real-track groundwork, and three more corrections ✓ DONE
+
+Four things happened, in this order. The first two were the agreed next steps
+from Session 17; the last two are corrections that came out of questioning
+Episode 14's own numbers.
+
+**1. The environment is vectorized.** `physics/batched_env.py` exists and is
+wired into PPO: **112× env throughput, 29× training**, gated on a differential
+test against the scalar implementation plus a batch-independence test, as
+planned. This was the blocker for real tracks.
+
+**2. Real-circuit source survey is done — see `TRACKS.md`.** Recommendation:
+**TUM `racetrack-database`** (LGPL-3.0, 25 circuits including Spa, Monza,
+Silverstone, Suzuka; CSV, uniform 5 m sampling, asymmetric widths, **no
+curvature/banking/elevation**). Do **not** vendor the CSVs — the licence chain
+is LGPL over ODbL-derived OSM data; ship a downloader plus our converter.
+**The curvature trap is measured, not guessed, and confirmed twice:** naive
+finite-differencing of 5 m centreline points gives a 10.4 m minimum radius at
+Spa where La Source is really ~25 m. Use a periodic cubic-spline fit +
+arclength reparameterisation + analytic κ, and validate recovered corner radii
+against **published** figures (rule 2). Staging is in `TRACKS.md` §4; step 1 is
+`SampledTrack` + the round-trip test against our own synthetic tracks.
+
+**Two things scoped but not built** (read-only investigation this session):
+
+- **`SampledTrack` design question, unresolved.** `physics/track.py`'s existing
+  `Track.curvature(s)` is analytic and **symbolic-safe — the CasADi
+  optimal-control solver calls it**. A `SampledTrack` built on `scipy`
+  splines cannot be, and `scipy` is not currently a dependency. Decide whether
+  sampled tracks are RL-only or need a hand-rolled `mathkit`-compatible spline
+  before writing the class. Also: **"the track locator" does not exist yet** —
+  `rl_env.py` carries `(s, n, xi)` as integrated state in the curvilinear frame
+  and never inverts from Cartesian. That inverse is only needed once real
+  (x, y) circuits arrive.
+- **O9's scripted-policy sanity check belongs in `tests/test_rl_env.py`, not a
+  new diagnostic.** It needs no trained model, unlike D6. Note
+  `test_reward_is_progress_and_nothing_else` already exists there but is
+  **self-referential** (asserts reward sum ≈ the env's own `s`), which is why it
+  did not catch F95; the fix is a hand-derived expected return, and the
+  `workload_penalty > 0` path is the one that would have made the flat
+  direction visible.
+
+**3. F95 — Episode 14's "half the tire" H-vs-E finding is retracted.** The
+whole effect lived on the **exit straight**, not in the corner; where the tires
+are actually cornering there is no measurable difference (1.8× sd). And on that
+straight the reward is `s_dot * dt` and nothing else — summed lateral force
+ranges **83 N to 3,199 N at identical reward**. The objective has a flat
+direction and each seed settles somewhere different along it. **Underdetermination,
+not a training failure.** The generalisable lesson, after four corrections in
+two sessions: *an aggregate was reported before it was decomposed.* Rule 7 says
+compute metrics downstream from logged arrays — but "downstream" is not
+"understood".
+
+**4. F96/F97/F98 — `STEER_NOISE = 0.15` was 23° RMS at the steering wheel, and
+Episodes 11 and 13 have now both been re-measured.** F96 found it: the env
+commands the **road wheel**, a driver holds the **steering wheel**, and nothing
+converted between them across the ~13.5:1 ratio. 0.15 is a continuous
+quarter-turn saw, an order of magnitude past the steering-reversal-rate
+literature's own bands. Calibrated replacements: **0.01** (attentive, 1.6° at
+the wheel) and **0.03** (distracted, 4.7°).
+
+**The two re-measurements went opposite ways, and that is the point:**
+
+| | at the retracted 0.15 | re-measured (0.01 / 0.03) | verdict |
+|---|---|---|---|
+| **Ep 13** — TV helps an imperfect driver | open diff 31/40 laps vs TV 40/40 | open diff **40/40 at both** levels | **RETRACTED (F97)** |
+| **Ep 11** — fastest design is most fragile | 47% front 8.7% in-fit failures, others 0% | 47% front **9.3%**, others 0%, **p = 0.0005** Holm-corrected at both levels | **SURVIVES (F98)** |
+| **Ep 14** — envelope guarantee under disturbance | 20–100% completion, 18–27° slip | **6/6 seeds 100%**, worst slip 5.8–11.8° | corrected in F96 |
+
+**Ep 11's survival came with a second finding, though.** Its attentive and
+distracted cells are **identical cell-for-cell**, and the `steer`-only condition
+fails 0% at every drivable design. **All of Episode 11's fragility signal is the
+±20% grip variation**; steering noise contributed nothing measurable and the
+article's "two disturbances, each attributable" framing has been corrected.
+Also retracted from Ep 11: the **population-level recovery table** (81/33/6/7%),
+because at realistic noise the non-fastest designs leave the fit only 1, 4 and 1
+times out of 120 — F70's small-n trap again. The *mechanism* (front-limited
+pushes wide and self-corrects; rear-limited rotates and diverges) is a property
+of the balance, not the disturbance, and stands.
+
+**O10 is closed. O9 is not**, and is now the oldest outstanding correctness item.
+
+**Next, unchanged and now unblocked:** `TRACKS.md` staging step 1 —
+`SampledTrack` + the round-trip curvature test, resolving the CasADi question
+above first. O9's scripted-policy test is small and would sit naturally
+alongside it.
+
 ### Superseded — Episode 13 planning notes
 
 **Question:** if pushing one wheel harder rotates the car, why not just do that?
@@ -899,10 +986,10 @@ width on every TV claim.
 | 8 | Front, mid, or rear engine | 2 | `I_zz` sweep (D4 ✓) | ✅ **DRAFTED** — `episodes/`, `experiments/ep08/` |
 | 9 | Teaching a car to drive, and watching it cheat | 3 | PPO + envelope + D6 ✓ | ✅ **DRAFTED** — `episodes/`, `experiments/ep09/` |
 | 10 | One policy, a thousand cars | 3 | conditioned policy ✓ | ✅ **DRAFTED** — `episodes/`, `experiments/ep10/` |
-| 11 | The fastest setup is the one that crashes | 3 | perturbation eval ✓ | ✅ **DRAFTED** — `episodes/`, `experiments/ep11/` |
+| 11 | The fastest setup is the one that crashes | 3 | perturbation eval ✓ | ✅ **DRAFTED** — `episodes/`, `experiments/ep11/` (re-measured after F96; ordering survives, F98) |
 | 12 | What a differential actually does | 4 | diff modes ✓ | ✅ **DRAFTED** — `episodes/`, `experiments/ep12/` |
-| 13 | How engineers built a car that steers with its wheels | 4 | classical TV ✓ | ✅ **DRAFTED** — `episodes/`, `experiments/ep13/` |
-| 14 | What the machine found instead | 4 | RL TV variants ✓ | ✅ **DRAFTED** — `episodes/`, `experiments/ep14/` (rewritten after F93/F94) |
+| 13 | How engineers built a car that steers with its wheels | 4 | classical TV ✓ | ✅ **DRAFTED** — `episodes/`, `experiments/ep13/` (noise result retracted by F97) |
+| 14 | What the machine found instead | 4 | RL TV variants ✓ | ✅ **DRAFTED** — `episodes/`, `experiments/ep14/` (rewritten after F93/F94; H-vs-E retracted by F95) |
 | 15 | Is chassis tuning about to be automated away? | 4 | TV × Season 2 sweeps | ← **NEXT** |
 | 16 | Did any of this survive real physics? | 4 | Chrono backend | — |
 

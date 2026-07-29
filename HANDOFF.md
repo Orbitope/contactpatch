@@ -709,6 +709,66 @@ vectoring" (one E seed converges cleanly) and not a lap-time race (rule 6).
 stronger envelope penalty or longer training as a follow-up sweep; Episode 15
 (Season 4 sweeps re-run with TV on) is next per the episode-status table.
 
+### Session 17 — Episode 14 re-run, and three defects in how RL results were measured ✓ DONE — **EPISODE 14 COMPLETE**
+
+**Session 16's Episode 14 was published and was wrong.** It reported that
+neither RL variant converges. It was measuring the optimiser's stopping point,
+not the policy. Corrected, re-run, rewritten.
+
+**The result, after the fix:** all 6 seeds drive the full 393 m, finish, and
+stay inside the ±12° tire fit (worst 11.5°). D6 passes 2/3 H and 1/3 E; the
+three remaining failures are training-process checks (one weak critic, two
+rising-entropy), none a driving or envelope failure.
+
+**The actual episode finding — H vs E, which is the controlled comparison:**
+
+| | H (allocator kept) | E (allocator deleted) | rule 5 |
+|---|---|---|---|
+| Peak lateral g | 0.915 ± 0.059 | 0.976 ± 0.028 | 1.3× sd — **no difference** |
+| Mean tire utilisation | 0.357 ± 0.087 | 0.701 ± 0.130 | 3.1× sd — **reportable** |
+
+Same grip, roughly twice the tire spent getting it. The QP allocator's
+minimise-workload objective is visible in the policy that inherits it, and is
+the piece end-to-end learning did not rediscover in 5M steps. Both learners run
+~4× the classical controller's yaw moment at p90.
+
+**Three defects, all in measurement rather than in RL** (F93, F94, D12):
+
+1. **Last checkpoint, not best** (F93). `train()` returned final weights.
+   Every one of the six seeds had already driven a clean lap and been trained
+   past it; best checkpoints sat at 15/44/46/61/77/100% of training. Fixed:
+   `PPOConfig.eval_every` scores the deployed policy on held-out seeds and
+   keeps the best. Default off — Season 3 reproduces bit-for-bit.
+2. **D6 was not reproducible** (F94). Its stochastic rollouts drew from
+   torch's global unseeded RNG; identical weights gave worst slip 11.27 /
+   12.12 / 11.74°, straddling the 12° gate. **This is F88 recurring inside the
+   diagnostic** — F88 was fixed in `experiments/ep09/run.py` in the previous
+   session and nobody checked the gate for the same pattern.
+3. **The envelope check contradicted its own comment** (F94/D12). It took
+   `max(deployed, sampled)`; the comment and CLAUDE.md both say deployed is the
+   gate. Corrected; sampled now printed alongside every time.
+
+**⚠️ Season 3 (Episodes 9–11) is affected by 1 and 2 and has not been
+re-measured.** Same last-checkpoint path, same unreproducible D6, same
+sampled-policy envelope verdicts. Its results are likely understated. This is
+the single biggest outstanding correctness item in the project.
+
+**Also:** `tests/test_ppo.py` now exists — 12 tests for the module every RL
+result comes from, which previously had **none**. That absence is why these
+defects survived.
+
+**Next, agreed:** vectorize the environment (blocker for real tracks), then
+research real circuit geometry. Measured today: 1,184 steps/s for H, 2,491 for
+E, 3,492 baseline — pure Python per-step scalar math. `physics/tire.py`
+**already vectorizes** (verified: `fy0`/`fx0`/`peak_fy`/`peak_fx`/`fy_combined`
+all batch and match the scalar loop), because it was written against the
+`mathkit` namespace. What remains is `double_track.py`, the track locator,
+auto-reset masking in `rl_env.py`, and the QP allocator — which is H's 3×
+per-step cost and the hardest piece to batch. Gate it on a differential test
+against the scalar implementation plus a batch-independence test.
+
+Training budget is ~2× oversized: median seed peaked at ~45% of 5M steps.
+
 ### Superseded — Episode 13 planning notes
 
 **Question:** if pushing one wheel harder rotates the car, why not just do that?
@@ -842,7 +902,7 @@ width on every TV claim.
 | 11 | The fastest setup is the one that crashes | 3 | perturbation eval ✓ | ✅ **DRAFTED** — `episodes/`, `experiments/ep11/` |
 | 12 | What a differential actually does | 4 | diff modes ✓ | ✅ **DRAFTED** — `episodes/`, `experiments/ep12/` |
 | 13 | How engineers built a car that steers with its wheels | 4 | classical TV ✓ | ✅ **DRAFTED** — `episodes/`, `experiments/ep13/` |
-| 14 | What the machine found instead | 4 | RL TV variants ✓ | ✅ **DRAFTED** — `episodes/`, `experiments/ep14/` |
+| 14 | What the machine found instead | 4 | RL TV variants ✓ | ✅ **DRAFTED** — `episodes/`, `experiments/ep14/` (rewritten after F93/F94) |
 | 15 | Is chassis tuning about to be automated away? | 4 | TV × Season 2 sweeps | ← **NEXT** |
 | 16 | Did any of this survive real physics? | 4 | Chrono backend | — |
 

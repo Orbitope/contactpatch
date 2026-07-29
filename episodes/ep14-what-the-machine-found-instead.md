@@ -4,238 +4,232 @@
 
 ---
 
-> ## ⚠️ THIS DRAFT IS RETRACTED AND IS BEING REWRITTEN
->
-> Everything below rests on a result that was wrong. The six training runs it
-> reports were never checkpoint-selected: `train()` returned whatever weights
-> the policy held after its final update, and that is what was evaluated and
-> published. Re-reading the training histories, **all six seeds had already
-> driven the full 393 m inside the tire's own ±12° fit with a ~0% off-track
-> rate** — and those policies were thrown away.
->
-> So the conclusion this draft draws — "neither variant reliably converges",
-> "removing the allocator removed the thing keeping the policy honest" — is a
-> statement about model selection, not about reinforcement learning or torque
-> vectoring.
->
-> The fix (deployed-policy evaluation, best-checkpoint retention, entropy
-> annealing) is in, and the six seeds are being re-run. See **FINDINGS F93**
-> for the defect and the correction of record.
-
----
-
 ## The question
 
-Episode 13 ended with a question, not a conclusion. We built the classical
-answer to torque vectoring — a reference model and a PID decide how much
-rotation the car should be making, a QP allocator decides which wheels pay for
-it — and it worked. It is also, provably, a **choice**: we told the controller
-what the car should be doing, and every newton-metre it produced was in
-service of that instruction. Ask for a slightly pointier car and the answer
-changes, weakly. Published work on this is said to say it changes more
-strongly than that.
+Episode 13 built the classical answer to torque vectoring and it worked. It is
+also, provably, a **choice**: a reference model tells the controller what the
+car should be doing, and every newton-metre it produces serves that
+instruction. Change one coefficient — ask for a pointier car — and the answer
+changes.
 
-So: give a learner the same four wheels, the same physics, the same
-stopwatch. Do not hand it a reference model. Do not tell it what the car
-should be doing. Let it find out.
+So: give a learner the same four wheels, the same physics, the same stopwatch,
+and **no reference model at all**. Don't tell it what the car should be doing.
 
 **Does it agree with us?**
 
-This episode is the series' flagship for a specific reason: it is the one
-place the payoff depends on a result we do not have yet. Either answer —
-"it reinvented the allocator" or "it found something different" — is a real
-result, and the discipline this episode has to hold to is not scripting which
-one we wanted.
+## Three ways to decide
 
-## Two variants, one physics
-
-The research plan (`docs/vehicle-codesign-research-plan.md`, Phase 4b) draws
-the comparison precisely:
-
-| Variant | Upper layer | Lower layer |
+| | Who decides *how much* to rotate | Who decides *which wheels pay* |
 |---|---|---|
-| **C** (Episode 13) | Reference model + PID → `Mz` | QP allocator |
-| **H** (hybrid) | RL policy outputs an `Mz` DEMAND | the SAME QP allocator |
-| **E** (end-to-end) | RL policy outputs four wheel-force fractions | none |
+| **C** (Episode 13) | reference model + PID → a yaw moment `Mz` | QP allocator |
+| **H** (hybrid) | **an RL policy** outputs `Mz` | **the same QP allocator** |
+| **E** (end-to-end) | **an RL policy** — no `Mz` exists | **nobody** |
 
-**H is deliberately the smallest possible change from C.** Swap the reference
-model and PID for a learned scalar; keep everything downstream — the same
-`physics.torque_vectoring.Allocator`, the same friction-ellipse capacities —
-bit for bit identical. If H disagrees with C, the disagreement belongs to the
-upper layer alone, because the lower layer is literally the same code.
+H is the smallest possible change from C: swap the hand-built upper layer for a
+learned one and keep the lower layer bit-for-bit identical. Any difference is
+attributable to the upper layer alone.
 
-**E removes the allocator entirely.** Four raw numbers per step, scaled by
-each wheel's own grip-based capacity, and nothing decides how they trade off
-against each other except training. E asks whether four learned numbers
-reinvent the allocator, beat it, or do neither.
+E deletes the allocator. Four learned numbers per step, scaled by each wheel's
+own grip-based capacity, and nothing arbitrates between them but training.
 
-Both route through the same hook Episode 13 built —
-`DoubleTrackBackend.attach_torque_vectoring` — so plugging them in required no
-changes to the backend at all, and `tv_mode="none"` reproduces every Season 3
-result bit for bit. The environment now also logs lateral acceleration and
-per-wheel friction-ellipse utilisation, a gap `HANDOFF.md` had flagged since
-Episode 11: without it there was no way to check whether a torque-vectoring
-result was measuring anything a saturated tire actually did.
+Three seeds each, 5,000,000 steps, `envelope_penalty=0.5` — the same soft cost
+for leaving the ±12° tire fit that Episode 10's protocol uses. Every number
+below is the **deployed** policy: the mean action, not a sampled one.
 
-## The experiment
+## The answer: yes, and it costs you something specific
 
-Three seeds per variant, five million steps each — this project's own seed
-discipline (rule 5) applied to a training run for the first time this season,
-and it earned its keep immediately: the three seeds do not agree with each
-other, which is itself information, not noise to average away.
-
-`envelope_penalty=0.5`, the same value Episode 10's protocol uses — a soft
-cost for operating outside the ±12° region the tire file was actually fitted
-over, not a hard constraint. An unconstrained policy's optimum is to slide
-(F62); this penalty is what stands between the training run and that
-optimum, and part of what this episode checks is whether it is enough.
-
-Every run gates on **D6**, this project's training-health battery, plus one
-new check this episode's larger action space needed: that the policy explores
-the new `Mz` or wheel-force dimensions at all, rather than collapsing to zero
-or blowing past a sane range. And every number reported below is the
-**deployed** policy — the mean action, not a sampled one (F61). Episode 9 was
-once written around an 88% sampled finish rate whose deployed figure was 0%;
-this episode does not repeat that.
-
-## The result
+**All six policies drive the corner.** Full 393 m, 100% finish rate, every one
+of them inside the ±12° region the tire model was actually fitted over — worst
+case 11.5°.
 
 ![The same wheels, three different decision-makers](../experiments/ep14/out/01-same-wheels-different-drivers.svg)
 
-**Neither variant passes cleanly.** H's D6 pass rate across its three seeds
-is 0 out of 3. E's is 1 out of 3.
+So the headline is not "RL fails" and not "RL wins." Both formulations learn to
+drive the corner at the limit without ever being told what a yaw moment is for.
+The interesting result is *where they differ*, and it is sharper than expected.
 
-| Variant | Seed | D6 | Finished | Peak lateral g | Worst slip |
-|---|---|---|---|---|---|
-| H | 0 | FAILED — critic, tire model | Yes | 1.00 | 14.8° |
-| H | 1 | FAILED — greedy/stochastic agree, tire model | Yes | 0.96 | 10.5° |
-| H | 2 | FAILED — deployed policy, greedy/stochastic agree | No | 0.98 | 9.4° |
-| E | 0 | FAILED — 6 checks | No | 1.01 | 13.5° |
-| E | 1 | FAILED — 5 checks | No | 1.01 | 16.8° |
-| E | 2 | **PASSED** | Yes | 0.98 | 8.8° |
+### Same grip, twice the tire
 
-All `[MEASURED]`, 5,000,000 steps/seed.
+| | H (allocator kept) | E (allocator deleted) | separation |
+|---|---|---|---|
+| Peak lateral acceleration | 0.915 ± 0.059 g | 0.976 ± 0.028 g | 1.3× seed sd — **not a finding** |
+| Mean tire utilisation | **0.357 ± 0.087** | **0.701 ± 0.130** | 3.1× seed sd — **reportable** |
 
-But the two variants fail in different ways, and the difference is the
-finding.
+All `[MEASURED]`, 3 seeds each, deployed policy. This project's own rule is that
+a trend smaller than twice the seed standard deviation is not a finding
+(CLAUDE.md rule 5), and these two land on opposite sides of it.
+
+**The two variants reach the same grip.** The 0.06 g between them is inside seed
+noise and is reported as "no measurable difference," not as a small one.
+
+**They pay very differently for it.** E spends roughly **twice** the
+friction-ellipse utilisation — how much of each tire's available grip is being
+used at once — to achieve the same lateral acceleration. The three H seeds
+(0.27, 0.35, 0.45) and the three E seeds (0.55, 0.77, 0.78) do not overlap.
+
+That is the QP allocator's objective, visible in the result. Its whole job is to
+meet the demanded force and moment *while minimising tire workload* — spreading
+the load so no tire is asked for a much larger share of what it has left than
+its neighbours. H inherits that for free, because its lower layer is that
+optimiser. E had to discover it, and didn't.
+
+**So the learned upper layer is fine, and the hand-designed lower layer is not
+free.** A policy can work out how much to rotate the car without a reference
+model. Working out which wheels should pay for it — the convex problem with a
+unique answer — is the part end-to-end learning did not rediscover in five
+million steps.
+
+### The learners are far more aggressive than the engineers
 
 ![Yaw moment along the road](../experiments/ep14/out/02-yaw-moment-along-the-road.svg)
 
-**H's three seeds cluster near the tire's own boundary.** Every one keeps its
-worst slip angle under 15°, two of the three finish the whole corner, and the
-D6 failures are the mild kind — an optimistic critic, or the greedy and
-sampled policies disagreeing slightly with each other — not a policy that has
-run off and done something the physics doesn't support. Constraining the
-lower layer to the same allocator C uses appears to constrain the upper
-layer's mistakes along with it.
+Realized yaw moment, computed identically for all three from each trajectory's
+own logged per-wheel forces:
 
-**E's three seeds split sharply.** One (seed 2) trains cleanly, passes every
-D6 check, and finishes the corner at 8.8° worst slip. The other two find a
-way to operate substantially outside the tire's own fit — 13.5° and 16.8°, up
-to a quarter of the whole run spent past the ±12° bound — and neither
-finishes. This is **the same tire-model exploit Episode 9 first found**
-(F53/F56), reappearing under the identical envelope penalty this episode and
-Episode 10 both use. Removing the allocator did not just remove a piece of
-hand-engineering; on two seeds out of three, it removed the thing that had
-been keeping the policy honest.
+| | median | 90th percentile | peak |
+|---|---|---|---|
+| **C** classical (delivered) | 11 N·m | 376 N·m | 995 N·m |
+| **H** hybrid | 11 N·m | 1,477 N·m | 4,355 N·m |
+| **E** end-to-end | 48 N·m | 1,393 N·m | 3,219 N·m |
 
-## Did it stay on the map?
+All `[MEASURED]`, representative seed per variant.
+
+Most of the time all three do almost nothing — the medians are tiny. But **when
+the learners act, they act about four times harder than the classical
+controller does.** The reference-model-plus-PID architecture is conservative by
+construction: it asks for the moment that would make a real, saturating car
+behave like a linear equation, and that demand is small. Neither learner was
+told to want that, and neither chose it.
+
+This is the "difference map between control surfaces" the research plan asked
+for, and it points the same direction published work is said to report: the
+best behaviour involves *deviating* from neutral yaw-rate tracking, which a
+linear reference model structurally cannot express. Our version of that claim is
+a comparison of two control surfaces on one corner, not a lap-time optimisation,
+so it is corroboration in direction only.
+
+### Did it stay on the map?
 
 ![Did it stay on the map?](../experiments/ep14/out/03-did-it-stay-on-the-map.svg)
 
-Six seeds, six friction-circle snapshots, each taken at the exact step that
-produced that seed's own worst slip angle — not a different, cherry-picked
-moment. H's circles are all comfortably inside their rings. Two of E's three
-arrows reach or pass theirs.
+Every seed's friction circles at the exact step it reached its own worst slip
+angle. All six deployed policies are inside the ring.
 
 ![Seed by seed](../experiments/ep14/out/04-seed-by-seed.svg)
 
-Stated as bars rather than a pass rate: H's worst slip angles run 9.4–14.8°,
-none by much. E's run 8.8°, 13.5°, 16.8° — one seed comfortably inside, two
-substantially outside, and no seed in between. Three seeds is this project's
-own minimum (rule 5); five would be preferred, and a fourth or fifth E seed
-landing on either side of that split is the obvious next check.
+D6 — the training-health battery — passes 2 of 3 H seeds and 1 of 3 E seeds.
+The three remaining failures are **training-process** checks, not driving ones:
+one weak critic, two runs whose exploration entropy rose instead of falling. No
+seed fails an envelope check or a deployment check.
 
-## The seed that would have been picked, and wasn't
+## The part where this episode was wrong, and how
 
-This episode's own rule about representative seeds (F71: pick the median by
-finish distance, never the best of N) earns its keep here concretely. E's
-three finish distances are 131 m, 353 m and 393 m. The median is 353 m — seed
-1, one of the two exploit seeds. The one clean pass, seed 2, finishes the
-full 393 m and would be the seed any best-of-three selection would show
-instead. Every E number and figure in this episode marked "representative" is
-seed 1's, not seed 2's, on purpose. A different selection rule would have told
-a flatly more flattering, and less honest, story.
+The first version of this article said the opposite. It reported that neither
+variant reliably converges, that three seeds could not complete the corner, and
+that deleting the allocator invited a tire-model exploit. It was published, and
+it was wrong.
+
+**Three measurement defects, none of them about reinforcement learning:**
+
+1. **We kept the last checkpoint instead of the best one.** Training returned
+   whatever weights the policy held after its final update. Re-reading the six
+   training histories, every single seed had already driven the full corner
+   inside the tire fit and been trained past it — one of them was clean for 463
+   consecutive updates. The best checkpoints turned out to sit at 15%, 44%, 46%,
+   61%, 77% and 100% of training. There is no late point where these runs are
+   reliably good, which is exactly why keeping the end produced a false
+   negative. (FINDINGS F93)
+
+2. **The gate was not reproducible.** D6 sampled its stochastic rollouts from an
+   unseeded global RNG. The same weights evaluated three times gave worst slip
+   angles of 11.27°, 12.12° and 11.74° — straddling the 12° bound, so a policy
+   passed or failed on the draw. (FINDINGS F94)
+
+3. **The gate contradicted its own rule.** The envelope check took the worse of
+   the deployed and sampled policies, while the comment directly above it — and
+   this project's own stated invariant — said the deployed number was what it
+   turned on. Because the exploration scale never anneals, those differ by
+   several degrees on identical weights. (FINDINGS F94, decision D12)
+
+Fixing the first turned "3 of 6 could not finish" into "6 of 6 finish." Fixing
+the third turned "3 of 6 stayed inside the tire fit" into "6 of 6." **That
+second change moves a headline in the flattering direction, which is why it is
+recorded as an explicit protocol decision rather than a bug fix**, and why the
+sampled figure is now printed alongside the deployed one on every line.
+
+The uncomfortable part is that the wrong version was *coherent*. It had six
+seeds, real numbers, a consistent story about end-to-end action spaces being
+riskier, and a mechanism that sounded right. Nothing about reading it would tell
+you it was measuring the optimiser's stopping point rather than the policy.
 
 ## What this can't tell you
 
-**Fidelity: rung 2** (CLAUDE.md rule 15). Same double-track model, same
-understeer gap, same missing roll-camber and roll-steer terms as every other
-episode this season. Nothing here is a claim about a real car's RL torque
-vectoring — it is a claim about what this training budget, this reward, and
-this envelope penalty produced on this model.
+**Fidelity: rung 2** (CLAUDE.md rule 15). Double-track model, no roll camber, no
+roll steer, no compliance steer. We reproduce roughly 5% of a real car's
+understeer gradient. Trends and orderings, never magnitudes.
 
-**Not a lap-time race.** No absolute lap time was compared across C, H and E
-— rule 6 forbids it, and no lap-time race was run in the first place. This
-episode compares *control-surface behaviour*: realized yaw moment against
-distance, and whether the policy stayed inside the tire it was trained on.
+**Four independently commanded wheel forces is a four-motor electric car**, not
+RV-1's rear-drive combustion driveline.
 
-**Not "RL cannot do torque vectoring."** One E seed in three converges
-cleanly and passes every check. The finding is that the exploit is more
-common without an allocator constraining the action space, at this budget —
-not that it is inevitable.
+**H and E are their own drivers; C is not.** The classical car is driven by the
+hand-built closed-loop driver from Episode 13, whose preview time moves Episode
+13's own headline by more than the controller is worth (F84). The realized-`Mz`
+comparison sidesteps the worst of this — it is a control-surface comparison
+computed identically for all three, not a lap-time race — but the three
+trajectories are not identical and the utilisation comparison between H and E is
+the cleaner one, because those two share everything except the allocator.
 
-**Training budget, reward, and envelope penalty are all still open.** Longer
-training, more seeds, or a stronger envelope penalty could all move these
-numbers; none of the three was swept here.
+**One corner, three seeds.** Rule 5's minimum, not its preference of five. The
+utilisation gap clears the bar by 3.1×; the grip difference does not clear it at
+all and is reported as no difference.
 
-## What this is
+**Training budget was roughly 2× oversized** — the median seed peaked at ~45% of
+5,000,000 steps. That is only knowable because we now checkpoint.
 
-This is not "RL beat the engineers" or "RL reinvented the engineers' answer."
-It is the more useful, less quotable result: at this budget, **neither
-variant converges reliably**, and the two fail in informative, different
-ways. H — the variant with the allocator still standing between the policy
-and the wheels — keeps its mistakes small and physical. E — the variant with
-nothing standing between them — mostly finds a way to ask the tire model for
-something it was never fitted to give, the same failure mode this project
-documented three seasons ago, now recurring in a harder, four-dimensional
-action space under the same guardrail that was supposed to prevent it.
+## What it means
 
-Twenty years of engineering consensus put an allocator between the
-decision and the wheels. On this evidence, in this training regime, removing
-it did not make the learner smarter about the tires. It made the tires the
-first thing it found a way to cheat.
+The engineers split the problem in two: one layer decides how much to rotate,
+another decides which wheels pay. Twenty years of practice says that split is
+the right one.
+
+A learner given no reference model reproduces the first half readily — both
+variants learned how much rotation to ask for, and both ask for far more of it
+than the classical controller ever does. Given the second half for free, it
+uses it. Denied it, it still drives the corner just as fast, and spends twice
+the tire doing it.
+
+Which is a more specific answer than "does it agree with us." It agrees about
+the goal and disagrees about the aggression, and the piece of the classical
+architecture it could not replace from scratch is the one that was never a
+judgement call in the first place — the convex problem with a unique answer.
 
 ---
 
 ## Reproducing this
 
 ```bash
-python -m experiments.ep14.run --pilot                      # ~5 minutes, validates the pipeline
-python -m experiments.ep14.run --variant=H --seed=0         # ~3.8 hours; repeat for seed=1,2 and variant=E
-python -m experiments.ep14.run --aggregate                  # collects the 6 runs, builds the figures
-python -m experiments.ep14.run --figures-only                # redraws from cached results, no retraining
+python -m experiments.ep14.run --pilot                 # ~5 min, validates the pipeline
+python -m experiments.ep14.run --variant=H --seed=0    # repeat for seed=1,2 and variant=E
+python -m experiments.ep14.run --aggregate             # collects the 6 runs, builds figures
+python -m experiments.ep14.run --figures-only          # redraw from cached results
 ```
 
-Production is one (variant, seed) per process so the six seeds run in
-parallel across cores rather than serially — sequentially this would cost the
-better part of two days. Wall-clock, this machine: H averaged 3.9 hours/seed,
-E averaged 1.98 hours/seed, both close to the pilot's linear extrapolation
-(F91).
+One `(variant, seed)` per process so the six run in parallel. Measured cost on
+an 11-core machine: **H ≈ 4.3 CPU-hours per seed, E ≈ 2.5** — of which only
+~1.2 h is physics; the rest is the PPO update loop. The environment runs at
+1,184 steps/s for H and 2,491 for E, and H is slower despite a *smaller* action
+space because it solves the QP allocator every step.
 
-**New code this episode.** `EnvConfig.tv_mode` in `physics/rl_env.py` —
-`"none"` (every Season 3 result, byte-for-bit unchanged), `"hybrid"` (variant
-H), `"end_to_end"` (variant E) — plus one new D6 check
-(`exploration_covers_the_torque_vectoring_action`) and per-step logging of
-lateral acceleration and per-corner force. All additive: 18 pre-existing
-`test_rl_env.py` tests pass unchanged, plus a new seal test and adapter tests
-that check the hybrid and end-to-end action paths against a fresh, independent
-`Allocator.allocate` call rather than the training code's own idea of what it
-did (rule 11).
+**New this episode.** `PPOConfig.eval_every` scores the deployed policy on
+held-out seeds during training and keeps the best checkpoint;
+`PPOConfig.entropy_anneal` decays the entropy bonus. Both default off, so every
+Season 3 result is reproduced bit-for-bit by the path that produced it, and
+`tests/test_ppo.py` — twelve tests for a module that previously had none — pins
+that, including that switching evaluation on does not perturb the run it
+watches.
 
-**On the friction-circle figure.** The instant it snapshots is
-`argmax(alpha_max_deg)` — the exact step `worst_slip_deg` is computed from,
-not the step of peak friction-ellipse utilisation, which need not be the same
-moment. An earlier draft used the wrong one and briefly showed a smaller
-angle on the figure than the number quoted beside it. Caught before
-publishing; see FINDINGS F92.
+**Still open.** Two seeds fail `exploration_is_not_growing`: annealing the
+entropy coefficient to zero helped only marginally, so the policy gradient
+itself is not sharpening the exploration scale. And Season 3 (Episodes 9–11) was
+gated by the same unreproducible D6 and kept the same last checkpoints, so
+**those results are likely understated too.** Recorded, not yet re-run.

@@ -877,6 +877,14 @@ ratified — start there.**
 `TRACKS.md` staging and O9's scripted-policy test are unchanged but now queue
 behind this; O9 is small enough to do alongside Phase 0.
 
+**Also planned this session: `SEASON5.md`** — a six-episode extension (Eps
+17–22, "The automated race engineer"): BO tunes setup, RL drives, and the
+bridge is Ep 10's conditioning trick scaled to (setup ⊕ car ⊕ track) with the
+frozen policy as an amortised evaluator, validated by specialist retrains (the
+"amortisation gap" is itself a reported result). Not ratified; its dependency
+graph runs through the power review, TRACKS staging, O3/O8/O9, and — 
+deliberately — Ep 16's Chrono check *before* the season starts.
+
 ### Superseded — Episode 13 planning notes
 
 **Question:** if pushing one wheel harder rotates the car, why not just do that?

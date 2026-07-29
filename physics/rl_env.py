@@ -231,7 +231,18 @@ class EnvConfig:
     #: 10 result is produced by exactly the environment those episodes describe.
     #:
     #: Standard deviation of zero-mean Gaussian noise added to the commanded
-    #: STEERING action each step, in units of the normalised action. This is the
+    #: STEERING action each step, in units of the normalised action.
+    #:
+    #: **Units trap, measured: this is a fraction of STEER_RATE_MAX at the ROAD
+    #: WHEEL, and a driver holds the STEERING WHEEL.** Through a ~13.5:1 rack
+    #: [ASSUMED], the closed-loop RMS steer deviation this produces is:
+    #:
+    #:   0.01 -> 1.6 deg at the steering wheel   (attentive: micro-corrections)
+    #:   0.03 -> 4.7 deg                         (distracted: visual-task band)
+    #:   0.15 -> 23.4 deg                        (no physical interpretation)
+    #:
+    #: Episodes 11 and 13 both used 0.15 and both describe it as the driver's
+    #: hands. Prefer 0.01, or 0.03 for a loaded driver. See FINDINGS F96. This is the
     #: driver's hands and the steering system, not the policy's own exploration:
     #: it is applied after the policy has chosen, and it is present at deployment.
     #: [ASSUMED] — a real figure would come from steering-robot repeatability data.

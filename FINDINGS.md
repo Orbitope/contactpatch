@@ -3421,6 +3421,74 @@ have asked which of those places it came from.
 
 ---
 
+### F96 · `STEER_NOISE = 0.15` is 23 degrees RMS at the steering wheel, not a driver. **Affects Episodes 11 and 13.** · 2026-07-29
+
+**Source:** `[MEASURED]` — closed-loop RMS steer deviation of Episode 14's
+H seed 0 policy against its own noise-free run, six draws per level.
+`[SOURCED]` — steering-reversal-rate methodology for the noise/intent boundary.
+`[ASSUMED]` — 13.5:1 steering ratio; `docs/vehicle-reference-parameters.md`
+specifies the car but not the rack.
+
+`EnvConfig.steer_noise` perturbs the steering **rate** command, as a fraction of
+`STEER_RATE_MAX` (200 deg/s at the **road wheel**). Episode 11 set it to 0.15,
+Episode 13 reused "Episode 11's value", and both describe it as the driver's
+hands and the steering linkage. What it actually produces:
+
+| `steer_noise` | road-wheel RMS | at the steering wheel (13.5:1) |
+|---|---|---|
+| 0.01 | 0.12° | **1.6°** |
+| 0.02 | 0.23° | 3.1° |
+| 0.03 | 0.35° | 4.7° |
+| 0.05 | 0.58° | 7.8° |
+| 0.10 | 1.16° | 15.6° |
+| **0.15** | 1.73° | **23.4°** |
+
+**23 degrees RMS at the wheel is not an imperfect driver.** It is a continuous
+quarter-turn saw. Against the reversal-rate literature's own bands — reversals
+under 1° characterise cognitive load, 2–6° characterise a *visual* secondary
+task, i.e. eyes off the road — 0.15 is off the scale by an order of magnitude.
+
+**The unit trap.** The environment commands the **road wheel**; a driver holds
+the **steering wheel**. The ~13.5:1 ratio between them is exactly where a
+number that sounds plausible stops being one, and nothing in the code converts
+between the two.
+
+**Recommended values:** `0.01` for an attentive driver (1.6° at the wheel, the
+micro-correction boundary) and `0.03` for a distracted one (4.7°, the
+visual-task band). Both `[DERIVED]` from the measurement above plus an
+`[ASSUMED]` steering ratio, so they are a defensible approximation and not a
+validated figure.
+
+**What this does to Episode 14's robustness test.** Run at 0.15, the six
+policies scattered from 100% down to 20% completion and reached 18–27° of slip,
+and I reported that the envelope guarantee does not survive disturbance. **That
+is retracted.** Re-run at 0.01: **all six complete 100% of laps** with lap
+scatter of ±0.01–0.02 s and worst slip 5.8–11.8°, inside the fit. At 0.03, five
+of six still complete 100% and the worst excursion is a marginal 13.0°.
+
+**And the H-vs-E result the test was built to settle:** no measurable
+difference in robustness — 0.8× the pooled seed standard deviation at 0.03,
+identical at 0.01. Consistent with F95's finding that the two carry the same
+utilisation in the corner, hence the same margin. The pre-registered hypothesis
+(the allocator buys robustness) is **rejected**, now at a disturbance level that
+means something.
+
+**Carried implication, not yet acted on.** Episode 11's fragility conclusions
+and Episode 13's noise study (78% → 100% completion, the largest effect Episode
+13 reports) both rest on 0.15. Neither has been re-measured. Episode 13's
+qualitative direction may well survive — its noise laps were run at an
+aggression close to the passive car's limit, where any disturbance hurts — but
+the magnitude is a statement about a 23° saw.
+
+**The part that stings.** `STEER_NOISE = 0.15` sits three lines below a comment
+citing **F70 — a retraction caused by a perturbation magnitude nobody
+justified.** The lesson had already been learned, written down, and placed
+directly above the constant that repeated it, because the value was chosen as
+"the strongest disturbance the median lap survives" rather than by asking what
+a driver does. A rule written next to a number does not check the number.
+
+---
+
 # Decisions
 
 ### D1 · The project drives an offset-free tire. · 2026-07-25
@@ -3595,6 +3663,7 @@ the measurement that forced it.
 | O8 | Add compliance steer / roll camber / roll steer, or accept a permanently low understeer gradient and compare only trends? Decides whether Season 2's magnitudes are ever quotable. | Season 2 |
 | ~~O6-old~~ | ~~How much of the understeer gap (F11) does the double-track model close? F18 predicts the size of the effect; Ep 5 measures it. The single most important open question in Season 1. | Ep 5 |
 | O7 | ~~Does terminal oversteer survive lateral load transfer?~~ **CLOSED by F17** — it was a protocol artefact, not a model property. |  |
+| O10 | **Episodes 11 and 13 have not been re-measured at a realistic steering-noise level** (F96). Both rest on `STEER_NOISE = 0.15`, which is 23 deg RMS at the steering wheel. Episode 13's 78% -> 100% completion result is its largest reported effect. | Quoting either episode's perturbation magnitudes |
 | O9 | The RL environment has **no scripted-policy sanity check** — a trivial policy with a hand-derived expected return, which is the cheapest reward-specification test there is. Its absence is how F95's flat reward direction survived to publication. | Any further RL result |
 | O5 | Pin real citations for two bands in the reality-check figure: slip angle at peak (6-12°) and road-sports-car skidpad grip (0.85-1.05 g). Both are general knowledge today, marked as such on the figure. | Publishing any comparison against them |
 | O6 | Pin a real citation for the **~9% FSAE skidpad torque-vectoring ceiling** and for the claim that the best lap times allow deviations from neutral yaw-rate tracking. Both come from `docs/content-series-plan.md`, which states them without references; both are marked `[SOURCED — citation outstanding]` in Episode 13's figures and text. | Episode 14 leaning on either |

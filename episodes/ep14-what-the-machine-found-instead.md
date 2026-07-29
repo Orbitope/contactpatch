@@ -215,10 +215,11 @@ python -m experiments.ep14.run --figures-only          # redraw from cached resu
 ```
 
 One `(variant, seed)` per process so the six run in parallel. Measured cost on
-an 11-core machine: **H ≈ 4.3 CPU-hours per seed, E ≈ 2.5** — of which only
-~1.2 h is physics; the rest is the PPO update loop. The environment runs at
-1,184 steps/s for H and 2,491 for E, and H is slower despite a *smaller* action
-space because it solves the QP allocator every step.
+an 11-core machine: **H ≈ 4.3 CPU-hours per seed, E ≈ 2.5**, and **96% of that
+is the environment** — 1,219 steps/s through the physics, against 2.4% for the
+policy forward pass and 1.9% for the PPO update itself. The learning is nearly
+free; simulating the car is the entire cost. H is slower than E despite a
+*smaller* action space because it solves the QP allocator every step.
 
 **New this episode.** `PPOConfig.eval_every` scores the deployed policy on
 held-out seeds during training and keeps the best checkpoint;

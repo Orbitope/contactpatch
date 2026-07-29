@@ -430,14 +430,29 @@ def envelope_escape_figure(results, report) -> str:
             cx = x0 + (i % cols) * dxp
             wu = e["worst_slip_instant"]
             worst[variant].append((seed, wu["alpha_max_deg"]))
-            d6 = seed in info.get("d6_passed_seeds", [])
-            colour = V.TEAL if d6 else V.COR
-            s += D.text(cx, cy - 150, f"variant {variant} — seed {seed}",
+            # The label states the ENVELOPE verdict, which is what this figure
+            # is about, and names any other D6 failure separately. Printing a
+            # bare "D6 FAILED" next to a slip angle implies the slip caused the
+            # failure — H seed 2 is inside the fit at 6.8 deg and fails on its
+            # critic, and the first version of this figure said "D6 FAILED
+            # worst slip 6.8 deg", which reads as exactly the opposite. That is
+            # F68's failure mode: a caption contradicting its own data.
+            inside = wu["alpha_max_deg"] <= ENVELOPE_SLIP_DEG
+            others = [f for f in info.get("d6_failures_by_seed", {})
+                      .get(str(seed), [])
+                      if f != "the_policy_stayed_inside_the_tire_model"]
+            s += D.text(cx, cy - 154, f"variant {variant} — seed {seed}",
                         V.FG, 15, "middle", weight="600")
-            s += D.text(cx, cy - 128,
-                        f"D6 {'PASSED' if d6 else 'FAILED'}   worst slip "
-                        f"{wu['alpha_max_deg']:.1f} deg", colour, 12,
-                        "middle", weight="600")
+            s += D.text(cx, cy - 134,
+                        f"worst slip {wu['alpha_max_deg']:.1f} deg — "
+                        f"{'inside' if inside else 'OUTSIDE'} the tire fit",
+                        V.TEAL if inside else V.COR, 12, "middle",
+                        weight="600")
+            s += D.text(cx, cy - 116,
+                        "D6 passed" if not others
+                        else "D6 fails elsewhere: " + ", ".join(
+                            f.replace("_", " ") for f in others),
+                        V.MUT, 10.5, "middle")
             s += D.car_plan(cx, cy, length=118, width=54, wheel_len=26,
                             wheel_w=11, loads=(0.5,) * 4, body=V.MUT)
             for c2, dx, dy in (("fl", -1, -1), ("fr", 1, -1),
@@ -455,24 +470,35 @@ def envelope_escape_figure(results, report) -> str:
     # not a fixed string — a caption that quotes a range the data has since
     # moved past is exactly the kind of silent drift rule 10 exists to
     # prevent.
-    h_vals = [v for _, v in worst["H"]]
-    e_over = [(sd, v) for sd, v in worst["E"] if v > ENVELOPE_SLIP_DEG]
-    e_under = [(sd, v) for sd, v in worst["E"] if v <= ENVELOPE_SLIP_DEG]
-    h_desc = (f"H's three seeds cluster near the boundary — worst slip "
-              f"{min(h_vals):.1f}-{max(h_vals):.1f} deg, none past the "
-              f"tire fit by much." if h_vals else "H: no seeds available.")
-    if e_over and e_under:
-        over_txt = " and ".join(f"{v:.1f}" for _, v in
-                                sorted(e_over, key=lambda t: t[1]))
-        under_txt = ", ".join(f"seed {sd} ({v:.1f} deg)" for sd, v in e_under)
-        e_desc = (f"E's three split sharply: {under_txt} stays inside; the "
-                  f"other {len(e_over)} run past the fit ({over_txt} deg) "
-                  f"and neither finishes — the same tire-model exploit "
-                  f"Episode 9 first found (F53/F56), reappearing under the "
-                  f"same envelope penalty (0.5) as classical training "
-                  f"already uses.")
+    allv = worst["H"] + worst["E"]
+    over = [(sd, v) for sd, v in allv if v > ENVELOPE_SLIP_DEG]
+    lo = min(v for _, v in allv) if allv else 0.0
+    hi = max(v for _, v in allv) if allv else 0.0
+    if allv and not over:
+        h_desc = (f"Every one of the {len(allv)} deployed policies stays "
+                  f"inside the tire fit — worst slip {lo:.1f}-{hi:.1f} deg "
+                  f"against a {ENVELOPE_SLIP_DEG:.0f} deg bound, and all six "
+                  f"drive the full corner.")
+        e_desc = ("That is the whole correction. The first production run "
+                  "reported excursions to 16.8 deg and three seeds that could "
+                  "not finish, because it kept each run's LAST weights rather "
+                  "than its best — every one of those seeds had already driven "
+                  "a clean lap and been trained past it (F93). The D6 failures "
+                  "that remain are training-process checks, not driving: one "
+                  "weak critic and two rising-entropy runs. No seed fails an "
+                  "envelope or deployment check.")
+    elif allv:
+        over_txt = ", ".join(f"{v:.1f}" for _, v in
+                             sorted(over, key=lambda t: t[1]))
+        h_desc = (f"Worst slip across the {len(allv)} deployed policies runs "
+                  f"{lo:.1f}-{hi:.1f} deg against a "
+                  f"{ENVELOPE_SLIP_DEG:.0f} deg bound.")
+        e_desc = (f"{len(over)} of {len(allv)} go past the fit ({over_txt} "
+                  f"deg) — the tire-model exploit Episode 9 first found "
+                  f"(F53/F56), under the same envelope penalty (0.5) "
+                  f"classical training already uses.")
     else:
-        e_desc = "E's three seeds do not split into a clear inside/outside pattern."
+        h_desc, e_desc = "No seeds available.", ""
 
     s += D.rule(60, 720, W - 60, V.GRID)
     for i, line in enumerate(D_wrap(h_desc + " " + e_desc, 148)):

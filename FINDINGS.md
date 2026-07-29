@@ -3279,6 +3279,81 @@ correction stays honest about what has and has not been re-measured.
 
 ---
 
+### F94 · D6's own evaluation was not reproducible, and its envelope check contradicted its documented rule. **Defect, in the gate every RL result passes through.** · 2026-07-29
+
+**Source:** `[MEASURED]` — `diagnostics/D6_training_health.py::evaluate`, probed
+against Episode 14's six re-run policies.
+
+Two defects, found while re-evaluating the Episode 14 re-run and both older
+than Episode 14.
+
+**1. The stochastic rollouts drew from torch's global, unseeded RNG.** The
+environment seeds were fixed (`seed=s for s in range(n)`); the *action
+sampling* was not. Three back-to-back `evaluate` calls on identical weights
+(Episode 14, E seed 2):
+
+| run | deployed worst slip | sampled worst slip | sampled distance |
+|---|---|---|---|
+| 0 | 9.33° | 11.27° | 359.1 m |
+| 1 | 9.33° | 12.12° | 359.4 m |
+| 2 | 9.33° | 11.74° | 393.2 m |
+
+The deployed rollout is exactly reproducible. The sampled one is not, and it
+**straddles the 12° bound the envelope check tests against** — so the same
+policy passed or failed depending on the draw. This was mistaken for a real
+change in the results before it was identified: two seeds appeared to flip
+from PASS to FAIL after an unrelated edit that could not have touched them.
+
+**This is F88 a second time.** F88 was the same defect in
+`experiments/ep09/run.py`, found earlier in the same session and fixed there;
+nobody checked whether the same pattern existed in the diagnostic. Fixed by
+drawing from an explicit `torch.Generator` seeded with `SAMPLE_SEED = 0`,
+re-seeded per policy so both rollouts start from the same draw. Verified
+identical across repeated calls.
+
+**2. The envelope check took `max(deployed, sampled)` while the comment
+directly above it said the deployed number was the gate.** CLAUDE.md's own
+invariant agrees with the comment: *"Report the deployed number as the headline
+and the sampled number as diagnostic detail explaining it."* The code disagreed
+with both.
+
+This is not cosmetic, because the exploration scale never anneals (F93): a
+Gaussian policy still sampling with std 0.2–0.38 visits slip angles its mean
+action never does. On these six policies:
+
+| | deployed | sampled |
+|---|---|---|
+| H 0 | 5.49° | 5.60° |
+| H 1 | 11.14° | 13.00° |
+| H 2 | 6.83° | 12.06° |
+| E 0 | 6.47° | 9.20° |
+| E 1 | 11.50° | 12.89° |
+| E 2 | 9.33° | 11.11° |
+
+**All six deployed policies are inside the fit; three sampled ones are not.**
+Gating on the sampled figure judges a shipped controller by noise that is not
+present when it is deployed.
+
+**Decision (D12), taken explicitly rather than by leaving the bug in place:**
+the check turns on the **deployed** policy, and the sampled figure is printed
+on the same line every time, per rule 9. The sampled number is not discarded —
+it says how much of *training* happened where the tire model was
+extrapolating, which is a real caveat about the learning signal even when the
+resulting policy is clean. Recorded because it is a protocol choice that moves
+the headline from "3 of 6 stayed inside the tire fit" to "6 of 6", and a change
+in that direction deserves to be visible rather than buried.
+
+`the_tire_file_s_own_load_range_was_respected` had the same problem — it tested
+the sampled rollout only — and now reports both with the deployed figure as the
+gate.
+
+**Carried implication.** Episodes 9, 10 and 11 were all gated by this
+diagnostic. Their D6 verdicts were not reproducible, and their envelope verdicts
+were taken on the sampled policy. Combined with F93's missing checkpoint
+selection, **Season 3's results are doubly understated.** Not re-run here.
+
+---
+
 # Decisions
 
 ### D1 · The project drives an offset-free tire. · 2026-07-25
@@ -3412,6 +3487,32 @@ approach can honestly claim.
 **Not applicable to the optimal-control episodes.** A minimum-time solver has no
 aggression knob; it is already at the limit by construction. This is a
 closed-loop-only protocol and Seasons 1–2 are unaffected.
+
+### D12 · A reinforcement-learning policy is judged on the actions it would actually take, including where the tire model is concerned. · 2026-07-29
+
+**Decision.** D6's envelope checks —
+`the_policy_stayed_inside_the_tire_model` and
+`the_tire_file_s_own_load_range_was_respected` — turn on the **deployed**
+(mean-action) policy. The sampled policy's figure is reported on the same line
+every time and is never dropped.
+
+**Rationale.** This extends F61 ("a reinforcement-learning result is the
+DEPLOYED policy's performance") to the physics checks, where the code had
+silently done the opposite: it took `max(deployed, sampled)` while its own
+comment claimed the deployed number was the gate. Because the exploration scale
+does not anneal (F93), the two differ by several degrees of slip on the same
+weights — H seed 2 reaches 6.8° deployed and 12.1° sampled. Gating on the
+sampled number judges a controller by noise that is not present when it runs.
+
+**What the sampled number still buys, and why it is kept.** It measures how much
+of *training* happened where the Magic Formula was extrapolating. A policy can
+be clean at deployment and still have learned from partly fictional rewards, and
+that is worth seeing. It is diagnostic detail, not the gate.
+
+**Recorded because it moves a headline.** Applying it to Episode 14 changes
+"3 of 6 seeds stayed inside the tire fit" to "6 of 6". A protocol change in the
+flattering direction has to be visible, stated, and attributable — see F94 for
+the measurement that forced it.
 
 ---
 

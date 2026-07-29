@@ -86,18 +86,90 @@ prediction. The **ordering** is the point and it is not sensitive to the model.
 
 ---
 
-## 3. Candidate sources
+## 3. Candidate sources — surveyed
 
-*(Being researched — see the findings section appended below once the source
-survey completes. Requirements: open licence permitting redistribution,
-several recognisable circuits, centreline plus width, and ideally curvature.)*
+### Recommended: `TUMFTM/racetrack-database`
 
-**Licensing trap to check explicitly:** sim-racing mod data (Assetto Corsa,
-rFactor and similar) is generally **not** redistributable and much of it is
-itself derived from copyrighted laser scans. Circuit *layouts* as geometric fact
-are not copyrightable, but a specific survey dataset is. Anything imported needs
-its licence recorded next to it, the same way `tires/Sedan_Pac02Tire.tir` records
-its BSD-3 origin from Project Chrono.
+<https://github.com/TUMFTM/racetrack-database> — **LGPL-3.0**, **25 circuits**
+including **Spa, Monza, Silverstone, Suzuka**, Zandvoort, Sakhir, Catalunya,
+Nürburgring.
+
+| | |
+|---|---|
+| format | CSV, header `# x_m,y_m,w_tr_right_m,w_tr_left_m`, **metres** |
+| sampling | uniform **5.00 m**, closed loop, endpoint not repeated |
+| verified | Spa 1401 pts / 7000.1 m; Monza 1159 / 5790.2 m; Silverstone 1178 / 5886.8 m; Suzuka 1161 / 5802.9 m — all within ~0.2% of published lap lengths |
+| widths | **asymmetric** left/right about the centreline. Spa total 9.77 m mean (7.87–16.42) |
+| missing | **no curvature, no banking, no elevation** |
+
+Everything else in this space is downstream of it, unlicensed, or unsuitable:
+
+- **`f1tenth/f1tenth_racetracks`** (GPL-3.0) is an explicit 1:10 downscale of
+  TUM with the real widths replaced by a constant 2.20 m. Its racing-line files
+  *do* ship `kappa_radpm` pre-computed — but for the racing line, at 1:10, with
+  a fictional width. Stronger copyleft, worse data: go upstream.
+- **`TUMRT/sampling_based_3D_local_planning`** (GPL-3.0) ships κ(s) **and
+  banking** already in our target form — but only Las Vegas Motor Speedway and
+  Mount Panorama. Worth remembering if banking is ever wanted; not
+  reader-recognisable in the Spa/Monza sense.
+- **RACECAR / Indy Autonomous** is CC BY-NC sensor data, not track geometry.
+- **AWS DeepRacer**, **CPS-TUWien/f1tenth_maps**, **nkapania/Wolverine** — no
+  licence file at all. Unusable regardless of content.
+- **OpenStreetMap directly** — ODbL, and a live Overpass query over Spa returns
+  35 `highway=raceway` ways with named corners but **zero width tags**. That is
+  the raw material TUM already processed; only worth it for a circuit TUM lacks.
+
+### The curvature trap, confirmed twice
+
+Independently of the round-trip measurement in section 2, the survey measured
+naive finite-difference curvature on TUM's raw 5 m Spa points: **max |κ| =
+0.0963 1/m, i.e. a 10.4 m minimum radius, where La Source is really ~25 m.**
+Monza came out at 10.8 m. A 9-point moving average only reaches 19.4 m and
+22.9 m respectively — still wrong.
+
+So: **a periodic cubic-spline fit, arclength reparameterisation, then analytic
+κ.** TUM publish exactly this as
+<https://github.com/TUMFTM/trajectory_planning_helpers> (LGPL-3.0, pip
+installable): `calc_splines.py`, `calc_head_curv_an.py`, `interp_track.py`.
+Either use it or reimplement it, but do not `np.gradient` the coordinates.
+
+**Validation gate (rule 2):** recovered corner radii checked against published
+figures for that circuit — La Source ~25 m, Monza's Parabolica, etc. Our own
+fit does not get to certify itself.
+
+### Licensing, and how to stay clean
+
+1. **Chain mismatch.** TUM ships LGPL-3.0 (a *software* licence) over data
+   derived from **OpenStreetMap**, which is **ODbL** with share-alike.
+   **Recommendation: do not vendor the CSVs.** Ship a small downloader plus our
+   converter, keep only our own code in the repo, and attribute both TUM and
+   OSM. That sidesteps the whole question.
+2. **Circuit silhouettes are registered trademarks** — confirmed on the
+   Nürburgring's own licensing page (EU figurative marks, EUIPO and DPMA).
+   Naming a circuit and drawing its layout to illustrate an engineering result
+   is ordinary identifying use; using an outline as a logo, cover art or
+   merchandise is not.
+3. **Operators assert IP over geometry data** in commercial licences (the
+   IMS/Motorsport Games agreement covers topographical maps, CAD and LiDAR).
+   The primary documents returned HTTP 403 and this is search-snippet evidence,
+   not verified quotation — but the practical line is clear: laser-scan-grade
+   geometry is licensed commercially; OSM-traced approximations are a different
+   thing and are what TUM publishes.
+4. **Sim-racing mod data (Assetto Corsa, rFactor, iRacing) is not a source.**
+   iRacing's are laser-scanned under commercial licence; community mods have no
+   clear provenance. No authoritative statement of mod redistribution terms was
+   found, so this is "assume not redistributable" rather than a verified finding.
+
+None of this is legal advice.
+
+### Two things to record in FINDINGS when adopted
+
+- Widths are `[SOURCED]` from **satellite image processing**, and TUM's own
+  README warns their quality "varies greatly depending on the location". Spa's
+  9.8 m mean total width looks low against the real circuit — low confidence.
+- TUM state the smoothed centreline "does not lie perfectly in the middle of the
+  track anymore", which is why left and right widths differ. Collapsing them to
+  one symmetric `half_width` is a modelling choice and has to be said out loud.
 
 ---
 

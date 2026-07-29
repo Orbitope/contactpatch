@@ -4,7 +4,7 @@
 
 **What this checks.** The same ten Season 3 checks, plus the exploration-scale check this episode's larger action space adds.
 
-**FAILED — 2 of 11** · 9/11 checks · 2 technical notes
+**PASSED** · 11/11 checks · 1 technical notes
 
 ---
 
@@ -16,18 +16,8 @@
 | Is the search at the scale of the problem? | 2/2 | ok |
 | Is the task possible, and did it get solved? | 2/2 | ok |
 | Is the critic predicting anything? | 1/1 | ok |
-| Does the policy you would actually deploy work? | 1/2 | **1 FAILED** |
-| Did it stay inside the tire model? | 1/2 | **1 FAILED** |
-
-## Failures
-
-### `greedy_and_stochastic_agree`
-
-mean-action rollouts reach 393 m and sampled rollouts reach 258 m, a 34% gap. A large gap means the behaviour depends on the exploration noise itself, so the deterministic policy you would ship is a different driver from the one the training curves describe.
-
-### `the_policy_stayed_inside_the_tire_model`
-
-worst slip angle reached 14.0 deg against our 12 deg bound, with 1.9% of steps beyond it. Every minimum-time solve in Seasons 1 and 2 constrains this; the environment deliberately does not, so the policy is free to operate where the Magic Formula is extrapolating and the forces are arithmetic rather than measurement.
+| Does the policy you would actually deploy work? | 2/2 | ok |
+| Did it stay inside the tire model? | 2/2 | ok |
 
 ## Technical notes
 
@@ -36,10 +26,6 @@ worst slip angle reached 14.0 deg against our 12 deg bound, with 1.9% of steps b
 ### the_two_action_dimensions_need_different_exploration
 
 Steering rate and throttle have useful scales an order of magnitude apart — 0.037 of authority against the whole [-1, 1] interval — so a single exploration standard deviation cannot serve both. With one value small enough for the steering, the policy never sampled braking at all and sat at full throttle for half a million steps. This run uses [0.082, 0.368, 0.223].
-
-### why_the_noise_matters_here
-
-The action-to-force map has a kink at zero — braking authority is 12 kN against 4.5 kN of drive, because brakes really are stronger than engines. A Gaussian policy straddling that kink does not deliver the force of its mean action: E[f(a)] != f(E[a]), and the difference is always toward braking. At a mean throttle of zero the sampled policy delivers about 1.2 kN of net braking that the mean action does not have. **The policy did not learn to brake. It learned a mean action that brakes only when its own noise is added to it.**
 
 ## Key numbers
 

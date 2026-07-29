@@ -155,6 +155,9 @@ def train_variant(out: Path, variant: str, steps: int, seed: int,
         # the best one" is this episode's own correction of record (F93) and
         # it has to stay checkable rather than asserted.
         torch.save(res["final_state"], out / f"policy_{tag}_final.pt")
+        (out / f"selection_{tag}.json").write_text(json.dumps(
+            {"best_update": res["best_update"], "n_updates": res["n_updates"],
+             "best_eval": res["best_eval"]}, indent=2) + "\n")
     torch.save(res["model"].state_dict(), out / f"policy_{tag}.pt")
     (out / f"train_config_{tag}.json").write_text(
         json.dumps(res["config"], indent=2) + "\n")
@@ -309,6 +312,21 @@ def production_report(out: Path) -> dict:
     return report
 
 
+def _selected_update(history: list[dict]) -> int | None:
+    """Which update's weights ``train`` handed back, read off the history.
+
+    ``train`` selects the argmax of ``eval_return`` over the checkpoints it
+    scored, so the same argmax over the recorded evaluations reproduces the
+    choice without trusting a sidecar file. Returns ``None`` for a run with no
+    evaluations recorded — the pre-F93 path, where the answer is "the last
+    one" and no truncation applies.
+    """
+    evals = [h for h in history if "eval_return" in h]
+    if not evals:
+        return None
+    return int(max(evals, key=lambda h: h["eval_return"])["update"])
+
+
 def _run_one(out: Path, variant: str, seed: int, steps: int, pilot: bool,
              eval_only: bool) -> dict:
     """Train (or load) and evaluate ONE (variant, seed) combination.
@@ -331,6 +349,29 @@ def _run_one(out: Path, variant: str, seed: int, steps: int, pilot: bool,
         res = train_variant(out, variant, steps, seed, tag)
         model, history, train_cfg, wall_s = (
             res["model"], res["history"], res["config"], res["wall_s"])
+
+    # D6 asks two different kinds of question: how does the DEPLOYED policy
+    # drive, and was the training that produced it healthy. Checkpoint
+    # selection (F93) splits those apart — the shipped policy comes from
+    # update `best_update`, so the four history-based checks (KL, entropy,
+    # critic explained variance, off-track rate) must read the training up to
+    # THAT point. Scoring them over the full run would grade the policy on
+    # updates that had no effect on it: E seed 0's selected checkpoint is from
+    # update 540, and its entropy trend over all 1,220 updates is mostly drift
+    # that happened afterwards.
+    #
+    # This narrows what those checks look at, so it is stated rather than done
+    # quietly — the whole point of F93 is that a gate nobody was watching is
+    # worse than no gate.
+    # Derived from the history rather than read from a sidecar file, so it is
+    # reconstructible for any run whose weights and history survive — the E
+    # seeds and the first H seeds were trained before the sidecar existed.
+    k = _selected_update(history)
+    if k is not None:
+        print(f"  D6 history truncated to updates 0-{k} "
+              f"(the training that produced the selected checkpoint, "
+              f"of {len(history)} run)")
+        history = history[:k + 1]
 
     ev = evaluate_variant(out, tag, model, cfg, history, train_cfg)
     tr = ev.pop("deployed_trace")

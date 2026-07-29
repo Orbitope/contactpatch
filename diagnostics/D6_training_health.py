@@ -83,18 +83,42 @@ GREEDY_GAP_FRACTION = 0.25
 SLIP_BOUND_DEG = 12.0
 
 
+#: Seed for the STOCHASTIC rollouts' action sampling. Fixed, because an
+#: unseeded one made this diagnostic's verdict depend on whatever global torch
+#: RNG state the process happened to be in.
+#:
+#: This is F88 a second time, in the gate rather than in an episode script.
+#: Measured on Episode 14's E seed 2: three back-to-back ``evaluate`` calls on
+#: identical weights gave a greedy worst slip of 9.33° every time and a
+#: stochastic worst slip of 11.27°, 12.12° and 11.74° — straddling the 12°
+#: bound, so ``the_policy_stayed_inside_the_tire_model`` passed or failed the
+#: same policy depending on the draw. See FINDINGS F94.
+SAMPLE_SEED = 0
+
+
 def evaluate(model, cfg: EnvConfig, n: int = 8) -> dict:
-    """Roll the policy out both ways: mean action, and sampled as trained."""
+    """Roll the policy out both ways: mean action, and sampled as trained.
+
+    Both rollouts are reproducible: the environment seeds are fixed, and so is
+    the generator the sampled policy draws its actions from.
+    """
     import torch
     from physics.ppo import greedy_policy
+
+    gen = torch.Generator().manual_seed(SAMPLE_SEED)
 
     def sampled(obs):
         with torch.no_grad():
             d = model.distribution(torch.as_tensor(obs, dtype=torch.float32))
-            return d.sample().numpy()
+            # ``Distribution.sample`` has no generator argument, so the draw is
+            # done explicitly against a seeded one. rsample/sample would both
+            # reach for the global RNG.
+            return (d.mean + d.stddev * torch.randn(
+                d.mean.shape, generator=gen)).numpy()
 
     out = {}
     for name, pol in (("greedy", greedy_policy(model)), ("stochastic", sampled)):
+        gen.manual_seed(SAMPLE_SEED)   # each policy starts from the same draw
         runs = [rollout(DrivingEnv(cfg), pol, seed=s) for s in range(n)]
         out[name] = {
             "distance_m": float(np.mean([r["distance_m"] for r in runs])),
@@ -289,28 +313,50 @@ def run_checks(report: Report, history: list[dict], model, cfg: EnvConfig,
 
     # -- and the physics question the series plan asked --------------------
     report.section("Did it stay inside the tire model?")
-    # Judge the deployed policy here as well, for the same reason: the sampled
-    # policy's envelope behaviour is not the behaviour you would ship. Both are
-    # reported; the deployed one is what the check turns on.
-    worst = max(g["worst_slip_deg"], st["worst_slip_deg"])
-    frac = max(g["slip_over_bound"], st["slip_over_bound"])
+    # **The check turns on the DEPLOYED policy**, and this used to disagree with
+    # the comment sitting above it: the code took max(greedy, stochastic) while
+    # the comment claimed the deployed number was the gate. The comment was
+    # right and the code was wrong — CLAUDE.md's own invariant is "report the
+    # deployed number as the headline and the sampled number as diagnostic
+    # detail explaining it" (F61).
+    #
+    # The distinction is not cosmetic here. A Gaussian policy whose exploration
+    # scale never annealed samples several degrees either side of its mean, so
+    # the sampled rollout visits slip angles the shipped artefact never does:
+    # Episode 14's H seed 2 reaches 6.8 deg deployed and 12.1 deg sampled on
+    # identical weights. Gating on the sampled number judges a controller by
+    # noise that is not present when it is deployed.
+    #
+    # The sampled figure is still reported on every line, per rule 9 — it says
+    # how much of TRAINING happened where the tire model was extrapolating,
+    # which is a real caveat about the learning signal even when the resulting
+    # policy is clean. See FINDINGS F94.
+    worst, frac = g["worst_slip_deg"], g["slip_over_bound"]
     report.add(
         "the_policy_stayed_inside_the_tire_model",
         worst <= SLIP_BOUND_DEG,
-        f"worst slip angle reached {worst:.1f} deg against our {SLIP_BOUND_DEG:.0f} "
-        f"deg bound, with {100*frac:.1f}% of steps beyond it. Every minimum-time "
-        "solve in Seasons 1 and 2 constrains this; the environment deliberately "
-        "does not, so the policy is free to operate where the Magic Formula is "
-        "extrapolating and the forces are arithmetic rather than measurement.",
-        value={"worst_deg": worst, "fraction_beyond": frac},
+        f"the deployed policy's worst slip angle reached {worst:.1f} deg against "
+        f"our {SLIP_BOUND_DEG:.0f} deg bound, with {100*frac:.1f}% of steps "
+        f"beyond it (sampled, for comparison: {st['worst_slip_deg']:.1f} deg, "
+        f"{100*st['slip_over_bound']:.1f}% of steps — training-time only). Every "
+        "minimum-time solve in Seasons 1 and 2 constrains this; the environment "
+        "deliberately does not, so the policy is free to operate where the Magic "
+        "Formula is extrapolating and the forces are arithmetic rather than "
+        "measurement.",
+        value={"worst_deg": worst, "fraction_beyond": frac,
+               "sampled_worst_deg": st["worst_slip_deg"],
+               "sampled_fraction_beyond": st["slip_over_bound"]},
     )
     report.add(
         "the_tire_file_s_own_load_range_was_respected",
-        st["envelope_occupancy"] < 0.02,
-        f"{100*st['envelope_occupancy']:.1f}% of steps left the tire file's own "
-        "declared operating range. That bound is the file's, not ours, and "
-        "outside it the model is not extrapolating from a fit — it has no fit.",
-        value=st["envelope_occupancy"],
+        g["envelope_occupancy"] < 0.02,
+        f"{100*g['envelope_occupancy']:.1f}% of the deployed policy's steps left "
+        f"the tire file's own declared operating range (sampled: "
+        f"{100*st['envelope_occupancy']:.1f}%). That bound is the file's, not "
+        "ours, and outside it the model is not extrapolating from a fit — it has "
+        "no fit.",
+        value={"deployed": g["envelope_occupancy"],
+               "sampled": st["envelope_occupancy"]},
     )
 
     return {"evaluation": ev, "history": history}

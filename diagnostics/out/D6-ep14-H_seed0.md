@@ -4,7 +4,7 @@
 
 **What this checks.** The same ten Season 3 checks, plus the exploration-scale check this episode's larger action space adds.
 
-**FAILED — 2 of 11** · 9/11 checks · 1 technical notes
+**PASSED** · 11/11 checks · 1 technical notes
 
 ---
 
@@ -15,19 +15,9 @@
 | Did the policy actually change? | 2/2 | ok |
 | Is the search at the scale of the problem? | 2/2 | ok |
 | Is the task possible, and did it get solved? | 2/2 | ok |
-| Is the critic predicting anything? | 0/1 | **1 FAILED** |
+| Is the critic predicting anything? | 1/1 | ok |
 | Does the policy you would actually deploy work? | 2/2 | ok |
-| Did it stay inside the tire model? | 1/2 | **1 FAILED** |
-
-## Failures
-
-### `the_critic_predicts_returns`
-
-explained variance over the last fifth of training has a median of +0.19. At zero the critic is no better than predicting the mean, which makes every advantage estimate noise and the policy gradient a random walk.
-
-### `the_policy_stayed_inside_the_tire_model`
-
-worst slip angle reached 18.4 deg against our 12 deg bound, with 4.0% of steps beyond it. Every minimum-time solve in Seasons 1 and 2 constrains this; the environment deliberately does not, so the policy is free to operate where the Magic Formula is extrapolating and the forces are arithmetic rather than measurement.
+| Did it stay inside the tire model? | 2/2 | ok |
 
 ## Technical notes
 

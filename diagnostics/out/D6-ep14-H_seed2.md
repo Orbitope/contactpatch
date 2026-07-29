@@ -4,7 +4,7 @@
 
 **What this checks.** The same ten Season 3 checks, plus the exploration-scale check this episode's larger action space adds.
 
-**FAILED — 2 of 11** · 9/11 checks · 2 technical notes
+**FAILED — 1 of 11** · 10/11 checks · 1 technical notes
 
 ---
 
@@ -15,19 +15,15 @@
 | Did the policy actually change? | 2/2 | ok |
 | Is the search at the scale of the problem? | 2/2 | ok |
 | Is the task possible, and did it get solved? | 2/2 | ok |
-| Is the critic predicting anything? | 1/1 | ok |
-| Does the policy you would actually deploy work? | 0/2 | **2 FAILED** |
+| Is the critic predicting anything? | 0/1 | **1 FAILED** |
+| Does the policy you would actually deploy work? | 2/2 | ok |
 | Did it stay inside the tire model? | 2/2 | ok |
 
 ## Failures
 
-### `the_deployed_policy_completes_the_task`
+### `the_critic_predicts_returns`
 
-the mean-action policy — the one you would ship — finishes 0% of laps and covers 136 m. Sampling its actions instead gives 75% and 330 m. **The deployed number is the result.** A run whose sampled policy performs well and whose mean action does not has not produced a driver; it has produced a policy whose competence lives in its own exploration noise, and the sampled figure describes something you cannot ship.
-
-### `greedy_and_stochastic_agree`
-
-mean-action rollouts reach 136 m and sampled rollouts reach 330 m, a 59% gap. A large gap means the behaviour depends on the exploration noise itself, so the deterministic policy you would ship is a different driver from the one the training curves describe.
+explained variance over the last fifth of training has a median of +0.18. At zero the critic is no better than predicting the mean, which makes every advantage estimate noise and the policy gradient a random walk.
 
 ## Technical notes
 
@@ -36,10 +32,6 @@ mean-action rollouts reach 136 m and sampled rollouts reach 330 m, a 59% gap. A 
 ### the_two_action_dimensions_need_different_exploration
 
 Steering rate and throttle have useful scales an order of magnitude apart — 0.037 of authority against the whole [-1, 1] interval — so a single exploration standard deviation cannot serve both. With one value small enough for the steering, the policy never sampled braking at all and sat at full throttle for half a million steps. This run uses [0.082, 0.368, 0.223].
-
-### why_the_noise_matters_here
-
-The action-to-force map has a kink at zero — braking authority is 12 kN against 4.5 kN of drive, because brakes really are stronger than engines. A Gaussian policy straddling that kink does not deliver the force of its mean action: E[f(a)] != f(E[a]), and the difference is always toward braking. At a mean throttle of zero the sampled policy delivers about 1.2 kN of net braking that the mean action does not have. **The policy did not learn to brake. It learned a mean action that brakes only when its own noise is added to it.**
 
 ## Key numbers
 

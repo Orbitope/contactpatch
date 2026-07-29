@@ -3,25 +3,25 @@
   "title": "Episode 14 H_seed2 \u2014 training health",
   "subtitle": "The same ten Season 3 checks, plus the exploration-scale check this episode's larger action space adds.",
   "passed": false,
-  "n_checks": 13,
-  "n_failed": 2,
+  "n_checks": 12,
+  "n_failed": 1,
   "findings": [],
   "checks": [
     {
       "name": "policy_is_actually_updating",
       "passed": true,
-      "detail": "median approximate KL per update is 0.00414 against a 0.0001 floor. Below the floor the weights are barely moving and the run is a very expensive way to keep a random policy \u2014 which is what happened when the value gradient was 150x the policy's and one shared gradient clip scaled both by 0.0067.",
+      "detail": "median approximate KL per update is 0.00432 against a 0.0001 floor. Below the floor the weights are barely moving and the run is a very expensive way to keep a random policy \u2014 which is what happened when the value gradient was 150x the policy's and one shared gradient clip scaled both by 0.0067.",
       "severity": "gate",
-      "value": 0.0041394665018742675,
+      "value": 0.004322955501265824,
       "expected": null,
       "group": "Did the policy actually change?"
     },
     {
       "name": "exploration_is_not_growing",
       "passed": true,
-      "detail": "policy entropy went -0.73 -> -0.88 (-0.15). A policy that is learning gets more decisive; rising entropy means the entropy bonus is beating the policy gradient, which on a Gaussian policy it will do indefinitely because entropy is unbounded above.",
+      "detail": "policy entropy went -0.73 -> -0.95 (-0.21). A policy that is learning gets more decisive; rising entropy means the entropy bonus is beating the policy gradient, which on a Gaussian policy it will do indefinitely because entropy is unbounded above.",
       "severity": "gate",
-      "value": -0.15035207271575934,
+      "value": -0.2120702669024468,
       "expected": null,
       "group": "Did the policy actually change?"
     },
@@ -50,10 +50,10 @@
     {
       "name": "exploration_covers_the_torque_vectoring_action",
       "passed": true,
-      "detail": "the torque-vectoring action explores with standard deviation [0.20329999923706055]. Below 0.001 and the policy has stopped trying anything but whatever it already does; above 2 the noise alone spans the entire action range and swamps the signal. A 1.0x spread across the 1 dimension means at least one is being explored an order of magnitude less than the others \u2014 a policy that never learned to use one wheel would look exactly like this (F52's mismatched-exploration-scale failure, in a new action space).",
+      "detail": "the torque-vectoring action explores with standard deviation [0.22619999945163727]. Below 0.001 and the policy has stopped trying anything but whatever it already does; above 2 the noise alone spans the entire action range and swamps the signal. A 1.0x spread across the 1 dimension means at least one is being explored an order of magnitude less than the others \u2014 a policy that never learned to use one wheel would look exactly like this (F52's mismatched-exploration-scale failure, in a new action space).",
       "severity": "gate",
       "value": [
-        0.20326358079910278
+        0.22616617381572723
       ],
       "expected": null,
       "group": "Is the search at the scale of the problem?"
@@ -73,59 +73,52 @@
     {
       "name": "the_off_track_rate_came_down",
       "passed": true,
-      "detail": "episodes ending off the road went 1.00 -> 0.42. A rate stuck at 1.00 means every episode is a crash and the policy has never seen the behaviour it is supposed to be reinforcing.",
+      "detail": "episodes ending off the road went 1.00 -> 0.06. A rate stuck at 1.00 means every episode is a crash and the policy has never seen the behaviour it is supposed to be reinforcing.",
       "severity": "gate",
-      "value": 0.42,
+      "value": 0.06,
       "expected": null,
       "group": "Is the task possible, and did it get solved?"
     },
     {
       "name": "the_critic_predicts_returns",
-      "passed": true,
-      "detail": "explained variance over the last fifth of training has a median of +0.91. At zero the critic is no better than predicting the mean, which makes every advantage estimate noise and the policy gradient a random walk.",
+      "passed": false,
+      "detail": "explained variance over the last fifth of training has a median of +0.18. At zero the critic is no better than predicting the mean, which makes every advantage estimate noise and the policy gradient a random walk.",
       "severity": "gate",
-      "value": 0.9116705030247227,
+      "value": 0.17583300503069604,
       "expected": null,
       "group": "Is the critic predicting anything?"
     },
     {
       "name": "the_deployed_policy_completes_the_task",
-      "passed": false,
-      "detail": "the mean-action policy \u2014 the one you would ship \u2014 finishes 0% of laps and covers 136 m. Sampling its actions instead gives 75% and 330 m. **The deployed number is the result.** A run whose sampled policy performs well and whose mean action does not has not produced a driver; it has produced a policy whose competence lives in its own exploration noise, and the sampled figure describes something you cannot ship.",
+      "passed": true,
+      "detail": "the mean-action policy \u2014 the one you would ship \u2014 finishes 100% of laps and covers 393 m. Sampling its actions instead gives 100% and 393 m. **The deployed number is the result.** A run whose sampled policy performs well and whose mean action does not has not produced a driver; it has produced a policy whose competence lives in its own exploration noise, and the sampled figure describes something you cannot ship.",
       "severity": "gate",
       "value": {
-        "greedy_finish": 0.0,
-        "stochastic_finish": 0.75
+        "greedy_finish": 1.0,
+        "stochastic_finish": 1.0
       },
       "expected": null,
       "group": "Does the policy you would actually deploy work?"
     },
     {
       "name": "greedy_and_stochastic_agree",
-      "passed": false,
-      "detail": "mean-action rollouts reach 136 m and sampled rollouts reach 330 m, a 59% gap. A large gap means the behaviour depends on the exploration noise itself, so the deterministic policy you would ship is a different driver from the one the training curves describe.",
-      "severity": "gate",
-      "value": 0.588188888854337,
-      "expected": null,
-      "group": "Does the policy you would actually deploy work?"
-    },
-    {
-      "name": "why_the_noise_matters_here",
       "passed": true,
-      "detail": "The action-to-force map has a kink at zero \u2014 braking authority is 12 kN against 4.5 kN of drive, because brakes really are stronger than engines. A Gaussian policy straddling that kink does not deliver the force of its mean action: E[f(a)] != f(E[a]), and the difference is always toward braking. At a mean throttle of zero the sampled policy delivers about 1.2 kN of net braking that the mean action does not have. **The policy did not learn to brake. It learned a mean action that brakes only when its own noise is added to it.**",
-      "severity": "note",
-      "value": null,
+      "detail": "mean-action rollouts reach 393 m and sampled rollouts reach 393 m, a 0% gap. A large gap means the behaviour depends on the exploration noise itself, so the deterministic policy you would ship is a different driver from the one the training curves describe.",
+      "severity": "gate",
+      "value": 0.0004919776154578555,
       "expected": null,
       "group": "Does the policy you would actually deploy work?"
     },
     {
       "name": "the_policy_stayed_inside_the_tire_model",
       "passed": true,
-      "detail": "worst slip angle reached 9.6 deg against our 12 deg bound, with 0.0% of steps beyond it. Every minimum-time solve in Seasons 1 and 2 constrains this; the environment deliberately does not, so the policy is free to operate where the Magic Formula is extrapolating and the forces are arithmetic rather than measurement.",
+      "detail": "the deployed policy's worst slip angle reached 6.8 deg against our 12 deg bound, with 0.0% of steps beyond it (sampled, for comparison: 12.1 deg, 0.0% of steps \u2014 training-time only). Every minimum-time solve in Seasons 1 and 2 constrains this; the environment deliberately does not, so the policy is free to operate where the Magic Formula is extrapolating and the forces are arithmetic rather than measurement.",
       "severity": "gate",
       "value": {
-        "worst_deg": 9.574793827702532,
-        "fraction_beyond": 0.0
+        "worst_deg": 6.831210068273165,
+        "fraction_beyond": 0.0,
+        "sampled_worst_deg": 12.05560124995341,
+        "sampled_fraction_beyond": 0.00047036688617121356
       },
       "expected": null,
       "group": "Did it stay inside the tire model?"
@@ -133,9 +126,12 @@
     {
       "name": "the_tire_file_s_own_load_range_was_respected",
       "passed": true,
-      "detail": "0.0% of steps left the tire file's own declared operating range. That bound is the file's, not ours, and outside it the model is not extrapolating from a fit \u2014 it has no fit.",
+      "detail": "0.0% of the deployed policy's steps left the tire file's own declared operating range (sampled: 0.0%). That bound is the file's, not ours, and outside it the model is not extrapolating from a fit \u2014 it has no fit.",
       "severity": "gate",
-      "value": 0.0,
+      "value": {
+        "deployed": 0.0,
+        "sampled": 0.00047036688617121356
+      },
       "expected": null,
       "group": "Did it stay inside the tire model?"
     }
@@ -143,22 +139,22 @@
   "data": {
     "evaluation": {
       "greedy": {
-        "distance_m": 135.93266095374042,
+        "distance_m": 393.2731014338876,
         "distance_std": 0.0,
-        "finish_rate": 0.0,
-        "worst_slip_deg": 9.390981633527135,
+        "finish_rate": 1.0,
+        "worst_slip_deg": 6.831210068273165,
         "slip_over_bound": 0.0,
         "envelope_occupancy": 0.0,
-        "lap_time_s": NaN
+        "lap_time_s": 19.36
       },
       "stochastic": {
-        "distance_m": 330.0849765213335,
-        "distance_std": 109.00199496644431,
-        "finish_rate": 0.75,
-        "worst_slip_deg": 9.574793827702532,
-        "slip_over_bound": 0.0,
-        "envelope_occupancy": 0.0,
-        "lap_time_s": 20.80333333333333
+        "distance_m": 393.0796198712204,
+        "distance_std": 0.08607520068065935,
+        "finish_rate": 1.0,
+        "worst_slip_deg": 12.05560124995341,
+        "slip_over_bound": 0.00047036688617121356,
+        "envelope_occupancy": 0.00047036688617121356,
+        "lap_time_s": 21.4825
       }
     },
     "train_config": {
@@ -181,7 +177,11 @@
         -1.5
       ],
       "seed": 2,
-      "anneal_lr": true
+      "anneal_lr": true,
+      "eval_every": 20,
+      "eval_episodes": 4,
+      "eval_seed0": 1000000,
+      "entropy_anneal": true
     }
   }
 }

@@ -3354,6 +3354,73 @@ selection, **Season 3's results are doubly understated.** Not re-run here.
 
 ---
 
+### F95 · Episode 14's "half the tire" comparison measured a free parameter of our own reward. **Retracts the H-vs-E utilisation finding.** · 2026-07-29
+
+**Source:** `[MEASURED]` — `experiments/ep14/out/full_trace_{H,E}_seed{0,1,2}.npz`,
+decomposed by position on the lap.
+
+**What was claimed.** That E spends roughly twice the friction-ellipse
+utilisation of H for the same lap time and peak grip (0.70 ± 0.13 against
+0.357 ± 0.087, 3.1× the pooled seed standard deviation), and that this said
+something about the QP allocator.
+
+**What the number actually is.** Split by where on the lap it happens:
+
+| | H | E | rule 5 |
+|---|---|---|---|
+| in the corner (60–150 m) | 0.70 ± 0.07 | 0.85 ± 0.10 | **1.8× — not a finding** |
+| on the exit straight (>200 m) | 0.23 ± 0.13 | 0.63 ± 0.15 | 2.9× |
+| whole lap | 0.36 ± 0.09 | 0.70 ± 0.13 | 3.1× |
+
+**Where the tires are actually cornering there is no measurable difference.**
+The whole effect lives on the straight, which is 260 of the lap's 393 m and
+therefore dominates the average.
+
+**And on the straight the metric is measuring nothing the objective constrains.**
+The reward there is `s_dot * dt` and nothing else: the car is on the road, so no
+off-track penalty, and worst slip angle across all six seeds is **0.02°–1.08°**
+against a 12° envelope bound, so no envelope penalty either. Summed per-wheel
+lateral force on that same straight ranges from **83 N to 3,199 N** — a factor
+of 38 — at **identical reward**. Wheels fighting each other is free.
+
+So the objective has a flat direction, and each seed settles somewhere different
+along it. That explains every symptom at once: the 4× spread in H's own straight
+utilisation (0.08, 0.25, 0.35), the absence of any correlation with net drive
+force (H seed 2 makes 775 N of net drive on 0.08 utilisation while H seed 1
+makes 543 N on 0.35), and the fact that both variants show it — because it is
+the reward, not the action space. H's allocator does not prevent it: the
+allocator faithfully delivers whatever `Mz` its policy asks for, and asking for
+yaw on a straight costs nothing.
+
+**This is underdetermination, not a training failure.** The seed variance is the
+correct behaviour of a well-trained policy against an objective that does not
+care. Reading it as "E is wasteful" or "the allocator is efficient" was reading
+structure into noise.
+
+**Retracted:** the H-vs-E utilisation comparison, and any claim built on it.
+**Not retracted:** all six policies complete the lap inside the ±12° tire fit
+(F93/F94's corrected result), and in the corner the two variants are
+indistinguishable — which is itself the answer to "does the learned upper layer
+work", just a quieter one.
+
+**How it was found, and the gap that let it through.** Rung 4 of the
+`rl-env-debug-triage` ladder — inspect reward scale and specification before
+touching anything else. It was found only because the seed-to-seed instability
+was questioned; nothing in the pipeline flagged it. **The env has no
+scripted-policy sanity check** — a trivial policy with a hand-derived expected
+return, which is the cheapest reward-specification test there is and would have
+made the flat direction obvious. That is rung 2 of the same ladder and it is
+missing. Recorded as open item O9.
+
+**The generalisable lesson, because this is the fourth correction in one
+session.** Every one had the same shape: an aggregate was reported before it was
+decomposed. Rule 7 says compute metrics downstream from logged arrays, and that
+was done — but "downstream" is not "understood". A lap-average is a sum over
+places the car was doing different things, and it is worth nothing until you
+have asked which of those places it came from.
+
+---
+
 # Decisions
 
 ### D1 · The project drives an offset-free tire. · 2026-07-25
@@ -3528,6 +3595,7 @@ the measurement that forced it.
 | O8 | Add compliance steer / roll camber / roll steer, or accept a permanently low understeer gradient and compare only trends? Decides whether Season 2's magnitudes are ever quotable. | Season 2 |
 | ~~O6-old~~ | ~~How much of the understeer gap (F11) does the double-track model close? F18 predicts the size of the effect; Ep 5 measures it. The single most important open question in Season 1. | Ep 5 |
 | O7 | ~~Does terminal oversteer survive lateral load transfer?~~ **CLOSED by F17** — it was a protocol artefact, not a model property. |  |
+| O9 | The RL environment has **no scripted-policy sanity check** — a trivial policy with a hand-derived expected return, which is the cheapest reward-specification test there is. Its absence is how F95's flat reward direction survived to publication. | Any further RL result |
 | O5 | Pin real citations for two bands in the reality-check figure: slip angle at peak (6-12°) and road-sports-car skidpad grip (0.85-1.05 g). Both are general knowledge today, marked as such on the figure. | Publishing any comparison against them |
 | O6 | Pin a real citation for the **~9% FSAE skidpad torque-vectoring ceiling** and for the claim that the best lap times allow deviations from neutral yaw-rate tracking. Both come from `docs/content-series-plan.md`, which states them without references; both are marked `[SOURCED — citation outstanding]` in Episode 13's figures and text. | Episode 14 leaning on either |
 

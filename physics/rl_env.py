@@ -189,6 +189,26 @@ class EnvConfig:
     #: Scaled so one degree past the bound costs about as much as a step's
     #: progress: excess/12 x this, against ~0.4 m of progress per step.
     envelope_penalty: float = 0.0
+    #: Cost per step for tire workload — the mean over the four wheels of
+    #: squared friction-ellipse utilisation. **0.0 reproduces every Episode
+    #: 9-14 result**, which is what it must do, because this changes the
+    #: question rather than fixing a bug (rule 9).
+    #:
+    #: Added because Episode 14 compared two variants on tire utilisation and
+    #: the comparison turned out to be meaningless: on the exit straight the
+    #: reward is progress alone — no off-track penalty, worst slip 0.02-1.08
+    #: deg against a 12 deg bound so no envelope penalty either — and summed
+    #: per-wheel LATERAL force ranged 83 N to 3,199 N across seeds at identical
+    #: reward. Wheels shoving against each other was free, so "does the policy
+    #: allocate efficiently" was being asked of an objective that had never
+    #: mentioned efficiency. See FINDINGS F95.
+    #:
+    #: Squared rather than linear so that one saturated wheel costs more than
+    #: four half-used ones — which is the same shape as the QP allocator's own
+    #: objective (``physics/torque_vectoring.py``), deliberately: the point is
+    #: to give BOTH variants the goal the allocator was built around and see
+    #: which reaches it, not to hand it to the variant that already has it.
+    workload_penalty: float = 0.0
     #: Give up if the car is crawling; otherwise a policy that stops still
     #: collects zero reward forever and wastes the rollout.
     min_speed: float = 3.0
@@ -509,6 +529,20 @@ class DrivingEnv:
             if excess > 0.0:
                 reward -= self.cfg.envelope_penalty * excess / math.degrees(
                     ENVELOPE_SLIP_MAX)
+        if self.cfg.workload_penalty > 0.0:
+            # Mean squared friction-ellipse utilisation over the four wheels.
+            # Computed from the SAME per-wheel forces _record logs, so the
+            # reward and the reported metric cannot describe different things.
+            wheels = self.backend._last_wheels
+            if wheels:
+                acc = 0.0
+                for c in CORNERS:
+                    w = wheels[c]
+                    fz = max(w.fz, 1.0)
+                    u = math.hypot(w.fx / float(self.backend.tire.peak_fx(fz)),
+                                   w.fy / float(self.backend.tire.peak_fy(fz)))
+                    acc += u * u
+                reward -= self.cfg.workload_penalty * acc / len(CORNERS)
 
         # Log the reward the learner actually receives, penalty included. An
         # earlier version logged only the progress term, so every training

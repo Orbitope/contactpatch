@@ -241,7 +241,7 @@ def full_trace(out: Path, variant: str, seed: int) -> dict:
     model, _ = _policy_from(out, tag, cfg)
     env = DrivingEnv(cfg)
     tr = rollout(env, greedy_policy(model), seed=0)
-    keys = ("s", "a_y", "utilisation_max", "alpha_max_deg") + tuple(
+    keys = ("s", "n", "speed", "a_y", "utilisation_max", "alpha_max_deg") + tuple(
         f"{f}_{c}" for f in ("fx", "fy", "fz") for c in CORNERS)
     data = {k: np.asarray(tr[k]) for k in keys}
     np.savez(cache, **data)
@@ -461,10 +461,10 @@ def build_final_figures(out: Path, results: dict) -> None:
          rl_tv_figures.envelope_escape_figure(results, report))
     write(out / "04-seed-by-seed.svg",
          rl_tv_figures.seed_scorecard_figure(results))
-    write(out / "05-same-lap-half-the-tire.svg",
-         rl_tv_figures.tire_spend_figure(results, report))
-    write(out / "06-where-the-tire-goes.svg",
+    write(out / "05-where-the-tire-goes.svg",
          rl_tv_figures.utilisation_along_the_lap_figure(out, results))
+    write(out / "06-lines-driven.svg",
+         rl_tv_figures.lines_driven_figure(out, results))
     print("  production_report.json")
     print("  01-same-wheels-different-drivers.svg")
     print("  02-yaw-moment-along-the-road.svg")

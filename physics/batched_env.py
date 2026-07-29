@@ -396,6 +396,16 @@ class BatchedDrivingEnv:
                 0.0, worst_deg - math.degrees(ENVELOPE_SLIP_MAX))
             reward = reward - (self.cfg.envelope_penalty * excess
                                / math.degrees(ENVELOPE_SLIP_MAX))
+        if self.cfg.workload_penalty > 0.0:
+            # Mean squared friction-ellipse utilisation, from the FIRST RK4
+            # stage's wheel forces — which is what ``_last_wheels`` holds in
+            # the reference, so the two rewards are computed from the same
+            # instant rather than from two different points in the step.
+            fz_safe = np.maximum(fz, 1.0)
+            ux = fx / self.tire.peak_fx(fz_safe)
+            uy = fy / self.tire.peak_fy(fz_safe)
+            reward = reward - self.cfg.workload_penalty * (
+                ux * ux + uy * uy).mean(axis=1)
 
         self._ep_return += reward
         self._ep_max_slip = np.maximum(self._ep_max_slip, worst_deg)

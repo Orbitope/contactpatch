@@ -48,61 +48,60 @@ So the headline is not "RL fails" and not "RL wins." Both formulations learn to
 drive the corner at the limit without ever being told what a yaw moment is for.
 The interesting result is *where they differ*, and it is sharper than expected.
 
-### Same lap, same grip, half the tire
-
-![Same lap, same grip, half the tire](../experiments/ep14/out/05-same-lap-half-the-tire.svg)
+### Where they differ, and where they only appear to
 
 | | H (allocator kept) | E (allocator deleted) | separation |
 |---|---|---|---|
 | Lap time | 19.80 ± 0.45 s | 18.89 ± 2.71 s | 0.5× seed sd — **not a finding** |
 | Peak lateral acceleration | 0.915 ± 0.059 g | 0.976 ± 0.028 g | 1.3× seed sd — **not a finding** |
-| Mean tire utilisation | **0.357 ± 0.087** | **0.701 ± 0.130** | 3.1× seed sd — **reportable** |
+| Tire utilisation **in the corner** | 0.70 ± 0.07 | 0.85 ± 0.10 | 1.8× seed sd — **not a finding** |
 
-All `[MEASURED]`, 3 seeds each, deployed policy. This project's rule is that a
-trend smaller than twice the seed standard deviation is not a finding
-(CLAUDE.md rule 5), and these land on opposite sides of it.
+All `[MEASURED]`, 3 seeds each, deployed policy. Rule 5 asks for more than twice
+the seed standard deviation before a difference counts, and **not one of these
+clears it.**
 
-**The two variants get round in the same time, at the same peak grip.** Both
-gaps are inside seed noise and are reported as no measurable difference, not as
-small ones.
+**So the answer to "does it agree with us" is: in the corner, yes — and there is
+no measurable difference between doing the allocation by hand and not doing it
+at all.** Both variants get round in the same time, at the same peak grip,
+working the tires equally hard where the tires are actually being worked.
 
-**They spend very differently doing it.** E uses roughly **twice** the
-friction-ellipse utilisation — how much of each tire's available grip is in use
-at once. The three H seeds (0.27, 0.35, 0.45) and the three E seeds (0.55, 0.77,
-0.78) do not overlap.
+![Where the tire actually goes](../experiments/ep14/out/05-where-the-tire-goes.svg)
 
-**And E is far less repeatable.** Its lap times spread ±2.71 s against H's
-±0.45 s — six times the seed-to-seed variation, from 16.34 s to 21.74 s. With
-three seeds that spread is suggestive rather than established, but it points the
-same way as the utilisation: the variant with a fixed lower layer lands in a
-narrower band.
+The six traces sit on top of each other through the corner. They separate the
+moment it ends — and that separation is the subject of the next section, because
+it is not what it looks like.
 
-**Where the gap actually is, which is not where I first assumed.** Broken down
-along the lap, H and E are *both* near the limit through the corner — 0.83–0.94
-against 0.91–1.00 in the 40 m either side of the apex. The whole difference is
-on the **exit straight**, where H falls to 0.08–0.35 and E stays at 0.47–0.77.
-Since 260 of this lap's 393 m are straight, the straight dominates the average.
+### The difference on the straight is a hole in our own reward
 
-![Where the tire actually goes](../experiments/ep14/out/06-where-the-tire-goes.svg)
+Over the *whole lap*, H averages 0.36 utilisation and E averages 0.70, a gap of
+3.1× the seed standard deviation. An earlier version of this article reported
+that as the headline result and attributed it to the allocator's
+workload-minimising objective. **That was wrong, and the way it is wrong is
+worth more than the claim was.**
 
-All six seeds, and the shape is the same on every one: the two variants sit on
-top of each other through the corner and separate the moment it ends.
+The gap lives entirely on the exit straight, which is 260 of this lap's 393 m
+and therefore dominates any lap average. And on that straight, the reward is
+`progress` and nothing else: the car is on the road, so there is no off-track
+penalty, and the worst slip angle across all six policies is **0.02°–1.08°**
+against a 12° envelope bound, so there is no envelope penalty either.
 
-**What that does and does not establish.** It is consistent with the QP
-allocator's objective — its job is to meet the demanded force and moment *while
-minimising tire workload*, and H inherits that for free — but the per-seed force
-decomposition does not cleanly support that as the mechanism. On the straight,
-H seed 1 puts out 4,165 N of summed per-wheel longitudinal force for 543 N of
-net drive, an efficiency of 13%; E seed 0 manages 15%. The variant with the
-allocator is not reliably the tidier one wheel-by-wheel, because H's allocator
-faithfully produces whatever opposing forces its policy's `Mz` demand asks for,
-including on a straight where no yaw is needed.
+Meanwhile the summed per-wheel *lateral* force on that same straight ranges from
+**83 N to 3,199 N** depending on the seed — a factor of 38 — for **identical
+reward**. Wheels shoving against each other on a straight line costs the policy
+absolutely nothing.
 
-So the honest statement is the measurement, not the mechanism: **removing the
-allocator costs about twice the tire for the same lap time, and the cost is paid
-on the straight.** Why is not settled by these six runs, and the obvious next
-experiment — feed H's policy a forced-zero `Mz` on the straight and see whether
-its utilisation advantage survives — has not been run.
+That is an underdetermined objective: a flat direction the reward cannot see,
+which each seed settles into differently. It explains every symptom at once —
+H's own three seeds spread 0.08, 0.25, 0.35 on that straight; utilisation does
+not correlate with net drive force (H seed 2 makes 775 N of drive on 0.08
+utilisation, H seed 1 makes 543 N on 0.35); and *both* variants show it, because
+it is a property of the reward rather than of the action space. H's allocator
+does not prevent it either: it faithfully delivers whatever yaw moment its policy
+asks for, and asking for yaw on a straight is free.
+
+**So the seed-to-seed instability is not a training failure. It is correct
+behaviour against an objective that does not care**, and reading it as "E is
+wasteful" was reading structure into noise. See FINDINGS F95.
 
 ### The learners are far more aggressive than the engineers
 
@@ -217,16 +216,28 @@ The engineers split the problem in two: one layer decides how much to rotate,
 another decides which wheels pay. Twenty years of practice says that split is
 the right one.
 
-A learner given no reference model reproduces the first half readily — both
-variants learned how much rotation to ask for, and both ask for far more of it
-than the classical controller ever does. Given the second half for free, it
-uses it. Denied it, it still drives the corner just as fast, and spends twice
-the tire doing it.
+A learner given no reference model reproduces the first half readily. Both
+variants worked out how much rotation to ask for, and both ask for about four
+times more of it than the classical controller ever does — nobody told them to
+want that, and neither chose the conservative reference-model demand.
 
-Which is a more specific answer than "does it agree with us." It agrees about
-the goal and disagrees about the aggression, and the piece of the classical
-architecture it could not replace from scratch is the one that was never a
-judgement call in the first place — the convex problem with a unique answer.
+As for the second half: **deleting the allocator entirely cost nothing
+measurable.** Same lap time, same peak grip, same tire usage through the corner.
+The convex little optimiser that twenty years of practice puts underneath the
+controller turns out, on this corner, to be doing a job the policy above it can
+absorb.
+
+That is a smaller claim than the one this article made a day ago, and it is
+smaller for a reason worth keeping. The bigger claim — that E burns twice the
+tire — came from a lap average, and a lap average is a sum over places where the
+car is doing different things. Decomposed, the difference sat entirely on a
+straight, in a direction our reward function cannot see. The measurement was
+real; what it measured was our own objective's indifference.
+
+**The honest shape of the result, then:** on the part of the lap this episode is
+actually about, the machine agrees with the engineers, and does not need their
+allocator to do it. On the part it is not about, it does whatever it likes,
+because we never told it not to.
 
 ---
 

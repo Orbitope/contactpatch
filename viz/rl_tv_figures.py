@@ -793,7 +793,104 @@ def utilisation_along_the_lap_figure(out_dir, results) -> str:
         "One line per seed. Traces end where that policy's lap ends.")
 
 
+def lines_driven_figure(out_dir, results) -> str:
+    """The line every seed actually drove, on the actual road.
+
+    This should have been the first figure in the episode and was the last one
+    written. Everything else here is a derived quantity plotted against
+    distance; this is where the car went. A reader who knows nothing about slip
+    angles can see six cars take six lines through one corner, and see at a
+    glance which ones ran wide.
+    """
+    import numpy as _np
+    from pathlib import Path
+    from physics.track import long_exit
+    from . import line_figures as LF
+
+    W, H = 1560, 980
+    s = V.head(
+        W, H,
+        "Six policies, one corner, six lines",
+        "The path each deployed policy actually drove, on the road it drove "
+        "it on. Colour is how much of the tires' grip was in use — teal is "
+        "loafing, coral is at the limit.",
+    )
+
+    track = long_exit()
+    back, to_px, scale = LF.track_backdrop(track, 0.0, track.length,
+                                           90, W - 60, 150, 700)
+    s += back
+
+    rows = []
+    for v in ("H", "E"):
+        for seed in sorted(results["variants"][v]["mean_utilisation_by_seed"],
+                           key=int):
+            p = Path(out_dir) / f"full_trace_{v}_seed{seed}.npz"
+            if not p.exists():
+                continue
+            d = _np.load(p)
+            if "n" not in d:
+                continue
+            rows.append((v, int(seed), d))
+
+    if not rows:
+        s += D.text(60, 760, "no traces with lateral offset available — "
+                    "re-run --aggregate to rebuild them", V.MUT, 13)
+        return s + V.foot(W, H, "")
+
+    for v, seed, d in rows:
+        x, y = track.to_xy(d["s"], d["n"])
+        px, py = to_px(x, y)
+        u = _np.clip(d["utilisation_max"], 0.0, 1.0)
+        # Coloured per segment by utilisation, so the line carries its own
+        # result instead of needing a second chart to explain it.
+        k = max(1, len(px) // 260)
+        for i in range(0, len(px) - k, k):
+            r_, g_, b_ = V.ramp(float(u[i]))
+            s += (f'<line x1="{px[i]:.1f}" y1="{py[i]:.1f}" '
+                  f'x2="{px[i+k]:.1f}" y2="{py[i+k]:.1f}" '
+                  f'stroke="#{r_:02x}{g_:02x}{b_:02x}" stroke-width="2.6" '
+                  f'stroke-linecap="round" opacity="0.95"/>')
+        # where it ended, and whether that was the finish line or the grass
+        fin = results["variants"][v]["finished_by_seed"][str(seed)]
+        s += (f'<circle cx="{px[-1]:.1f}" cy="{py[-1]:.1f}" r="4.5" '
+              f'fill="{V.TEAL if fin else V.COR}"/>')
+        s += D.text(px[0] - 8, py[0] + 4, f"{v}{seed}", COLOUR[v], 11.5,
+                    "end", weight="600", mono=True)
+
+    # grip scale
+    lx, ly = 120, 742
+    for i in range(60):
+        r_, g_, b_ = V.ramp(i / 59.0)
+        s += (f'<rect x="{lx + i * 3.2:.1f}" y="{ly}" width="3.4" height="12" '
+              f'fill="#{r_:02x}{g_:02x}{b_:02x}"/>')
+    s += D.text(lx - 8, ly + 11, "grip used", V.MUT, 11.5, "end")
+    s += D.text(lx, ly + 28, "0%", V.MUT, 10.5, "middle")
+    s += D.text(lx + 192, ly + 28, "100%", V.MUT, 10.5, "middle")
+    s += D.text(lx + 230, ly + 11, "· filled dot = finished, coral = left the road",
+                V.MUT, 11.5)
+
+    s += D.rule(60, 800, W - 120, V.GRID)
+    for i, line in enumerate(D_wrap(
+            "All six get round. The lines are not identical — each policy "
+            "found its own way through, and none of them was given a racing "
+            "line to follow or told what one is. What separates the variants "
+            "is not the path but the colour: through the corner every line "
+            "runs hot, and on the straight afterwards H's lines cool off "
+            "while E's stay warm.", 148)):
+        s += D.text(60, 834 + 20 * i, line, V.MUT, 12.5)
+
+    s += D.text(40, H - 40,
+               "[MEASURED] deployed policy, one rollout per seed, plotted "
+               "through Track.to_xy on the same road every other figure in "
+               "this project draws · RUNG 2 (rule 15)", V.MUT, 9.5)
+    return s + V.foot(
+        W, H,
+        "The road is drawn to scale; the dashed line is the centreline. "
+        "Lateral offset is the policy's own logged distance from it.")
+
+
 __all__ = ["pilot_sanity_figure", "control_surfaces_figure",
            "yaw_moment_figure", "envelope_escape_figure",
            "seed_scorecard_figure", "tire_spend_figure",
-           "utilisation_along_the_lap_figure"]
+           "utilisation_along_the_lap_figure", "lines_driven_figure"]

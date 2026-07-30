@@ -1012,6 +1012,61 @@ pure relocation (108 insertions / 107 deletions, word count +7).
 worth as a function of power, which Episode 15 also needs) and Phase 3
 (conditional RL retrain). `SEASON5.md` is still waiting on all of this.
 
+### Session 22 — Phase 2 done: TV's worth goes from +4.6% to +125.5% cornering limit across the power curve
+
+**F101.** Same session, same discipline, continuing straight from Phase 1.
+Gave `physics/driver.py` D-A support first (`Driver.drive_max`/`brake_max`/
+`drive_power`, additive and opt-in, mirroring `optimal_control.Limits`;
+verified bit-identical to Episode 13's committed best-lap result before
+trusting it) — needed because `ep13.lap()`'s own `SpeedProfile` reads the
+module-level constants directly, not any per-instance override.
+
+**Ep 12 turned out not to have a power axis at all.** Checked before
+building anything: it's a steady-state, fixed-corner mechanism study that
+sweeps *demanded* force directly (0–6,500 N), no engine cap, no lap. Its
+existing sweep already covers 1×/most-of-1.5× but not 2×; extended it
+directly and confirmed F76/F77's mechanism holds unchanged through
+12,000 N, no re-publish needed. Original plan had assumed Ep 12 needed the
+same {1×,1.5×,2×} treatment as Ep 13 without checking.
+
+**Ep 13's result: TV's cornering-limit gain over the open differential goes
++4.6% (1×, matching F82) → +48.3% (1.5×) → +125.5% (2×), monotonic under
+both drive models.** Not because TV improves with power — because
+everything else collapses and TV doesn't: the open differential's own
+limit nearly halves (−54%), the LSD becomes completely undrivable by 2×
+(checked at 0.002 resolution — no valid `grip_use` anywhere from stalled to
+spun), the single-axis TV-differential degrades substantially too, and only
+the full four-wheel allocator holds its limit flat across the whole range.
+
+**Two more real defects, same pattern as Phase 1 — caught by not accepting
+a surprising number:**
+1. A plan/clip mismatch produced a textbook-shaped false result: feeding the
+   power-limited clip's deliberately non-binding drive_max (100,000 N) into
+   the *plan's* acceleration target too (7.5 g, no physical meaning) made
+   the tracking driver's error term saturate chasing an unreachable speed,
+   and the open differential spun at 49.9° — reading exactly like "more
+   power breaks an open diff" before it was checked. Confirmed by
+   construction: the same clip with a sane plan drives the identical lap at
+   3.1°. Fixed by separating what the plan assumes from what the clip
+   enforces.
+2. `GU_LO=0.70` was silently reporting "no valid lap" for cars whose real
+   limit sat below it once defect 1 was fixed — checked directly (2×/flat
+   open diff: off track at 0.70 and 0.50, clean at 0.30) rather than
+   accepted. Lowered to 0.05, and the new floor was itself verified valid
+   before trusting anything built on it.
+
+**Closes Phase 2.** Episode 15 has both prerequisites now: a
+design-sensitivity baseline that varies with power (F100) and TV's own
+worth as a function of the same curve, with a mechanistic account of why
+(F101). 583 tests pass throughout; every number in F101 checked against the
+regenerated JSON before being written down.
+
+**Next:** Phase 3 (conditional RL retrain, Episodes 9–11) — lower priority
+per the original plan (needs the power decision fixed and Episode 15's
+design to actually need it first) — then Episode 15 itself, now unblocked
+on both of its prerequisites. `SEASON5.md` still waits behind all of Season
+4's own episodes landing.
+
 ### Superseded — Episode 13 planning notes
 
 **Question:** if pushing one wheel harder rotates the car, why not just do that?

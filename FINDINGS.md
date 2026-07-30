@@ -3884,6 +3884,113 @@ POWER-REVIEW named at the start.
 
 ---
 
+### F101 · POWER-REVIEW Phase 2: torque vectoring is worth 25× more cornering limit at 2× power than at 1×, and a passive differential becomes undrivable long before that. · 2026-07-30
+
+**Source:** `[MEASURED]` — `experiments/power_review/phase2_sweep.py`,
+Episode 13's five configurations at {1×, 1.5×, 2×} power × {flat cap,
+power-limited}, `long_exit`, bisected to `grip_use` tolerance 0.002, plus
+Phase 0's brake-cap fix (`BRAKE_MAX` raised to the tire's demonstrated
+~0.985 g, applied once, every configuration — not a swept axis; see §1
+point 3 of POWER-REVIEW.md).
+
+**The headline: TV's cornering-limit gain over the open differential.**
+
+| Power | Flat cap | Power-limited |
+|---|---|---|
+| 1× | **+4.6%** | +8.8% |
+| 1.5× | +48.3% | +66.2% |
+| 2× | **+125.5%** | +123.0% |
+
+Monotonic under both drive models, growing from a low-single-digit number —
+matching F82's original 1× measurement (+5.18% there; +4.6% here, the small
+remainder explained entirely by the brake-cap fix, not drift) — to **more
+than doubling** the achievable cornering limit by 2×. Lap-time gain follows
+the same shape: −0.95% (a wash, matching F82/F97) → +5.08% → **+14.06%**
+(flat cap); corner-section gain **+24.55%** at 2×, against F82's original
+−1.32%-to-modest range. **This is the number Episode 15 needed and did not
+have**: at real sports-car power, torque vectoring is not a small effect
+measured carefully — it is the difference between a car that corners and
+one that does not.
+
+**The reason, and it is not subtle once measured directly: the passive
+differential runs out of road long before torque vectoring does.**
+
+| Config | 1× limit | 2× limit | Change |
+|---|---|---|---|
+| Open differential | 1.044 | 0.480 | **−54%** |
+| LSD (1.5:1) | 0.970 | **undrivable** | — |
+| TV, rear axle only | 1.082 | 0.722 (flat) / 0.335 (power-limited) | −33% to −68% |
+| **TV, four wheels** | 1.093 | 1.082 | **−1%, effectively flat** |
+
+The open differential's own achievable limit **nearly halves** from 1× to
+2× power — more torque, delivered without any per-wheel intelligence,
+simply overwhelms it. The single-axis TV-differential degrades too, more
+under the power-limited model (which delivers more torque at low speed —
+D-A's own crossover mechanism, F100) than under the flat cap. **Only the
+full four-wheel allocator holds its limit essentially constant across a 2×
+power range.** This is the mechanistic answer to "why does TV's worth grow
+with power": it is not that TV gets better with power, it is that
+everything else gets worse and TV does not.
+
+**LSD's "undrivable" is checked, not assumed.** Scanned at fine resolution
+(`gu` in 0.002 steps from 0.02 to 0.058) at 2× power: the car transitions
+directly from `stalled` (too slow to register as under way) to `spun`
+(49.9–52.5° of slip) with **no valid grip_use in between** — not a search
+that gave up early, a corner this configuration cannot complete at any
+aggression from the gentlest tested upward. Consistent with the article's
+own earlier finding that the LSD is *already* the slowest configuration
+tested at 1× (F79) — this is that same weakness, worse at real power.
+
+**Three defects found and fixed while building this, none accepted at face
+value:**
+
+1. **A plan/clip mismatch that produced a false physical result.** The
+   power-limited drive model's clip deliberately sets a non-binding
+   `drive_max` (100,000 N) so `drive_power` alone governs — but an early
+   version fed that same 100,000 N into the `SpeedProfile`'s own planning
+   input too, a 7.5 g acceleration target with no physical meaning. The
+   plan's forward pass then demanded near-instant post-corner acceleration,
+   the tracking driver's error term saturated chasing it, and the open
+   differential spun at 49.9° on a lap the flat model drove clean at the
+   same aggression — which read, before it was checked, as "more power
+   makes an open diff worse," the right shape for a real finding and
+   entirely wrong. Confirmed by construction: the same clip with a sane
+   planning value (the flat model's own figure) drives the identical lap at
+   3.1°. Fixed by separating what the plan assumes from what the clip
+   enforces (`driver_kw_for` now returns both, independently).
+2. **`GU_LO = 0.70` was too high a floor once the first defect was fixed.**
+   The corrected run still showed most of the passive-differential cells as
+   `nan` at 1.5×/2× power. Checked rather than reported: 2×/flat open diff
+   goes off track at `gu = 0.70` *and* `0.50` but finishes clean at `0.30` —
+   the search's own starting point sat above the car's real limit, so
+   "no valid lap" was being reported for configurations that have a
+   perfectly real, just much lower, one. Lowered to 0.05, and the new floor
+   was itself checked before trusting the results built on it.
+3. **Episode 12 does not have a power axis at all**, discovered by checking
+   rather than assuming Episode 12 needed the same {1×,1.5×,2×} treatment
+   as Episode 13. It is a steady-state, fixed-corner mechanism study that
+   sweeps *demanded* force directly (0–6,500 N) — no engine cap, no
+   `SpeedProfile`, no lap. Its sweep already covers 1× and most of 1.5× but
+   not 2× (9,000 N); extending it directly (not through the Phase 2 sweep
+   infrastructure) found the mechanism conclusion (F76/F77 — the
+   speed-coupling term dominates at full throttle) holds unchanged through
+   12,000 N, with the outside wheel's own grip saturating the asymmetry by
+   9,000 N. No re-publish needed; recorded here as the check, not a finding
+   of its own.
+
+**Not retracted, not touched:** everything upstream of the power question —
+the two-layer controller's mechanism (F82's "both layers do what they
+claim"), the allocator's ~40% share of the gain, the driver-preview
+sensitivity (F84) — none of it depended on power level and none of it
+changed.
+
+**Closes Phase 2.** Episode 15 now has the second thing it needed: not just
+a design-sensitivity baseline that varies with power (F100), but TV's own
+worth as a function of the same power curve, and a mechanistic account of
+why. Both were missing when POWER-REVIEW opened; both exist now.
+
+---
+
 # Decisions
 
 ### D1 · The project drives an offset-free tire. · 2026-07-25

@@ -1,0 +1,274 @@
+{
+  "config": {
+    "powers": [
+      "1x",
+      "1.5x",
+      "2x"
+    ],
+    "models": [
+      "flat",
+      "power_limited"
+    ],
+    "p_1x_watts": 174000.0,
+    "drive_max_1x_n": 4500.0,
+    "brake_max_fixed_n": 13136.988339999998
+  },
+  "cells": {
+    "1x|flat": {
+      "rows": {
+        "open": {
+          "limit_grip_use": 1.044482421875,
+          "lap_time": 14.510914491285853,
+          "section_time": 5.463168341978659,
+          "wall_s": 5.335971117019653
+        },
+        "lsd": {
+          "limit_grip_use": 0.9703125,
+          "lap_time": 14.688057348428709,
+          "section_time": 5.6170990371435465,
+          "wall_s": 6.403717756271362
+        },
+        "alloc": {
+          "limit_grip_use": 1.0656738281250002,
+          "lap_time": 14.642733573166828,
+          "section_time": 5.53843237047688,
+          "wall_s": 6.753839731216431
+        },
+        "tv4": {
+          "limit_grip_use": 1.092919921875,
+          "lap_time": 14.649400239833495,
+          "section_time": 5.53545383205221,
+          "wall_s": 6.8922107219696045
+        },
+        "tvrear": {
+          "limit_grip_use": 1.0823242187500002,
+          "lap_time": 14.90805734842871,
+          "section_time": 5.577856470220656,
+          "wall_s": 6.01175594329834
+        }
+      },
+      "lap_gain_pct": -0.9543557618701888,
+      "section_gain_pct": -1.3231422784122022,
+      "limit_gain_pct": 4.637464354167654,
+      "plan_drive_n": 4500.0,
+      "clip_kw_summary": {
+        "drive_max": 4500.0,
+        "brake_max": 13136.988339999998
+      }
+    },
+    "1x|power_limited": {
+      "rows": {
+        "open": {
+          "limit_grip_use": 1.0005859375000001,
+          "lap_time": 14.529400239833494,
+          "section_time": 5.451168341978658,
+          "wall_s": 5.731841087341309
+        },
+        "lsd": {
+          "limit_grip_use": 0.933984375,
+          "lap_time": 14.730914491285853,
+          "section_time": 5.615168341978658,
+          "wall_s": 7.641916275024414
+        },
+        "alloc": {
+          "limit_grip_use": 1.0596191406250002,
+          "lap_time": 14.430914491285852,
+          "section_time": 5.451168341978659,
+          "wall_s": 6.7372050285339355
+        },
+        "tv4": {
+          "limit_grip_use": 1.08837890625,
+          "lap_time": 14.373771634142996,
+          "section_time": 5.475168341978659,
+          "wall_s": 7.437472105026245
+        },
+        "tvrear": {
+          "limit_grip_use": 1.0369140625,
+          "lap_time": 14.43948591985728,
+          "section_time": 5.471099037143547,
+          "wall_s": 5.472084999084473
+        }
+      },
+      "lap_gain_pct": 1.0711289049896957,
+      "section_gain_pct": -0.44027258918387063,
+      "limit_gain_pct": 8.774155768104611,
+      "plan_drive_n": 4500.0,
+      "clip_kw_summary": {
+        "drive_max": 100000.0,
+        "brake_max": 13136.988339999998,
+        "drive_power": 174000.0
+      }
+    },
+    "1.5x|flat": {
+      "rows": {
+        "open": {
+          "limit_grip_use": 0.7372070312500001,
+          "lap_time": 15.229400239833495,
+          "section_time": 6.071168341978659,
+          "wall_s": 6.876630067825317
+        },
+        "lsd": {
+          "limit_grip_use": 0.6796875000000001,
+          "lap_time": 15.569400239833495,
+          "section_time": 6.291168341978658,
+          "wall_s": 7.647794961929321
+        },
+        "alloc": {
+          "limit_grip_use": 1.0596191406250002,
+          "lap_time": 14.282733573166828,
+          "section_time": 5.449376256483993,
+          "wall_s": 6.385987997055054
+        },
+        "tv4": {
+          "limit_grip_use": 1.092919921875,
+          "lap_time": 14.456066906500162,
+          "section_time": 5.509765703810214,
+          "wall_s": 7.735150098800659
+        },
+        "tvrear": {
+          "limit_grip_use": 1.0369140625,
+          "lap_time": 14.349400239833495,
+          "section_time": 5.471099037143547,
+          "wall_s": 5.308551788330078
+        }
+      },
+      "lap_gain_pct": 5.077897495336877,
+      "section_gain_pct": 9.247028027318336,
+      "limit_gain_pct": 48.2514240296728,
+      "plan_drive_n": 6750.0,
+      "clip_kw_summary": {
+        "drive_max": 6750.0,
+        "brake_max": 13136.988339999998
+      }
+    },
+    "1.5x|power_limited": {
+      "rows": {
+        "open": {
+          "limit_grip_use": 0.6494140625,
+          "lap_time": 15.693771634142996,
+          "section_time": 6.384272299231327,
+          "wall_s": 6.616899013519287
+        },
+        "lsd": {
+          "limit_grip_use": 0.602490234375,
+          "lap_time": 16.029400239833492,
+          "section_time": 6.599272299231326,
+          "wall_s": 8.407632112503052
+        },
+        "alloc": {
+          "limit_grip_use": 1.050537109375,
+          "lap_time": 14.212733573166828,
+          "section_time": 5.376042923150661,
+          "wall_s": 6.237449884414673
+        },
+        "tv4": {
+          "limit_grip_use": 1.0792968750000003,
+          "lap_time": 14.17606690650016,
+          "section_time": 5.41443237047688,
+          "wall_s": 6.620485067367554
+        },
+        "tvrear": {
+          "limit_grip_use": 0.8704101562500001,
+          "lap_time": 14.705200205571568,
+          "section_time": 5.6953762564839945,
+          "wall_s": 5.938969135284424
+        }
+      },
+      "lap_gain_pct": 9.6707455863634,
+      "section_gain_pct": 15.191080256260635,
+      "limit_gain_pct": 66.19548872180455,
+      "plan_drive_n": 6750.0,
+      "clip_kw_summary": {
+        "drive_max": 100000.0,
+        "brake_max": 13136.988339999998,
+        "drive_power": 261000.0
+      }
+    },
+    "2x|flat": {
+      "rows": {
+        "open": {
+          "limit_grip_use": 0.47988281250000003,
+          "lap_time": 16.74606690650016,
+          "section_time": 7.219272299231325,
+          "wall_s": 7.419206142425537
+        },
+        "lsd": {
+          "limit_grip_use": NaN,
+          "lap_time": NaN,
+          "section_time": NaN,
+          "wall_s": 0.9545660018920898
+        },
+        "alloc": {
+          "limit_grip_use": 1.056591796875,
+          "lap_time": 14.172733573166827,
+          "section_time": 5.403168341978659,
+          "wall_s": 6.69713282585144
+        },
+        "tv4": {
+          "limit_grip_use": 1.0823242187500002,
+          "lap_time": 14.390914491285853,
+          "section_time": 5.447168341978658,
+          "wall_s": 6.984501838684082
+        },
+        "tvrear": {
+          "limit_grip_use": 0.7220703125000001,
+          "lap_time": 15.202343062714425,
+          "section_time": 6.115272299231328,
+          "wall_s": 6.5095038414001465
+        }
+      },
+      "lap_gain_pct": 14.063913803545898,
+      "section_gain_pct": 24.54685020595985,
+      "limit_gain_pct": 125.53927553927555,
+      "plan_drive_n": 9000.0,
+      "clip_kw_summary": {
+        "drive_max": 9000.0,
+        "brake_max": 13136.988339999998
+      }
+    },
+    "2x|power_limited": {
+      "rows": {
+        "open": {
+          "limit_grip_use": 0.47988281250000003,
+          "lap_time": 16.74606690650016,
+          "section_time": 7.219272299231325,
+          "wall_s": 7.257956027984619
+        },
+        "lsd": {
+          "limit_grip_use": NaN,
+          "lap_time": NaN,
+          "section_time": NaN,
+          "wall_s": 0.9449043273925781
+        },
+        "alloc": {
+          "limit_grip_use": 1.041455078125,
+          "lap_time": 14.096628777000138,
+          "section_time": 5.3060429231506605,
+          "wall_s": 6.529071092605591
+        },
+        "tv4": {
+          "limit_grip_use": 1.07021484375,
+          "lap_time": 14.065200205571568,
+          "section_time": 5.349306951648882,
+          "wall_s": 6.672159194946289
+        },
+        "tvrear": {
+          "limit_grip_use": 0.3345703125000001,
+          "lap_time": 18.482343062714424,
+          "section_time": 8.429272299231325,
+          "wall_s": 7.912648916244507
+        }
+      },
+      "lap_gain_pct": 16.00893341640709,
+      "section_gain_pct": 25.90240775073062,
+      "limit_gain_pct": 123.01587301587301,
+      "plan_drive_n": 9000.0,
+      "clip_kw_summary": {
+        "drive_max": 100000.0,
+        "brake_max": 13136.988339999998,
+        "drive_power": 348000.0
+      }
+    }
+  },
+  "wall_clock_s": 190.0881049633026
+}

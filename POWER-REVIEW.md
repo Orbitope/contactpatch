@@ -390,18 +390,67 @@ stays null:*
 
 Any of these outcomes is publishable; this is not a fishing trip.
 
-### Phase 2 — Season 4 classical (Episodes 12, 13)
+### Phase 2 — DONE. TV's cornering-limit gain over the open differential
+grows from +4.6% at 1× to +125.5% at 2× power. See F101.
 
-Closed-loop; ~15 min per configuration set, so the full curve is affordable
-here too. Re-run Ep 12's diff comparison and Ep 13's five-configuration study
-at {1×, 1.5×, 2×} — both drive models per D-A's resolution, not one —
-section metric. The specific number Episode 15
-needs from this phase: **TV's worth as a function of power** — per F43's
-mechanism the corner-section gain should grow with saturation, and the curve
-shape tells Episode 15 which power its comparison lives at. Ep 13's
-driver-preview sensitivity check (F84) is re-run at 2× — if the preview
-dependence grows with power, Episode 15's protocol must fix the driver before
-it compares anything.
+TV goes from a small, carefully-measured effect (matching F82's original
++5.18%) to more than doubling the achievable cornering limit — not because
+TV gets better with power, but because everything else gets worse and TV
+does not: the open differential's own limit nearly halves (1.044→0.480,
+−54%), the passive LSD becomes completely undrivable by 2× (checked at fine
+resolution — no valid `grip_use` anywhere from stalled to spun), and even
+the single-axis TV-differential degrades substantially. Only the full
+four-wheel allocator holds its limit essentially flat across the whole
+range. Episode 12's own mechanism (F76/F77) was checked at the power-implied
+demand levels directly (no re-publish needed — it already holds through
+12,000 N) rather than swept through the same {1×,1.5×,2×} machinery, since
+it turned out not to have a power axis at all (below).
+
+Two more real defects, found the same way as Phase 1's — by not accepting a
+surprising number — before anything got written up: a plan/clip mismatch
+that produced a false "more power makes an open diff spin" result before
+the plan and the clip were made to agree on what the car could actually do,
+and a bisection floor (`GU_LO=0.70`) that was silently reporting "no valid
+lap" for configurations whose real limit just sat below it.
+
+Episode 15 now has both things it needed: a design-sensitivity baseline
+that varies with power (F100) and TV's own worth as a function of the same
+curve (F101), with a mechanistic account of why. What follows is the
+original plan, kept for the record of what was intended.
+
+**Revised on inspection: Episode 12 does not have a power level to sweep.**
+The original plan above treated Ep 12 like Ep 13 — re-run at {1×,1.5×,2×} —
+without checking that Ep 12 is a steady-state, fixed-corner mechanism study
+(`A_Y=9.0`, exit speed and yaw rate both fixed) that sweeps the **demanded**
+force directly (`DEMAND_SWEEP`, 0–6,500 N), not a lap with an engine cap.
+There is no "power level" parameter for it to vary independently of what it
+already sweeps. Checked before building anything: 6,500 N covers 1× (4,500 N)
+and most of 1.5× (6,750 N) but not 2× (9,000 N).
+
+**Ep 12's actual Phase 2 task, much smaller than originally planned:** extend
+`DEMAND_SWEEP`'s upper bound to comfortably clear 9,000 N and confirm F76/F77's
+mechanism conclusion (the speed-coupling handling term dominates the
+traction term) still holds at the higher demand. No drive model question
+applies here — `probe()` never touches `drive_max`/`drive_power` at all.
+
+**Ep 13 is where the real Phase 2 compute lives**, and it needed
+`physics/driver.py`'s D-A support (built and verified above) first, since
+`ep13.lap()`'s own `SpeedProfile` construction reads the module-level
+`DRIVE_MAX`/`BRAKE_MAX` constants directly rather than any per-instance
+override — confirmed the hard way (raising the clip alone did nothing,
+because the *plan* still targeted the old cap). Re-run Ep 13's
+five-configuration study at {1×, 1.5×, 2×} — both drive models, section
+metric, `SpeedProfile` and `Driver` built consistently from the same
+power-derived values rather than reusing `ep13.lap()`'s hardcoded wrapper.
+Also apply the brake-cap fix Phase 0 confirmed (`BRAKE_MAX` raised to the
+tire's demonstrated ~0.985 g, not swept — a one-time correction, not a power
+axis; see §1 point 3). The specific number Episode 15 needs from this phase:
+**TV's worth as a function of power** — per F43's mechanism the
+corner-section gain should grow with saturation, and the curve shape tells
+Episode 15 which power its comparison lives at. Ep 13's driver-preview
+sensitivity check (F84) is re-run at 2× — if the preview dependence grows
+with power, Episode 15's protocol must fix the driver before it compares
+anything.
 
 ### Phase 3 — Season 3 RL (Episodes 9–11) — conditional, cheapest last
 

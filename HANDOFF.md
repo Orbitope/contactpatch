@@ -1067,6 +1067,50 @@ design to actually need it first) — then Episode 15 itself, now unblocked
 on both of its prerequisites. `SEASON5.md` still waits behind all of Season
 4's own episodes landing.
 
+### Session 23 — Episode 15's experiment: F102, TV flattens layout up to 47×, and a genuine exception
+
+**Went straight to Episode 15 instead of Phase 3**, since it was the actual
+payoff both prior phases existed for and Phase 3 was explicitly the lower
+priority. New `experiments/ep15/run.py`: Episode 7's balance sweep and
+Episode 8's five layout archetypes, TV off (open diff) vs TV on (`tv4`), at
+1× and 2× power, D11's cornering-limit protocol — reusing Phase 2's driver
+infrastructure directly.
+
+**Result: layout sensitivity is nearly erased by TV, and increasingly so
+with power** — 16× flatter at 1×, **47× flatter at 2×** (spread 0.271→0.017
+at 1×, 0.713→0.015 at 2×). The series plan's payoff line stands: "the thing
+that made a 911 a 911" is something this controller has already made
+irrelevant to whether the car holds a line, on this model. **Balance
+flattens for the RWD car (10.3× at 2×) and does not for the FWD one** — and
+that split is a real, checked mechanism, not a gap: the FWD archetype's
+drive force fully saturates whichever power cap it's given, yet its
+cornering limit sits at a bit-identical 1.100 regardless — its limit is a
+front-tire slip-angle ceiling (11.9°, one tenth of a degree from the ±12°
+envelope), not a traction-management one, so there is nothing for an
+allocator to fix.
+
+**The one pattern that needed a direct check** — `front_fwd`'s
+power-invariant limit — is the same "identical across power" shape that was
+a real bug twice already this session (Phase 1's `drive_max` bug, Phase 2's
+plan/clip bug). Checked rather than assumed: confirmed the drive-force clip
+genuinely reaches and saturates the raised cap at both power levels; the
+limit doesn't move because something else binds first. Different mechanism,
+same discipline.
+
+**A recurring, unexplained wall-clock oddity, noted rather than chased
+further:** 4 of 60 configurations across the quick and full runs took
+~900–1000s against every other config's 7–8s. Direct re-tests of the exact
+same parameters ran in under a second each time, and the reported results
+are physically consistent with their neighbours, so this reads as a
+transient system-level slowdown rather than a code defect — but it is
+recorded here in case the pattern recurs on a future run.
+
+**Not yet done: figures and the article.** `experiments/ep15/` has the
+experiment, `out/results.json`, and a diagnostic write-up
+(`diagnostics/out/D-ep15.md`, 7/7 checks); F102 is written. The episode
+isn't complete by this project's own four-piece definition until
+`episodes/ep15-*.md` exists with its figures embedded.
+
 ### Superseded — Episode 13 planning notes
 
 **Question:** if pushing one wheel harder rotates the car, why not just do that?
@@ -1201,7 +1245,7 @@ width on every TV claim.
 | 12 | What a differential actually does | 4 | diff modes ✓ | ✅ **DRAFTED** — `episodes/`, `experiments/ep12/` |
 | 13 | How engineers built a car that steers with its wheels | 4 | classical TV ✓ | ✅ **DRAFTED** — `episodes/`, `experiments/ep13/` (noise result retracted by F97) |
 | 14 | What the machine found instead | 4 | RL TV variants ✓ | ✅ **DRAFTED** — `episodes/`, `experiments/ep14/` (rewritten after F93/F94; H-vs-E retracted by F95) |
-| 15 | Is chassis tuning about to be automated away? | 4 | TV × Season 2 sweeps | ← **NEXT** |
+| 15 | Is chassis tuning about to be automated away? | 4 | TV × Season 2 sweeps ✓ | ✅ **EXPERIMENT DONE** — `experiments/ep15/`, F102 (article/figures ← next) |
 | 16 | Did any of this survive real physics? | 4 | Chrono backend | — |
 
 **Seasons 1–2 (Ep 1–8) carry no training risk.** Tire model, double-track, optimal control only. If the RL work proves harder than expected, half the series still ships.

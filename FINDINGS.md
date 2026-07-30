@@ -3991,6 +3991,91 @@ why. Both were missing when POWER-REVIEW opened; both exist now.
 
 ---
 
+### F102 · Episode 15: torque vectoring flattens layout sensitivity by up to 47×, flattens balance for rear-driven cars — and does nothing for a front-driven one, for a reason worth keeping. · 2026-07-30
+
+**Source:** `[MEASURED]` — `experiments/ep15/run.py`, Episode 7's balance
+sweep (5 fractions × 2 drivetrains) and Episode 8's five layout archetypes,
+each driven with TV off (open differential) and TV on (the four-wheel
+allocator), at RV-1's own power (1×) and 2×, `long_exit`, D11's protocol
+(cornering-limit `grip_use`, bisected to 0.002). Uses Phase 2's driver
+infrastructure directly (`experiments/power_review/phase2_sweep.py`).
+
+**Layout: TV nearly erases it, and increasingly so as power rises.**
+
+| | TV off (spread) | TV on (spread) | Flattening factor |
+|---|---|---|---|
+| 1× power | 0.271 | 0.017 | **16×** |
+| 2× power | 0.713 | 0.015 | **47×** |
+
+The five archetypes span 0.83–1.10 in cornering limit with TV off at 1×
+(F49/F99/F100's already-established sensitivity) and 0.39–1.10 at 2× — a
+spread that **grows 2.6× with power, exactly as F100 found for the OC-solver
+version of this same axis.** With TV on, every archetype sits in a tight
+1.07–1.10 band at both power levels. **The thing that made a 911 a 911 —
+where the engine sits — is something this controller has already made
+irrelevant to whether the car can hold a line, on this model, at this
+power.** The series-plan payoff line stands: this is the flattening it
+asked whether would hold.
+
+**Balance: flattens for the rear-driven car, and does not need to for the
+front-driven one — a real mechanism, not a gap in the result.**
+
+| | TV off, 1×→2× | TV on, 1×→2× | Flattens at 2×? |
+|---|---|---|---|
+| RWD | 0.086 → **0.371** | 0.047 → 0.036 | **Yes — 10.3× flatter** |
+| FWD | 0.091 → 0.091 | 0.094 → 0.080 | **No measurable flattening** |
+
+RWD's sensitivity grows with power exactly like layout's does, and TV
+collapses it the same way. **FWD's sensitivity does not grow with power at
+all — 0.091 both times, with or without TV — because power was never what
+was binding it.** Checked directly on the archetype that shows this
+starkest (`front_fwd`, 62% front mass, TV off): drive force **fully
+saturates whichever cap it is given** (4,500 N at 1×, 9,000 N at 2× — the
+power scaling reaches the wheels correctly) and the cornering limit is
+**bit-identical, 1.100, at both power levels.** Worst slip angle is 11.9° at
+both — one tenth of a degree from the ±12° envelope, on the axle that is
+doing double duty as steering *and* driving. This car's limit is a lateral
+slip-angle ceiling, not a traction-management one, so giving it more torque
+neither helps nor needs fixing. TV even makes the FWD balance sweep
+**marginally less uniform** (0.094 vs 0.091 at 1×) — plausible and not
+alarming: an allocator built to redistribute traction has less to
+redistribute on an axle that was never the bottleneck, and reallocating
+force that was already fine is not guaranteed to be free.
+
+**The reframing this forces, stated plainly:** "does TV flatten design
+sensitivity" does not have one answer — it has the answer for *whichever
+mechanism the design axis actually threatens the car through*. Where a
+design's vulnerability is a passive differential being overwhelmed by
+torque (RWD balance, every layout archetype — F101's mechanism), TV fixes
+it, more so as power rises. Where a design's vulnerability is a tire's own
+slip-angle ceiling (this FWD archetype), TV has nothing to allocate, because
+nothing was being mismanaged.
+
+**Checked, not assumed, twice over.** A systematic scan of every balance
+point against a linear interpolation of its neighbours found nothing
+suspicious (matching Phase 1's discipline exactly). The one pattern worth a
+direct check — `front_fwd`'s power-invariant limit, the same "identical
+across power levels" shape that was a real bug in Phase 1 (F100) and again
+in this session's own Phase 2 script — was confirmed to be a *different*,
+genuine mechanism this time: the drive-force clip is measurably reaching
+and saturating the raised 2× cap; the limit does not move because
+something else (front-tire slip angle) binds first regardless.
+
+**Fidelity: rung 2** (rule 15), same as everything Season 2 through 4
+stands on. This is a trend on a model that reproduces roughly 5% of a real
+car's understeer gradient, driven by a tracker that never brakes in a
+corner. Whether a real, road-legal 911's engine position stops mattering to
+a driver is not a claim this project can make; whether it stops mattering
+*to this rung-2 model's own cornering limit, under this controller* is
+exactly what was measured, and it does.
+
+**Closes the series plan's Episode 15 question.** Both of POWER-REVIEW's
+outputs (F100, F101) were prerequisites for asking it at all; this is the
+answer, and it came with an exception precise enough to explain rather than
+a footnote to hide.
+
+---
+
 # Decisions
 
 ### D1 · The project drives an offset-free tire. · 2026-07-25

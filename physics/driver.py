@@ -216,6 +216,16 @@ class Driver:
     #: policy's exploration noise it does not go away at deployment (F54, F61).
     #: [ASSUMED] — a real figure would come from steering-robot repeatability data.
     steer_noise: float = 0.0
+    #: POWER-REVIEW D-A, mirrored from ``optimal_control.Limits``: per-instance
+    #: overrides of the module-level caps, defaulting to them so every existing
+    #: caller is unaffected. ``drive_power`` (W, default ``None``) is additional,
+    #: not a replacement — both ``drive_max`` and ``drive_power`` clip
+    #: simultaneously when set, exactly as in the OC solver, so
+    #: ``F = min(drive_max, drive_power / v)`` falls out of the two bounds
+    #: rather than an if/else on which model is "the" model.
+    drive_max: float = DRIVE_MAX
+    brake_max: float = BRAKE_MAX
+    drive_power: float | None = None
     _v_integral: float = 0.0
     _rng: np.random.Generator | None = None
 
@@ -254,7 +264,12 @@ class Driver:
         a_ff = self.profile.slope(s) * v
         force = (self.params.mass * a_ff + self.k_v * err
                  + self.k_vi * self._v_integral)
-        drive = float(np.clip(force, -BRAKE_MAX, DRIVE_MAX))
+        drive_cap = self.drive_max
+        if self.drive_power is not None:
+            # Additional, not replacing: self.drive_max still applies. v is
+            # already floored at 1.0 above, so this division is always safe.
+            drive_cap = min(drive_cap, self.drive_power / v)
+        drive = float(np.clip(force, -self.brake_max, drive_cap))
         return steer_rate, drive
 
 

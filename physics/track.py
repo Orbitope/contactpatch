@@ -143,5 +143,42 @@ def long_exit() -> Track:
     )
 
 
+# ---------------------------------------------------------------------------
+# POWER-REVIEW D-D: two more radii, same 90 deg turn and same entry/exit
+# straight lengths as ``long_exit``. Radius is deliberately the ONLY thing
+# that changes across the three tracks below — a real hairpin usually turns
+# through more than 90 deg, but holding the angle fixed isolates radius as the
+# single varied quantity rather than mixing radius and angle into one
+# comparison. All dimensions [ASSUMED], same as long_exit/short_exit.
+# ---------------------------------------------------------------------------
+
+HAIRPIN_RADIUS = 15.0     # second-gear, traction-dominated exit
+FAST_SWEEP_RADIUS = 90.0  # lateral-dominated, high commitment
+
+
+def hairpin() -> Track:
+    arc = 0.5 * np.pi * HAIRPIN_RADIUS
+    return Track(
+        name="hairpin",
+        segments=[Segment(ENTRY_STRAIGHT), Segment(arc, HAIRPIN_RADIUS),
+                  Segment(260.0)],
+        half_width=HALF_WIDTH,
+        description="a 15 m-radius 90 deg corner, second-gear and "
+                     "traction-dominated on exit",
+    )
+
+
+def fast_sweep() -> Track:
+    arc = 0.5 * np.pi * FAST_SWEEP_RADIUS
+    return Track(
+        name="fast sweep",
+        segments=[Segment(ENTRY_STRAIGHT), Segment(arc, FAST_SWEEP_RADIUS),
+                  Segment(260.0)],
+        half_width=HALF_WIDTH,
+        description="a 90 m-radius 90 deg corner, lateral-dominated and "
+                     "taken with far less speed lost",
+    )
+
+
 __all__ = ["Segment", "Track", "short_exit", "long_exit",
            "CORNER_RADIUS", "ENTRY_STRAIGHT", "CORNER_ARC", "HALF_WIDTH"]

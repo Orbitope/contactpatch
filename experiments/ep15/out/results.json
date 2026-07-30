@@ -429,5 +429,6 @@
       }
     }
   },
-  "wall_clock_s": 4239.979289770126
+  "wall_clock_s": 4239.979289770126,
+  "shared_gu_figure": 0.65
 }

@@ -162,6 +162,31 @@ def main() -> int:
         print(f"    layout  {power_label}: TV-off={off:.3f}  TV-on={on:.3f}  "
               f"({'flattens' if on < off else 'does not flatten'})")
     results["flattening"] = flatten
+
+    # -- a shared-aggression comparison, for the pictorial figure ----------
+    # Every design point above was measured at its OWN limit, which is right
+    # for the numbers but wrong for a picture: five cars each at a different
+    # aggression cannot show "one diverges, the other doesn't" on one road.
+    # Pick ONE gu (2x power, where flattening is starkest, F102) that sits
+    # below most open-diff archetypes' own limits but inside tv4's -- so
+    # open-diff genuinely fails on some and tv4 genuinely does not.
+    SHARED_GU = 0.65
+    print(f"  shared-aggression comparison (gu={SHARED_GU}, 2x power, for the figure):")
+    tr = {"s": None}
+    for tv in TV_CONDITIONS:
+        for name in archetypes:
+            params = schema.LAYOUT_ARCHETYPES[name]
+            ref = measure(params)
+            car = Car(tv, params, ref)
+            plan_n, clip = driver_kw_for(2.0, "flat")
+            lp = power_lap(car, track, ref, SHARED_GU, plan_n, clip)
+            tag = f"{tv}_{name}"
+            tr[f"{tag}_s"] = lp.log["s"]
+            tr[f"{tag}_n"] = lp.log["n"]
+            tr[f"{tag}_finished"] = np.array([float(lp.valid)])
+            print(f"    {tv:6s} {name:14s} valid={lp.valid} reason={lp.reason}")
+    np.savez(out / "traces.npz", **{k: v for k, v in tr.items() if v is not None})
+    results["shared_gu_figure"] = SHARED_GU
     results["wall_clock_s"] = time.time() - t_start
 
     # -- checks -----------------------------------------------------------
@@ -214,7 +239,13 @@ def main() -> int:
 
 
 def figures(out) -> None:
-    pass
+    from viz import chassis_figures
+    results = json.loads((out / "results.json").read_text())
+    traces = dict(np.load(out / "traces.npz"))
+    write(out / "01-five-cars-one-corner.svg",
+          chassis_figures.flattening_paths(results, traces))
+    write(out / "02-does-it-flatten.svg",
+          chassis_figures.flattening_card(results))
 
 
 if __name__ == "__main__":

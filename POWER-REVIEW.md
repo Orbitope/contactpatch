@@ -83,9 +83,12 @@ questioning any *magnitude* claim at the default power level:
      a fixed scalar independent of `front_mass_fraction`, `i_zz` or
      drivetrain.** The braking *phase* is design-blind by construction for
      the closed-loop path specifically — confirmed, not merely suspected —
-     while the OC path needs no fix here. `BRAKE_MAX` needs the same D-A/D-B
-     power-model treatment as `DRIVE_MAX`, but only where the closed-loop
-     driver is used.
+     while the OC path needs no fix here. **Not a D-A-style sensitivity
+     question** — braking capacity is a tire/mass property, not an engine-power
+     one, so it has no business riding the 1×/1.5×/2× power curve at all.
+     `BRAKE_MAX` (closed-loop only) simply needs raising to at least the
+     ~0.985 g the tire has already demonstrated it can deliver, once, not
+     re-derived per power level.
 
 **The convergence-floor contradiction is resolved, not just re-audited.** F43
 quoted both 0.02 s and 0.08 s as the convergence bias bound. That question is
@@ -124,7 +127,8 @@ cars, it is a property of the test.
 
 Each is a modelling choice (rule 9): record it, and measure its sensitivity.
 
-### D-A · How power is represented
+### D-A · How power is represented — resolved as a sensitivity axis, not a
+replacement
 
 The current `drive_max` force cap is wrong in a speed-dependent way — F43's own
 caveat: "a real engine's force falls with speed rather than staying capped."
@@ -132,18 +136,37 @@ A constant force cap over-delivers at low speed and under-delivers at high
 speed, which distorts exactly the corner-exit phase where drivetrain and
 balance differences live.
 
-**Options:**
-1. Keep the force cap, sweep it. Cheapest; keeps continuity with F43. The cap
-   stays `[ASSUMED]` and the speed distortion stays unmodelled.
-2. **Power-limited drive: `F = min(F_cap, P/v)`** — two parameters, the
-   standard first-order model. `[SOURCED]`-able against any real car's
-   power/torque curve. Changes the OC constraint (still smooth, CasADi-safe)
-   and one line in the driver and env.
-3. Full torque curve + gearing. Fidelity theatre at rung 2; rejected.
+**The obvious next move — pick the power-limited model and re-baseline
+everything onto it — was checked before being adopted, and the check changed
+the decision.** At RV-1's own 174 kW, `F = min(F_cap, P/v)` drops below
+today's 4.5 kN cap once the car exceeds 38.7 m/s — **30% of Episode 6's own
+exit straight, at the power every published episode already used.** Adopting
+it as *the* model would silently move lap times in Episodes 1–14, including
+the numbers F99 just finished correcting. That is a materially bigger
+decision than "add a more realistic power model," and not one this plan gets
+to make unilaterally.
 
-**Recommendation: 2**, with the F = P/v knee stated on every figure. It makes
-"horsepower" mean horsepower, which the series narrative needs, and it removes
-a known distortion from the phase of the corner we care most about.
+**Resolution: run both, report both, let disagreement be the finding where
+there is one.** This is rule 9 applied to itself — the same treatment track
+width already gets (`[LIKELY]`, re-run at ±3%, the conclusion has to survive
+it) — rather than silently swapping one assumption for another:
+
+- **Flat cap (`F_cap`, unchanged)** — what every existing episode was measured
+  with. Nothing already published is touched. Scaling it directly (F43's own
+  method) is how the drivetrain power sweep already works, and Phase 1 keeps
+  using it for continuity with F43, F44, F49.
+- **Power-limited (`F = min(F_cap, P/v)`)** — run *alongside* the flat cap in
+  Phase 1, not instead of it, at the same power levels. Where the two agree in
+  trend and rank ordering, that is a stronger result than either alone —
+  robust to a modelling choice this project was carrying unexamined. Where
+  they disagree, the disagreement is reported as its own finding (most likely
+  candidate: high-power, high-speed configurations — the exit straight above
+  ~39 m/s — since that is exactly where the two models diverge at 1× already).
+- **Neither replaces the other in any already-published article.** Episodes
+  1–14 stand as measured. The comparison is new information Phase 1 produces,
+  not a retroactive correction — unless the comparison itself surfaces a
+  further F99-style staleness, in which case that gets its own finding, same
+  as everything else in this project.
 
 ### D-B · What power level(s) the series stands on
 
@@ -282,8 +305,10 @@ re-measured (7, 8); single-track spot checks elsewhere.
    0.899 g target is a fixed scalar independent of any design parameter.
    Braking is confirmed design-blind by construction, but **only for the
    closed-loop path** (Episodes 11, 13, and anything Season 5 builds on it) —
-   not for Episodes 6–8's OC solves, which need no fix here. `BRAKE_MAX`
-   needs the D-A/D-B power treatment, scoped to the closed-loop driver only.
+   not for Episodes 6–8's OC solves, which need no fix here. Not a power-curve
+   question — braking capacity is a tire/mass property, not an engine one —
+   `BRAKE_MAX` (closed-loop only) just needs raising to the ~0.985 g already
+   demonstrated, once, independent of the 1×/1.5×/2× sweep.
 4. **Fix the live inconsistency F99 flagged** in `episodes/ep07-*.md`: its own
    corrected numbers (0.21 s / 0.12 s, doubled) sit under a section still
    headed "it barely changes how fast it is." An editorial call, not a
@@ -295,16 +320,25 @@ re-measured (7, 8); single-track spot checks elsewhere.
 ### Phase 1 — Season 2 re-measured (Episodes 6, 7, 8)
 
 OC solves only; hours, not days. For each of Ep 7's balance grid and Ep 8's
-layout grid: {1×, 1.5×, 2×} × {hairpin, long_exit, fast_sweep}, section metric
-headline, **every solve required to converge** (F39 gate — raise `max_iter`,
-prefer the grid where everything converges; at 2× power expect to need it).
-The 1.5× row doubles as the convergence hedge: if 2× solves fight the
-iteration limit, the 1×→1.5× leg still establishes the trend direction on
-fully converged solves rather than losing the phase to F39.
-Envelope occupancy must stay 0 (higher power pushes slip ratio toward the
-±0.20 bound; if solves start riding it, that is reported, not clipped away).
-Ep 6 needs only a confirmation pass: F43 already contains its power sweep;
-re-express it on the section metric and under D-A's power model.
+layout grid: {1×, 1.5×, 2×} × {hairpin, long_exit, fast_sweep} × **{flat cap,
+power-limited}** (D-A — both drive models, not one), section metric headline,
+**every solve required to converge** (F39 gate — raise `max_iter`, prefer the
+grid where everything converges; at 2× power expect to need it). The 1.5× row
+doubles as the convergence hedge: if 2× solves fight the iteration limit, the
+1×→1.5× leg still establishes the trend direction on fully converged solves
+rather than losing the phase to F39. Envelope occupancy must stay 0 (higher
+power pushes slip ratio toward the ±0.20 bound; if solves start riding it,
+that is reported, not clipped away). Ep 6 needs only a confirmation pass: F43
+already contains its power sweep on the flat-cap model; re-express it on the
+section metric and add the power-limited comparison alongside it.
+
+**The two drive models are reported side by side, not collapsed to one.**
+Where they agree in trend and ordering, say so — that is a stronger result,
+robust to a modelling choice this project was carrying unexamined until now.
+Where they diverge, report where and by how much (§1 already predicts the
+likely spot: high-speed, high-power configurations above ~39 m/s, where the
+two models' constraints cross even at 1×). Neither model is presented as
+having replaced the other.
 
 **Pre-registered outcomes (rule 9), stated before running — split by finding,
 since F99 means balance and layout no longer ask the same question:**
@@ -339,7 +373,8 @@ Any of these outcomes is publishable; this is not a fishing trip.
 
 Closed-loop; ~15 min per configuration set, so the full curve is affordable
 here too. Re-run Ep 12's diff comparison and Ep 13's five-configuration study
-at {1×, 1.5×, 2×} (D-A model, section metric). The specific number Episode 15
+at {1×, 1.5×, 2×} — both drive models per D-A's resolution, not one —
+section metric. The specific number Episode 15
 needs from this phase: **TV's worth as a function of power** — per F43's
 mechanism the corner-section gain should grow with saturation, and the curve
 shape tells Episode 15 which power its comparison lives at. Ep 13's

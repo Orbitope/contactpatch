@@ -3786,6 +3786,104 @@ numbers already sitting in the file that exists to keep this from happening.**
 
 ---
 
+### F100 · POWER-REVIEW Phase 1: balance's real effect and layout's null both grow monotonically with power, on every track, under both drive models — the layout null does not survive. · 2026-07-30
+
+**Source:** `[MEASURED]` — `experiments/power_review/phase1_sweep.py`, the
+full {1×, 1.5×, 2×} × {hairpin, long_exit, fast_sweep} × {flat cap,
+power-limited} grid, both axes (Episode 7's balance sweep, Episode 8's
+layout sweep). 270 solves. 269 converged on the first pass; the two that
+didn't are accounted for below, not silently excluded.
+
+**The result, stated once because it holds everywhere it was checked.**
+Every one of 12 balance rows (3 tracks × 2 drivetrains) and 6 layout rows
+(3 tracks) grows monotonically from 1× to 1.5× to 2× power, under **both**
+drive models. Representative (`long_exit`, flat cap, `fwd_0.54` as the
+comparison point across neighbouring designs):
+
+| | 1× | 1.5× | 2× |
+|---|---|---|---|
+| Balance spread, RWD | 0.205 s | 0.319 s | 0.740 s |
+| Balance spread, FWD | 0.120 s | 0.525 s | 0.836 s |
+| Layout spread | 0.056 s | 0.116 s | 0.262 s |
+
+Growth factor 1×→2×, across all 12 balance rows (3 tracks × 2 drivetrains ×
+2 drive models): **×2.3–8.1**, widest for hairpin FWD under the flat cap
+(×8.1) and narrowest for fast_sweep RWD under power-limited drive (×2.3).
+Layout: ×2.5–4.9 across the three tracks and both models, a tighter range.
+**The same order of magnitude as F43's original drivetrain sweep** (which
+found 4–5× amplification from its own lowest to highest power point) —
+balance's range brackets it, layout's sits inside it — on an axis (layout)
+that F99 had just corrected to a *tighter* null at 1×.
+
+**F49's null does not survive the power curve, and this is the second
+correction to it in one day, for a different reason than the first.** F99
+corrected F49's numbers at the power level it was measured at (drift, not a
+design flaw in the finding). This measures the same finding across power and
+finds the null itself was a low-power artefact — exactly what
+POWER-REVIEW's original premise suspected, before F99 showed the premise had
+been arguing from a stale table. **Both things are true at once**: F49's 1×
+number was wrong (F99) and F49's 1×-only *scope* was also insufficient
+(this entry) — a corrected measurement can still be an incomplete one.
+
+**Balance (F44/F99) gets what it predicted.** F99 already established a real
+1× effect and asked whether it would grow with power, F43-style. It does, on
+every track, under both drive models, with no exceptions once the two
+defects below were fixed. Season 2's balance finding is now power-robust
+across a 2× range rather than a one-point claim.
+
+**Two defects found while producing this, both caught by refusing to trust
+a number before checking it, neither by assuming the grid was clean:**
+
+1. **A single cell in a genuinely bad local optimum.**
+   `long_exit|1.5x|flat|rwd_0.61` reported `Solve_Succeeded` at **12.672 s** —
+   self-consistent enough to pass IPOPT's own convergence test, but a full
+   1.1 s slower than both its neighbours (11.40 s at 0.54 front, 11.63 s at
+   0.65 front) and slower than the *same design at 1× power* (12.17 s),
+   which a genuine 1.5×-power solve cannot be. Found because the spread
+   computed across the sweep broke monotonicity in exactly one place — not
+   because the solve reported any failure. Warm-starting cleanly from the
+   converged 0.54 neighbour (the intended staging) and, independently, a
+   cold start both land at **11.525 s**, matching each other and restoring
+   monotonicity. **A systematic scan of every other point in the 270-cell
+   grid — checking each balance point against a linear interpolation of its
+   neighbours, and each layout point against the other four — found zero
+   further instances.** This one cell is corrected in place; nothing else in
+   the dataset needed it.
+2. **One cell hit the iteration limit** (`hairpin|1x|flat|rwd_0.61` —
+   the same fraction, the same drivetrain, a different track and power;
+   plausibly a genuinely harder region for this solver rather than
+   coincidence, not investigated further here). Re-solved from the same
+   converged 0.54 neighbour at double `max_iter`: **12.355 s**, against the
+   unconverged run's own **12.356 s** — this one **was** nearly exact
+   despite not converging, the F39 pattern in its gentler form (small error,
+   not a large one, but still not quotable until checked).
+
+**The flat-cap/power-limited divergence has a clean explanation, not a
+mysterious one.** Because both models are defined as `4500 N × mult` and
+`174,000 W × mult` respectively, their crossover speed —
+`174,000/4,500 = 38.7 m/s` — **is invariant to the power multiplier**; only
+how much of each lap is spent above or below it changes, and more power
+means higher top speed on the same track, hence more of the lap above the
+crossover. Consistent with the data: at 1× power, `hairpin` and `long_exit`
+(lower average speed) show power-limited **faster** than flat cap (the P/v
+constraint is looser than 4.5 kN below 38.7 m/s); by 2× power that gap has
+shrunk and, on both tracks, flipped sign. `fast_sweep` (the high-speed
+track) shows the opposite pattern throughout — power-limited slower than
+flat at every power level, the gap *widening* with power. Neither model is
+reported as having superseded the other (D-A); this divergence is itself
+Phase 1's answer to the question D-A raised.
+
+**Closes Phase 1 for both axes.** Pre-registered outcomes (rule 9): balance
+was "grows monotonically → confirms F43's mechanism" (confirmed, on all
+three tracks, both models); layout was "grows monotonically → F49 corrected
+F43-style, joins balance as a real design axis" (also confirmed — not the
+"stays flat, gets stronger" alternative). Episode 15 now has what it needed
+and did not have before this entry: **a design-sensitivity baseline, on
+both axes, that measurably varies with power** — the missing prerequisite
+POWER-REVIEW named at the start.
+
+---
+
 # Decisions
 
 ### D1 · The project drives an offset-free tire. · 2026-07-25

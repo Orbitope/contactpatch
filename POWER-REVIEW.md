@@ -317,7 +317,28 @@ re-measured (7, 8); single-track spot checks elsewhere.
    updated in place above, from what Phase 0 actually found rather than what
    it assumed).
 
-### Phase 1 — Season 2 re-measured (Episodes 6, 7, 8)
+### Phase 1 — DONE. Both axes grow monotonically with power, on every track,
+under both drive models. See F100.
+
+Balance took the outcome it predicted (F43-style, already real at 1× per
+F99): ×2.3–8.1 growth 1×→2×, all 12 rows monotonic. Layout's null did **not**
+survive: same range order as balance (×2.5–4.9), all 6 rows monotonic —
+reversing F49 a second time in one day, for a different reason than F99's
+correction (that was drift; this is scope — a corrected 1× number can still
+be an incomplete measurement). Two defects found and fixed in the process,
+both by refusing to trust a surprising number rather than by assuming the
+grid was clean: a single cell landed in a genuine local-optimum trap
+(`Solve_Succeeded` at a value 1.1 s off from both neighbours and worse than
+the same design at *lower* power — physically impossible for a real
+power increase, caught because it broke the spread's monotonicity, not
+because the solve reported failure) and one cell hit the iteration limit
+(re-solved, landed within 0.001 s of the unconverged run's own value — F39's
+gentle case). A systematic scan of the other 268 cells found nothing else.
+
+Episode 15 now has what this whole review exists to give it: **a
+design-sensitivity baseline, on both axes, that measurably varies with
+power.** What follows is the original plan, kept for the record of what was
+intended before it ran; F100 above is what actually happened.
 
 OC solves only; hours, not days. For each of Ep 7's balance grid and Ep 8's
 layout grid: {1×, 1.5×, 2×} × {hairpin, long_exit, fast_sweep} × **{flat cap,

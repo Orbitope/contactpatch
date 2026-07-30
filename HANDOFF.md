@@ -944,6 +944,74 @@ start this time.
 **Next:** Phase 0 items 3 (brake-cap audit) and 4 (Ep 7 article wording), then
 Phase 1's power curve for Eps 6–8.
 
+### Session 21 — Phase 0 finished (items 3–4), D-A resolved and built, Phase 1
+run, and F100
+
+**Phase 0 closed out.** The brake-cap hypothesis was half wrong: the OC
+solver's 15 kN cap never binds (87.6% peak usage, zero nodes at cap —
+tire-limited, as it should be); the closed-loop driver's 12 kN cap does bind,
+identically regardless of design, confirmed rather than assumed. Episode 7's
+own wording ("barely changes how fast it is") was inconsistent with its own
+corrected numbers (0.21 s / 0.12 s, doubled) — reworded to distinguish a real
+1.7%-of-lap quantitative effect from the understeer swing's qualitative one.
+
+**D-A didn't get ratified as "adopt the power-limited model" — it got
+resolved as "measure both, neither replaces the other."** Recommending the
+power-limited model as a straight swap turned out to be a bigger commitment
+than it looked: it drops below today's flat cap at 38.7 m/s, 30% of Episode
+6's own exit straight, at the power every published episode already used.
+Adopting it as *the* model would have silently moved Episodes 1–14's numbers,
+including the ones F99 just corrected. The user's own reaction to seeing the
+three options ("I like all of those framings") pointed at the right answer
+directly: track width already gets this treatment (rule 9, ±3%, re-run and
+see if the conclusion survives); the drive model gets it now too.
+
+Implemented both D-A (power-limited drive, additive/opt-in on
+`Limits.drive_power`, verified bit-identical to every existing solve when
+unset) and D-D (hairpin R=15m, fast_sweep R=90m, radius the only thing that
+varies from `long_exit`). New `experiments/power_review/phase1_sweep.py`
+runs the {1×,1.5×,2×} × {3 tracks} × {2 drive models} grid for both axes.
+
+**The sweep caught three of its own defects before anything got written up,
+each by refusing to trust a surprising number:**
+1. The pilot's numbers didn't match F99's already-verified baseline — a
+   leftover `entry_speed=20.0` from an earlier scratch check instead of the
+   established 32.0 m/s. Fixed by testing 32.0 against all three tracks
+   directly rather than guessing a per-track value.
+2. `power_limited` gave bit-identical results at 1.5x and 2x power on every
+   track — `drive_max` was never actually raised for that mode (a stale
+   comment claimed it matched a "15 kN default" that belongs to `brake_max`,
+   not `drive_max`), so the leftover 4.5 kN flat cap silently governed at
+   every power level except 1x. Fixed; re-ran the affected half only (a new
+   `--models` merge flag), verified the fix directly before trusting the
+   66-minute run it was replacing.
+3. One cell in the corrected full grid reported `Solve_Succeeded` at a value
+   1.1 s worse than its neighbours and worse than the *same design at lower
+   power* — a genuine local-optimum trap passing IPOPT's own convergence
+   test. Caught because it broke the spread's monotonicity, not because
+   anything reported failure. A systematic scan of the other 268 cells found
+   nothing else; one more cell (different track/power, same fraction and
+   drivetrain — noted, not investigated further) needed more iterations and
+   landed within 0.001 s of its own unconverged value.
+
+**The result, F100: both axes grow monotonically with power, on every track,
+under both drive models.** Balance took the outcome F99 predicted (×2.3–8.1
+growth 1×→2×, F43-shaped). Layout's null did **not** survive — same order of
+magnitude (×2.5–4.9) — the second correction to F49 in one day, for a
+different reason than the first (F99 was drift; this is scope: a corrected
+1× number can still be an incomplete measurement). Episode 15 now has the one
+thing this whole review exists to give it: a design-sensitivity baseline, on
+both axes, that measurably varies with power.
+
+**Also fixed, unrelated to the physics: FINDINGS.md's own structure.** F99
+had landed after `# Decisions` instead of at the end of `# Findings` — an
+editing mistake from the session that wrote it. Moved verbatim; verified as a
+pure relocation (108 insertions / 107 deletions, word count +7).
+
+**Next:** Phase 2 (Episodes 12/13 at the power curve, both drive models — TV's
+worth as a function of power, which Episode 15 also needs) and Phase 3
+(conditional RL retrain). `SEASON5.md` is still waiting on all of this.
+
 ### Superseded — Episode 13 planning notes
 
 **Question:** if pushing one wheel harder rotates the car, why not just do that?

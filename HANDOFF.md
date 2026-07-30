@@ -1105,11 +1105,20 @@ are physically consistent with their neighbours, so this reads as a
 transient system-level slowdown rather than a code defect — but it is
 recorded here in case the pattern recurs on a future run.
 
-**Not yet done: figures and the article.** `experiments/ep15/` has the
-experiment, `out/results.json`, and a diagnostic write-up
-(`diagnostics/out/D-ep15.md`, 7/7 checks); F102 is written. The episode
-isn't complete by this project's own four-piece definition until
-`episodes/ep15-*.md` exists with its figures embedded.
+**Figures and article done in the same session.** New `viz/chassis_figures.py`
+— a pictorial (five archetypes, one corner, one shared aggression, TV off vs
+on, reusing Ep11's `track_backdrop` pattern) and a technical spread card. The
+pictorial needed data the main sweep didn't produce — every point there was
+measured at its own limit, which can't show one car diverging from another
+on one road — so a small shared-`grip_use` comparison (0.65, 2× power) was
+added and computed standalone rather than re-running the 70-minute sweep:
+4 of 5 archetypes leave the road with an open differential, 0 of 5 do with
+the allocator, at the identical demand. `episodes/ep15-*.md` is written,
+both figures embedded, every number checked against the JSON. **Episode 15
+is DRAFTED — all four pieces exist.**
+
+**Season 4 (Episodes 12–15) is now complete.** Episode 16 (the Chrono
+cross-check) is the only piece of the original 16-episode plan left.
 
 ### Superseded — Episode 13 planning notes
 
@@ -1245,7 +1254,7 @@ width on every TV claim.
 | 12 | What a differential actually does | 4 | diff modes ✓ | ✅ **DRAFTED** — `episodes/`, `experiments/ep12/` |
 | 13 | How engineers built a car that steers with its wheels | 4 | classical TV ✓ | ✅ **DRAFTED** — `episodes/`, `experiments/ep13/` (noise result retracted by F97) |
 | 14 | What the machine found instead | 4 | RL TV variants ✓ | ✅ **DRAFTED** — `episodes/`, `experiments/ep14/` (rewritten after F93/F94; H-vs-E retracted by F95) |
-| 15 | Is chassis tuning about to be automated away? | 4 | TV × Season 2 sweeps ✓ | ✅ **EXPERIMENT DONE** — `experiments/ep15/`, F102 (article/figures ← next) |
+| 15 | Is chassis tuning about to be automated away? | 4 | TV × Season 2 sweeps ✓ | ✅ **DRAFTED** — `episodes/`, `experiments/ep15/`, F102 |
 | 16 | Did any of this survive real physics? | 4 | Chrono backend | — |
 
 **Seasons 1–2 (Ep 1–8) carry no training risk.** Tire model, double-track, optimal control only. If the RL work proves harder than expected, half the series still ships.

@@ -79,15 +79,25 @@ SKIDPAD_RADIUS = 30.0
 SKIDPAD_SPEEDS = np.arange(5.0, 19.0, 0.25)
 
 
+#: A drive_max large enough to never bind for "power_limited" mode, so
+#: drive_power alone governs. This was originally left at Limits' own
+#: default (4500 N) on the mistaken belief that it matched the 15 kN OC
+#: default -- it does not (that is brake_max's default, not drive_max's) --
+#: and the result was 4500 N silently acting as the real constraint at every
+#: power level, since P/v never dropped that low at any speed these tracks
+#: reach. Caught by checking WHY 1.5x and 2x produced bit-identical results
+#: rather than assuming the sweep had nothing left to show at high power.
+#: Set comfortably above the worst case: 2x power (348 kW) at v_min (8 m/s)
+#: is 43,500 N; 100,000 N leaves no room for ambiguity.
+_NON_BINDING_DRIVE_MAX_N = 100_000.0
+
+
 def limits_for(mult: float, model: str) -> Limits:
     if model == "flat":
         return Limits(drive_max=DRIVE_MAX_1X_N * mult)
     if model == "power_limited":
-        # drive_max stays at the generous 15 kN OC default (never binds --
-        # Phase 0's brake-cap audit measured this directly for the analogous
-        # 15 kN brake cap; the same solver, same friction ellipse, applies to
-        # drive). drive_power is the only thing that varies with mult.
-        return Limits(drive_power=P_1X_WATTS * mult)
+        return Limits(drive_max=_NON_BINDING_DRIVE_MAX_N,
+                      drive_power=P_1X_WATTS * mult)
     raise ValueError(model)
 
 
@@ -198,6 +208,11 @@ def main() -> int:
                     help="long_exit, 1x only, both drive models, balance only")
     ap.add_argument("--axis", choices=("balance", "layout", "both"),
                     default="both")
+    ap.add_argument("--models", choices=("flat", "power_limited", "both"),
+                    default="both",
+                    help="re-run only one drive model and MERGE into the "
+                         "existing phase1_results.json, leaving the other "
+                         "model's already-verified results untouched")
     args = ap.parse_args()
 
     # Not experiments/epNN/out/ -- this is cross-episode infrastructure, same
@@ -205,6 +220,8 @@ def main() -> int:
     # episode's directory.
     out = ROOT / "experiments" / "power_review" / "out"
     out.mkdir(parents=True, exist_ok=True)
+
+    models = list(DRIVE_MODELS) if args.models == "both" else [args.models]
 
     if args.pilot:
         tracks, powers = ["long_exit"], [(1.0, "1x")]
@@ -214,20 +231,33 @@ def main() -> int:
         powers = list(zip(POWER_MULTIPLIERS, POWER_LABELS))
         axes = ["balance", "layout"] if args.axis == "both" else [args.axis]
 
-    print(f"Phase 1 sweep — tracks={tracks} powers={[p[1] for p in powers]} "
-          f"models={DRIVE_MODELS} axes={axes}")
-    t_start = time.time()
-    results: dict = {"config": {
+    suffix = "_pilot" if args.pilot else ""
+    path = out / f"phase1_results{suffix}.json"
+    # Merge mode: start from what is already on disk (a prior full run) so a
+    # single-model re-run doesn't discard the other model's already-verified
+    # results -- the flat-cap half of this grid was unaffected by the
+    # drive_max bug and re-running it would just burn ~30 minutes reproducing
+    # numbers already on disk.
+    if args.models != "both" and path.exists():
+        results = json.loads(path.read_text())
+        print(f"  merging into existing {path}")
+    else:
+        results = {"config": {}, "balance": {}, "layout": {}}
+    results["config"].update({
         "tracks": tracks, "powers": [p[1] for p in powers],
         "drive_models": list(DRIVE_MODELS), "axes": axes,
         "nodes": NODES, "max_iter": MAX_ITER,
         "p_1x_watts": P_1X_WATTS, "drive_max_1x_n": DRIVE_MAX_1X_N,
-    }, "balance": {}, "layout": {}}
+    })
+
+    print(f"Phase 1 sweep — tracks={tracks} powers={[p[1] for p in powers]} "
+          f"models={models} axes={axes}")
+    t_start = time.time()
 
     for track_name in tracks:
         entry_speed = ENTRY_SPEED[track_name]
         for mult, power_label in powers:
-            for drive_model in DRIVE_MODELS:
+            for drive_model in models:
                 key = f"{track_name}|{power_label}|{drive_model}"
                 if "balance" in axes:
                     print(f"\n  balance: {key}")
@@ -240,11 +270,9 @@ def main() -> int:
                         track_name, power_label, mult, drive_model,
                         entry_speed, print)
 
-    results["wall_clock_s"] = time.time() - t_start
-    suffix = "_pilot" if args.pilot else ""
-    path = out / f"phase1_results{suffix}.json"
+    results["wall_clock_s"] = results.get("wall_clock_s", 0.0) + (time.time() - t_start)
     path.write_text(json.dumps(results, indent=2) + "\n")
-    print(f"\n  wrote {path}  ({results['wall_clock_s']:.0f}s wall total)")
+    print(f"\n  wrote {path}  ({time.time()-t_start:.0f}s wall this run)")
     return 0
 
 

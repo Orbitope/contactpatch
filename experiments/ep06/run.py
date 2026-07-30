@@ -191,6 +191,11 @@ def main() -> int:
                 arrays[f"{tag}_{k}_{c}"] = q.per_wheel[k][c]
         arrays[f"{tag}_speed"] = q.speed
         arrays[f"{tag}_n"] = q.states["n"]
+        # dt/ds at every node -- exact (verified: trapz(dt_ds, s) reproduces
+        # sol.time to 0.0000%), unlike (1-n*kappa)/speed which drops v_y*sin(xi)
+        # and is wrong by ~0.07s here because xi reaches 24 deg at turn-in. This
+        # is what a section-time metric (POWER-REVIEW Phase 0) must integrate.
+        arrays[f"{tag}_dt_ds"] = q.dt_ds
         # xi (heading relative to the road) and delta (steer) are what let a
         # figure draw the car pointing where it actually points, rather than
         # tangent to the road at every station.

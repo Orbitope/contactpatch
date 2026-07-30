@@ -882,8 +882,67 @@ behind this; O9 is small enough to do alongside Phase 0.
 bridge is Ep 10's conditioning trick scaled to (setup ⊕ car ⊕ track) with the
 frozen policy as an amortised evaluator, validated by specialist retrains (the
 "amortisation gap" is itself a reported result). Not ratified; its dependency
-graph runs through the power review, TRACKS staging, O3/O8/O9, and — 
+graph runs through the power review, TRACKS staging, O3/O8/O9, and —
 deliberately — Ep 16's Chrono check *before* the season starts.
+
+### Session 20 — Phase 0 executed, and F99: half the premise above was stale
+
+**Phase 0 items 1 and 2 are done, and did not go as scoped.** Recomputing
+section times from the *existing* traces.npz turned out to be impossible —
+Episodes 6/7 saved `n`/`ξ`/`speed` but never the per-node time (`dt_ds`) a
+section split needs, and the naive `(1−n·κ)/speed` substitute is wrong by
+~0.07 s exactly where `ξ` is large (24° at turn-in). Fixed properly: `dt_ds`
+was already computed by the solver and discarded before saving; added it to
+Episodes 6/7's trace output (two-line diff each, verified to reproduce
+`Solution.time` to 0.0000% before use), re-ran both, and verified the re-run
+**bit-identical** to the already-committed `results.json` and `traces.npz`
+before trusting anything downstream.
+
+**That verification step is what surfaced F99, which matters more than the
+section metric it was chasing.** F44 (balance) and F49 (layout) — the two
+"null" findings this whole review was built to explain — **predate the
+F72/F73/F79/F80 yaw-moment correction**, exactly the failure mode F90 already
+caught once, for a different number, in the same episode. Both episode
+*articles* already carry the corrected numbers; only their FINDINGS.md entries
+were never updated to match. Corrected:
+
+- **F44 was never a null.** All ten solves now converge (three used to be
+  excluded); the corrected spread is **0.205 s rear-drive, 0.121 s
+  front-drive** across 40–65% front — a real, ~1.7% effect, not
+  "indistinguishable." The article already says so ("sensitivity has
+  doubled"); FINDINGS did not, until now.
+- **F49 got tighter, not reversed.** The corrected ranking removes the one
+  candidate outlier (front-engine-FWD: last place → second) and the span
+  shrinks to a uniform **0.056 s**. Still a null — a more robust one.
+
+**This changes Phase 1's shape.** Balance is no longer "is there an effect
+hiding below the instrument's floor" — there is one, confirmed, at 1× power.
+The question becomes the F43 shape: does an already-real effect grow with
+power. Layout keeps the original null-audit framing, now against a tighter
+baseline. `POWER-REVIEW.md` §1, §2, D-C, and the Phase 0/1 sections are all
+updated to reflect this — D-C in particular, since the corrected traces let a
+real check run: on `long_exit`, the balance-induced speed gap between the
+40%/65% cars **never re-converges within the 392.8 m track** (3.8% at corner
+exit, still 0.9% apart at the finish), so the original section-metric proposal
+(end where speed traces re-converge) doesn't fire on this track and had to be
+revised to report the speed-gap curve directly instead of assuming a
+convergence point exists.
+
+**Left open, deliberately not fixed in the same pass:** `episodes/ep07-*.md`'s
+own numbers (0.21 s / 0.12 s) sit under a section still headed "it barely
+changes how fast it is" — the prose was never re-read against the table it
+sits above, once the table was corrected. An editorial call, queued as Phase 0
+item 4, not folded into F99 itself. Episode 8's archetype sweep has **no
+per-node trace saved at all** (only the scalar `time_s`); queued for whenever
+Ep 8 is re-measured in Phase 1.
+
+**571 tests pass.** Every number in F99 and the POWER-REVIEW.md updates
+verified mechanically against the regenerated JSON before being written down —
+the same discipline Ep11's correction needed after the fact, applied from the
+start this time.
+
+**Next:** Phase 0 items 3 (brake-cap audit) and 4 (Ep 7 article wording), then
+Phase 1's power curve for Eps 6–8.
 
 ### Superseded — Episode 13 planning notes
 

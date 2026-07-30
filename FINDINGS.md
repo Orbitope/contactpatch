@@ -3840,6 +3840,113 @@ the measurement that forced it.
 
 ---
 
+### F99 · F44 and F49 predate the yaw-moment correction, exactly like F90's brake-release number — and this time the "no effect" conclusion itself was wrong for one of them. **Defect, and the correction of record.** · 2026-07-30
+
+**Source:** `[MEASURED]` — fresh re-solves of `experiments/ep07/run.py` and
+`experiments/ep08/run.py`, unchanged except for one additive trace field
+(`dt_ds`, added for POWER-REVIEW Phase 0's section-time work). Verified
+bit-identical to the already-committed `results.json` in every other field
+before anything below was trusted — this is not new drift, it is drift that
+was already sitting in the repository, discovered while auditing it for
+POWER-REVIEW.
+
+**F90 already named this failure mode once**, for Episode 7's brake-release
+number: "a fix to shared machinery invalidates every number downstream of it,
+not only the ones the fix was motivated by... regenerate every figure and
+reread every table rather than trust that the important ones were checked."
+F44 and F49 are two more instances of exactly that, discovered because Phase 0
+asked "is this null real?" and re-solving to check it surfaced that the
+tables being questioned were never the current ones.
+
+**Both episode *articles* are already correct.** `episodes/ep07-*.md` and
+`episodes/ep08-*.md` both carry explicit re-solved-after-F72/F73/F79/F80
+notices and numbers that match a fresh re-solve exactly. **Only the FINDINGS.md
+entries were never updated after the articles were.** No published, reader-
+facing content is wrong; the project's own numbered record of what is true
+was stale, in the file whose entire purpose is not being that.
+
+**F44, corrected — and here the conclusion itself reverses, not just the
+magnitude:**
+
+| Front mass | K (deg/g) | Rear drive | Front drive |
+|---|---|---|---|
+| 40% | −0.37 | 12.059 s ✓ | 12.175 s ✓ |
+| 47% | −0.07 | 12.047 s ✓ | 12.084 s ✓ |
+| 54% (nominal) | +0.22 | 12.086 s ✓ | 12.054 s ✓ |
+| 61% | +0.51 | 12.173 s ✓ | 12.063 s ✓ |
+| 65% | +0.68 | 12.252 s ✓ | 12.085 s ✓ |
+
+**All ten solves converge now** (F80: the fix that corrected the moment also
+fixed the 47%-rear-drive case that had never converged in the project's
+history). F44's own text excluded three rear-drive points as unconverged;
+none are excluded now, so every claim below rests on the full grid.
+
+**The lap time does not "do almost nothing."** Rear drive spans **0.205 s**
+across the range (12.047 to 12.252) and front drive spans **0.121 s** (12.054
+to 12.175) — both monotonic, both now fully converged, neither resting on an
+excluded point. F44 called the 40%-and-54% rear-drive gap "indistinguishable
+(0.012 s apart)" from two of the *previously converged* points; the
+now-complete range is seventeen times that. **This is not a small correction
+to a null result — it is a reversal of the headline**, and the article already
+says so in different words ("rear drive's sensitivity has doubled... the
+whole 40–65% range is worth 0.21 s"). F44 is the one place that sentence never
+arrived.
+
+**F49, corrected — here the story tightens rather than reverses:**
+
+| Layout | Polar moment | Rise time | Lap time |
+|---|---|---|---|
+| Mid engine, RWD | 0.80× | 201 ms | 12.043 s |
+| Front engine, FWD | 1.25× | 234 ms | 12.068 s |
+| Front-mid, RWD | 1.00× | 201 ms | 12.078 s |
+| Rear engine, RWD | **1.22×** | **356 ms** | 12.079 s |
+| Front engine, RWD | 1.20× | 236 ms | 12.099 s |
+
+**The ranking is not merely shifted, it is inverted at both ends.** F49's
+table had front-engine-FWD dead last, 0.113 s off the pace, and rear-engine-RWD
+mid-pack. The corrected data has front-engine-FWD in **second place** and
+rear-engine-RWD tied for third — the one design F49 singled out as "clearly
+off the pace" is now indistinguishable from the pack it was compared against.
+The full span **shrinks** from F49's 0.03–0.113 s (with one outlier) to a
+uniform **0.056 s** with no outlier at all. Where F44's null reversed into a
+real effect, F49's null gets *more* uniformly null — a cleaner, more robust
+version of the same conclusion, not a different one.
+
+**What this changes about the power review's premise.** POWER-REVIEW.md
+opened by treating F44 and F49 symmetrically — two nulls, both suspected of
+being instrument artefacts of low power and a diluted lap metric. That premise
+now only half-applies:
+
+- **Balance (F44) is not a null to explain away.** It is already a real,
+  fully-converged, ~1.7% effect at 1× power. Phase 1's balance question changes
+  from "is there an effect hiding below the instrument's resolution?" to "how
+  does an already-real effect move across the power curve?" — closer in shape
+  to F43's original drivetrain sweep than to a null-result audit.
+- **Layout (F49) is still the open question POWER-REVIEW framed it as** — if
+  anything more so, since the corrected data removes the one candidate outlier
+  and leaves a flatter result to interrogate.
+
+**A live inconsistency this leaves in `episodes/ep07-*.md`, not yet fixed.**
+The article's own numbers (0.21 s / 0.12 s, doubled from the earlier draft) sit
+under a section still headed "Result two: it barely changes how fast it is"
+and closed by the pull-quote "Balance transforms how a car feels and barely
+touches how fast it is." The *numbers* were corrected when F80 landed; the
+*sentence describing them* was not re-read against its own table — the same
+gap F90 found, one level up, in prose instead of a figure. Left as an open
+item rather than corrected in this entry, since it is an editorial call about
+Episode 7's framing, not a measurement.
+
+**The lesson, restated because this is the second time it has been learned.**
+F90: "the way to catch the rest is to regenerate every figure and reread every
+table, rather than trust that the important ones were checked." That lesson
+was written down and did not prevent this — because it was applied to the
+*episode*, once, and never applied to *FINDINGS.md's own record of the
+episode*, which drifted from it afterward and stayed drifted. A correction to
+shared machinery invalidates every number that depends on it **including the
+numbers already sitting in the file that exists to keep this from happening.**
+
+---
+
 # Open
 
 | # | Question | Blocks |

@@ -251,6 +251,11 @@ def main() -> int:
         arrays[f"{tag}_xi"] = q.states["xi"]
         arrays[f"{tag}_delta"] = q.states["delta"]
         arrays[f"{tag}_speed"] = q.speed
+        # dt/ds at every node -- exact (verified: trapz(dt_ds, s) reproduces
+        # sol.time to 0.0000%), unlike (1-n*kappa)/speed which drops v_y*sin(xi)
+        # and is wrong by ~0.07s here because xi reaches 24 deg at turn-in. This
+        # is what a section-time metric (POWER-REVIEW Phase 0) must integrate.
+        arrays[f"{tag}_dt_ds"] = q.dt_ds
         for c in CORNERS:
             arrays[f"{tag}_utilisation_{c}"] = q.per_wheel["utilisation"][c]
             arrays[f"{tag}_load_{c}"] = q.per_wheel["load"][c]

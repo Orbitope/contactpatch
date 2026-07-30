@@ -48,7 +48,14 @@ POWER_MULTIPLIERS = (1.0, 1.5, 2.0)
 POWER_LABELS = ("1x", "1.5x", "2x")
 DRIVE_MODELS = ("flat", "power_limited")
 
-GU_LO, GU_HI, GU_TOL = 0.70, 1.60, 0.002
+#: GU_LO was originally 0.70 (a reasonable floor for Episode 13's own five
+#: configurations at 1x power). At higher power the open differential's real
+#: limit can sit well below that -- checked directly: at 2x/flat it goes
+#: "off track" at gu=0.70 AND 0.50 but finishes clean at 0.30 -- so a search
+#: that gives up when its own floor is invalid was reporting nan for
+#: configurations that have a perfectly real, lower limit. Lowered to 0.05,
+#: comfortably below anything observed to fail.
+GU_LO, GU_HI, GU_TOL = 0.05, 1.60, 0.002
 SECTION = (55.0, 165.0)
 
 _NON_BINDING_DRIVE_MAX_N = 100_000.0

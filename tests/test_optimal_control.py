@@ -12,6 +12,7 @@ import math
 import numpy as np
 import pytest
 
+from physics import schema
 from physics import track as T
 
 pytest.importorskip("casadi")
@@ -210,3 +211,45 @@ def test_apex_interpolation_recovers_a_known_offset():
         denom = y[0] - 2.0 * y[1] + y[2]
         got = 0.5 * (y[0] - y[2]) / denom
         assert got == pytest.approx(true_off, abs=1e-12)
+
+
+# ---------------------------------------------------------------------------
+# POWER-REVIEW D-A: power-limited drive is additive and opt-in. Neither
+# published episode nor the flat force cap may change when it is unused.
+# ---------------------------------------------------------------------------
+
+
+def test_drive_power_none_is_bit_identical_to_the_flat_cap_alone():
+    """The default must reproduce every already-published episode exactly."""
+    track = T.long_exit()
+    kw = dict(n_nodes=60, entry_speed=20.0, diff="open", four_wheel=True)
+    base = solve_min_time(track, schema.RV_1, limits=Limits(), **kw)
+    explicit_none = solve_min_time(track, schema.RV_1,
+                                   limits=Limits(drive_power=None), **kw)
+    assert base.success and explicit_none.success
+    assert base.time == pytest.approx(explicit_none.time, abs=1e-9)
+
+
+def test_drive_power_never_exceeded_while_accelerating():
+    track = T.long_exit()
+    cap = 174_000.0
+    sol = solve_min_time(track, schema.RV_1, n_nodes=60, entry_speed=20.0,
+                         limits=Limits(drive_power=cap), diff="open",
+                         four_wheel=True)
+    assert sol.success
+    speed, drive = sol.speed, sol.controls["drive_force"]
+    accelerating = drive > 100.0
+    assert accelerating.any(), "test needs at least one accelerating node"
+    assert np.all(drive[accelerating] * speed[accelerating] <= cap + 50.0)
+
+
+def test_drive_power_can_only_make_the_lap_slower_or_equal():
+    """An ADDITIONAL constraint can never help — it is layered on the
+    existing drive_max bound, not a replacement for it."""
+    track = T.long_exit()
+    kw = dict(n_nodes=60, entry_speed=20.0, diff="open", four_wheel=True)
+    unlimited = solve_min_time(track, schema.RV_1, limits=Limits(), **kw)
+    limited = solve_min_time(track, schema.RV_1,
+                             limits=Limits(drive_power=174_000.0), **kw)
+    assert unlimited.success and limited.success
+    assert limited.time >= unlimited.time - 1e-9

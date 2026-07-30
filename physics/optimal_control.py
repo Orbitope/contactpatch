@@ -73,6 +73,19 @@ class Limits:
     #: Peak drive force at the wheels, N. 250 N.m of engine torque through a
     #: first-gear-ish overall ratio; [ASSUMED], and generous.
     drive_max: float = 4500.0
+    #: Peak engine power, W. ``None`` (default) means every episode's original
+    #: behaviour: a flat force cap at ``drive_max`` alone, unchanged. When set,
+    #: an ADDITIONAL constraint ``drive <= drive_power / v_x`` is layered on
+    #: top of the existing ``drive_max`` bound rather than replacing it, so
+    #: ``F = min(drive_max, drive_power / v)`` falls out of having both active
+    #: simultaneously — whichever is tighter at a given node binds. See
+    #: POWER-REVIEW.md D-A: this is deliberately opt-in. Adopting it as the
+    #: only model would silently move lap times already published even at
+    #: today's power (it drops below the flat 4.5 kN cap above 38.7 m/s at
+    #: RV-1's 174 kW) — checked, not assumed, before this was added — so
+    #: every episode that does not pass ``drive_power`` keeps its original,
+    #: unchanged constraint.
+    drive_power: float | None = None
     #: Peak braking force, N. About 1.1 g of deceleration — a road car on good
     #: tires. [ASSUMED]
     brake_max: float = 15000.0
@@ -462,6 +475,12 @@ def solve_min_time(track: Track, params: schema.VehicleParams | None = None,
     opti.subject_to(opti.bounded(-lim.steer_rate_max, steer_rate, lim.steer_rate_max))
     opti.subject_to(opti.bounded(-lim.brake_max / 1000.0, drive,
                                  lim.drive_max / 1000.0))
+    if lim.drive_power is not None:
+        # Additional, not replacing: drive_max above still applies. v_x is
+        # already bounded away from 0 (opti.bounded(lim.v_min, v_x, ...)
+        # above, v_min defaults to 8.0 m/s), so this division is safe at
+        # every node without a separate guard.
+        opti.subject_to(drive <= (lim.drive_power / 1000.0) / v_x)
     for k in range(n_nodes):
         if four_wheel:
             for a_ in dyn[k][11].values():

@@ -62,12 +62,30 @@ questioning any *magnitude* claim at the default power level:
    below is revised accordingly. Episodes 6–8 still have no section metric of
    any kind, which remains true and remains worth having.
 
-3. **Braking is cap-limited, not grip-limited.** `BRAKE_MAX` is 12 kN
-   (driver/RL) and 15 kN (OC) against a ~1,980 kg car whose tires support
-   ~1.05 g ≈ 20 kN. Every configuration brakes at the same sub-grip cap, so
-   the braking phase — where load transfer and balance differences should be
-   loudest — is design-blind by construction. `[MEASURED]` check pending
-   (Phase 0); if confirmed it joins the other two.
+3. **Braking is cap-limited for the closed-loop driver, but NOT for the OC
+   solver — measured directly, and the original guess (`~1,980 kg`, an earlier
+   draft's error) had the wrong mass; RV-1 is 1,360 kg.** Checked both paths:
+   - **OC (Episodes 6–8):** peak commanded braking force across every solve
+     in Episode 6's traces reaches at most **87.6% of the 15 kN cap**
+     (13,140 N ≈ 0.985 g) — **zero nodes sit at the cap.** The solver, free to
+     ask for anything up to 15 kN, never asks for that much, because trail
+     braking shares the tire's capacity with lateral force (the friction
+     ellipse) and the optimiser is already trading the two optimally. **The
+     OC brake cap does not bind and is not the problem.**
+   - **Closed-loop driver (Episodes 11, 13, and everything Season 5 plans to
+     build on it):** the speed plan's braking target is
+     `min(BRAKE_MAX/mass, grip_use·g)` = `min(0.899 g, 1.0 g)` = **0.899 g at
+     `grip_use=1`** — the 12 kN cap, not the tire, sets the plan, and the
+     realised force gets to **98.9%** of that cap. Since the OC solver's own
+     unconstrained result shows the tire can deliver **~0.985 g** under the
+     same combined-slip demands, **the closed-loop driver brakes at a target
+     that is below the tire's own demonstrated capability, and that target is
+     a fixed scalar independent of `front_mass_fraction`, `i_zz` or
+     drivetrain.** The braking *phase* is design-blind by construction for
+     the closed-loop path specifically — confirmed, not merely suspected —
+     while the OC path needs no fix here. `BRAKE_MAX` needs the same D-A/D-B
+     power-model treatment as `DRIVE_MAX`, but only where the closed-loop
+     driver is used.
 
 **The convergence-floor contradiction is resolved, not just re-audited.** F43
 quoted both 0.02 s and 0.08 s as the convergence bias bound. That question is
@@ -227,7 +245,7 @@ re-measured (7, 8); single-track spot checks elsewhere.
 
 ## 4. Phases
 
-### Phase 0 — status: items 1 and 2 done, differently than planned; 3 and 4 open
+### Phase 0 — status: items 1–3 done, none of them the way they were planned; item 4 open
 
 1. **DONE, but not as scoped.** "Recompute section times from the existing
    `traces.npz`" turned out to be impossible as literally written — Episodes
@@ -254,12 +272,18 @@ re-measured (7, 8); single-track spot checks elsewhere.
    status update for the full account, and the corrected D-C for what the
    re-run's speed-trace check found about re-convergence (it doesn't, on this
    track).
-3. **Brake-cap audit — still open.** Compute peak achievable deceleration vs
-   the cap for RV-1; check whether any Season 2 solve ever brakes below the
-   cap. If none does, braking has been design-blind everywhere and the
-   section start must sit before the braking zone to have any chance of
-   seeing balance effects under braking — and `brake_max` needs the same
-   D-A/D-B treatment as drive.
+3. **DONE, and the original guess was half wrong.** Measured directly (§1,
+   point 3, corrected mass 1,360 kg not the earlier draft's 1,980 kg): the
+   **OC solver's 15 kN cap never binds** (peak commanded braking reaches
+   87.6% of it, zero nodes at cap — braking is tire/combined-slip-limited,
+   as it should be). The **closed-loop driver's 12 kN cap does bind** — its
+   speed plan targets 0.899 g against a tire that (per the OC solver's own
+   revealed capability under the same demands) can deliver ~0.985 g, and that
+   0.899 g target is a fixed scalar independent of any design parameter.
+   Braking is confirmed design-blind by construction, but **only for the
+   closed-loop path** (Episodes 11, 13, and anything Season 5 builds on it) —
+   not for Episodes 6–8's OC solves, which need no fix here. `BRAKE_MAX`
+   needs the D-A/D-B power treatment, scoped to the closed-loop driver only.
 4. **Fix the live inconsistency F99 flagged** in `episodes/ep07-*.md`: its own
    corrected numbers (0.21 s / 0.12 s, doubled) sit under a section still
    headed "it barely changes how fast it is." An editorial call, not a

@@ -56,7 +56,7 @@ cleanest effect in the entire sweep.
 
 So balance transforms how the car behaves. Now the awkward part.
 
-## Result two: it barely changes how fast it is
+## Result two: it moves the needle, but far less than it moves the feel
 
 ![Balance card](../experiments/ep07/out/03-balance-card.svg)
 
@@ -90,14 +90,23 @@ never quite made sense. With the yaw moment corrected the two halves of the
 statement finally agree with each other.
 
 **And the size of it is no longer negligible.** The whole 40–65% range is worth
-**0.21 s** to rear drive and **0.12 s** to front drive. The earlier draft measured
-0.10 s and 0.11 s and made a point of how small that was; rear drive's sensitivity
-has doubled. Meanwhile
-the same range swings the understeer gradient by 1.06 deg/g — from clear oversteer
-to clear understeer, five times the threshold at which a test team can tell two
-cars apart.
+**0.21 s** to rear drive and **0.12 s** to front drive — real and resolvable,
+about ten times the ~0.02 s these solves resolve to, not the rounding noise an
+earlier version of this table implied. The earlier draft measured 0.10 s and
+0.11 s and made a point of how small that was; rear drive's sensitivity has
+doubled.
 
-> **Balance transforms how a car feels and barely touches how fast it is.**
+**But put next to what balance does to the *character* of the car, it is still
+the smaller of the two effects.** 0.21 s is 1.7% of a 12-second lap — a real
+number a driver would notice, not one that decides a race by itself. The
+understeer swing is a different kind of thing entirely: 1.06 deg/g is not 1.7%
+of anything, it is the difference between a car that oversteers and a car that
+doesn't, five times over the threshold at which a professional test team can
+tell two cars apart. One number moves the lap time. The other one moves what
+kind of car you are driving.
+
+> **Balance transforms how a car feels far more than it transforms how fast it
+> is — and "far more" is not the same claim as "barely at all."**
 
 So 50:50 *is* a marketing number, though not quite for the reason I expected. I
 was looking for the optimum to sit somewhere other than 50:50, and it does — each

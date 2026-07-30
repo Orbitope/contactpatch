@@ -1,0 +1,57 @@
+{
+  "config": {
+    "powers": [
+      "1x"
+    ],
+    "models": [
+      "flat"
+    ],
+    "p_1x_watts": 174000.0,
+    "drive_max_1x_n": 4500.0,
+    "brake_max_fixed_n": 13136.988339999998
+  },
+  "cells": {
+    "1x|flat": {
+      "rows": {
+        "open": {
+          "limit_grip_use": 1.04453125,
+          "lap_time": 14.513771634142994,
+          "section_time": 5.463168341978659,
+          "wall_s": 4.283086061477661
+        },
+        "lsd": {
+          "limit_grip_use": 0.970703125,
+          "lap_time": 14.696066906500162,
+          "section_time": 5.6170990371435465,
+          "wall_s": 5.487981796264648
+        },
+        "alloc": {
+          "limit_grip_use": 1.0656249999999998,
+          "lap_time": 14.642343062714424,
+          "section_time": 5.53843237047688,
+          "wall_s": 4.93052077293396
+        },
+        "tv4": {
+          "limit_grip_use": 1.0919921875,
+          "lap_time": 14.649400239833495,
+          "section_time": 5.532856470220654,
+          "wall_s": 6.04536771774292
+        },
+        "tvrear": {
+          "limit_grip_use": 1.0814453124999999,
+          "lap_time": 14.890914491285853,
+          "section_time": 5.577120498718877,
+          "wall_s": 5.383087873458862
+        }
+      },
+      "lap_gain_pct": -0.9344821532911594,
+      "section_gain_pct": -1.2755991373451845,
+      "limit_gain_pct": 4.54375467464474,
+      "driver_kw_summary": {
+        "drive_max": 4500.0,
+        "brake_max": 13136.988339999998
+      }
+    }
+  },
+  "wall_clock_s": 26.131337881088257
+}

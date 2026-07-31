@@ -562,6 +562,38 @@ rule 7); and a car whose draw lands within metres of the line "finishes"
 trivially, a rare and harmless dilution of `episodes_finished` worth
 remembering when reading that counter.
 
+**9. Stage 1, run once without selection, and a real defect it surfaced —
+fixed before trusting the checkpoint.** First run: `n_envs=1024`,
+`rollout_steps=1024`, `total_steps=40,000,000`, `gamma=0.999`,
+`start_jitter_m=track.length`, no `eval_every`. 990.5 s wall-clock, 38
+updates, 86,490 completed episodes. Artefacts kept as
+`experiments/tracks_pilot/out/stage1_noselect_*` — evidence, not deleted,
+same reason F93 stays in `FINDINGS.md` rather than being quietly fixed and
+forgotten.
+
+**The training curve itself caught the problem, read carefully rather than
+skimmed for a final number:** `return_mean` climbed to a clear peak of
+**834 at update 25** (`off_track_rate` 0.92), then **genuinely declined** —
+not noise, a sustained ~12-update regression — to `return_mean` 317-360 and
+`off_track_rate` 0.96-1.00 by the final update 37. This is **exactly the
+pattern F93 was written about** (Episode 14: "six healthy policies were
+reported as non-convergent because only the final weights were saved").
+Stage 1's own first run made the identical mistake — `eval_every` was
+scoped for stage 2 only (§4 item 8's table), and stage 1 saved unselected
+final weights despite the tooling to prevent this already existing and
+already being tested (`tests/test_ppo.py`). **Caught by reading the
+history, not by the run reporting failure** — `train()` returned
+successfully, nothing errored, the checkpoint just was not the best one
+produced.
+
+Fixed in `experiments/tracks_pilot/spa_ppo_stage1.py`: `eval_every=2`,
+`eval_episodes=8`, `make_eval_env` returning a `DrivingEnv` with
+`start_jitter_m = track.length` — matching TRAINING's own distribution
+(evaluating from-the-line, stage 2's task, would be selecting on the wrong
+question here). Selection wiring smoke-tested against a tiny config before
+re-running at full budget (rule: confirm before trusting compute). The
+corrected run's real numbers replace this entry once it completes.
+
 ---
 
 ## 5. What this unlocks, and what it does not

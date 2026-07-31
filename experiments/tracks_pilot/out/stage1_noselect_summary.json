@@ -1,0 +1,34 @@
+{
+  "n_envs": 1024,
+  "rollout_steps": 1024,
+  "total_steps": 40000000,
+  "gamma": 0.999,
+  "wall_s": 990.4908900260925,
+  "n_updates": 38,
+  "steps_per_s_full_loop": 40384.01604980564,
+  "final_training_stats": {
+    "update": 37,
+    "steps": 39845888,
+    "wall_s": 989.7658848762512,
+    "lr": 7.894736842105254e-06,
+    "log_std": [
+      -2.391096353530884,
+      -1.0187064409255981
+    ],
+    "explained_variance": 0.3274881846144929,
+    "policy_loss": -4.985212617611978e-05,
+    "value_loss": 127.20477657318115,
+    "entropy": -0.5717690408229827,
+    "approx_kl": 0.00022734921346341254,
+    "clip_fraction": 7.343292236328125e-06,
+    "episodes_finished": 86490,
+    "return_mean": 335.6127259344656,
+    "distance_mean": 3891.852268362863,
+    "worst_slip_mean_deg": 25.794592877430215,
+    "off_track_rate": 0.98,
+    "entropy_coef": 0.0005
+  },
+  "section_distance_mean": 516.5624936522994,
+  "section_distance_std": 318.8021388584133,
+  "section_off_track_rate": 1.0
+}

@@ -678,6 +678,68 @@ rise-then-decline shape persists even under the new reward. Checked with
 the user before choosing, since more large compute is the shared cost of
 every option.
 
+**12. A second reward defect (`stall_penalty`/`progress_scale` added),
+`progress_scale` swept, and a two-phase warm-started confirmation run —
+full detail already in HANDOFF.md's Session 25 entries. The headline,
+stated plainly because it is easy to miss under "distance keeps
+improving": across every reward configuration that actually drives (not
+the stalling exploit), per-section off-track rate has stayed in a
+**0.94-1.00 band, unmoved by any of this session's reward tuning.****
+
+| configuration | section distance mean | section off-track rate |
+|---|---|---|
+| `off_track_penalty=50`, `gamma=0.999` | 536.6 m | 1.00 |
+| `off_track_penalty=500` alone | 73.4 m | **0.00** — stalling exploit, not real driving |
+| `+stall_penalty=150`, `progress_scale=3.0` | 595.2 m | 1.00 |
+| `+stall_penalty=150`, `progress_scale=1.5` (two-phase warm start) | **653.5 m** | 0.96 |
+
+The only configuration that ever moved off-track rate did so by teaching
+the policy to give up (§4 item 11's stalling exploit) — every
+configuration that produces genuine driving has landed in the same
+narrow crash-rate band regardless of the specific `progress_scale`. One
+genuinely positive detail, not noise: the single per-section probe whose
+remaining distance to the lap end was short enough to actually reach it
+(started at `s=6707.8`, ~292 m from `s=length`) did so cleanly — 19.8 m/s,
+no crash, no stall, `finished=True`. The policy CAN drive safely over
+distances close to what it has already learned to sustain; the open
+question is whether more budget lets that safe range grow to cover a
+whole lap, or whether the reward shape itself caps out here regardless
+of steps.
+
+**What this suggests, stated as a hypothesis rather than a conclusion**:
+every run so far shows a late, sudden climb in return (and in
+off-track-while-climbing) that has not yet visibly plateaued by 40M
+steps — consistent with training still being mid-exploration of an
+aggressive driving style rather than having converged to a stable one.
+More budget might let that settle into safer driving on its own; or the
+tension between "reward pushing the limit" and "penalty for crashing"
+might have a floor this reward shape cannot get under no matter how long
+it trains, in which case the fix is not a coefficient but a different
+mechanism (a hard safety constraint, or a curriculum that only asks for
+longer distances once shorter ones are reliably safe). Not resolved here
+— flagged so the next round of tuning does not repeat a fourth or fifth
+coefficient guess without first ruling out "just needs more steps."
+
+**Sweep methodology note for next time (user's own proposal, recorded
+before it is forgotten)**: future reward sweeps should share one common,
+past-the-basics baseline checkpoint across branches (warm-started, not
+each from scratch) rather than reproducing the "learn to survive at all"
+cost per point — this sweep's own 5 points spent their entire 15M-step
+budget still in deeply negative return territory, mostly paying that
+shared cost rather than differentiating by reward. Two things to get
+right when doing this, not just the warm start itself: (a) a higher
+starting `lr` for the abbreviated branch, since the existing anneal
+schedule already restarts cleanly on warm start (Stage 0) but assumes a
+full-length run's usual pace, and a short branch needs to move faster
+within its reduced budget; (b) state explicitly that sharing one baseline
+changes the comparison from "what would each reward produce from
+scratch" to "how does each reward reshape this one policy" — cheaper, and
+often the more relevant question (it is exactly what stage 2 already
+does), but it can bias every branch toward whichever behavioural basin
+the baseline already committed to, which matters more here than usual
+given training has already been observed to lurch between qualitatively
+different regimes (stall-forever vs. crash-constantly).
+
 ---
 
 ## 5. What this unlocks, and what it does not

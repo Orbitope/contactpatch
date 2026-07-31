@@ -1472,12 +1472,65 @@ a mismatch this session's own gate design didn't anticipate.
 recovered varying half-width (3.9-8.2 m), reusing `viz/lib.py`'s existing
 primitives rather than a new tool.
 
-**Next action:** a real fork, not a clear failure calling for the
-pre-registered "stop and rethink the observation" fallback specifically.
-Options: more stage-1 budget before warm-starting stage 2; proceed to
-stage 2 anyway and let its own full-lap gate be the real test; or try the
-pre-registered `entropy_anneal`/`gamma=0.9995` contingencies now. Checked
-with the user before choosing — more large compute either way.
+**Next action (done later this session, user reviewed the reward
+structure and said "do both", then "Sweep them", then "keep going" with
+warm-started reuse):** the rest of the reward-tuning arc below.
+
+### Session 25 continued — reward-tuning arc: stall exploit, sweep, warm-started confirmation
+
+Full detail in `TRACKS.md` §4 items 11-12. Summary of the whole arc,
+since it is easy to lose the thread across five runs:
+
+1. **`off_track_penalty=500` alone taught the policy to give up.** Checked
+   directly: it braked steadily from 15 m/s to a dead stop every episode
+   (`stalled=True`, never `off_track`) — stalling was free, so once
+   crashing got expensive enough, coasting to a stop became strictly
+   safer than driving. Per-section distance collapsed to 73.4 m.
+2. **Fixed with two new `EnvConfig` fields** (`physics/rl_env.py`,
+   `physics/batched_env.py`, D-A pattern, differential-tested,
+   10 new tests): `stall_penalty` (closes the loophole directly) and
+   `progress_scale` (grows the reward for covering ground, by explicit
+   user decision after reviewing the tradeoff between the two).
+3. **`progress_scale=3.0` swung too far the other way** — `return_mean`
+   peaked at 2985 specifically BY crashing more often
+   (`off_track_rate` 0.88-1.00 during the climb); per-section off-track
+   rate came back 100%, same as the very first run.
+4. **Swept `progress_scale` instead of guessing a fourth combination**
+   (`experiments/tracks_pilot/reward_sweep.py`, 5 points x 15M steps):
+   2.5 and 3.0 already trending crash-heavy that early; 2.0 surprisingly
+   the MOST stall-prone (not a monotonic relationship); 1.0 and 1.5 the
+   only two still a genuine mix of both failure modes.
+5. **`progress_scale=1.5` run via two-phase warm start** — phase A
+   reproduced the sweep's own 15M-step run exactly (recovering the
+   checkpoint the sweep script never saved, a real gap in it), phase B
+   warm-started the remaining 25M steps to reach the full 40M budget.
+   789.2 s total wall-clock. Per-section result: **653.5 m mean distance,
+   the best yet — but off_track_rate=0.96**, plus one genuinely positive
+   detail: the one probe close enough to the lap end to actually reach it
+   (started 292 m out) did so cleanly, no crash, no stall.
+
+**The headline, stated plainly**: across every configuration that
+actually drives, per-section off-track rate has stayed in a 0.94-1.00
+band. Distance has steadily improved (536.6 -> 595.2 -> 653.5 m) but
+"stay on track" — the user's own stated #1 priority — has not moved
+under any variant tried. Every run shows a late, sudden return climb
+that has not visibly plateaued by 40M steps, consistent with training
+still mid-exploration rather than converged — more budget might resolve
+it on its own, or the reward shape might have a floor coefficients alone
+cannot get under.
+
+**Sweep methodology for next time**, the user's own proposal, recorded
+before it is lost: share one past-the-basics baseline checkpoint across
+future sweep branches (warm-started) rather than paying the "learn to
+survive" cost per point; use a higher starting `lr` for the abbreviated
+branch; and state explicitly that this changes the comparison from
+"what would each reward produce from scratch" to "how does each reward
+reshape this one policy" — cheaper, but can bias every branch toward
+whichever regime the baseline already committed to.
+
+**Next action:** decide whether to spend more budget on stage 1 to see
+if the late-climb pattern eventually plateaus into safer driving, or
+proceed to stage 2's own full-lap gate as the next real test regardless.
 
 ### Superseded — Episode 13 planning notes
 

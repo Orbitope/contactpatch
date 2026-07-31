@@ -1,0 +1,31 @@
+{
+  "n_envs": 1024,
+  "rollout_steps": 1024,
+  "total_steps": 38500000,
+  "gamma": 0.999,
+  "wall_s": 632.078987121582,
+  "n_updates": 36,
+  "steps_per_s_full_loop": 60910.108996542906,
+  "final": {
+    "update": 35,
+    "steps": 37748736,
+    "wall_s": 631.5481221675873,
+    "lr": 8.333333333333337e-06,
+    "log_std": [
+      -2.395658493041992,
+      -0.9875460863113403
+    ],
+    "explained_variance": 0.7451730381941977,
+    "policy_loss": -0.0001340614919172367,
+    "value_loss": 80.6489065170288,
+    "entropy": -0.5454497948288918,
+    "approx_kl": 0.00021574930269423475,
+    "clip_fraction": 0.0008172035217285156,
+    "episodes_finished": 93249,
+    "return_mean": 173.68721484384147,
+    "distance_mean": 364.92037551088436,
+    "worst_slip_mean_deg": 15.581656781789464,
+    "off_track_rate": 0.54,
+    "entropy_coef": 0.0005
+  }
+}

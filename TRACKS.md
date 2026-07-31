@@ -445,6 +445,72 @@ episodes-per-update tracked as the health signal to watch for the shift
 from "surviving the road" to "surviving whole laps," not a short smoke
 test like this one.
 
+**6. Speedup levers, checked directly rather than guessed, before the long
+run:**
+- ✅ **`n_envs=1024` instead of 256**: measured ~11% faster full-loop
+  throughput (52,003 vs 46,999 steps/s in a short comparison). Free, no
+  tradeoff. Adopted for the long run below.
+- ❌ **Larger `rollout_steps`** (tried 4,096): no throughput benefit —
+  measured slightly *worse* (43,569 vs 52,003 steps/s). That knob should
+  be chosen for training-statistics reasons, not speed.
+- ❌ **Cutting `FIXED_POINT_ITERS` below 6** (`batched_env.py`, the single
+  biggest cost inside `env.step()`): investigated and rejected. The
+  reference implementation shares the identical 6-iteration cap and, under
+  realistic aggressive-driving states, does not actually converge to its
+  own 1e-9 tolerance within 6 iterations either (measured: max
+  `|Δa_y| ≈ 1.7e-4` even at iteration 6) — cutting further would silently
+  diverge from the reference exactly at the grip-limit states that matter
+  most for a racing policy.
+- ❌ **MPS (Apple GPU) offload** for the PPO gradient update: measured ~2x
+  *slower* than CPU (752k vs 1.43M samples/s) — the network (hidden=64) is
+  too small for GPU dispatch/transfer overhead to pay off.
+- **Real, unexplored tradeoff, not adopted**: `epochs=10` drives
+  gradient-update cost roughly proportionally; cutting it would trade
+  wall-clock for fewer gradient passes per batch of experience, a genuine
+  sample-efficiency cost that would need its own validation before use.
+
+**7. ✅ The long run — `experiments/tracks_pilot/spa_ppo_long.py`.** Full
+scoped production budget: `n_envs=1024`, `rollout_steps=1024`,
+`total_steps=38,500,000`, `gamma=0.999`, Spa. **632.1 s wall-clock
+(10.5 min) — 60,910 steps/s**, faster than either short benchmark, and the
+number to use going forward. 36 updates, 93,249 completed episodes.
+Artefacts in `experiments/tracks_pilot/out/long_*`.
+
+**This is a real, meaningful training curve, not another flat smoke test:**
+
+| update | steps | `distance_mean` (m) | `off_track_rate` | `return_mean` | `explained_var` |
+|---|---|---|---|---|---|
+| 0 | 1.0M | 200 | 1.00 | -1.4 | 0.00 |
+| 9 | 10.5M | 233 | 1.00 | 16.3 | 0.27 |
+| 19 | 21.0M | 254 | 0.52 | 83.2 | 0.52 |
+| 27 | 29.4M | 346 | 0.32 | 190.7 | 0.82 |
+| 35 (final) | 37.7M | 365 | 0.54 | 173.7 | 0.75 |
+
+`distance_mean` grew from ~200 m to ~365 m (roughly 80%), `off_track_rate`
+fell from ~1.00 to a noisy 0.22-0.54 band in the back third of the run
+(genuinely improving, not stuck), `explained_variance` climbed to a healthy
+0.6-0.83, and `approx_kl` (0.0002-0.0019 throughout) shows no instability
+at `gamma=0.999` across the full run. The policy is measurably learning to
+survive longer and leave the road less often.
+
+**And this is exactly the evidence that settles §4's open question, in the
+direction the numbers actually point:** 365 m final `distance_mean` against
+Spa's ~7,000 m length is **~5% of one lap**, after the full "same
+experience budget as Episode 10, scaled by lap-length ratio" allowance.
+The heuristic behind 38.5M was flagged as unvalidated when it was written
+(§4) and this run is the validation — it is a real underestimate for a
+20-corner circuit, not a defensible production number. Naively
+extrapolating the observed distance-per-step rate to a full lap implies a
+budget an order of magnitude or more past 38.5M, which is not a number to
+trust from a short linear extrapolation of a noisy, likely-nonlinear
+learning curve — but it is enough to say the right next move is not simply
+"run 38.5M again," it is either substantially more steps, or a curriculum
+change (Episode 9's own "start below the corner speed" trick made an
+unlearnable single-corner task learnable — a 20-corner circuit may need
+its own version of that idea, e.g. per-section curriculum or reward
+shaping, rather than throwing raw steps at the whole lap from a standing
+start every episode).
+
 ---
 
 ## 5. What this unlocks, and what it does not

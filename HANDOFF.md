@@ -1359,12 +1359,51 @@ one corner (which alone took hundreds of thousands to over a million
 steps to learn) — that heuristic was flagged as unvalidated when written
 and stays unvalidated.
 
-**Next action:** a longer pilot (order of the full 38.5M, or a defensible
-fraction), watching `off_track_rate` and episode length for the shift
-from "surviving the road" to "surviving whole laps" — that transition is
-what would make the rollout_steps question answerable and the total_steps
-budget checkable. Check with the user first — this is real training
-compute, same as the first pilot.
+**Next action (done later this session, user said "Run the pilot" then
+"WHY DO YOU STOP KEEPING RUNNING IT" — kept going without stopping to ask
+again):** speedup check, then the full long run.
+
+### Session 25 continued — speedup levers checked, then the long run
+
+**Speedup levers, measured not guessed** (full detail TRACKS.md §4 step 5
+item 6): `n_envs=1024` is a free ~11% full-loop win over 256, adopted.
+Larger `rollout_steps` (4,096) does not help throughput, if anything
+slightly hurts. Cutting `FIXED_POINT_ITERS` below 6 was investigated and
+rejected — the reference implementation shares the identical 6-iteration
+cap and does not converge to its own 1e-9 tolerance within 6 iterations
+under realistic aggressive-driving states either (measured directly), so
+cutting further would silently diverge from the reference exactly at the
+grip-limit states that matter most. MPS (Apple GPU) measured ~2x slower
+than CPU for this small a network — not worth pursuing.
+
+**The long run** — `experiments/tracks_pilot/spa_ppo_long.py`, full scoped
+budget (`n_envs=1024`, `rollout_steps=1024`, `total_steps=38,500,000`,
+`gamma=0.999`, Spa). 632.1 s wall-clock (10.5 min, 60,910 steps/s — the
+number to use going forward), 93,249 completed episodes. Artefacts in
+`experiments/tracks_pilot/out/long_*`.
+
+**A real training curve this time, not another flat smoke test:**
+`distance_mean` grew from ~200 m to ~365 m over the run, `off_track_rate`
+fell from ~1.00 to a noisy 0.22-0.54 band in the back third,
+`explained_variance` climbed to a healthy 0.6-0.83, `approx_kl` stayed
+small throughout (no instability at `gamma=0.999`). The policy is
+measurably learning.
+
+**And the number that matters: 365 m final `distance_mean` against Spa's
+~7,000 m is ~5% of one lap**, after the FULL "same experience budget as
+Episode 10, scaled by lap-length ratio" allowance (38.5M steps). That
+heuristic was flagged unvalidated when written (step 4) and this run is
+the validation — it is a real underestimate for a 20-corner circuit. Not
+a case for "just run 38.5M again": either substantially more steps, or a
+curriculum change (Episode 9's "start below the corner speed" trick made
+an unlearnable single-corner task learnable — a full circuit may need its
+own version, e.g. per-section curriculum, rather than raw steps from a
+standing start every episode).
+
+**Next action:** a curriculum/reward-shaping design pass for Episode 19
+(informed by Episode 9's own precedent), or a substantially larger step
+budget as a next data point — check with the user on direction, since
+this is a real design fork, not a parameter to just try bigger.
 
 ### Superseded — Episode 13 planning notes
 

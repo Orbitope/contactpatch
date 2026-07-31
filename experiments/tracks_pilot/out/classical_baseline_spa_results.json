@@ -1,0 +1,62 @@
+[
+  {
+    "grip_use": 0.3,
+    "valid": false,
+    "reason": "spun",
+    "lap_time_s": 33.58,
+    "distance_m": 983.6735958118775,
+    "worst_slip_deg": 47.9756398434828,
+    "max_offset_m": 2.31893003684921,
+    "fraction_of_lap": 0.1405351337834516
+  },
+  {
+    "grip_use": 0.4,
+    "valid": false,
+    "reason": "off track",
+    "lap_time_s": 30.240000000000002,
+    "distance_m": 901.4090780126635,
+    "worst_slip_deg": 44.367652119078265,
+    "max_offset_m": 4.900746059657976,
+    "fraction_of_lap": 0.12878219554889248
+  },
+  {
+    "grip_use": 0.5,
+    "valid": false,
+    "reason": "spun",
+    "lap_time_s": 31.32,
+    "distance_m": 997.6760669266373,
+    "worst_slip_deg": 48.80028563297202,
+    "max_offset_m": 1.8944163421700713,
+    "fraction_of_lap": 0.14253563390848292
+  },
+  {
+    "grip_use": 0.6,
+    "valid": false,
+    "reason": "spun",
+    "lap_time_s": 31.14,
+    "distance_m": 1018.679773598777,
+    "worst_slip_deg": 48.92361841750355,
+    "max_offset_m": 1.2562036060827002,
+    "fraction_of_lap": 0.14553638409602995
+  },
+  {
+    "grip_use": 0.7,
+    "valid": false,
+    "reason": "spun",
+    "lap_time_s": 30.72,
+    "distance_m": 1020.430082488122,
+    "worst_slip_deg": 48.7270322438658,
+    "max_offset_m": 1.2212724311731742,
+    "fraction_of_lap": 0.14578644661165888
+  },
+  {
+    "grip_use": 0.85,
+    "valid": false,
+    "reason": "spun",
+    "lap_time_s": 10.72,
+    "distance_m": 386.8182645452398,
+    "worst_slip_deg": 54.04080720458088,
+    "max_offset_m": 0.34600995012589236,
+    "fraction_of_lap": 0.055263815953990714
+  }
+]

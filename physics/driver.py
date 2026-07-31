@@ -360,6 +360,17 @@ def drive_lap(backend: DoubleTrackBackend, track: Track, driver: Driver,
         tv.reset()
         backend.attach_torque_vectoring(tv)
     backend.reset(driver.profile.target(0.0))
+    # The car starts at the TRACK's own s=0 pose, not the world origin.
+    # These coincide for every synthetic Track (centreline() integrates
+    # from (0, 0, heading 0) by construction) so this changes nothing for
+    # any existing caller -- but a SampledTrack's raw (x, y) data is
+    # wherever the source puts it, and reset()'s BicycleState() default
+    # (x=y=heading=0) silently dropped the car at the WORLD origin instead,
+    # which is nowhere near a real circuit's own start/finish line
+    # (TRACKS.md staging: blocked drive_lap on Spa on exactly this).
+    backend.state.x = float(locator.x_ref[0])
+    backend.state.y = float(locator.y_ref[0])
+    backend.state.heading = float(locator.h_ref[0])
     log = {k: [] for k in
            ("t", "s", "s_total", "n", "xi", "speed", "v_target", "steer",
             "drive", "yaw_rate", "a_x", "a_y", "alpha_max_deg", "load_min",

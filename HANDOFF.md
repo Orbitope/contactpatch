@@ -1611,11 +1611,40 @@ Run against all five saved checkpoints:
   (26% gap), plausibly the stall boundary being a more knife-edge
   decision than genuine driving.
 
-**Next action:** item B, the classical baseline on Spa (needs the
-start-pose fix) — and given the entry-speed finding above, the spawn
-should probably use a speed the classical driver's own `SpeedProfile`
-would choose at that point, not a flat 15 m/s, so the baseline doesn't
-repeat the same defect it just surfaced.
+**Next action (done later this session):** item B below.
+
+### Session 25 continued — item B: start-pose fixed, classical baseline is an honest negative result
+
+Full detail in `TRACKS.md` §4 item 15. `physics/driver.py`'s `drive_lap`
+always placed the car at the world origin — harmless for every synthetic
+`Track` (its `centreline` integrates FROM the origin, so this always
+coincided) but wrong for a real circuit's raw coordinates, which is why
+`drive_lap` had never run on Spa at all. Fixed: the car now starts at the
+track's own s=0 pose. Bit-identical for every existing caller (all 15
+pre-existing `test_driver.py` tests unchanged); new test added checking
+it against a circle deliberately not centred on the origin — the exact
+case that was silently wrong before.
+
+**The classical baseline itself does not complete a Spa lap at any grip
+level tried** (`experiments/tracks_pilot/classical_baseline_spa.py`,
+0.3-0.85). Every attempt spins or leaves the road in the same ~900-1020 m
+window regardless of aggression — checked directly: dropping `grip_use`
+from 0.85 to 0.3 moved neither the failure location nor its severity
+(worst slip 44-54° either way), ruling out "too aggressive" and pointing
+at the steering controller (pure-pursuit gains tuned only against the
+single synthetic corner) rather than speed. A third distinct problem
+location, different from Spa's tightest corner (item 14, s=403 m).
+
+Item B's actual goal — calibrate reward scales against a competent lap's
+earnings — isn't available yet as a result. An honest negative result,
+not a failure to hide: driver-gain retuning for real-circuit curvature
+is its own task (Episode 13's own precedent: a hand-tuned driver's gains
+are exactly the protocol choice CLAUDE.md rule 9 exists for). Not
+attempted further without checking scope with the user first.
+
+**Next action:** check with the user — driver-gain retuning for Spa
+(new work, unscoped), or item C (the single-variable gamma-revert
+training run) instead, since B's finding doesn't block C.
 
 ### Superseded — Episode 13 planning notes
 

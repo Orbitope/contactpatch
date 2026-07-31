@@ -149,15 +149,25 @@ def test_the_lap_logs_everything_rule_4_asks_for(track):
 
 def _circle_track(radius=80.0, n=400, half_width=HALF_WIDTH):
     """A circle through the origin, tangent to +x there (heading 0) --
-    matching where every synthetic ``Track`` in this file starts and where
-    ``DoubleTrackBackend.reset`` always places the car (``BicycleState``'s
-    ``x=y=heading=0`` defaults). A circle centred on the origin instead would
-    start the car 80 m from the road with nothing in ``drive_lap`` to place
-    it there; that pose-alignment problem is real for a real circuit but is
-    TRACKS.md staging step 3's problem, not this fixture's."""
+    matching where every synthetic ``Track`` in this file starts. Kept this
+    way (rather than centred on the origin) so this fixture stays a clean
+    isolation of the closed-loop plumbing (locate/preview/n_laps) from the
+    start-pose question below, now that ``drive_lap`` places the car at the
+    TRACK's own s=0 pose (TRACKS.md staging step 5) rather than assuming it
+    coincides with the world origin."""
     theta = np.linspace(0.0, 2 * np.pi, n, endpoint=False)
     x, y = radius * np.sin(theta), radius * (1.0 - np.cos(theta))
     return SampledTrack("circle", x, y, half_width, closed=True, smoothing=0.0)
+
+
+def _circle_track_off_origin(radius=80.0, n=400, half_width=HALF_WIDTH):
+    """A circle CENTRED on the origin -- s=0 is 80 m from world (0, 0), the
+    exact case ``drive_lap`` silently got wrong before (it placed the car at
+    the world origin regardless of where the track's own s=0 actually was)."""
+    theta = np.linspace(0.0, 2 * np.pi, n, endpoint=False)
+    x, y = radius * np.cos(theta), radius * np.sin(theta)
+    return SampledTrack("circle_off_origin", x, y, half_width, closed=True,
+                        smoothing=0.0)
 
 
 def test_locator_inverts_to_xy_across_the_seam_on_a_closed_track():
@@ -211,3 +221,25 @@ def test_drive_lap_completes_two_laps_of_a_closed_track():
     two = drive_lap(b, circle, driver, grip_use=0.85, n_laps=2, max_steps=4000)
     assert two.valid and two.reason == "finished"
     assert two.lap_time == pytest.approx(2 * one.lap_time, rel=0.05)
+
+
+def test_drive_lap_starts_at_the_tracks_own_pose_not_the_world_origin():
+    """TRACKS.md staging step 5: drive_lap silently placed the car at world
+    (0, 0, heading 0) regardless of where the track's own s=0 point actually
+    was -- harmless for every synthetic Track here (whose centreline
+    integrates FROM the origin by construction) but wrong for any track
+    whose raw coordinates are not centred on it, which blocked drive_lap on
+    Spa entirely (s=0 there is nowhere near world (0, 0))."""
+    circle = _circle_track_off_origin()
+    b = DoubleTrackBackend(schema.RV_1, diff="open")
+    prof = SpeedProfile(circle, a_lat=0.85 * 9.3, a_brake=8.0, a_drive=3.3,
+                        v_max=40.0)
+    driver = Driver(schema.RV_1, prof, TrackLocator(circle))
+
+    lap = drive_lap(b, circle, driver, grip_use=0.85, n_laps=1, max_steps=2000)
+    assert lap.valid and lap.reason == "finished"
+    # The very first logged offset must be small -- if the car had started
+    # at the world origin instead (80 m from this track's actual road), the
+    # locator would report a huge |n| on step one and the lap would break
+    # immediately, not finish cleanly.
+    assert abs(lap.log["n"][0]) < 1.0

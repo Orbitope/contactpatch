@@ -896,6 +896,42 @@ driving, consistent with that run's already-known degenerate behaviour.
 Reports written to `experiments/tracks_pilot/out/D6-Spa-<run>_report.json`
 for all five runs.
 
+**15. Plan item B — start-pose gap fixed, classical baseline attempted,
+honest negative result.** `physics/driver.py`'s `drive_lap` always placed
+the car at the world origin (`BicycleState`'s `x=y=heading=0` defaults) —
+harmless for every synthetic `Track` (its `centreline` integrates FROM
+the origin by construction, so this always coincided) but wrong for a
+real circuit's raw coordinates, which is why `drive_lap` had never been
+run on Spa at all. Fixed: the car now starts at the track's own s=0
+centreline pose. Bit-identical for every existing caller (all 15
+pre-existing `test_driver.py` tests pass unchanged); a new test
+(`test_drive_lap_starts_at_the_tracks_own_pose_not_the_world_origin`)
+checks it against a circle deliberately NOT centred on the origin, the
+exact case that was silently wrong before.
+
+**The classical baseline itself: does not complete a Spa lap, at any
+grip level tried (`experiments/tracks_pilot/classical_baseline_spa.py`,
+`grip_use` 0.3-0.85).** Every attempt spins or leaves the road in the
+same ~900-1020 m window — checked directly, not assumed to be a speed
+problem: dropping `grip_use` from 0.85 to 0.3 (much lower target speed
+throughout) moved neither the failure location nor its severity (worst
+slip 44-54° regardless). That rules out "too aggressive" as the cause
+and points at the steering controller — pure-pursuit gains tuned only
+against a single, constant-radius synthetic corner — not at speed. This
+is a THIRD distinct problem location, different from both Spa's tightest
+corner (item 14, s=403 m) and the reward-tuning arc's own crash
+clustering; the pure-pursuit driver's fixed lookahead most likely cannot
+track a corner whose curvature changes as fast as this section's does.
+
+**Item B's actual goal (calibrate reward scales against a competent
+lap's earnings) is therefore not yet available** — a real, useful
+negative result, not a failure to hide. Driver-gain retuning for
+real-circuit curvature is its own task, matching Episode 13's own
+precedent that a hand-tuned driver's gains are exactly the kind of
+unstated protocol choice CLAUDE.md rule 9 exists for (Episode 13 swept
+them for the single synthetic corner; nothing has swept them for Spa).
+Not attempted further here without checking scope with the user first.
+
 ---
 
 ## 5. What this unlocks, and what it does not

@@ -1,0 +1,146 @@
+[
+  {
+    "start_s": 0.0,
+    "distance_travelled": 394.0670461922397,
+    "off_track": true,
+    "steps": 853
+  },
+  {
+    "start_s": 291.645218687095,
+    "distance_travelled": 106.20419820309684,
+    "off_track": true,
+    "steps": 306
+  },
+  {
+    "start_s": 583.29043737419,
+    "distance_travelled": 505.6445891808713,
+    "off_track": true,
+    "steps": 1025
+  },
+  {
+    "start_s": 874.935656061285,
+    "distance_travelled": 412.9214126186471,
+    "off_track": true,
+    "steps": 914
+  },
+  {
+    "start_s": 1166.58087474838,
+    "distance_travelled": 1259.8890629163486,
+    "off_track": true,
+    "steps": 1977
+  },
+  {
+    "start_s": 1458.226093435475,
+    "distance_travelled": 969.1764551988463,
+    "off_track": true,
+    "steps": 1630
+  },
+  {
+    "start_s": 1749.87131212257,
+    "distance_travelled": 678.7311940638897,
+    "off_track": true,
+    "steps": 1265
+  },
+  {
+    "start_s": 2041.516530809665,
+    "distance_travelled": 389.38435017638017,
+    "off_track": true,
+    "steps": 844
+  },
+  {
+    "start_s": 2333.16174949676,
+    "distance_travelled": 114.12542397803008,
+    "off_track": true,
+    "steps": 324
+  },
+  {
+    "start_s": 2624.806968183855,
+    "distance_travelled": 391.83464932050447,
+    "off_track": true,
+    "steps": 885
+  },
+  {
+    "start_s": 2916.45218687095,
+    "distance_travelled": 192.20150916998,
+    "off_track": true,
+    "steps": 537
+  },
+  {
+    "start_s": 3208.097405558045,
+    "distance_travelled": 616.8897163929537,
+    "off_track": true,
+    "steps": 1243
+  },
+  {
+    "start_s": 3499.74262424514,
+    "distance_travelled": 359.35708582372536,
+    "off_track": true,
+    "steps": 799
+  },
+  {
+    "start_s": 3791.387842932235,
+    "distance_travelled": 697.3330002986477,
+    "off_track": true,
+    "steps": 1310
+  },
+  {
+    "start_s": 4083.03306161933,
+    "distance_travelled": 411.8927694975614,
+    "off_track": true,
+    "steps": 877
+  },
+  {
+    "start_s": 4374.678280306425,
+    "distance_travelled": 297.0352733543341,
+    "off_track": true,
+    "steps": 720
+  },
+  {
+    "start_s": 4666.32349899352,
+    "distance_travelled": 287.5225797636831,
+    "off_track": true,
+    "steps": 671
+  },
+  {
+    "start_s": 4957.968717680615,
+    "distance_travelled": 1244.9333145559358,
+    "off_track": true,
+    "steps": 2121
+  },
+  {
+    "start_s": 5249.61393636771,
+    "distance_travelled": 957.8256450069784,
+    "off_track": true,
+    "steps": 1638
+  },
+  {
+    "start_s": 5541.259155054805,
+    "distance_travelled": 651.2115880339006,
+    "off_track": true,
+    "steps": 1238
+  },
+  {
+    "start_s": 5832.9043737419,
+    "distance_travelled": 921.1240922965808,
+    "off_track": true,
+    "steps": 1599
+  },
+  {
+    "start_s": 6124.549592428995,
+    "distance_travelled": 629.4188129175454,
+    "off_track": true,
+    "steps": 1201
+  },
+  {
+    "start_s": 6416.19481111609,
+    "distance_travelled": 338.06806616219274,
+    "off_track": true,
+    "steps": 763
+  },
+  {
+    "start_s": 6707.840029803185,
+    "distance_travelled": 50.47571100661298,
+    "off_track": true,
+    "steps": 167
+  }
+]

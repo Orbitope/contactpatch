@@ -1425,8 +1425,59 @@ measured 60,910 steps/s; ≥3 seeds (rule 5) ≈ an afternoon.
 Pre-registered stall contingencies in order: gamma 0.9995, entry-speed
 curriculum, more steps — one at a time, never blended.
 
-**Next action:** Stage 0 (warm-start support + smoke test), then Stage 1
-— the schedule is designed to run without further scope decisions.
+**Next action (done later this session, user said "DO all the
+training"):** Stage 0, then Stage 1 (twice — see below).
+
+### Session 25 continued — Stage 0 done, Stage 1 caught its own F93 recurrence
+
+**Stage 0**: `ppo.train()` gained `init_state_dict` (D-A pattern, additive,
+`None` default reproduces every existing call bit-for-bit). 2 new tests;
+full suite 613 passed. Also verified directly: `BatchedDrivingEnv`'s
+existing `start_jitter_m` mechanism already gives sane, varied starts
+across the whole lap with zero new environment code.
+
+**Stage 1, run once without checkpoint selection first — and it recurred
+F93.** 40M steps, uniform starts, no `eval_every`. Trained cleanly by
+every surface signal (no crash, no NaN) but its own history showed
+`return_mean` peaking at update 25 (834) then genuinely declining over
+the next 12 updates to 317-360, `off_track_rate` worsening from 0.92 back
+to 0.96-1.00 alongside it. Exactly the pattern F93 was written about
+(Episode 14: only the final, worse weights get saved) — `eval_every` had
+been scoped for stage 2 only, and stage 1 made the identical mistake
+despite the selection tooling already existing and already tested.
+**Caught by reading the training curve, not by any run-reported
+failure.** Fixed and re-run with `eval_every=2`, `eval_episodes=8`, and an
+eval env matching TRAINING's own jittered distribution (not stage 2's
+from-the-line task — selecting against the wrong distribution would
+answer the wrong question for this stage). First run's artefacts kept as
+`stage1_noselect_*`, evidence rather than deleted.
+
+**The corrected run: selection worked, and the underlying result is real
+but modest.** 1,149.2 s wall-clock, 38 updates. Same rise-then-decline
+shape recurred (peak `eval_return` 583.34 at update 32, decline after) —
+checked why rather than treating it as a new mystery: `log_std` barely
+moves the whole run (`entropy_anneal=False`, this project's own
+documented default — exploration noise never tightens). Selection
+correctly held onto update 32's weights rather than the declined final
+ones. Per-section survival of the SELECTED checkpoint: mean 536.6 m
+(range 50.5-1,259.9 m), every section still eventually off-track. Real,
+if modest, improvement over the unjittered long run's 365 m (~47% more)
+— but honestly, nowhere near the gate as originally written, which
+turned out to compare two different populations (easy near-start
+training-time episodes vs. hard fixed points spanning the whole lap) —
+a mismatch this session's own gate design didn't anticipate.
+
+**Track visualized** for the user during this run:
+`experiments/tracks_pilot/out/spa_track.svg` — Spa's true shape with
+recovered varying half-width (3.9-8.2 m), reusing `viz/lib.py`'s existing
+primitives rather than a new tool.
+
+**Next action:** a real fork, not a clear failure calling for the
+pre-registered "stop and rethink the observation" fallback specifically.
+Options: more stage-1 budget before warm-starting stage 2; proceed to
+stage 2 anyway and let its own full-lap gate be the real test; or try the
+pre-registered `entropy_anneal`/`gamma=0.9995` contingencies now. Checked
+with the user before choosing — more large compute either way.
 
 ### Superseded — Episode 13 planning notes
 

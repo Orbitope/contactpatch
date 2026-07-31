@@ -591,8 +591,57 @@ Fixed in `experiments/tracks_pilot/spa_ppo_stage1.py`: `eval_every=2`,
 `start_jitter_m = track.length` — matching TRAINING's own distribution
 (evaluating from-the-line, stage 2's task, would be selecting on the wrong
 question here). Selection wiring smoke-tested against a tiny config before
-re-running at full budget (rule: confirm before trusting compute). The
-corrected run's real numbers replace this entry once it completes.
+re-running at full budget (rule: confirm before trusting compute).
+
+**10. The corrected run — selection worked exactly as designed, and the
+underlying result is real but modest, not the breakthrough the schedule
+hoped for.** 1,149.2 s wall-clock, 38 updates, 86,490 completed episodes.
+The training curve shows the **same rise-then-decline shape as the first
+run** — `eval_return` climbed to 583.34 at update 32, then the final
+updates' `return_mean`/`off_track_rate` show the same late decline the
+first run had. **This time it did not matter**: selection correctly held
+onto update 32's weights rather than the declined final ones —
+`res["model"]` returns the genuine peak, demonstrated concretely rather
+than assumed. Checked why the curve is non-monotonic at all before calling
+it a new mystery: `log_std` barely moves across the whole run
+(steer -2.49→-2.39, drive -0.99→-1.02) — `entropy_anneal=False` (this
+project's own documented default: "with a constant bonus the log standard
+deviation sits where it was initialised for the whole run, measured,
+Episodes 10 and 14 alike") means exploration noise never tightens, so a
+noisy, non-monotonic curve is the expected shape here, not a new defect.
+Selection is the correct, standard answer to that noise — not eliminating
+it, just not shipping from inside a dip.
+
+**Per-section survival of the SELECTED checkpoint**: mean 536.6 m
+(std 330.1, range 50.5-1,259.9 m), `off_track_rate=1.00` — every one of
+the 24 fixed evaluation points still eventually leaves the road.
+**Honestly, this does not cleanly clear the gate as written.** The gate
+compared against the long run's 0.22-0.54 `off_track_rate`, but that
+number came from the long run's own training-time bookkeeping — mostly
+easy, near-start episodes late in an unjittered run — while this is the
+DEPLOYED policy dropped at 24 fixed, often-harder points spanning the
+WHOLE lap. Those are different populations; the gate as I wrote it did
+not anticipate that mismatch, and "clearly below the band" is not a valid
+comparison between them. What IS a fair comparison: mean per-section
+distance (536.6 m) against the long run's own final `distance_mean`
+(365 m) — **~47% more**, a real, direction-confirming improvement, but
+still only ~7.7% of Spa's ~7,000 m lap. Stage 1 shows training everywhere
+helps generally, not that anything close to lap-scale driving exists yet.
+
+**Where this leaves the schedule**: the pre-registered contingency for a
+stage-1 shortfall was "stop and rethink the observation... rather than
+push budget at it" — but this is a real fork, not a clear failure calling
+for that fallback specifically. The improvement is real and in the right
+direction; it is just far smaller than the ~40M-step budget's authors
+(this doc, in §4) hoped for, echoing the long run's own lesson that the
+"scale Episode 10's budget by lap-length ratio" heuristic underestimates
+what a 20-corner circuit needs. Options, not resolved here: (a) more
+stage-1 budget before warm-starting stage 2, (b) proceed to stage 2's
+warm start anyway and let its own gate (does the DEPLOYED policy complete
+a lap) be the real test, (c) try the pre-registered entropy-anneal or
+gamma-0.9995 contingencies now rather than waiting for stage 2 to stall
+first. Checked with the user before choosing, since more large compute is
+the shared cost of every option.
 
 ---
 

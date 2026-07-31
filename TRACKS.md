@@ -387,12 +387,63 @@ without a pilot.
   whether that budget is anywhere near enough for a track 7.7x longer and
   more complex than a single corner, not just proportionally rescaled.
 
-**5. Recommended next step, when resumed:** a short pilot (SEASON5.md §7's
-own "budget rederived from a pilot before the production run" plan,
-Episode 14's pattern, which caught three defects early) — enough steps to
-see whether `gamma=0.999` is stable and whether the rollout-statistics fix
-is needed, at `n_envs=1024` batched, on Spa, before committing to a
-38.5M-step production run.
+**5. ✅ Pilot run — `experiments/tracks_pilot/spa_ppo_pilot.py`.** Small on
+purpose (not a scaled-down production run): `n_envs=256`,
+`rollout_steps=1024`, `total_steps=5,000,000` (19 updates), `gamma=0.999`,
+Spa, `envelope_penalty=0.5` (Ep 10's value, kept rather than reinvented).
+Wall-clock 106.4 s. Artefacts in `experiments/tracks_pilot/out/`.
+
+**What it answered:**
+- **The batched path works end to end on Spa** — no crash, no NaN, across
+  19 updates and ~19,600 completed episodes.
+- **Measured full-loop throughput: 46,999 steps/s** (env-stepping AND the
+  PPO gradient update, not the env-stepping-only 78,559 measured earlier).
+  Revises the production estimate: 38.5M steps / 46,999 ≈ **14 minutes**,
+  not the ~5 minutes an env-stepping-only number implied — still
+  dramatically faster than the ~4-hour unbatched path, just a more honest
+  number now that the whole loop has actually been measured once.
+- **`gamma=0.999` shows no instability over this run** — `approx_kl` stays
+  small (0.0003-0.0018) throughout, `explained_variance` climbs steadily
+  from 0.00 to 0.34 rather than diverging or collapsing. Not proof it is
+  the right value, but nothing here argues against it either.
+
+**What it did NOT answer, and why — reported honestly rather than
+stretched to look conclusive:**
+- **The rollout_steps question is not yet testable.** `off_track_rate`
+  stayed at 0.94-1.00 for all 19 updates — episodes are ending after ~200
+  steps on average (1,295 completions in the *first* 262,144-step update
+  alone), nowhere near the ~10,000-step scale a full lap would need. The
+  policy is still in "learn not to leave the road within the first few
+  hundred metres" territory; it has not yet reached the training stage
+  where "does a near-complete lap fit inside one rollout window" would
+  even apply. `return_mean` staying informative from update 0 onward
+  (never `nan`) is real, but for the wrong reason — episodes are so short
+  right now that many fit inside 1,024 steps regardless. The concern
+  TRACKS.md raised (long episodes vs. a short rollout window) only becomes
+  checkable once a policy exists that reliably survives past the first
+  corner or two, which this pilot's budget does not reach.
+- **5M steps is not remotely enough to see lap-driving behaviour on a
+  ~20-corner, 7 km circuit**, and that is not a surprise stated after the
+  fact: Episode 9's single 393 m corner needed hundreds of thousands to
+  over a million steps to learn from scratch, and Spa is a different
+  problem in kind, not just a longer version of the same one. The "match
+  Episode 10's experience budget, scaled by lap-length ratio" heuristic
+  behind the 38.5M figure was always flagged as unvalidated (§4 above);
+  this pilot did not validate it either, because 5M steps stays entirely
+  inside the "surviving the first corner" regime `return_mean` (noisily
+  climbing 0 → ~15 across the run) and `explained_variance` (climbing
+  0→0.34) both suggest the policy IS learning something — just not
+  anything measurable yet against "how much of a lap does it complete."
+
+**Honest bottom line:** infrastructure is proven and one real hyperparameter
+(`gamma`) shows no red flags at this scale. Whether `rollout_steps=1024` (or
+any other value) is adequate, and whether ~38.5M steps is anywhere near the
+right budget for a full circuit rather than one corner, are both still open
+— the next informative experiment is a LONGER pilot (order of the full
+38.5M, or a defensible fraction of it) with off-track-rate and
+episodes-per-update tracked as the health signal to watch for the shift
+from "surviving the road" to "surviving whole laps," not a short smoke
+test like this one.
 
 ---
 

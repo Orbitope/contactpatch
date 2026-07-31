@@ -1329,10 +1329,42 @@ rather than estimated:
   fix instead, total_steps~38.5M), explicitly flagged as guesses a pilot
   run needs to confirm, not final answers (rule 9).
 
-**Next action:** a short pilot run (SEASON5.md §7's own "budget rederived
-from a pilot before the production run" plan) at `n_envs=1024` batched on
-Spa — check with the user before launching, since this is the first
-actual training compute this thread would spend.
+**Next action (done later this session, user said "Run the pilot"):** the
+pilot itself.
+
+### Session 25 continued — TRACKS.md staging step 5: pilot run
+
+Full detail and the honest "what it did and did not answer" breakdown in
+`TRACKS.md` §4 step 5. `experiments/tracks_pilot/spa_ppo_pilot.py`: PPO on
+Spa through `BatchedDrivingEnv`, `n_envs=256`, `rollout_steps=1024`,
+`total_steps=5,000,000`, `gamma=0.999`. Ran clean, 106.4 s wall-clock,
+~19,600 completed episodes. Artefacts in `experiments/tracks_pilot/out/`.
+
+**Answered:** batched training on a real circuit works end to end (no
+crash, no NaN). Measured full-loop throughput (env-stepping AND the PPO
+gradient update, not measured before): **46,999 steps/s** — revises the
+production estimate from ~5 minutes (env-stepping only) to **~14 minutes**
+for 38.5M steps, still a dramatic win over the ~4-hour unbatched path.
+`gamma=0.999` shows no instability (`approx_kl` small throughout,
+`explained_variance` climbing steadily 0→0.34).
+
+**Did NOT answer, stated honestly rather than stretched:** the
+rollout_steps question isn't testable yet — `off_track_rate` stayed
+0.94-1.00 across all 19 updates, episodes averaging ~200 steps (crashing
+within the first corner or two), nowhere near lap-length. The pilot never
+reached the training stage where "does a near-full lap fit in one rollout
+window" applies. Nor does 5M steps say anything about whether ~38.5M is
+the right production budget for a 20-corner circuit versus Episode 9's
+one corner (which alone took hundreds of thousands to over a million
+steps to learn) — that heuristic was flagged as unvalidated when written
+and stays unvalidated.
+
+**Next action:** a longer pilot (order of the full 38.5M, or a defensible
+fraction), watching `off_track_rate` and episode length for the shift
+from "surviving the road" to "surviving whole laps" — that transition is
+what would make the rollout_steps question answerable and the total_steps
+budget checkable. Check with the user first — this is real training
+compute, same as the first pilot.
 
 ### Superseded — Episode 13 planning notes
 

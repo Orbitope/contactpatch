@@ -59,6 +59,41 @@ def test_training_without_evaluation_is_unchanged_and_deterministic():
         assert key not in a
 
 
+def test_init_state_dict_defaults_to_none_and_reproduces_training_unchanged():
+    """TRACKS.md staging step 5, stage 0: warm-start must not perturb the
+    fresh-random-init path when unused — the D-A pattern every other
+    additive parameter in this project follows."""
+    a = _train(_tiny(), eval_env=False)
+    b = _train(_tiny(), eval_env=False)
+    for (k, x), (_, y) in zip(a["model"].state_dict().items(),
+                              b["model"].state_dict().items()):
+        assert torch.equal(x, y), f"{k} differs between identical seeds"
+
+
+def test_init_state_dict_actually_warm_starts_the_model():
+    """The loaded weights must change the outcome, not be silently ignored in
+    favour of a fresh random init — and starting from the same weights with
+    the same seed must still be deterministic."""
+    warm = _train(_tiny(), eval_env=False)
+    cfg = _tiny()
+    default = _train(cfg, eval_env=False)
+    one = train(lambda i: DrivingEnv(EnvConfig()), cfg,
+               init_state_dict=warm["model"].state_dict())
+    two = train(lambda i: DrivingEnv(EnvConfig()), cfg,
+               init_state_dict=warm["model"].state_dict())
+
+    # Same starting weights + same training seed -> identical outcome.
+    for (k, x), (_, y) in zip(one["model"].state_dict().items(),
+                              two["model"].state_dict().items()):
+        assert torch.equal(x, y), f"{k} differs between identical warm starts"
+
+    # Different starting weights (warm vs. fresh) under the same training
+    # seed -> the init actually mattered, not silently ignored.
+    differs = any(not torch.equal(x, y) for (_, x), (_, y) in zip(
+        one["model"].state_dict().items(), default["model"].state_dict().items()))
+    assert differs, "warm-started training landed on the same weights as a fresh init"
+
+
 def test_turning_evaluation_on_does_not_change_the_trajectory():
     """The strongest guarantee here: watching the run must not steer it.
 

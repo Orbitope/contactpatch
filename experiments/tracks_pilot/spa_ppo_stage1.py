@@ -1,0 +1,162 @@
+"""TRACKS.md staging step 5, training schedule stage 1 — learn the road
+everywhere, not just the opening sector.
+
+The long run (``spa_ppo_long.py``) trained 38.5M steps entirely from Spa's
+first ~300 m (`start_jitter_m=0`, the environment default) and only ever saw
+the rest of the circuit by surviving into it — which it barely did (final
+`distance_mean` ~365 m against a ~7,000 m lap). This stage changes exactly
+one thing: `start_jitter_m = track.length`, so every reset lands uniformly
+around the whole lap. `BatchedDrivingEnv._reset_mask` already draws `s0`
+per instance from `uniform(0, start_jitter_m)` — no new environment code.
+Because the curvature-ahead preview is local (55 m), driving skill learned
+anywhere on the lap transfers everywhere; this just makes sure every part of
+the lap actually gets driven during training, not only the part nearest s=0.
+
+Gate (checked in a separate analysis pass after training, downstream from
+logged rollouts -- CLAUDE.md rule 7, never computed inside the training
+loop): per-start-section survival should be roughly uniform, not
+concentrated near s=0 the way an unjittered run's would be. Off-track rate
+should sit clearly below the long run's 0.22-0.54 band once averaged over
+a comparable number of steps.
+
+    python -m experiments.tracks_pilot.spa_ppo_stage1
+"""
+
+from __future__ import annotations
+
+import json
+import time
+from pathlib import Path
+
+import numpy as np
+import torch
+
+from physics.ppo import PPOConfig, greedy_policy, train
+from physics.rl_env import DrivingEnv, EnvConfig
+from physics.tracks_data import load_real_track
+
+ROOT = Path(__file__).resolve().parent.parent.parent
+OUT = ROOT / "experiments" / "tracks_pilot" / "out"
+
+N_ENVS = 1024
+ROLLOUT_STEPS = 1024
+TOTAL_STEPS = 40_000_000
+GAMMA = 0.999
+SEED = 0
+MAX_STEPS = 15_000
+ENVELOPE_PENALTY = 0.5
+#: The whole point of stage 1: uniform starts around the entire lap, not the
+#: long run's start_jitter_m=300.
+START_JITTER_M = None  # filled in from track.length in make_batched_env
+
+#: Per-section survival probes, evenly spaced around the lap. 24 points is
+#: enough to see whether survival concentrates near s=0 without being an
+#: expensive evaluation pass (24 rollouts, not 24*N).
+N_SECTIONS = 24
+
+
+def make_batched_env(n_envs: int, seed: int = SEED):
+    from physics.batched_env import BatchedDrivingEnv
+    spa = load_real_track("Spa")
+    cfg = EnvConfig(track=spa, max_steps=MAX_STEPS,
+                    envelope_penalty=ENVELOPE_PENALTY,
+                    start_jitter_m=spa.length)
+    return BatchedDrivingEnv(cfg, n=n_envs, seed=seed)
+
+
+def evaluate_per_section(model, n_sections: int = N_SECTIONS) -> list[dict]:
+    """Deployed policy, dropped at ``n_sections`` evenly-spaced points around
+    Spa, one rollout each. Distance travelled from EACH probe's own start
+    (not absolute ``s`` — TRACKS.md's own stated caveat: `episode_distance`
+    is absolute, and that is the wrong number once starts are not all 0).
+    """
+    spa = load_real_track("Spa")
+    starts = np.linspace(0.0, spa.length, n_sections, endpoint=False)
+    policy = greedy_policy(model)
+    rows = []
+    for s0 in starts:
+        env = DrivingEnv(EnvConfig(track=spa, max_steps=MAX_STEPS,
+                                   envelope_penalty=ENVELOPE_PENALTY,
+                                   start_jitter_m=0.0))
+        env.reset(0)
+        env.s = float(s0)  # drop the car at this section instead of s=0
+        obs = env.observe()  # observation depends on s; reset()'s is stale
+        while not env.done:
+            obs, r, done, info = env.step(policy(obs))
+        h = env.history()
+        distance = float(h["s"][-1]) - float(s0)
+        off_track = bool(abs(h["n"][-1]) > float(spa.half_width_at(h["s"][-1])))
+        rows.append({"start_s": float(s0), "distance_travelled": distance,
+                    "off_track": off_track, "steps": int(env.steps)})
+    return rows
+
+
+def main():
+    OUT.mkdir(parents=True, exist_ok=True)
+    print("TRACKS.md step 5, stage 1 -- learn the road everywhere")
+    print(f"  n_envs={N_ENVS}  rollout_steps={ROLLOUT_STEPS}  "
+         f"total_steps={TOTAL_STEPS:,}  gamma={GAMMA}  "
+         f"start_jitter_m=track.length\n")
+
+    cfg = PPOConfig(total_steps=TOTAL_STEPS, n_envs=N_ENVS,
+                    rollout_steps=ROLLOUT_STEPS, gamma=GAMMA, seed=SEED)
+
+    def on_update(rec):
+        print(f"  update {rec['update']:4d}  steps={rec['steps']:>11,}  "
+             f"wall={rec['wall_s']:7.1f}s  "
+             f"episodes_finished={rec['episodes_finished']:6d}  "
+             f"return_mean={rec['return_mean']:8.2f}  "
+             f"distance_mean={rec['distance_mean']:8.1f}  "
+             f"off_track_rate={rec['off_track_rate']:.2f}  "
+             f"explained_var={rec['explained_variance']:+.2f}  "
+             f"approx_kl={rec['approx_kl']:.4f}", flush=True)
+
+    t0 = time.time()
+    res = train(make_batched_env=make_batched_env, cfg=cfg, on_update=on_update)
+    wall_s = time.time() - t0
+    history = res["history"]
+    final = history[-1] if history else {}
+
+    print(f"\n  training done: {len(history)} updates, {wall_s:.1f}s wall-clock "
+         f"({cfg.total_steps/wall_s:,.0f} steps/s)")
+    print(f"  final (this stage's own accounting -- distance is ABSOLUTE s, "
+         f"not corrected for jittered starts, see per-section eval below): "
+         f"off_track_rate={final.get('off_track_rate')}  "
+         f"distance_mean={final.get('distance_mean')}")
+
+    print("\n  per-section survival (deployed policy, one rollout per "
+         f"section, {N_SECTIONS} sections around the lap):")
+    sections = evaluate_per_section(res["model"])
+    for row in sections:
+        print(f"    start_s={row['start_s']:7.1f}  "
+             f"distance_travelled={row['distance_travelled']:8.1f}  "
+             f"off_track={row['off_track']}  steps={row['steps']}")
+    distances = np.array([r["distance_travelled"] for r in sections])
+    off_rate = np.mean([r["off_track"] for r in sections])
+    print(f"\n  section distance: mean={distances.mean():.1f}  "
+         f"std={distances.std():.1f}  min={distances.min():.1f}  "
+         f"max={distances.max():.1f}")
+    print(f"  section off_track_rate={off_rate:.2f}")
+    print(f"  uniformity check: std/mean={distances.std()/max(distances.mean(),1e-9):.2f} "
+         "(lower = more uniform survival across the lap)")
+
+    torch.save(res["model"].state_dict(), OUT / "stage1_policy.pt")
+    (OUT / "stage1_history.json").write_text(json.dumps(history, indent=2) + "\n")
+    (OUT / "stage1_config.json").write_text(json.dumps(res["config"], indent=2) + "\n")
+    (OUT / "stage1_sections.json").write_text(json.dumps(sections, indent=2) + "\n")
+    (OUT / "stage1_summary.json").write_text(json.dumps({
+        "n_envs": N_ENVS, "rollout_steps": ROLLOUT_STEPS,
+        "total_steps": TOTAL_STEPS, "gamma": GAMMA,
+        "wall_s": wall_s, "n_updates": len(history),
+        "steps_per_s_full_loop": cfg.total_steps / wall_s,
+        "final_training_stats": final,
+        "section_distance_mean": float(distances.mean()),
+        "section_distance_std": float(distances.std()),
+        "section_off_track_rate": float(off_rate),
+    }, indent=2) + "\n")
+    print(f"\n  wrote {OUT.relative_to(ROOT)}/stage1_{{policy.pt,history.json,"
+         f"config.json,sections.json,summary.json}}")
+
+
+if __name__ == "__main__":
+    main()

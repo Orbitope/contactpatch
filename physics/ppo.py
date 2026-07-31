@@ -216,7 +216,8 @@ def _evaluate_deployed(model, env, episodes: int, seed0: int) -> dict:
 
 
 def train(make_env=None, cfg: PPOConfig | None = None, on_update=None,
-          make_eval_env=None, make_batched_env=None) -> dict:
+          make_eval_env=None, make_batched_env=None,
+          init_state_dict=None) -> dict:
     """Train a policy. ``make_env(i)`` builds environment ``i``.
 
     Returns the trained model plus a per-update history — the raw material D6
@@ -232,6 +233,16 @@ def train(make_env=None, cfg: PPOConfig | None = None, on_update=None,
 
     With ``cfg.eval_every == 0`` (the default) this is exactly the function
     Episodes 9-11 called: no evaluation, no selection, final weights returned.
+
+    ``init_state_dict`` (TRACKS.md staging step 5's training schedule,
+    stage 2): warm-start the actor-critic from a prior checkpoint's weights
+    instead of a fresh random init. **``None`` (the default) reproduces every
+    existing call bit-for-bit** — the model is constructed exactly as before
+    and nothing here touches it. The optimiser is always fresh (Adam's own
+    moment estimates do not transfer across a changed reward/observation
+    distribution the way the weights do), and the learning-rate anneal and
+    entropy schedule both restart from update 0 — a warm start changes where
+    training begins, not what a training run's own schedule means.
     """
     cfg = cfg or PPOConfig()
     torch.manual_seed(cfg.seed)
@@ -249,6 +260,8 @@ def train(make_env=None, cfg: PPOConfig | None = None, on_update=None,
         envs = [make_env(i) for i in range(cfg.n_envs)]
         obs_dim, act_dim = envs[0].obs_dim, envs[0].act_dim
     model = ActorCritic(obs_dim, act_dim, cfg.hidden, cfg.init_log_std)
+    if init_state_dict is not None:
+        model.load_state_dict(init_state_dict)
     opt = torch.optim.Adam(model.parameters(), lr=cfg.lr, eps=1e-5)
 
     obs = (batched.reset(int(rng.integers(1 << 30))) if batched is not None

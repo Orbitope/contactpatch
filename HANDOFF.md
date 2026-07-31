@@ -1528,9 +1528,50 @@ branch; and state explicitly that this changes the comparison from
 reshape this one policy" — cheaper, but can bias every branch toward
 whichever regime the baseline already committed to.
 
-**Next action:** decide whether to spend more budget on stage 1 to see
-if the late-climb pattern eventually plateaus into safer driving, or
-proceed to stage 2's own full-lap gate as the next real test regardless.
+**Next action (done later this session, user asked for a step-back
+review):** the review below.
+
+### Session 25 continued — step-back review: the critic has been dead since the reward change
+
+Full analysis and revised plan in `TRACKS.md` §4 item 13. The three
+findings, each verified against the runs' own logged histories:
+
+1. **`explained_variance` collapsed from 0.33-0.72 (gamma=0.999 runs) to
+   ~0.00 in every run since the gamma/penalty change** — the critic
+   predicts nothing, so with `rollout_steps` far shorter than episodes
+   (GAE bootstraps almost everything through V) the advantage signal has
+   been mostly noise for three consecutive 40M-step runs. `D6`'s own
+   `the_critic_predicts_returns` check (gate: EV > 0.3) describes exactly
+   this failure — **and D6 was never run on any tracks pilot**, despite
+   being the project's standing training-health diagnostic. Also a
+   process failure worth owning: gamma and penalty scale were changed
+   together, violating the schedule's own pre-registered "one at a time,
+   never blended" rule, so the two candidate causes (40 s horizon vs a
+   3-5 s observation preview; ±500 value-target spikes vs the value
+   head's 0.5 grad-norm clip, F51) are currently confounded.
+2. **The "off-track rate stuck at 0.94-1.00" headline had a censoring
+   artifact** — with finish requiring a multi-km drive to `s=length` and
+   a 300 s timeout, eventual-crash is near-guaranteed by construction
+   until the policy can survive lap-scale distances. The honest safety
+   metric is hazard (mean distance before crash), which did improve
+   536.6 → 595.2 → 653.5 m. Corrected in the record, not just noted.
+3. **No existence proof the task is completable**: the classical driver
+   has never lapped Spa (blocked only by the small start-pose gap flagged
+   at step 2). A classical baseline lap would prove completability,
+   calibrate reward scales against a competent lap's actual earnings, and
+   be an external check the RL loop wasn't written around (rule 11).
+
+**Revised plan (TRACKS.md item 13, in order)**: (A) D6 becomes the
+standing gate for every training run; (B) classical baseline on Spa
+first; (C) single-variable gamma-revert run to un-confound the critic
+collapse; (D) contingent single changes only (dense edge shaping /
+entropy anneal / spawn-speed adaptation); (E) stage-1 gate redefined as
+hazard-based (≥ one lap length before crash) + D6 passing; (F) future
+sweeps use the shared-baseline warm-start method.
+
+**Next action:** plan item A+B — wire D6 into the pilot scripts and run
+the classical baseline on Spa (needs the start-pose fix). Both cheap;
+no training compute until C.
 
 ### Superseded — Episode 13 planning notes
 

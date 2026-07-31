@@ -740,6 +740,109 @@ the baseline already committed to, which matters more here than usual
 given training has already been observed to lurch between qualitatively
 different regimes (stall-forever vs. crash-constantly).
 
+**13. Step-back review of the whole training arc — three findings and a
+revised plan.** Requested by the user after item 12; each finding is
+checked against the runs' own logged histories, not reasoned from memory.
+
+**Finding 1 — the critic has been dead since the reward change, our own
+diagnostic would have caught it, and we never ran the diagnostic.**
+`explained_variance`, median over the last fifth of training, per run:
+
+| run | gamma | penalties | EV tail median | D6's own gate (>0.3) |
+|---|---|---|---|---|
+| long run | 0.999 | otp=50 | **+0.72** | pass |
+| stage1 old-reward | 0.999 | otp=50 | **+0.33** | pass |
+| stall-exploit | 0.9995 | otp=500 | +0.01 | **fail** |
+| aggressive-crash | 0.9995 | otp=500, ps=3.0 | +0.00 | **fail** |
+| current (ps=1.5, phase B) | 0.9995 | otp=500, ps=1.5 | +0.00 | **fail** |
+
+`D6_training_health` has a check named `the_critic_predicts_returns`
+whose own failure text is exactly this situation: "at zero the critic is
+no better than predicting the mean, which makes every advantage estimate
+noise and the policy gradient a random walk." **D6 was never run on any
+of these pilots** — every Season 3/4 episode ran it; the tracks pilots
+skipped it, and three consecutive runs trained with a dead critic while
+we tuned reward coefficients on top. Worse than the usual dead-critic
+case: `rollout_steps=1024` is far shorter than late-training episodes
+(5,000-10,000 steps), so GAE bootstraps almost everything through V —
+a dead critic does not just add noise, it dominates the advantage signal.
+
+Two candidate causes, which were changed TOGETHER (violating item 8's own
+pre-registered "one at a time, never blended" rule — recorded as a
+process failure, not excused): (a) `gamma` 0.999→0.9995 gives a ~40 s
+effective horizon while the observation's curvature preview reaches 55 m
+(~3-5 s at speed) — the return simply is not predictable from the
+observation at that horizon; (b) penalty magnitude ×10 makes value
+targets spike-dominated (rare ±500s among ±0.1-scale steps), and the
+value head's separate 0.5 grad-norm clip (F51) throttles how fast it can
+learn targets of that scale.
+
+**Finding 2 — my own "off-track rate is stuck at 0.94-1.00" headline
+(item 12) has a censoring artifact and needs correcting.** An episode can
+only end four ways; with `finished` requiring reaching `s=length` (a
+multi-km drive from most spawn points) and the timeout at 300 s, any
+policy that cannot yet drive several km ends by crash **almost by
+construction**. The binary "did it eventually crash" is uninformative at
+this stage; the real safety metric is the **hazard** — mean distance
+driven before crashing — which DID improve: 536.6 → 595.2 → 653.5 m
+(+22% over the arc). Off-track-eventually will stay ~1.0 until the
+policy can survive lap-scale distances, and treating it as the headline
+overstated the failure. (The priority-order concern stands — the crash
+hazard is still far too high — but the instrument was measuring episode
+topology as much as safety.)
+
+**Finding 3 — there is still no existence proof that the task as posed is
+completable, and the classical driver would provide one cheaply.**
+`drive_lap` + `SpeedProfile` (Episode 13's closed-loop driver) has never
+been run on Spa — blocked only by the start-pose gap already flagged at
+step 2 ("drive_lap assumes the car starts at the world origin with
+heading 0"), which is a few lines to fix. A classical lap would (a) prove
+a full Spa lap is drivable inside our own physics and envelope, (b) give
+a reference lap time and a reference reward total to calibrate penalty
+scales against actual earnings of a competent lap, (c) exercise the
+step-2/3 plumbing at racing speeds — an external check the RL loop was
+not written around (rule 11). Related quantifiable check, not yet done:
+the fraction of uniform spawn points that are doomed at birth (dropped at
+15 m/s, steer=0, inside or just before the few corners whose limit speed
+is below 15 m/s) — computable directly from `track.curvature`, and worth
+knowing before interpreting per-section failures near those corners.
+
+### Revised plan (proposed, in order — each step cheap and diagnostic
+before any further 40M-step spend)
+
+- **A. Make D6 the standing gate for every training run in this thread**
+  starting now — it exists, it is generated not hand-written, and it
+  would have failed three runs we instead interpreted by eye. Add
+  `explained_variance` to the per-run summary JSON.
+- **B. Classical baseline on Spa** (~minutes): fix the start pose (set
+  the initial `BicycleState` from the centreline's own s=0 pose), run
+  `drive_lap` at 2-3 `grip_use` values, record lap time, validity,
+  envelope occupancy, and the reward a clean lap would earn under the
+  current coefficients. If the classical driver cannot lap Spa, the task
+  definition has a problem RL cannot fix and everything pauses there.
+- **C. Single-variable critic test** (~13 min): revert `gamma` to 0.999,
+  keep everything else exactly as the current run (otp=500, sp=150,
+  ps=1.5). If EV recovers → the horizon was the poison and 0.999 stays;
+  if EV stays ~0 → penalty magnitude is implicated, and the next single
+  change is scaling penalties down (or normalising value targets), not
+  another coefficient guess. Either outcome is informative; this honours
+  the "one at a time" rule the last change broke.
+- **D. Contingent, after C, at most one at a time**: dense edge-proximity
+  shaping (a per-step cost near the track edge — predictable from the
+  current observation, so it fixes credit assignment for safety directly;
+  tradeoff to state up front: it mildly fights racing-line width usage,
+  so threshold high, e.g. only beyond 80% of half-width, and revisit
+  before stage 3); `entropy_anneal=True` (pre-registered, still untried);
+  spawn-speed adaptation (`v0 = min(15, 0.8·v_limit(s0))` from local
+  curvature, D-A default-off) to eliminate doomed spawns.
+- **E. Gate redefinition for stage 1**: hazard-based, not
+  binary-terminal — mean per-section distance-before-crash ≥ one lap
+  length (7,000 m) with envelope occupancy ~0, plus D6 passing
+  (including `the_critic_predicts_returns`). The per-section probe gains
+  worst-slip and termination-cause columns (rule 4).
+- **F. Sweeps**, when next needed, use the shared-baseline warm-start
+  method (item 12), with the from-a-shared-point caveat stated.
+
 ---
 
 ## 5. What this unlocks, and what it does not

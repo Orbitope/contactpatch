@@ -1400,10 +1400,33 @@ an unlearnable single-corner task learnable — a full circuit may need its
 own version, e.g. per-section curriculum, rather than raw steps from a
 standing start every episode).
 
-**Next action:** a curriculum/reward-shaping design pass for Episode 19
-(informed by Episode 9's own precedent), or a substantially larger step
-budget as a next data point — check with the user on direction, since
-this is a real design fork, not a parameter to just try bigger.
+**Next action (done later this session, user asked for a feasible
+training schedule):** the schedule below.
+
+### Session 25 continued — training schedule designed (TRACKS.md §4 item 8)
+
+Full table and pre-registered contingencies in `TRACKS.md`. The
+diagnosis: the long run was a curriculum problem, not (only) a budget
+problem — every episode started in Spa's first 300 m, so 38.5M steps
+went into the opening sector and the policy never saw ~95% of the
+circuit. The fix is already supported in code, verified not assumed:
+`BatchedDrivingEnv._reset_mask` draws `s0` per instance, so
+`start_jitter_m = track.length` gives uniform starts around the whole
+lap with zero new environment code, and the local (55 m) curvature
+preview means skill learned anywhere transfers everywhere.
+
+Four stages: (0) warm-start support in `ppo.train()` (D-A pattern,
+additive, bit-identical when unset) + jitter smoke test; (1) ~40M steps
+uniform-start survival, gate on per-section survival uniformity; (2)
+~100–150M steps warm-started, `eval_every` on with from-the-line eval,
+gate on the DEPLOYED policy completing a full lap (D12/F93); (3)
+consolidate + measure, ≥6 eval seeds, D6 gates. ~1 h/seed at the
+measured 60,910 steps/s; ≥3 seeds (rule 5) ≈ an afternoon.
+Pre-registered stall contingencies in order: gamma 0.9995, entry-speed
+curriculum, more steps — one at a time, never blended.
+
+**Next action:** Stage 0 (warm-start support + smoke test), then Stage 1
+— the schedule is designed to run without further scope decisions.
 
 ### Superseded — Episode 13 planning notes
 

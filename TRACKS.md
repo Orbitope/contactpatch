@@ -511,6 +511,57 @@ its own version of that idea, e.g. per-section curriculum or reward
 shaping, rather than throwing raw steps at the whole lap from a standing
 start every episode).
 
+**8. Proposed training schedule (designed, not yet run).** The long run's
+diagnosis is a curriculum problem, not (only) a budget problem: every
+episode starts in the same first 300 m, so the policy has spent 38.5M
+steps learning Spa's opening sector and has never seen the other ~95% of
+the circuit except by surviving into it. The fix TRACKS.md's own
+observation design already supports: the curvature preview is **local**
+(next 55 m), so driving skill learned anywhere on the lap transfers
+everywhere — spread the starts.
+
+The load-bearing fact, verified in code rather than assumed:
+`BatchedDrivingEnv._reset_mask` already draws `s0` per instance from
+`uniform(0, start_jitter_m)`, so `start_jitter_m = track.length` gives
+uniform starts around the whole circuit with **zero new environment
+code**. On a closed track the existing termination (`s >= length *
+n_laps`) then means "drive the remainder of the lap to the start line" —
+episode difficulty varies naturally from a few metres to a full lap,
+which IS the curriculum gradient, the same shape as Episode 9's
+entry-speed trick (make the easy version of the task exist, let the
+reward push toward the hard one).
+
+Wall-clock arithmetic uses the long run's measured 60,910 steps/s.
+
+| Stage | What | Budget | Wall-clock | Gate to advance |
+|---|---|---|---|---|
+| 0 | Warm-start support in `ppo.train()` (accept an initial `state_dict`, D-A pattern: additive, default-off, bit-identical unset) + a smoke test of full-lap jitter semantics on the closed track | code only | ~an hour of work | existing PPO tests still pass; smoke run shows varied start positions and sane terminations |
+| 1 | **Learn the road everywhere.** `start_jitter_m = length`, otherwise the long run's exact config | ~40M steps | ~11 min/seed | `off_track_rate` clearly below the long run's 0.22–0.54 band; per-start-section survival roughly uniform (computed downstream from logged `s`, rule 7 — no section left unlearned) |
+| 2 | **Stretch to laps.** Warm-start from Stage 1; same uniform starts (starts near `s=0` are full-lap tasks); `eval_every` ON with a from-the-start-line eval env, selection on deployed return (F93) | ~100–150M steps | ~30–40 min/seed | DEPLOYED (mean-action) policy from the start line covers a full lap — D12: the sampled curve counts for nothing here |
+| 3 | **Consolidate and measure.** Keep the Stage 2 champion; deployed-policy evaluation from clean standing starts, ≥6 eval seeds (Episode 9's lesson: one harness is not a measurement), D6 gates, envelope occupancy | ~40M steps + eval | ~15 min/seed | D6 passes; envelope rule 4 respected; numbers quotable |
+
+Per training seed: ~200–230M steps ≈ **~1 hour**. Rule 5 demands ≥3
+seeds: **~3 hours, an afternoon** — 5 seeds fits an evening. This is why
+the batched-path work mattered: the same schedule through the unbatched
+path would be ~2 weeks per seed.
+
+Pre-registered contingency (rule 9), so a stall is a decision point and
+not an improvisation: if Stage 2 plateaus below lap scale, the forks are
+(a) `gamma` 0.999 → 0.9995 (horizon 20 s → 40 s), (b) an entry-speed
+curriculum stacked on the start-position one (Episode 9's actual trick),
+(c) more raw steps — in that order, one at a time, never blended in a
+single run. If Stage 1 itself fails its gate, stop and rethink the
+observation (the preview may be too short for 90 m/s straights: 55 m is
+0.6 s of lookahead at top speed) rather than pushing budget at it.
+
+Known reporting caveats to carry into the runs, stated now rather than
+discovered mid-analysis: `info["episode_distance"]` reports absolute `s`
+at termination, not distance covered — with jittered starts those differ,
+so Stage 1+ analysis must subtract start positions (downstream from logs,
+rule 7); and a car whose draw lands within metres of the line "finishes"
+trivially, a rare and harmless dilution of `episodes_finished` worth
+remembering when reading that counter.
+
 ---
 
 ## 5. What this unlocks, and what it does not

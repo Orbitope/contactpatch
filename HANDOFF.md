@@ -1642,9 +1642,37 @@ is its own task (Episode 13's own precedent: a hand-tuned driver's gains
 are exactly the protocol choice CLAUDE.md rule 9 exists for). Not
 attempted further without checking scope with the user first.
 
-**Next action:** check with the user — driver-gain retuning for Spa
-(new work, unscoped), or item C (the single-variable gamma-revert
-training run) instead, since B's finding doesn't block C.
+**Next action (done later this session):** item C.
+
+### Session 25 continued — item C: the confound is resolved, penalty magnitude broke the critic
+
+Full detail in `TRACKS.md` §4 item 16. `experiments/tracks_pilot/critic_gamma_test.py`:
+`gamma` reverted to 0.999, everything else held exactly as the current
+stage-1 run (`off_track_penalty=500`, `stall_penalty=150`,
+`progress_scale=1.5`). 20M steps, 19 updates, 381.8 s.
+
+**`explained_variance` stayed at -0.001 to +0.000 for all 19 updates —
+no recovery at all**, in sharp contrast to the reference `gamma=0.999`/
+`off_track_penalty=50` run, which climbed from 0.0 past D6's 0.3 gate by
+update 12-15 and reached 0.72 by the end. Reverting the horizon changed
+nothing. **This isolates the cause the step-back review left confounded:
+the ~10x penalty-magnitude jump broke the critic, not the longer
+horizon.** Consistent with the mechanism already suspected in item 13 —
+value targets now spike between the ordinary per-step scale and
+±500-650 on a terminal step, and the value head's own separate 0.5
+grad-norm clip (F51) may not let it track targets that much larger.
+
+Per the plan's own pre-registered next step, penalty magnitude (not
+gamma) is now the implicated single variable. Two candidate fixes: (a)
+scale the penalties back down, leaning more on `gamma=0.9995`'s
+implicit deterrent to carry the safety weight instead (which was always
+its OTHER stated purpose alongside the explicit penalty, not a
+substitute for it); (b) leave the reward alone and fix the value
+network's ability to track it — raise/remove its grad-norm clip, or
+normalise value targets. Checked with the user before choosing.
+
+**Next action:** get direction on (a) vs (b) before spending more
+training compute.
 
 ### Superseded — Episode 13 planning notes
 

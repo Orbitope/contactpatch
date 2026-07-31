@@ -932,6 +932,50 @@ unstated protocol choice CLAUDE.md rule 9 exists for (Episode 13 swept
 them for the single synthetic corner; nothing has swept them for Spa).
 Not attempted further here without checking scope with the user first.
 
+**16. Plan item C — the confound is resolved. Gamma was not the
+poison; penalty magnitude is.** `experiments/tracks_pilot/critic_gamma_test.py`:
+`gamma` reverted to 0.999, everything else held exactly as the current
+run (`off_track_penalty=500`, `stall_penalty=150`, `progress_scale=1.5`).
+20M-step budget, 19 updates, 381.8 s. `explained_variance` sat at
+**-0.001 to +0.000 for all 19 updates** — no recovery at all, in sharp
+contrast to the reference `gamma=0.999`/`off_track_penalty=50` run, which
+climbed from 0.0 to past D6's 0.3 gate by update 12-15 and reached 0.72
+by the end. Reverting the horizon changed nothing; the critic stayed
+exactly as dead as under `gamma=0.9995`.
+
+This cleanly isolates the cause the step-back review (item 13) left
+confounded: **the ~10x penalty-magnitude jump (50→500 flat, plus the new
+150 stall penalty) is what broke the critic, not the longer horizon.**
+Consistent with the mechanism already named in item 13: value targets
+now spike between roughly the ordinary per-step scale (~0.1-1 with
+`progress_scale=1.5`) and ±500-650 on a terminal step, a much harder
+regression problem than the original reward's, and the value head's own
+separate 0.5 grad-norm clip (F51) — already isolated FROM the policy's
+clip, but still a fixed cap — may simply not let the critic's weights
+move far enough per update to track targets that much larger in scale.
+
+Per-section result at this checkpoint (worth recording, not the point of
+this run): distance mean 281.5 m, off-track rate 1.00 — worse than the
+`gamma=0.9995` runs, consistent with a genuinely noise-driven policy
+gradient under a dead critic, exactly as item 13 warned it would look.
+
+**Per the plan's own pre-registered next step, penalty magnitude is now
+the implicated single variable — not gamma, and not a fresh guess.**
+Two candidate fixes, not yet chosen between: (a) scale
+`off_track_penalty`/`stall_penalty` down toward a magnitude the value
+function can actually track, accepting this partially undoes item 11's
+original fix for the weak-deterrent problem unless `gamma=0.9995`'s
+implicit (lost-future-reward) deterrent is reinstated to carry more of
+that weight, which was always its OTHER stated purpose (item 11: "the two
+are meant to reinforce each other, not substitute" — this run suggests
+they were instead compounding into a value-learning problem); (b) leave
+the reward scale alone and address the value network's own ability to
+track it — raise or remove the value head's grad-norm clip specifically,
+or normalise returns/value targets before regression, so the SAME reward
+shape becomes learnable without renegotiating the safety-vs-speed balance
+again. Checked with the user before choosing, consistent with every
+reward-design decision this arc has made.
+
 ---
 
 ## 5. What this unlocks, and what it does not

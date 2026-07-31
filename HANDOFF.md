@@ -1671,8 +1671,33 @@ substitute for it); (b) leave the reward alone and fix the value
 network's ability to track it — raise/remove its grad-norm clip, or
 normalise value targets. Checked with the user before choosing.
 
-**Next action:** get direction on (a) vs (b) before spending more
-training compute.
+**Next action (done later this session, user said "try 2 and then try 1
+with decreasing the off road penalty"):** fix (b) below, both
+candidates, both negative.
+
+### Session 25 continued — value grad-norm clip ruled out too, moving to reward scale
+
+Full detail in `TRACKS.md` §4 item 17. Added `value_max_grad_norm` to
+`physics/ppo.py` (D-A pattern, tested), then
+`experiments/tracks_pilot/critic_value_clip_test.py`: reward held exactly
+as the current stage-1 run, `value_max_grad_norm` set to an effectively
+unbounded 1e6. 20M steps, 19 updates.
+
+**`explained_variance` stayed at -0.001 to +0.000 — statistically
+indistinguishable from item 16's gamma-revert result.** Unclipping the
+value head entirely made no measurable difference, ruling out F51's own
+clip-throttling mechanism as the (sole) bottleneck here. The critic's
+difficulty looks like a genuine scale/representation problem, not a
+step-size one.
+
+Both `fix (b)` candidates (gamma, grad-norm clip) tried and both
+negative. Moving to `fix (a)` — reducing `off_track_penalty`'s own
+magnitude — per the user's explicit direction, while keeping
+`gamma=0.9995` to carry more of the deterrent implicitly, genuinely
+testing item 11's original intention (explicit and implicit deterrents
+reinforcing each other) rather than stacking two large ones at once.
+
+**Next action:** design and run the `off_track_penalty` reduction test.
 
 ### Superseded — Episode 13 planning notes
 

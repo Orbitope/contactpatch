@@ -976,6 +976,37 @@ shape becomes learnable without renegotiating the safety-vs-speed balance
 again. Checked with the user before choosing, consistent with every
 reward-design decision this arc has made.
 
+**17. Fix (b) tried first, and it is also a clean negative result.**
+`physics/ppo.py` gained `value_max_grad_norm` (D-A pattern, `None`
+default reuses `max_grad_norm`, tested for default-safety and for
+actually being wired in). `experiments/tracks_pilot/critic_value_clip_test.py`:
+reward held exactly as the current stage-1 run (`gamma=0.9995`,
+`off_track_penalty=500`, `stall_penalty=150`, `progress_scale=1.5`),
+`value_max_grad_norm` set to an effectively unbounded 1e6 — does removing
+the throttle recover the critic at all, before tuning a finite value.
+20M steps, 19 updates.
+
+**`explained_variance` stayed at -0.001 to +0.000 for all 19 updates —
+statistically indistinguishable from item 16's gamma-revert result.**
+Unclipping the value head entirely made no measurable difference. This
+rules out the grad-norm clip as the bottleneck (or at least as the sole
+one): F51's own mechanism — a fixed clip throttling the critic once
+return magnitude grows — does not reproduce here even with the clip
+effectively removed, so the critic's difficulty tracking these targets is
+not (only) a step-size problem, it looks more like a genuine scale/
+representation problem the network cannot regress against directly
+regardless of how far each gradient step is allowed to move.
+
+**Both `fix (b)` candidates tried; both negative. Moving to `fix (a)` —
+reducing the reward's own scale — per the user's explicit direction**,
+having now ruled out gamma and the clip as one-line fixes. `off_track_penalty`
+to be brought down from 500 toward a magnitude closer to what the
+critic demonstrably could track (the original `off_track_penalty=50`
+config had EV 0.33-0.72) while keeping `gamma=0.9995` to carry more of
+the deterrent implicitly, as item 11 originally intended the two to do
+together — this time genuinely testing that intention rather than
+stacking two large explicit-and-implicit deterrents at once.
+
 ---
 
 ## 5. What this unlocks, and what it does not

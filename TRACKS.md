@@ -843,6 +843,59 @@ before any further 40M-step spend)
 - **F. Sweeps**, when next needed, use the shared-baseline warm-start
   method (item 12), with the from-a-shared-point caveat stated.
 
+**14. Plan item A done — `experiments/tracks_pilot/d6_spa.py`, run
+against all five saved checkpoints — and it found a second real defect
+beyond the dead critic.** Reuses D6's own KL/entropy/deployed-vs-sampled/
+tire-envelope checks unmodified; adapts the two checks hardcoded to the
+single synthetic corner (`the_task_is_completable`,
+`exploration_matches_the_action_scale`) to use Spa's own tightest corner
+(max recovered curvature, r=11.4 m) instead — same intent, right
+reference. `off_track_penalty`/`stall_penalty`/`progress_scale` must be
+passed explicitly per run rather than read from the saved config: those
+are `EnvConfig` fields and `PPOConfig`'s serialized JSON has no record of
+them at all — a `.get(..., 500.0)`-style default would have silently
+reconstructed the WRONG reward for both `gamma=0.999` runs (which used
+`off_track_penalty=50`), caught by checking the actual saved keys before
+writing the fallback rather than after.
+
+**`the_critic_predicts_returns` gate confirms item 13 exactly**: pass for
+both `gamma=0.999` runs (EV +0.72, +0.33), fail for all three
+`gamma=0.9995` runs (EV +0.01, +0.00, +0.00).
+
+**A second, previously-unflagged defect, found by running the adapted
+`the_task_is_completable` check rather than assumed**: it **fails for
+all five runs**. Spa's tightest corner (r=11.4 m) has a limit speed of
+10.1 m/s; every episode spawns at `entry_speed=15.0 m/s`, inherited
+unchanged from the single-corner synthetic track. This is the exact
+failure D6's check exists to catch (Episode 9: entry speed above the
+corner's own limit), recurring on a new track because entry speed was
+never revisited when the track changed. Every uniform spawn point within
+braking distance of Spa's tightest corner (or any of its other corners
+whose limit sits below 15 m/s) starts the episode already unsurvivable
+without immediate hard braking — a likely PRIMARY contributor to the
+short, heterogeneous per-section survival times already measured (item
+10's 48.8-1259.9 m range), not merely the reward shape. This elevates
+"spawn-speed adaptation" from item D's contingent list to something to
+fix before the next training run, not after: `v0 = min(15, 0.8 *
+v_limit(s0))` from local curvature at the drawn start, D-A default-off
+so every existing episode is unaffected.
+
+**`exploration_is_not_growing` fails for all five runs** (entropy rising
+in every one, e.g. current run -0.56 -> -0.52) — expected given
+`entropy_anneal=False` is the default and already documented elsewhere
+in this codebase to behave exactly this way, but now formally gated
+rather than merely known. Supports trying `entropy_anneal=True` (plan
+item D) rather than leaving it as a vague "still untried" note.
+
+`exploration_matches_the_action_scale` passes for all five (ratio 0.6x,
+inside the adapted Spa-corner window). `greedy_and_stochastic_agree`
+fails only for `stage1_stallexploit` (26% gap) — plausibly the stall
+boundary itself being a more decision-sensitive knife-edge than genuine
+driving, consistent with that run's already-known degenerate behaviour.
+
+Reports written to `experiments/tracks_pilot/out/D6-Spa-<run>_report.json`
+for all five runs.
+
 ---
 
 ## 5. What this unlocks, and what it does not

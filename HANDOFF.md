@@ -1569,9 +1569,53 @@ entropy anneal / spawn-speed adaptation); (E) stage-1 gate redefined as
 hazard-based (≥ one lap length before crash) + D6 passing; (F) future
 sweeps use the shared-baseline warm-start method.
 
-**Next action:** plan item A+B — wire D6 into the pilot scripts and run
-the classical baseline on Spa (needs the start-pose fix). Both cheap;
-no training compute until C.
+**Next action (done later this session, user said "Sure" to A+B):** item
+A below; item B (classical baseline) next.
+
+### Session 25 continued — D6-Spa (item A), and a second real defect found
+
+Full detail in `TRACKS.md` §4 item 14. `experiments/tracks_pilot/d6_spa.py`
+reuses D6's own KL/entropy/deployed-vs-sampled/tire-envelope checks
+unmodified, adapting only the two hardcoded to the single synthetic
+corner (`the_task_is_completable`, `exploration_matches_the_action_scale`)
+to use Spa's own tightest corner (r=11.4 m) instead. Caught a real bug
+before it shipped: `off_track_penalty`/`stall_penalty`/`progress_scale`
+are `EnvConfig` fields with no record in the saved `PPOConfig` JSON, so a
+`.get(..., default)` read would have silently reconstructed the WRONG
+reward for both `gamma=0.999` runs — fixed by requiring them passed
+explicitly per run (`RUN_REWARDS` table, checked against each script's
+actual constants, not guessed).
+
+Run against all five saved checkpoints:
+
+- **`the_critic_predicts_returns` confirms item 13 exactly**: pass for
+  both `gamma=0.999` runs (EV +0.72, +0.33), fail for all three
+  `gamma=0.9995` runs (EV +0.01, +0.00, +0.00).
+- **A second, previously-unflagged defect**: `the_task_is_completable`
+  **fails for all five runs**. Spa's tightest corner (r=11.4 m) caps at
+  10.1 m/s; every episode spawns at `entry_speed=15.0 m/s`, inherited
+  unchanged from the single-corner synthetic track. Exactly the failure
+  D6 exists to catch (Episode 9's entry speed above corner limit),
+  recurring because entry speed was never revisited when the track
+  changed. Every spawn near that corner (or Spa's other sub-15-m/s
+  corners) starts already unsurvivable without immediate hard braking —
+  a likely PRIMARY contributor to the short, heterogeneous per-section
+  survival already measured, not only the reward shape. Elevates
+  "spawn-speed adaptation" from a contingent later item to something to
+  fix before the next training run.
+- `exploration_is_not_growing` fails for all five (entropy rising in
+  every run) — expected given `entropy_anneal=False`'s already-documented
+  behaviour, now formally gated rather than just known.
+- `exploration_matches_the_action_scale` passes for all five.
+  `greedy_and_stochastic_agree` fails only for `stage1_stallexploit`
+  (26% gap), plausibly the stall boundary being a more knife-edge
+  decision than genuine driving.
+
+**Next action:** item B, the classical baseline on Spa (needs the
+start-pose fix) — and given the entry-speed finding above, the spawn
+should probably use a speed the classical driver's own `SpeedProfile`
+would choose at that point, not a flat 15 m/s, so the baseline doesn't
+repeat the same defect it just surfaced.
 
 ### Superseded — Episode 13 planning notes
 

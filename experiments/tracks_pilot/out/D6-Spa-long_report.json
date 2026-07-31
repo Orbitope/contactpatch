@@ -1,0 +1,143 @@
+{
+  "diagnostic": "D6-Spa-long",
+  "title": "Training health (Spa-adapted) \u2014 long",
+  "subtitle": "D6's own checks, generalised from the single synthetic corner to Spa's tightest corner where two checks depend on it.",
+  "passed": false,
+  "n_checks": 9,
+  "n_failed": 2,
+  "findings": [],
+  "checks": [
+    {
+      "name": "policy_is_actually_updating",
+      "passed": true,
+      "detail": "median approximate KL per update is 0.00121 against a 0.0001 floor.",
+      "severity": "gate",
+      "value": 0.0012080893282927717,
+      "expected": null,
+      "group": "Did the policy actually change?"
+    },
+    {
+      "name": "exploration_is_not_growing",
+      "passed": false,
+      "detail": "policy entropy went -0.65 -> -0.55 (+0.11).",
+      "severity": "gate",
+      "value": 0.10763505399227136,
+      "expected": null,
+      "group": "Did the policy actually change?"
+    },
+    {
+      "name": "exploration_matches_the_action_scale",
+      "passed": true,
+      "detail": "[ADAPTED from D6: uses Spa's tightest corner, r=11.4 m, not the synthetic track's single corner] holding it needs a normalised steering action of about 0.130; the policy searches with a standard deviation of 0.082, a ratio of 0.6x.",
+      "severity": "gate",
+      "value": 0.6323427626556709,
+      "expected": null,
+      "group": "Is the search at the scale of the problem?"
+    },
+    {
+      "name": "the_task_is_completable",
+      "passed": false,
+      "detail": "[ADAPTED from D6: uses Spa's tightest corner, r=11.4 m, not the synthetic track's single corner] the car makes 10.1 m/s round it at the limit and starts episodes at 15.0 m/s.",
+      "severity": "gate",
+      "value": {
+        "tightest_corner_limit_ms": 10.141143798828125,
+        "entry_ms": 15.0,
+        "tightest_corner_radius_m": 11.365502002981753
+      },
+      "expected": null,
+      "group": "Is the task possible, and did it get solved?"
+    },
+    {
+      "name": "the_off_track_rate_came_down",
+      "passed": false,
+      "detail": "episodes ending off the road went 1.00 -> 0.54. NOTE (Spa-specific, not in D6): with a multi-km lap and a policy nowhere near completing one, this rate is expected to stay near 1.0 regardless of safety improvement -- see the hazard metric (mean distance before crash) instead, computed downstream in the per-section eval, not here.",
+      "severity": "note",
+      "value": 0.54,
+      "expected": null,
+      "group": "Is the task possible, and did it get solved?"
+    },
+    {
+      "name": "the_critic_predicts_returns",
+      "passed": true,
+      "detail": "explained variance over the last fifth of training has a median of +0.72. At zero the critic is no better than predicting the mean, which makes every advantage estimate noise and the policy gradient a random walk.",
+      "severity": "gate",
+      "value": 0.7224610515144732,
+      "expected": null,
+      "group": "Is the critic predicting anything?"
+    },
+    {
+      "name": "the_deployed_policy_completes_the_task",
+      "passed": false,
+      "detail": "the mean-action policy finishes 0% of laps and covers 363 m. Sampling instead gives 0% and 322 m. NOTE (Spa-specific): a full Spa lap is ~7,000 m from most starts -- this is expected to fail until stage 2 at the earliest and is not this run's gate.",
+      "severity": "note",
+      "value": 0.0,
+      "expected": null,
+      "group": "Does the policy you would actually deploy work?"
+    },
+    {
+      "name": "greedy_and_stochastic_agree",
+      "passed": true,
+      "detail": "deployed distance 363 m vs sampled 322 m, a 13% gap.",
+      "severity": "gate",
+      "value": 0.12997778705840599,
+      "expected": null,
+      "group": "Does the policy you would actually deploy work?"
+    },
+    {
+      "name": "the_policy_stayed_inside_the_tire_model",
+      "passed": true,
+      "detail": "deployed policy spends 0.0% of steps beyond the 12 deg envelope bound (occupancy 0.0%).",
+      "severity": "gate",
+      "value": 0.0,
+      "expected": null,
+      "group": "Does the policy you would actually deploy work?"
+    }
+  ],
+  "data": {
+    "evaluation": {
+      "greedy": {
+        "distance_m": 363.3170235444911,
+        "distance_std": 0.0,
+        "finish_rate": 0.0,
+        "worst_slip_deg": 8.133042399993887,
+        "slip_over_bound": 0.0,
+        "envelope_occupancy": 0.0,
+        "lap_time_s": NaN
+      },
+      "stochastic": {
+        "distance_m": 321.52581024649123,
+        "distance_std": 53.197046265810684,
+        "finish_rate": 0.0,
+        "worst_slip_deg": 38.540672949033166,
+        "slip_over_bound": 0.060225941162754634,
+        "envelope_occupancy": 0.05957626150957098,
+        "lap_time_s": NaN
+      }
+    },
+    "train_config": {
+      "total_steps": 38500000,
+      "n_envs": 1024,
+      "rollout_steps": 1024,
+      "epochs": 10,
+      "minibatches": 4,
+      "gamma": 0.999,
+      "gae_lambda": 0.95,
+      "clip": 0.2,
+      "lr": 0.0003,
+      "value_coef": 0.5,
+      "entropy_coef": 0.0005,
+      "max_grad_norm": 0.5,
+      "hidden": 64,
+      "init_log_std": [
+        -2.5,
+        -1.0
+      ],
+      "seed": 0,
+      "anneal_lr": true,
+      "eval_every": 0,
+      "eval_episodes": 4,
+      "eval_seed0": 1000000,
+      "entropy_anneal": false
+    }
+  }
+}

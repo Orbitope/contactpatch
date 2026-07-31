@@ -273,13 +273,47 @@ None of this is legal advice.
    5 tests (`tests/test_tracks_data.py`), skipped cleanly rather than
    failed when TUM's GitHub is unreachable — an external dependency this
    project does not control should not hard-fail CI/offline runs.
-4. **Batched env support for long tracks** — the current curvature lookup is
-   called per step on an array, which is fine, but a 5 km circuit at 50 Hz is
-   ~10,000 steps per lap against today's ~1,000, so `max_steps` and the episode
-   budget both need revisiting.
-5. **Only then** retrain. A real circuit changes what "a lap" costs, so every
+4. ✅ **INVESTIGATED — no code defect, the real work turned out to belong to
+   step 5.** Checked `batched_env.py`'s buffers, `TrackLocator`'s window
+   search, `EnvConfig.max_steps`/`drive_lap`'s `max_steps`, and PPO's
+   reward/log accumulation for anything hardcoded to a ~1,000-2,000-step
+   episode. Nothing is: `max_steps` is already a config value, no buffer is
+   shaped off it, `TrackLocator`'s `window` is in metres (track-length
+   independent), reward has no episode-length normalisation to break.
+
+   What "the episode budget needs revisiting" (this step's own words)
+   actually means, found by looking rather than assumed: three **training
+   hyperparameters**, not infrastructure —
+   - `physics/ppo.py`'s `rollout_steps=512` is smaller than even the OLD
+     `max_steps=2000` cap; against a ~10,000-step Spa lap almost no episode
+     would complete inside a rollout window, so `finished_returns`-derived
+     stats (`return_mean`, `off_track_rate` — exactly what D6/rule 4 read)
+     would sit `nan` for most of training.
+   - `total_steps` (300k/1.2M/5M across `ppo.py`/ep09/ep10) buys an order of
+     magnitude fewer COMPLETED laps on a track 5-18x longer, at unchanged
+     step budget.
+   - `gamma=0.995` (4 s effective horizon) was already short against the old
+     26 s lap; against Spa's 10+ second straights it cannot connect
+     corner-exit speed to its payoff at all.
+   - **Bigger, adjacent finding**: no experiment script (`ep09`-`ep11`)
+     actually routes through `batched_env.py` yet — every one constructs
+     plain single-instance `DrivingEnv`s. `BatchedDrivingEnv` exists,
+     is tested, and is exactly what a 10,000-step-lap training budget would
+     need for throughput, but nothing wires it into a training run.
+
+   None of these are guessable without a real training run to calibrate
+   against (rule 9 — a modelling choice measured, not assumed), and every
+   one is inseparable from actually retraining on a real circuit. They are
+   step 5's work, not a separate step 4 — recorded here rather than
+   invented a number for now.
+5. **Retrain.** A real circuit changes what "a lap" costs, so every
    step-count and wall-clock number in Season 3 and 4 is re-derived, not
-   inherited.
+   inherited — including the hyperparameters step 4 surfaced
+   (`rollout_steps`, `total_steps`, `gamma`) and wiring training through
+   `BatchedDrivingEnv` for throughput. **Large compute, likely
+   multi-hour-plus per configuration** — check scope with the user before
+   starting, the same way POWER-REVIEW's own RL-retrain phase was held for
+   confirmation rather than launched speculatively.
 
 ---
 

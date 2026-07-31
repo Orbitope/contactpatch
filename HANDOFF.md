@@ -1264,10 +1264,42 @@ synthetic data it was measured on, worse length match, washed-out corner.
 as step 1, generalised correctly this time: measure smoothing on the data
 in front of you, don't carry a number over from different data.
 
-**Next action:** TRACKS.md staging step 4 — batched-env step-count support
-for a ~10,000-step lap (Spa at 50 Hz) against today's ~1,000-step
-`long_exit` episodes; `max_steps` and the episode budget both need
-revisiting before RL training can actually drive this circuit.
+**Next action (done later this session — turned out to be an
+investigation, not a code change):** TRACKS.md staging step 4.
+
+### Session 25 continued — TRACKS.md staging step 4: investigated, no defect
+
+Checked `batched_env.py`'s buffers, `TrackLocator`'s window search,
+`EnvConfig.max_steps`/`drive_lap`'s `max_steps`, and PPO's reward/log
+accumulation for anything hardcoded to a ~1,000-2,000-step episode.
+**Nothing is** — `max_steps` is already a config value, no buffer is sized
+off it, `TrackLocator`'s `window` is in metres not track-fraction, reward
+has no episode-length normalisation. Full detail and the four things that
+DO need attention in `TRACKS.md` §4 step 4:
+
+- `ppo.py`'s `rollout_steps=512` is smaller than the OLD `max_steps=2000`
+  cap; against a ~10,000-step Spa lap almost no episode finishes inside a
+  rollout window, so `return_mean`/`off_track_rate` (what D6/rule 4 read)
+  would go `nan` for most of training.
+- `total_steps` (300k/1.2M/5M) buys an order of magnitude fewer completed
+  laps at unchanged budget, on a track 5-18x longer.
+- `gamma=0.995` (4 s horizon) was already short against the old 26 s lap;
+  cannot connect corner-exit speed to payoff across Spa's 10+ second
+  straights at all.
+- No experiment script routes through `BatchedDrivingEnv` yet — `ep09`-`11`
+  all build single-instance `DrivingEnv`s. The batched env is tested and
+  exists specifically for this throughput problem, but nothing wires it in.
+
+None of these are guessable without an actual training run to calibrate
+against (rule 9) — they're step 5's work, not a separable step 4, so
+recorded here rather than invented as numbers now.
+
+**Next action:** TRACKS.md staging step 5 — retrain on Spa. **Large
+compute** (multi-hour-plus per configuration, per the four items above,
+plus wiring `BatchedDrivingEnv` into a training script that doesn't exist
+yet) — check scope with the user before starting, per the same pattern
+POWER-REVIEW's own RL-retrain phase was held for rather than launched
+speculatively.
 
 ### Superseded — Episode 13 planning notes
 

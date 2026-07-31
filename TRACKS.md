@@ -635,13 +635,48 @@ for that fallback specifically. The improvement is real and in the right
 direction; it is just far smaller than the ~40M-step budget's authors
 (this doc, in §4) hoped for, echoing the long run's own lesson that the
 "scale Episode 10's budget by lap-length ratio" heuristic underestimates
-what a 20-corner circuit needs. Options, not resolved here: (a) more
-stage-1 budget before warm-starting stage 2, (b) proceed to stage 2's
-warm start anyway and let its own gate (does the DEPLOYED policy complete
-a lap) be the real test, (c) try the pre-registered entropy-anneal or
-gamma-0.9995 contingencies now rather than waiting for stage 2 to stall
-first. Checked with the user before choosing, since more large compute is
-the shared cost of every option.
+what a 20-corner circuit needs.
+
+**11. Reward re-tuned by explicit user decision (protocol change, rule
+9), grounded in a real decomposition rather than intuition.** Reviewed
+the reward structure with the user: progress (`ds·dt`, uncapped, the only
+speed incentive there is), `off_track_penalty` (flat, once, default 50),
+`envelope_penalty` (proportional to slip beyond 12°, `0.5`, Episode 10's
+value). Decomposed 30 rollouts of the corrected stage-1 checkpoint:
+`distance - total_reward` averaged **49.90** (std 0.73) — essentially the
+entire non-progress cost is the flat off-track penalty, and the envelope
+term barely fired (the policy was not yet pushing near the boundary).
+**50 points is only ~10% of a typical episode's reward (497.3 mean), and
+that fraction shrinks as the policy improves** — a flat penalty against a
+growing progress total, weakening exactly as training succeeds. A
+structural, not cosmetic, reason a fixed penalty under-deters improving
+policies, and a plausible contributor to both stage-1 runs' rise-then-
+decline shape.
+
+**Decision**: `off_track_penalty: 50 -> 500` (a much larger, still flat,
+fraction of banked reward) **and** `gamma: 0.999 -> 0.9995` (~2,000-step /
+40 s horizon) together — the second changes the IMPLICIT deterrent (lost
+future reward) to scale with how much of the lap remains, rather than
+staying a fixed number that dilutes as episodes lengthen; the two are
+meant to reinforce each other, not substitute. `envelope_penalty`
+unchanged — it was not the active constraint in either run, no evidence
+yet that it needs to be. User's stated priority order for this design:
+**staying on track first, viable slip state second, speed third — but
+deliberately still pushing the grip limit, since that is the only regime
+where torque vectoring has anything to show.** Smoke-tested (tiny config,
+no crash, sane negative returns from an untrained policy under the larger
+penalty) before the full run. Stage 1 re-run from scratch (not
+warm-started) under the new reward, so the comparison against both prior
+runs is clean rather than confounded by an old-reward-tuned initial
+policy. Previous stage-1 artefacts kept as `stage1_oldreward_*`.
+
+Options going forward once this run reports, not resolved here: (a) more
+stage-1 budget if the new reward's own gate still falls short, (b)
+proceed to stage 2's warm start and let its own full-lap gate be the real
+test, (c) `entropy_anneal=True` as a further contingency if the
+rise-then-decline shape persists even under the new reward. Checked with
+the user before choosing, since more large compute is the shared cost of
+every option.
 
 ---
 

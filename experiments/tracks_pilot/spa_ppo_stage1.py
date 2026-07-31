@@ -29,6 +29,21 @@ task, because stage 1's own question is "does it survive from anywhere",
 not stage 2's "does it complete a lap from the start" -- selecting against
 the wrong distribution would be selecting on a different stage's question.
 
+**Reward re-tuned (protocol change, rule 9) after decomposing the corrected
+run's own reward: `distance - total_reward` averaged 49.90 (std 0.73)
+across 30 rollouts -- essentially the entire non-progress cost is the flat
+`off_track_penalty=50`, and the envelope term barely fired at all (the
+policy wasn't yet pushing near 12 deg). 50 points is only ~10% of a typical
+episode's reward (497.3 mean) -- and that fraction SHRINKS as the policy
+improves, since the penalty is a flat constant against a growing progress
+total. `off_track_penalty: 50 -> 500` makes leaving the road cost far more
+of what has been banked; `gamma: 0.999 -> 0.9995` (~2,000-step / 40 s
+horizon) makes the IMPLICIT deterrent -- lost future reward -- scale with
+how much of the lap remains, rather than staying a fixed number that
+dilutes as episodes lengthen. `envelope_penalty` unchanged: it was not the
+active constraint in the previous run and there is no evidence yet that it
+needs to be.
+
     python -m experiments.tracks_pilot.spa_ppo_stage1
 """
 
@@ -51,7 +66,10 @@ OUT = ROOT / "experiments" / "tracks_pilot" / "out"
 N_ENVS = 1024
 ROLLOUT_STEPS = 1024
 TOTAL_STEPS = 40_000_000
-GAMMA = 0.999
+#: Both changed together, by explicit user decision, after decomposing the
+#: previous run's own reward (see module docstring for the measurement).
+GAMMA = 0.9995
+OFF_TRACK_PENALTY = 500.0
 SEED = 0
 MAX_STEPS = 15_000
 ENVELOPE_PENALTY = 0.5
@@ -83,6 +101,7 @@ def make_eval_env():
     spa = load_real_track("Spa")
     return DrivingEnv(EnvConfig(track=spa, max_steps=MAX_STEPS,
                                envelope_penalty=ENVELOPE_PENALTY,
+                               off_track_penalty=OFF_TRACK_PENALTY,
                                start_jitter_m=spa.length))
 
 
@@ -91,6 +110,7 @@ def make_batched_env(n_envs: int, seed: int = SEED):
     spa = load_real_track("Spa")
     cfg = EnvConfig(track=spa, max_steps=MAX_STEPS,
                     envelope_penalty=ENVELOPE_PENALTY,
+                    off_track_penalty=OFF_TRACK_PENALTY,
                     start_jitter_m=spa.length)
     return BatchedDrivingEnv(cfg, n=n_envs, seed=seed)
 
@@ -108,6 +128,7 @@ def evaluate_per_section(model, n_sections: int = N_SECTIONS) -> list[dict]:
     for s0 in starts:
         env = DrivingEnv(EnvConfig(track=spa, max_steps=MAX_STEPS,
                                    envelope_penalty=ENVELOPE_PENALTY,
+                                   off_track_penalty=OFF_TRACK_PENALTY,
                                    start_jitter_m=0.0))
         env.reset(0)
         env.s = float(s0)  # drop the car at this section instead of s=0

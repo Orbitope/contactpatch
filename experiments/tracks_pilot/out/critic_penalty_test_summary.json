@@ -1,0 +1,20 @@
+{
+  "gamma": 0.9995,
+  "off_track_penalty": 200.0,
+  "stall_penalty": 150.0,
+  "progress_scale": 1.5,
+  "total_steps": 20000000,
+  "wall_s": 378.6313490867615,
+  "n_updates": 19,
+  "explained_variance_tail_median": -0.0016574749723385906,
+  "passes_d6_gate": false,
+  "section_distance_mean": 242.58457608049667,
+  "section_distance_std": 74.85460250291612,
+  "section_off_track_rate": 1.0,
+  "best_update": 18,
+  "best_eval": {
+    "eval_return": 100.24314781565835,
+    "eval_distance": 3374.6969558203923,
+    "eval_finish_rate": 0.0
+  }
+}

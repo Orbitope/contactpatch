@@ -1007,6 +1007,77 @@ the deterrent implicitly, as item 11 originally intended the two to do
 together — this time genuinely testing that intention rather than
 stacking two large explicit-and-implicit deterrents at once.
 
+**18. `fix (a)` is also a clean negative — and the real cause, found by
+measuring the critic's OUTPUT rather than its error.**
+`experiments/tracks_pilot/critic_penalty_test.py` (`off_track_penalty`
+500 → 200, everything else held): `explained_variance` −0.002 across 19
+updates. **Three candidate fixes, three clean negatives** — gamma,
+grad-norm clip, penalty magnitude.
+
+Two measurements then found the actual mechanism, neither of which is a
+coefficient:
+
+**(i) The observation cannot see far enough — real, but NOT the main
+cause.** Lining every run up against `start_jitter_m` (a controlled
+comparison already sitting in the existing data):
+
+| jitter | reward | gamma | EV tail |
+|---|---|---|---|
+| 300 m | otp=50 | 0.999 | **+0.72** |
+| 7,000 m | otp=50, *identical otherwise* | 0.999 | **+0.33** |
+| 7,000 m | otp ≥ 200 | either | ~0.00 |
+
+Rows 1-2 differ ONLY in spawn spread, and it halved EV. Mechanism: the
+observation carries 6 curvature-preview samples reaching **55 m**
+(`PREVIEW_DISTANCES`) and **no absolute track position**, so on a 7 km
+circuit the critic cannot distinguish a kilometre of clear straight from
+60 m before a hairpin when local curvature happens to match. A k-NN
+estimate of the EV *achievable from the observation alone* (200 episodes,
+initial observation → actual discounted return) gives a ceiling of
+**+0.25 (old reward) and +0.28 (current reward)** — low, and nearly
+IDENTICAL for both. So the observation ceiling explains 0.72 → 0.33 under
+full-lap jitter, but **not** 0.33 → 0.00: the current reward's critic sits
+far BELOW a ceiling it could reach.
+
+**(ii) The critic never leaves its initialisation — this is the cause.**
+Measured V(s) against actual discounted returns over 40 episodes per
+config:
+
+| config | critic V(s) | actual return G | V spans |
+|---|---|---|---|
+| old reward (EV 0.33) | mean 19.7, sd 2.8, range [−13, 21] | mean 177, sd 133, range [−51, 454] | **2.1%** of G's spread |
+| current reward (EV 0.00) | mean −14.7, sd 1.4, range [−15, 6.7] | mean 133, sd 365, range [−500, 1052] | **0.39%** of G's spread |
+
+The critic is not mis-predicting; it has barely moved. Its output is
+stuck in a ±20 band while returns span ±1000. The arithmetic matches:
+Adam at `lr=3e-4`, ~40 gradient steps per update (10 epochs × 4
+minibatches) × 19-38 updates ⇒ ~760-1520 steps ⇒ **total** possible
+travel per parameter ≈ `lr × steps` ≈ 0.2-0.5, so a 64-unit final layer
+can reach ~±30 at absolute best against a required ±1000. It cannot get
+there within the budget regardless of clip, horizon, or penalty size —
+which is exactly why all three fixes did nothing: **none of them changed
+the required output magnitude.**
+
+This also reframes the "healthy" runs: the old reward's critic spanned
+only 2.1% of its return spread too, and its EV=0.33 is partly GAE's own
+bootstrapping correlation (`ret = adv + V`) rather than genuine
+prediction. **The critic has been weak in every tracks-pilot run**; the
+larger penalties merely made it unambiguously zero. That the policy still
+improves throughout is consistent — with a near-constant baseline, GAE
+degrades toward high-variance Monte-Carlo returns, which still carries a
+valid (if noisy) policy gradient.
+
+**The fix is the one remaining candidate from item 16, now identified by
+measurement rather than chosen by elimination: normalise the value
+targets / returns** (PopArt — van Hasselt et al. 2016, "Learning values
+across many orders of magnitude" — or the running-return normalisation
+shipped in most production PPO implementations). It attacks the actual
+problem: it puts the regression target in a range the network can
+represent from its initialisation, instead of asking a freshly-initialised
+head to travel three orders of magnitude. To be validated against the
+racing-RL literature review (item 19) before implementing, since the user
+asked what the field actually does here.
+
 ---
 
 ## 5. What this unlocks, and what it does not

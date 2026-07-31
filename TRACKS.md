@@ -234,8 +234,45 @@ None of this is legal advice.
    for `drive_lap`'s implicit assumption that the car starts at the world
    origin with heading 0 — true of every synthetic `Track` here by
    construction, but not automatic for a real circuit's raw coordinates.
-3. **One real circuit, imported and validated** against published corner radii
-   and total length. One is enough to prove the pipeline; a second is cheap.
+3. ✅ **DONE** — Spa-Francorchamps, via `physics/tracks_data.py`
+   (`download_track_csv` + `load_real_track`, not vendored — see
+   `.gitignore` — fetched from TUM's `racetrack-database` on first use,
+   cached in `physics/tracks_cache/`).
+
+   **Validated against `[SOURCED]` figures, not our own fit (rule 2):**
+   recovered `length` 6999.5 m against the Grand Prix layout's published
+   7.004 km / 19-20 corners (consistent across multiple independent race
+   reports) — **0.064% error**. No independently-published per-corner
+   radius was found for La Source during this work despite several
+   searches — general descriptions call it "tight" and "first gear" but
+   give no number, and this doc's own prior "~25 m" has no citation either,
+   so it is **not** used here as if it were external. The recovered minimum
+   radius (11.4 m) is reported `[MEASURED]` only, checked for physical
+   plausibility against a modern FIA circuit's typical tightest-corner range
+   rather than a hard published number — that gap is stated, not papered
+   over. Bounding box (1270 m × 2040 m) is also consistent with the real
+   circuit's footprint, a cheap independent sanity check.
+
+   **A real bug, found by measuring rather than reusing step 1's own
+   convention:** `smoothing=0.0` (exact interpolation) looked like the
+   right default going in — TUM's centreline is a processed racing surface,
+   not raw noisy GPS — but measured directly, it fit a 5.8 m minimum
+   radius, tighter than anything on the real circuit, because 5 m point
+   spacing still carries enough residual irregularity for an
+   exact-interpolating spline to read as a spurious sharp corner. A sweep
+   (`smoothing` 0 to 1401) found `length` within 0.05-0.25% of published
+   throughout and minimum radius stabilising to a plausible 9-11.5 m for
+   `10 <= smoothing <= 300`; step 1's own `s ~= m` convention (1401 here)
+   turned out to be **too much** smoothing for this dataset — different
+   point spacing and noise character than the synthetic test it was
+   measured on — worse length match and a washed-out corner. `20.0`
+   (`DEFAULT_SMOOTHING` in `physics/tracks_data.py`) sits inside the
+   plausible plateau. The lesson generalises the same way step 1's did:
+   don't reuse a smoothing value measured on different data, measure again.
+
+   5 tests (`tests/test_tracks_data.py`), skipped cleanly rather than
+   failed when TUM's GitHub is unreachable — an external dependency this
+   project does not control should not hard-fail CI/offline runs.
 4. **Batched env support for long tracks** — the current curvature lookup is
    called per step on an array, which is fine, but a 5 km circuit at 50 Hz is
    ~10,000 steps per lap against today's ~1,000, so `max_steps` and the episode

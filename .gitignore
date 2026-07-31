@@ -5,6 +5,15 @@ __pycache__/
 .pytest_cache/
 .DS_Store
 
+# One deliberate exception: real-circuit CSVs downloaded by
+# physics/tracks_data.py (TRACKS.md staging step 3). TUM's racetrack-database
+# is LGPL-3.0 over OpenStreetMap data (ODbL, share-alike) -- vendoring the
+# files would pull that share-alike chain into this repo. TRACKS.md §3's own
+# licensing survey recommends a downloader instead, so the CSVs are fetched
+# on first use and cached here, never committed. Only our own converter code
+# (physics/tracks_data.py) is tracked.
+physics/tracks_cache/
+
 # Nothing else is ignored on purpose.
 #
 # Generated outputs ARE committed: experiments/*/out/ and diagnostics/out/ hold the

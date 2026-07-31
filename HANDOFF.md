@@ -1225,11 +1225,49 @@ the world origin with heading 0, true of every synthetic `Track` here by
 construction but not automatic for a real circuit's raw coordinates — a
 real circuit will need its start pose derived from the track itself.
 
-**Next action:** TRACKS.md staging step 3 — import one real circuit (TUM
-`racetrack-database`, TRACKS.md §3's own recommendation) and validate the
-recovered curvature against **published** corner radii, not our own fit
-(rule 2). That is also where the two deferred items above first become
-load-bearing rather than hypothetical.
+**Next action (done later this session, user approved the download first —
+step 3 fetches external files):** TRACKS.md staging step 3 — import one
+real circuit (TUM `racetrack-database`) and validate against published
+figures (rule 2).
+
+### Session 25 continued — TRACKS.md staging step 3 done
+
+Full detail in `TRACKS.md` §4 step 3. Summary: `physics/tracks_data.py`
+(`download_track_csv` + `load_real_track`) fetches Spa-Francorchamps from
+TUM's `racetrack-database` (LGPL-3.0/OpenStreetMap) on first use and caches
+it in `physics/tracks_cache/`, which is git-ignored — the CSV is never
+vendored, per TRACKS.md §3's own licensing recommendation. 5 new tests in
+`tests/test_tracks_data.py`, skipped (not failed) when TUM's GitHub is
+unreachable.
+
+**Validated against published figures, not our own fit:** recovered
+`length` 6999.5 m against the Grand Prix layout's published 7.004 km —
+0.064% error. Could not find an independently-published per-corner radius
+for La Source (several searches, general descriptions only) — this doc's
+own prior "~25 m" has no citation either, so it was **not** reused as if it
+were external; the recovered 11.4 m minimum radius is reported measured-only,
+checked for physical plausibility rather than against a hard number. Stated
+as a real gap rather than smoothed over with an unsourced figure.
+
+**A real bug, found by measuring rather than reusing step 1's own
+convention:** exact interpolation (`smoothing=0.0`) looked right going in —
+TUM's centreline is a processed surface, not raw noisy GPS — but measured
+directly it fit a 5.8 m minimum radius, tighter than any real corner on the
+circuit, because 5 m point spacing still carries enough residual
+irregularity for exact interpolation to read as a spurious sharp corner. A
+sweep found `length` within 0.05-0.25% of published throughout and minimum
+radius stabilising to a plausible 9-11.5 m for `10 <= smoothing <= 300`.
+Step 1's own `s ~= m` convention (1401 for Spa's point count) turned out to
+be **too much** here — different point spacing and noise character than the
+synthetic data it was measured on, worse length match, washed-out corner.
+`DEFAULT_SMOOTHING = 20.0` sits inside the plausible plateau. Same lesson
+as step 1, generalised correctly this time: measure smoothing on the data
+in front of you, don't carry a number over from different data.
+
+**Next action:** TRACKS.md staging step 4 — batched-env step-count support
+for a ~10,000-step lap (Spa at 50 Hz) against today's ~1,000-step
+`long_exit` episodes; `max_steps` and the episode budget both need
+revisiting before RL training can actually drive this circuit.
 
 ### Superseded — Episode 13 planning notes
 

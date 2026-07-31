@@ -44,6 +44,24 @@ dilutes as episodes lengthen. `envelope_penalty` unchanged: it was not the
 active constraint in the previous run and there is no evidence yet that it
 needs to be.
 
+**A second reward defect found before this run, not after**:
+`off_track_penalty=500` alone (checked directly, one rollout of the
+resulting checkpoint) taught the policy to brake steadily from the 15 m/s
+entry speed down to a dead stop every episode -- `stalled=True`, never
+`off_track`. Stalling carried NO penalty at all, so once leaving the road
+got expensive enough, coasting to a stop became strictly safer than
+driving, and per-section survival collapsed from ~537 m to ~73 m (a car
+decelerating from 15 m/s to a stop covers almost exactly that distance).
+Fixed with two more changes, both by explicit user decision after
+reviewing the tradeoff: `stall_penalty=150` (`physics/rl_env.py`,
+`physics/batched_env.py` -- new, D-A pattern, 0.0 default reproduces every
+prior episode) closes the loophole directly; `progress_scale=3.0` (same
+files) grows the reward for actually covering ground faster than the
+now-larger fixed penalties shrink in relative terms, since neither penalty
+scales with it. Both differential-tested against the reference
+implementation (`tests/test_batched_env.py`) and unit-tested for D-A
+default safety (`tests/test_rl_env.py`) before this run.
+
     python -m experiments.tracks_pilot.spa_ppo_stage1
 """
 
@@ -66,10 +84,21 @@ OUT = ROOT / "experiments" / "tracks_pilot" / "out"
 N_ENVS = 1024
 ROLLOUT_STEPS = 1024
 TOTAL_STEPS = 40_000_000
-#: Both changed together, by explicit user decision, after decomposing the
-#: previous run's own reward (see module docstring for the measurement).
+#: All four changed together, by explicit user decision, after decomposing
+#: the previous two runs' own rewards (see module docstring for both
+#: measurements).
 GAMMA = 0.9995
 OFF_TRACK_PENALTY = 500.0
+#: Closes the "coast to a stop instead of driving" loophole off_track_penalty
+#: alone opened. Smaller than OFF_TRACK_PENALTY by convention (not enforced)
+#: so a crash while genuinely pushing the limit still reads as worse than
+#: giving up, matching the stated priority order: on-track, then inside the
+#: slip envelope, then fast.
+STALL_PENALTY = 150.0
+#: Grows the reward for covering ground faster than the two (now larger)
+#: fixed penalties shrink in relative terms -- neither penalty scales with
+#: this, so it changes the balance from the other side.
+PROGRESS_SCALE = 3.0
 SEED = 0
 MAX_STEPS = 15_000
 ENVELOPE_PENALTY = 0.5
@@ -102,6 +131,8 @@ def make_eval_env():
     return DrivingEnv(EnvConfig(track=spa, max_steps=MAX_STEPS,
                                envelope_penalty=ENVELOPE_PENALTY,
                                off_track_penalty=OFF_TRACK_PENALTY,
+                               stall_penalty=STALL_PENALTY,
+                               progress_scale=PROGRESS_SCALE,
                                start_jitter_m=spa.length))
 
 
@@ -111,6 +142,8 @@ def make_batched_env(n_envs: int, seed: int = SEED):
     cfg = EnvConfig(track=spa, max_steps=MAX_STEPS,
                     envelope_penalty=ENVELOPE_PENALTY,
                     off_track_penalty=OFF_TRACK_PENALTY,
+                    stall_penalty=STALL_PENALTY,
+                    progress_scale=PROGRESS_SCALE,
                     start_jitter_m=spa.length)
     return BatchedDrivingEnv(cfg, n=n_envs, seed=seed)
 
@@ -129,6 +162,8 @@ def evaluate_per_section(model, n_sections: int = N_SECTIONS) -> list[dict]:
         env = DrivingEnv(EnvConfig(track=spa, max_steps=MAX_STEPS,
                                    envelope_penalty=ENVELOPE_PENALTY,
                                    off_track_penalty=OFF_TRACK_PENALTY,
+                                   stall_penalty=STALL_PENALTY,
+                                   progress_scale=PROGRESS_SCALE,
                                    start_jitter_m=0.0))
         env.reset(0)
         env.s = float(s0)  # drop the car at this section instead of s=0

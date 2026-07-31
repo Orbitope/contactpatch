@@ -113,14 +113,14 @@ def test_termination_reasons_agree():
     pytest.fail("never terminated")
 
 
-def _reward_divergence(penalty: float, steps: int = 400) -> float:
-    cfg = EnvConfig(envelope_penalty=penalty)
+def _reward_divergence(steps: int = 400, policy=_tracker, **cfg_kwargs) -> float:
+    cfg = EnvConfig(**cfg_kwargs)
     ref, bat = DrivingEnv(cfg), BatchedDrivingEnv(cfg, n=1, seed=0)
     o = ref.reset(0)
     bat.reset(0)
     worst = 0.0
     for _ in range(steps):
-        a = _tracker(o)[0]
+        a = policy(o)[0]
         o, r_ref, d, _ = ref.step(a)
         _, r_bat, _, _ = bat.step(a[None, :])
         worst = max(worst, abs(r_ref - r_bat[0]))
@@ -132,7 +132,7 @@ def _reward_divergence(penalty: float, steps: int = 400) -> float:
 def test_progress_reward_matches_the_reference():
     """With no envelope penalty the reward is pure progress, so this tracks the
     trajectory divergence directly and is the tighter of the two bounds."""
-    assert _reward_divergence(0.0) < 1e-6
+    assert _reward_divergence(envelope_penalty=0.0) < 1e-6
 
 
 def test_reward_with_the_envelope_penalty_matches_the_reference():
@@ -148,7 +148,7 @@ def test_reward_with_the_envelope_penalty_matches_the_reference():
     Both bounds are asserted so that a real divergence cannot hide behind the
     looser one: it would break the progress test too.
     """
-    assert _reward_divergence(0.5) < 1e-5
+    assert _reward_divergence(envelope_penalty=0.5) < 1e-5
 
 
 def test_the_envelope_penalty_uses_post_step_slip_angles():
@@ -160,7 +160,31 @@ def test_the_envelope_penalty_uses_post_step_slip_angles():
     trajectories still agreed — the penalty does not feed back into the physics
     — so only the reward showed it, and it was off by 0.18 rather than 5e-6.
     """
-    assert _reward_divergence(0.5) < 100 * _reward_divergence(0.0)
+    assert (_reward_divergence(envelope_penalty=0.5)
+           < 100 * _reward_divergence(envelope_penalty=0.0))
+
+
+def test_progress_scale_matches_the_reference():
+    """TRACKS.md staging step 5: progress_scale multiplies ds*dt in both
+    implementations identically."""
+    assert _reward_divergence(progress_scale=3.0, envelope_penalty=0.0) < 1e-5
+
+
+def _full_brake(obs: np.ndarray) -> np.ndarray:
+    """Steer straight, brake hard -- forces a stall within the test window,
+    which _tracker's normal driving would not do on its own."""
+    o = np.atleast_2d(obs)
+    return np.stack([np.zeros(len(o)), np.full(len(o), -1.0)], axis=1)
+
+
+def test_stall_penalty_matches_the_reference():
+    """TRACKS.md staging step 5: the loophole off_track_penalty=500 found
+    (coasting to a stop was free) is closed by stall_penalty -- and it must
+    fire identically in both implementations, or training on the batched
+    path would optimise a different reward than the one being designed."""
+    div = _reward_divergence(steps=200, policy=_full_brake, stall_penalty=150.0,
+                             envelope_penalty=0.0)
+    assert div < 1e-5
 
 
 # ---------------------------------------------------------------------------

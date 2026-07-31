@@ -153,6 +153,62 @@ def test_a_stalled_car_terminates():
     assert info["stalled"] or info["off_track"]
 
 
+def test_progress_scale_defaults_to_one_and_reproduces_reward_unchanged():
+    """TRACKS.md staging step 5: progress_scale=1.0 must be bit-for-bit the
+    unscaled reward every existing episode was trained on."""
+    a = _straight_env()
+    b = _straight_env(progress_scale=1.0)
+    a.reset(0)
+    b.reset(0)
+    for _ in range(30):
+        _, ra, da, _ = a.step(np.array([0.0, 0.2]))
+        _, rb, db, _ = b.step(np.array([0.0, 0.2]))
+        assert ra == rb
+        if da or db:
+            break
+
+
+def test_progress_scale_multiplies_the_progress_reward():
+    env = _straight_env(progress_scale=3.0)
+    env.reset(0)
+    total = 0.0
+    for _ in range(60):
+        _, r, done, _ = env.step(np.array([0.0, 0.2]))
+        total += r
+        if done:
+            break
+    assert total == pytest.approx(3.0 * env.s, rel=1e-6)
+
+
+def test_stall_penalty_defaults_to_zero_and_does_not_penalise_stalling():
+    """TRACKS.md staging step 5: the loophole off_track_penalty=500 found --
+    stalling was free, so a risk-averse policy just coasted to a stop instead
+    of driving. stall_penalty=0.0 (the default) must reproduce every existing
+    episode exactly."""
+    env = _straight_env()
+    env.reset(0)
+    last = 0.0
+    for _ in range(env.cfg.max_steps):
+        _, last, done, info = env.step(np.array([0.0, -1.0]))
+        if done:
+            break
+    assert info["stalled"]
+    assert last >= 0.0, \
+        "the terminal stalled step must not be penalised when stall_penalty=0"
+
+
+def test_stall_penalty_costs_more_than_it_earns_when_stalled():
+    env = _straight_env(stall_penalty=150.0)
+    env.reset(0)
+    last = 0.0
+    for _ in range(env.cfg.max_steps):
+        _, last, done, info = env.step(np.array([0.0, -1.0]))
+        if done:
+            break
+    assert info["stalled"]
+    assert last < 0.0, "the terminal step must be a net loss, or stalling pays"
+
+
 # ---------------------------------------------------------------------------
 # The envelope — instrumented, deliberately NOT enforced
 # ---------------------------------------------------------------------------

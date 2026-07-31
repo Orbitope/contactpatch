@@ -389,8 +389,10 @@ class BatchedDrivingEnv:
                                       self.steer)
         worst_deg = np.degrees(np.abs(alpha_post).max(axis=1))
 
-        reward = s_dot * dt
+        reward = s_dot * dt * self.cfg.progress_scale
         reward = reward - np.where(off, self.cfg.off_track_penalty, 0.0)
+        if self.cfg.stall_penalty > 0.0:
+            reward = reward - np.where(stalled, self.cfg.stall_penalty, 0.0)
         if self.cfg.envelope_penalty > 0.0:
             excess = np.maximum(
                 0.0, worst_deg - math.degrees(ENVELOPE_SLIP_MAX))

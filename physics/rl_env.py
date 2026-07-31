@@ -170,6 +170,32 @@ class EnvConfig:
     #: Terminal penalty for putting a wheel off the road, in reward units. Large
     #: enough that leaving the track is never worth the progress it buys.
     off_track_penalty: float = 50.0
+    #: Multiplies the progress term (``ds * dt``) only — the two penalties
+    #: above stay in absolute reward units. **1.0 reproduces every existing
+    #: episode exactly.**
+    #:
+    #: TRACKS.md staging step 5: raising ``off_track_penalty`` alone (50 ->
+    #: 500, real circuit training) fixed off-track driving (rate ~1.00 ->
+    #: ~0.00) by making a genuinely different failure mode strictly cheaper —
+    #: decelerating to a stall carries NO penalty at all, so the policy
+    #: learned to coast to a stop rather than risk the road, collapsing
+    #: per-section survival distance from ~537 m to ~73 m. Raising
+    #: ``progress_scale`` makes the reward for actually covering ground grow
+    #: faster than the now-larger fixed penalty shrinks in relative terms,
+    #: which is the OTHER lever for the same imbalance (paired with
+    #: ``stall_penalty`` below, not a substitute for it — this closes the
+    #: "give up slowly" loophole from the other side, by making continuing
+    #: to drive worth more, not by making stopping cost something).
+    progress_scale: float = 1.0
+    #: Terminal penalty for coasting below ``min_speed`` — the loophole
+    #: ``off_track_penalty=500`` found: stalling was free, so a policy averse
+    #: to the road's risk just stopped instead of driving it. **0.0
+    #: reproduces every existing episode exactly.** Kept smaller than
+    #: ``off_track_penalty`` by convention (not enforced) so a crash while
+    #: genuinely pushing the limit still reads as worse than giving up —
+    #: matching this project's stated priority order for Season 4:
+    #: on-track, then inside the slip envelope, then fast.
+    stall_penalty: float = 0.0
     #: Cost per step for operating outside the slip envelope, scaled by how far
     #: outside. **0.0 reproduces Episode 9 exactly**, where the envelope is
     #: instrumented and deliberately unenforced.
@@ -550,9 +576,11 @@ class DrivingEnv:
 
         # reward: progress, a penalty for falling off, and — from Episode 10 on —
         # a cost for operating where the tire model has no fit.
-        reward = ds * self.cfg.dt
+        reward = ds * self.cfg.dt * self.cfg.progress_scale
         if off:
             reward -= self.cfg.off_track_penalty
+        if stalled and self.cfg.stall_penalty > 0.0:
+            reward -= self.cfg.stall_penalty
         if self.cfg.envelope_penalty > 0.0:
             sl = self.backend.slip_angles()
             worst = math.degrees(max(abs(v) for v in sl.values()))

@@ -1120,6 +1120,33 @@ is DRAFTED — all four pieces exist.**
 **Season 4 (Episodes 12–15) is now complete.** Episode 16 (the Chrono
 cross-check) is the only piece of the original 16-episode plan left.
 
+### Session 24 — Episode 16 deprioritized; RL multi-track training is next
+
+**User decision (D13).** Not pursuing Chrono for now — explicitly a
+publication-grade validation step the user doesn't currently need, and
+they're more interested in the RL multi-track direction. Revisit-able, not
+closed. This means every finding in the project stays a rung-2 claim,
+unverified against an independent simulator, for as long as this holds —
+recorded as an accepted risk in D13, not quietly dropped.
+
+**What replaces it: `TRACKS.md`'s own staging order**, already written,
+now prioritized ahead of Phase 3 of the power review:
+
+1. `SampledTrack` + the round-trip curvature test, against `long_exit` where
+   the answer is already known (TRACKS.md §2 — clean data: 1.16e-05 error;
+   the naive finite-difference trap is 390× the signal on noisy data, so
+   this has to be a periodic spline fit with analytic κ, not `np.gradient`).
+2. Closed-loop support (`s` wrapping, lap counting, `half_width(s)`).
+3. One real circuit imported (TUM `racetrack-database`, TRACKS.md's own
+   recommendation) and validated against **published** corner radii — rule 2,
+   not our own fit certifying itself.
+4. Batched-env support for the step count a real circuit implies (~10,000
+   steps/lap against today's ~1,000 on `long_exit` — `max_steps` and the
+   episode budget both need rederiving).
+5. Only then retrain.
+
+**Next action:** start on step 1, `SampledTrack`.
+
 ### Superseded — Episode 13 planning notes
 
 **Question:** if pushing one wheel harder rotates the car, why not just do that?
@@ -1255,7 +1282,7 @@ width on every TV claim.
 | 13 | How engineers built a car that steers with its wheels | 4 | classical TV ✓ | ✅ **DRAFTED** — `episodes/`, `experiments/ep13/` (noise result retracted by F97) |
 | 14 | What the machine found instead | 4 | RL TV variants ✓ | ✅ **DRAFTED** — `episodes/`, `experiments/ep14/` (rewritten after F93/F94; H-vs-E retracted by F95) |
 | 15 | Is chassis tuning about to be automated away? | 4 | TV × Season 2 sweeps ✓ | ✅ **DRAFTED** — `episodes/`, `experiments/ep15/`, F102 |
-| 16 | Did any of this survive real physics? | 4 | Chrono backend | — |
+| 16 | Did any of this survive real physics? | 4 | Chrono backend | ⏸️ **ON HOLD** — deprioritized (D13); revisit-able, not closed |
 
 **Seasons 1–2 (Ep 1–8) carry no training risk.** Tire model, double-track, optimal control only. If the RL work proves harder than expected, half the series still ships.
 

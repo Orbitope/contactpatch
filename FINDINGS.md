@@ -4238,6 +4238,41 @@ the measurement that forced it.
 
 ---
 
+### D13 · Episode 16 (the Chrono cross-check) is deprioritized. RL multi-track training is the priority. · 2026-07-30
+
+**Decision.** `docs/content-series-plan.md` names Episode 16 the series'
+"SERIES PAYOFF" — three design points re-run in Project Chrono, trend
+direction compared, the only validation tier that tests findings against
+assumptions this project did not make itself. User decision: not pursuing
+it for now. Explicit reason given: this would matter for a result heading
+toward formal publication; that is not the current goal, and RL training
+across multiple (eventually real) tracks is the more interesting direction
+right now. **Revisit-able, not closed** — the user's own words were "we can
+revisit chrono later if I change my mind."
+
+**What this changes.** `SEASON5.md`'s dependency graph listed Ep 16 as a
+prerequisite *before* Season 5 starts, specifically to avoid building a
+season of setup-delta claims on an unvalidated rung-2 model. With Chrono off
+the table for now, that specific risk is accepted rather than mitigated —
+worth restating plainly rather than quietly dropping: every finding in this
+project remains a rung-2 claim (rule 15), unverified against an independent
+simulator, and stays that way until Ep 16 is picked back up. This is a
+knowingly accepted scope decision, not an oversight.
+
+**What replaces it as the priority: RL multi-track training.** Concretely,
+`TRACKS.md`'s own staging order — `SampledTrack` + the round-trip curvature
+test, closed-loop support, one real circuit imported and validated against
+published corner radii, batched-env support for a real circuit's step count,
+*then* retrain. This was already the plan; it now has priority over Ep16
+rather than sitting behind Phase 3 of the power review.
+
+**Not touched:** `docs/content-series-plan.md` is read-only reference and is
+not edited to reflect this — this entry is the correction of record per
+CLAUDE.md's own rule for that situation. `HANDOFF.md`'s episode-status table
+is updated to show Ep 16 as on hold rather than next.
+
+---
+
 # Open
 
 | # | Question | Blocks |

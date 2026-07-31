@@ -186,15 +186,14 @@ allowed to see.
 ## 6. Dependency graph
 
 ```
-POWER-REVIEW Phase 0–2  ──────────────┐   (instrument fixed; TV worth vs power known)
+POWER-REVIEW Phase 0–2  ──────────────┐   (instrument fixed; TV worth vs power known -- DONE)
 TRACKS.md staging 1–4   ──────────────┤   (SampledTrack, round-trip test, closed loop,
                                       │    budget rederivation; CasADi Q resolved)
 O3 diff formulation     ──────────────┤   (a tunable diff to tune)
 O8 decision             ──────────────┤   (roll-share magnitudes: fix or trend-only)
 O9 scripted-policy test ──────────────┤   (before any new RL result)
-Ep 15 (uses Phase 1–2 outputs) ───────┤   (design-sensitivity baseline, TV-flattening)
-Ep 16 Chrono cross-check ─────────────┤   (validate rung 2 BEFORE a season of
-                                      │    setup-delta claims leans on it)
+Ep 15 (uses Phase 1–2 outputs) ───────┤   (design-sensitivity baseline, TV-flattening -- DONE)
+[Ep 16 Chrono cross-check] ───────────┤   (deprioritized, D13 -- see note below)
                                       ▼
         Ep 17 → Ep 18 (classical only, no training risk)
                   │
@@ -203,9 +202,22 @@ Ep 16 Chrono cross-check ─────────────┤   (validate 
         Ep 21 → Ep 22 (co-tuned comparisons; full stack)
 ```
 
-Ep 16 sits deliberately *before* Season 5 in this graph: a season quantifying
-0.1–1% setup effects on an unvalidated model is the riskiest ordering
-available, and the Chrono check exists to buy exactly that trust.
+**Revised, D13 (2026-07-30): Episode 16 is deprioritized, not required.**
+This graph originally put it directly before Season 5 on the reasoning
+below, unchanged as a statement of risk:
+
+> A season quantifying 0.1–1% setup effects on an unvalidated model is the
+> riskiest ordering available, and the Chrono check exists to buy exactly
+> that trust.
+
+That risk is now **accepted rather than mitigated**, by explicit user
+decision — not pursuing publication-grade validation at this time, and RL
+multi-track training (TRACKS.md's staging, above) is the actual priority.
+Season 5 can proceed once its other prerequisites land, understanding that
+every setup-delta claim it produces remains a rung-2 claim never checked
+against an independent simulator. Revisit-able: if Ep 16 gets picked back
+up later, this note — not the season's own findings — is what needs
+revisiting first.
 
 ## 7. Cost, honestly
 

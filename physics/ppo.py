@@ -47,6 +47,21 @@ class PPOConfig:
     #: over 250k steps while the policy learned nothing. See FINDINGS F51.
     entropy_coef: float = 0.0005
     max_grad_norm: float = 0.5
+    #: Separate grad-norm clip for the value head. ``None`` (the default)
+    #: reuses ``max_grad_norm``, reproducing every existing run exactly.
+    #:
+    #: TRACKS.md staging step 5: F51's own fix already separates the actor's
+    #: and critic's clips SO one cannot throttle the other, but a single
+    #: fixed cap still throttles the critic on its own once return
+    #: magnitude changes — measured directly: reverting `gamma` 0.9995 ->
+    #: 0.999 with `off_track_penalty=500` left `explained_variance` at
+    #: -0.001 for 19 straight updates (no recovery at all), ruling out the
+    #: horizon and pointing at the reward scale itself. Returns of order 40
+    #: (F51's own case) make a value loss near 1600 and a raw gradient norm
+    #: of ~150 against a 0.5 clip; the current penalties push typical
+    #: returns into the hundreds-to-low-thousands, a proportionally larger
+    #: raw gradient the same fixed 0.5 clip would throttle even harder.
+    value_max_grad_norm: float | None = None
     hidden: int = 64
     #: Initial policy standard deviation, log units, PER ACTION DIMENSION.
     #:
@@ -380,8 +395,10 @@ def train(make_env=None, cfg: PPOConfig | None = None, on_update=None,
                 # F51.
                 nn.utils.clip_grad_norm_(model.policy_parameters,
                                          cfg.max_grad_norm)
-                nn.utils.clip_grad_norm_(model.value_parameters,
-                                         cfg.max_grad_norm)
+                nn.utils.clip_grad_norm_(
+                    model.value_parameters,
+                    cfg.max_grad_norm if cfg.value_max_grad_norm is None
+                    else cfg.value_max_grad_norm)
                 opt.step()
                 with torch.no_grad():
                     stats["policy_loss"].append(float(pol_loss))

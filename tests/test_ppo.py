@@ -94,6 +94,28 @@ def test_init_state_dict_actually_warm_starts_the_model():
     assert differs, "warm-started training landed on the same weights as a fresh init"
 
 
+def test_value_max_grad_norm_defaults_to_none_and_matches_max_grad_norm():
+    """TRACKS.md staging step 5: value_max_grad_norm=None must reuse
+    max_grad_norm exactly (D-A pattern) -- checked by comparing against an
+    explicit value_max_grad_norm equal to max_grad_norm, not just asserted."""
+    default = _train(_tiny(), eval_env=False)
+    explicit = _train(_tiny(value_max_grad_norm=0.5), eval_env=False)
+    for (k, x), (_, y) in zip(default["model"].state_dict().items(),
+                              explicit["model"].state_dict().items()):
+        assert torch.equal(x, y), f"{k} differs: None did not reuse max_grad_norm"
+
+
+def test_value_max_grad_norm_actually_changes_training():
+    """The clip must be wired into the value head's own gradient step, not
+    silently ignored -- checked by giving it a wildly different cap and
+    confirming the trained weights actually diverge from the default."""
+    default = _train(_tiny(), eval_env=False)
+    loosened = _train(_tiny(value_max_grad_norm=1000.0), eval_env=False)
+    differs = any(not torch.equal(x, y) for (_, x), (_, y) in zip(
+        default["model"].state_dict().items(), loosened["model"].state_dict().items()))
+    assert differs, "loosening value_max_grad_norm had no effect on training"
+
+
 def test_turning_evaluation_on_does_not_change_the_trajectory():
     """The strongest guarantee here: watching the run must not steer it.
 

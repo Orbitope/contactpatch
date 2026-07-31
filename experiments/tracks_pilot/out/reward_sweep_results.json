@@ -1,0 +1,72 @@
+[
+  {
+    "progress_scale": 1.0,
+    "wall_s": 399.45312094688416,
+    "n_updates": 14,
+    "off_track_rate_first_half": 0.9571428571428572,
+    "off_track_rate_second_half": 0.7142857142857143,
+    "section_distance_mean": 159.4656471606881,
+    "section_distance_std": 44.45081332326019,
+    "section_off_track_rate": 0.6875,
+    "section_stall_rate": 0.3125,
+    "best_update": 12,
+    "best_eval_return": -284.37855804915034,
+    "final_return_mean": -271.69771254281994
+  },
+  {
+    "progress_scale": 1.5,
+    "wall_s": 299.93317008018494,
+    "n_updates": 14,
+    "off_track_rate_first_half": 0.9542857142857143,
+    "off_track_rate_second_half": 0.6428571428571429,
+    "section_distance_mean": 164.0313457834401,
+    "section_distance_std": 41.98329900433093,
+    "section_off_track_rate": 0.6875,
+    "section_stall_rate": 0.3125,
+    "best_update": 10,
+    "best_eval_return": -211.6621871906873,
+    "final_return_mean": -243.36434508505332
+  },
+  {
+    "progress_scale": 2.0,
+    "wall_s": 269.3707981109619,
+    "n_updates": 14,
+    "off_track_rate_first_half": 0.9714285714285714,
+    "off_track_rate_second_half": 0.6085714285714287,
+    "section_distance_mean": 134.43670879037887,
+    "section_distance_std": 29.933137481538044,
+    "section_off_track_rate": 0.3125,
+    "section_stall_rate": 0.6875,
+    "best_update": 8,
+    "best_eval_return": -148.41195995222574,
+    "final_return_mean": -112.69899783666273
+  },
+  {
+    "progress_scale": 2.5,
+    "wall_s": 280.34297275543213,
+    "n_updates": 14,
+    "off_track_rate_first_half": 0.9685714285714286,
+    "off_track_rate_second_half": 0.7628571428571428,
+    "section_distance_mean": 207.11284449257795,
+    "section_distance_std": 97.48881010005901,
+    "section_off_track_rate": 0.9375,
+    "section_stall_rate": 0.0625,
+    "best_update": 13,
+    "best_eval_return": -161.7070033948824,
+    "final_return_mean": -190.9278242813339
+  },
+  {
+    "progress_scale": 3.0,
+    "wall_s": 266.6423008441925,
+    "n_updates": 14,
+    "off_track_rate_first_half": 0.9799999999999999,
+    "off_track_rate_second_half": 0.8085714285714285,
+    "section_distance_mean": 180.42156670907926,
+    "section_distance_std": 60.545337363632406,
+    "section_off_track_rate": 0.9375,
+    "section_stall_rate": 0.0625,
+    "best_update": 12,
+    "best_eval_return": -96.36947500558824,
+    "final_return_mean": -139.16782148577616
+  }
+]

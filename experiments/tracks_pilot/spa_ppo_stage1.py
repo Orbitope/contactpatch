@@ -55,12 +55,40 @@ decelerating from 15 m/s to a stop covers almost exactly that distance).
 Fixed with two more changes, both by explicit user decision after
 reviewing the tradeoff: `stall_penalty=150` (`physics/rl_env.py`,
 `physics/batched_env.py` -- new, D-A pattern, 0.0 default reproduces every
-prior episode) closes the loophole directly; `progress_scale=3.0` (same
-files) grows the reward for actually covering ground faster than the
-now-larger fixed penalties shrink in relative terms, since neither penalty
-scales with it. Both differential-tested against the reference
-implementation (`tests/test_batched_env.py`) and unit-tested for D-A
-default safety (`tests/test_rl_env.py`) before this run.
+prior episode) closes the loophole directly; `progress_scale` (same files)
+grows the reward for actually covering ground faster than the now-larger
+fixed penalties shrink in relative terms, since neither penalty scales
+with it. Both differential-tested against the reference implementation
+(`tests/test_batched_env.py`) and unit-tested for D-A default safety
+(`tests/test_rl_env.py`) before any of this was trained on.
+
+**A third finding, from the full run at `progress_scale=3.0`**: it swung
+past the target. `return_mean` climbed to a peak of 2985 specifically BY
+crashing more often (`off_track_rate` 0.88-1.00 during the climb) --
+`progress_scale=3` makes a crash cost only `500/3 ~= 167 m` of
+distance-equivalent, small next to what the policy could now cover, so
+pushing hard and eating frequent crashes became the rational strategy.
+Per-section off-track rate came back 100%, matching the very first run
+before any of these changes. Rather than guess a fourth combination at
+full budget, `reward_sweep.py` screened `progress_scale` in
+`{1.0, 1.5, 2.0, 2.5, 3.0}` at a reduced 15M-step budget: 2.5 and 3.0 were
+already trending toward the same crash-heavy pattern that early; 2.0 was,
+surprisingly, the MOST stall-prone of all five (not a monotonic
+relationship); 1.0 and 1.5 were the only two still a genuine mix of both
+failure modes rather than committed to either. `PROGRESS_SCALE = 1.5`
+here, not a confident pick -- the honest best available from a screen that
+was itself too short to be certain (see `reward_sweep.py`'s own docstring
+for why).
+
+**Two-phase training, not a fresh 40M-step run, to reuse rather than
+discard the sweep's own compute**: `reward_sweep.py` already trained
+`progress_scale=1.5` for 15M steps but never saved the checkpoint (a real
+gap -- it only recorded summary statistics). Phase A here reproduces that
+exact run (same seed, same config) to obtain the checkpoint this time.
+Phase B warm-starts from it (`init_state_dict`, Stage 0's mechanism) for
+the remaining steps to reach the full 40M-step budget, with a different
+seed so its stochastic draws are not a rerun of phase A's. This is a
+genuine reuse of already-computed learning, not merely a cosmetic split.
 
     python -m experiments.tracks_pilot.spa_ppo_stage1
 """
@@ -84,6 +112,12 @@ OUT = ROOT / "experiments" / "tracks_pilot" / "out"
 N_ENVS = 1024
 ROLLOUT_STEPS = 1024
 TOTAL_STEPS = 40_000_000
+#: Reproduces reward_sweep.py's progress_scale=1.0 run EXACTLY (same seed,
+#: same config) up to this many steps, so PHASE_A below is not new compute --
+#: it is the sweep point whose checkpoint was never saved, re-derived once so
+#: it can be. The remaining budget continues from there via warm start.
+PHASE_A_STEPS = 15_000_000
+PHASE_B_STEPS = TOTAL_STEPS - PHASE_A_STEPS
 #: All four changed together, by explicit user decision, after decomposing
 #: the previous two runs' own rewards (see module docstring for both
 #: measurements).
@@ -98,7 +132,18 @@ STALL_PENALTY = 150.0
 #: Grows the reward for covering ground faster than the two (now larger)
 #: fixed penalties shrink in relative terms -- neither penalty scales with
 #: this, so it changes the balance from the other side.
-PROGRESS_SCALE = 3.0
+#:
+#: 1.5, not 3.0 -- reward_sweep.py's own sweep (5M-step-per-point screen over
+#: 1.0-3.0) found 2.5 and 3.0 already trending toward the same aggressive,
+#: constant-crashing pattern the full progress_scale=3.0 run showed in full
+#: (return climbing specifically BY crashing more, not less); 1.0 and 1.5
+#: were the only two that stayed a genuine mix of stalling and crashing
+#: rather than committing to either failure mode this early. 1.5 chosen over
+#: 1.0 for a slightly better within-run improving trend (off-track rate
+#: 0.95->0.64 vs 0.96->0.71) at identical per-section stall/off-track rates --
+#: not a confident pick, the honest best available from a screen that was
+#: itself too short to be certain (see reward_sweep.py's own docstring).
+PROGRESS_SCALE = 1.5
 SEED = 0
 MAX_STEPS = 15_000
 ENVELOPE_PENALTY = 0.5
@@ -178,20 +223,10 @@ def evaluate_per_section(model, n_sections: int = N_SECTIONS) -> list[dict]:
     return rows
 
 
-def main():
-    OUT.mkdir(parents=True, exist_ok=True)
-    print("TRACKS.md step 5, stage 1 -- learn the road everywhere")
-    print(f"  n_envs={N_ENVS}  rollout_steps={ROLLOUT_STEPS}  "
-         f"total_steps={TOTAL_STEPS:,}  gamma={GAMMA}  "
-         f"start_jitter_m=track.length\n")
-
-    cfg = PPOConfig(total_steps=TOTAL_STEPS, n_envs=N_ENVS,
-                    rollout_steps=ROLLOUT_STEPS, gamma=GAMMA, seed=SEED,
-                    eval_every=EVAL_EVERY, eval_episodes=EVAL_EPISODES)
-
+def _on_update(label):
     def on_update(rec):
         ev = f"  eval_return={rec['eval_return']:8.2f}" if "eval_return" in rec else ""
-        print(f"  update {rec['update']:4d}  steps={rec['steps']:>11,}  "
+        print(f"  [{label}] update {rec['update']:4d}  steps={rec['steps']:>11,}  "
              f"wall={rec['wall_s']:7.1f}s  "
              f"episodes_finished={rec['episodes_finished']:6d}  "
              f"return_mean={rec['return_mean']:8.2f}  "
@@ -199,22 +234,54 @@ def main():
              f"off_track_rate={rec['off_track_rate']:.2f}  "
              f"explained_var={rec['explained_variance']:+.2f}  "
              f"approx_kl={rec['approx_kl']:.4f}{ev}", flush=True)
+    return on_update
 
+
+def main():
+    OUT.mkdir(parents=True, exist_ok=True)
+    print("TRACKS.md step 5, stage 1 -- learn the road everywhere")
+    print(f"  n_envs={N_ENVS}  rollout_steps={ROLLOUT_STEPS}  "
+         f"total_steps={TOTAL_STEPS:,} (phase A {PHASE_A_STEPS:,} + "
+         f"phase B {PHASE_B_STEPS:,})  gamma={GAMMA}  progress_scale={PROGRESS_SCALE}  "
+         f"start_jitter_m=track.length\n")
+
+    print("  phase A -- reproducing reward_sweep.py's progress_scale=1.5 point "
+         "(same seed, same config) to obtain the checkpoint it never saved:")
+    cfg_a = PPOConfig(total_steps=PHASE_A_STEPS, n_envs=N_ENVS,
+                      rollout_steps=ROLLOUT_STEPS, gamma=GAMMA, seed=SEED,
+                      eval_every=EVAL_EVERY, eval_episodes=EVAL_EPISODES)
     t0 = time.time()
-    res = train(make_batched_env=make_batched_env, cfg=cfg, on_update=on_update,
-               make_eval_env=make_eval_env)
-    wall_s = time.time() - t0
+    res_a = train(make_batched_env=make_batched_env, cfg=cfg_a,
+                 on_update=_on_update("A"), make_eval_env=make_eval_env)
+    wall_a = time.time() - t0
+    print(f"  phase A done: {len(res_a['history'])} updates, {wall_a:.1f}s. "
+         f"warm-starting phase B from its SELECTED checkpoint "
+         f"(update {res_a.get('best_update')}, "
+         f"eval_return={res_a.get('best_eval', {}).get('eval_return')}).\n")
+
+    print(f"  phase B -- {PHASE_B_STEPS:,} more steps warm-started from phase A, "
+         f"reaching the full {TOTAL_STEPS:,}-step budget:")
+    cfg_b = PPOConfig(total_steps=PHASE_B_STEPS, n_envs=N_ENVS,
+                      rollout_steps=ROLLOUT_STEPS, gamma=GAMMA, seed=SEED + 1,
+                      eval_every=EVAL_EVERY, eval_episodes=EVAL_EPISODES)
+    t0 = time.time()
+    res = train(make_batched_env=make_batched_env, cfg=cfg_b,
+               on_update=_on_update("B"), make_eval_env=make_eval_env,
+               init_state_dict=res_a["model"].state_dict())
+    wall_b = time.time() - t0
+    wall_s = wall_a + wall_b
     history = res["history"]
     final = history[-1] if history else {}
 
-    print(f"\n  training done: {len(history)} updates, {wall_s:.1f}s wall-clock "
-         f"({cfg.total_steps/wall_s:,.0f} steps/s)")
+    print(f"\n  training done: phase A {wall_a:.1f}s + phase B {wall_b:.1f}s = "
+         f"{wall_s:.1f}s wall-clock total for {TOTAL_STEPS:,} steps "
+         f"({TOTAL_STEPS/wall_s:,.0f} steps/s)")
     print(f"  final (this stage's own accounting -- distance is ABSOLUTE s, "
          f"not corrected for jittered starts, see per-section eval below): "
          f"off_track_rate={final.get('off_track_rate')}  "
          f"distance_mean={final.get('distance_mean')}")
     if "best_update" in res:
-        print(f"  SELECTED checkpoint: update {res['best_update']} "
+        print(f"  SELECTED checkpoint: phase B update {res['best_update']} "
              f"(eval_return={res['best_eval']['eval_return']:.2f}) -- "
              f"the returned model holds these weights, not the final ones. "
              f"Final-weights eval_return for comparison: see history.")
@@ -236,14 +303,22 @@ def main():
          "(lower = more uniform survival across the lap)")
 
     torch.save(res["model"].state_dict(), OUT / "stage1_policy.pt")
+    (OUT / "stage1_phaseA_history.json").write_text(
+        json.dumps(res_a["history"], indent=2) + "\n")
     (OUT / "stage1_history.json").write_text(json.dumps(history, indent=2) + "\n")
     (OUT / "stage1_config.json").write_text(json.dumps(res["config"], indent=2) + "\n")
     (OUT / "stage1_sections.json").write_text(json.dumps(sections, indent=2) + "\n")
     (OUT / "stage1_summary.json").write_text(json.dumps({
         "n_envs": N_ENVS, "rollout_steps": ROLLOUT_STEPS,
+        "phase_a_steps": PHASE_A_STEPS, "phase_b_steps": PHASE_B_STEPS,
         "total_steps": TOTAL_STEPS, "gamma": GAMMA,
-        "wall_s": wall_s, "n_updates": len(history),
-        "steps_per_s_full_loop": cfg.total_steps / wall_s,
+        "progress_scale": PROGRESS_SCALE, "off_track_penalty": OFF_TRACK_PENALTY,
+        "stall_penalty": STALL_PENALTY,
+        "wall_a_s": wall_a, "wall_b_s": wall_b, "wall_s": wall_s,
+        "n_updates_phase_b": len(history),
+        "steps_per_s_full_loop": TOTAL_STEPS / wall_s,
+        "phase_a_best_update": res_a.get("best_update"),
+        "phase_a_best_eval": res_a.get("best_eval"),
         "final_training_stats": final,
         "best_update": res.get("best_update"),
         "best_eval": res.get("best_eval"),

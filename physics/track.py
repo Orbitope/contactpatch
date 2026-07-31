@@ -16,6 +16,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 import numpy as np
+from scipy.interpolate import splev, splprep
 
 
 @dataclass
@@ -180,5 +181,144 @@ def fast_sweep() -> Track:
     )
 
 
-__all__ = ["Segment", "Track", "short_exit", "long_exit",
-           "CORNER_RADIUS", "ENTRY_STRAIGHT", "CORNER_ARC", "HALF_WIDTH"]
+# ---------------------------------------------------------------------------
+# TRACKS.md staging step 1: SampledTrack, validated by the round-trip test in
+# tests/test_sampled_track.py before any real circuit data touches it.
+# ---------------------------------------------------------------------------
+
+class SampledTrack:
+    """A centreline given as ``(x, y)`` points, not analytic segments.
+
+    Where ``Track`` composes curvature from named ``Segment``s (exact by
+    construction), this recovers curvature from raw coordinates — what a real
+    circuit's centreline actually is. **The recovery method is the whole
+    subject of TRACKS.md's curvature trap**: naive finite-differencing of even
+    clean, evenly-sampled points amplifies noise catastrophically (390x the
+    signal, measured, TRACKS.md §2). This class does the thing TRACKS.md
+    prescribes instead — periodic cubic-spline fit, arclength
+    reparameterisation, analytic curvature from the spline's own derivatives
+    — and does not implement the naive version at all, so there is no
+    tempting shortcut sitting next to the right answer.
+
+    ``half_width`` is a single scalar here, matching ``Track``'s current
+    interface exactly so this is a drop-in wherever a ``Track`` is used.
+    Variable width along ``s`` is TRACKS.md staging step 2, deliberately not
+    this one.
+
+    ``closed`` defaults to ``True`` because a real circuit is a loop and
+    that is the actual target of this class — but the round-trip test
+    (``tests/test_sampled_track.py``) validates against ``long_exit``, which
+    is deliberately NOT a loop (an open corner: straight, corner, straight,
+    start far from the end). Fitting a periodic spline through an open curve
+    forces it closed anyway, which does not error — it just fits a curve
+    roughly twice the intended length, silently. Caught by the round-trip
+    test itself (``length`` came out at ~785 m against a known 393 m, almost
+    exactly double) rather than assumed away, which is the entire reason a
+    round-trip test against a KNOWN answer is step 1 and not skipped.
+
+    ``smoothing`` (scipy's ``splprep`` ``s``) does not have a good universal
+    default and must scale with point count, not be a fixed constant — an
+    arbitrary small value (tested: 0.05) recovered curvature *worse* than the
+    naive finite-difference trap it exists to beat (err 42 vs. 8.7), while
+    scipy's own unweighted-data convention, ``s ~= m`` (the point count),
+    matched TRACKS.md's measured "tuned smoothing spline" row almost exactly
+    (err 0.015 vs. 0.013). Start from ``s = len(x)`` for noisy real data and
+    verify against an independent curvature check (rule 2), same as every
+    other number in this project.
+
+    Not CasADi-safe (built on scipy, which has no symbolic/autodiff path) —
+    by design, not by oversight. RL training (``physics/rl_env.py``,
+    ``physics/batched_env.py``) is pure NumPy and is what this project is
+    prioritising (D13); the optimal-control solver needs an analytic
+    ``Track`` and was never going to get real-circuit geometry through this
+    class regardless.
+    """
+
+    def __init__(self, name: str, x, y, half_width: float,
+                 blend: float = 4.0, description: str = "",
+                 n_resample: int = 4000, smoothing: float = 0.0,
+                 closed: bool = True):
+        assert half_width > 0
+        x = np.asarray(x, dtype=float)
+        y = np.asarray(y, dtype=float)
+        assert len(x) == len(y) and len(x) >= 4, \
+            "need at least 4 points for a cubic spline"
+        self.name = name
+        self.half_width = half_width
+        self.blend = blend
+        self.description = description
+        self.closed = closed
+
+        # Parametric cubic spline through the raw points, u in [0, 1].
+        # `per=closed`: a real circuit is a loop (the actual target of this
+        # class) and must be fit periodically or the join is a kink, not a
+        # corner; an open reference track like long_exit must NOT be, or the
+        # fit closes a gap that was never there (see the class docstring).
+        # `smoothing=0` interpolates exactly (clean synthetic data, e.g. the
+        # round-trip test); `smoothing>0` fits through noisy data rather than
+        # chasing every sample (TRACKS.md's own measurement: this is what
+        # keeps recovered curvature usable against real, noisy survey data).
+        self._tck, _ = splprep([x, y], s=smoothing, per=closed, k=3)
+
+        # Arclength reparameterisation: densely resample the fitted spline
+        # in u, integrate the chord lengths to get s(u), then invert for
+        # u(s). This is the step a naive np.gradient(x, y) skips entirely,
+        # and skipping it is the 390x-the-signal trap (TRACKS.md §2).
+        u_dense = np.linspace(0.0, 1.0, n_resample, endpoint=not closed)
+        xd, yd = splev(u_dense, self._tck)
+        if closed:
+            # close the loop for the chord-length sum
+            xd_c = np.concatenate([xd, xd[:1]])
+            yd_c = np.concatenate([yd, yd[:1]])
+            chord = np.hypot(np.diff(xd_c), np.diff(yd_c))
+            self._u_dense = np.concatenate([u_dense, [1.0]])
+        else:
+            chord = np.hypot(np.diff(xd), np.diff(yd))
+            self._u_dense = u_dense
+        s_dense = np.concatenate([[0.0], np.cumsum(chord)])
+        self._s_dense = s_dense
+        self.length = float(s_dense[-1])
+
+    def _u_of_s(self, s):
+        s = np.asarray(s, dtype=float)
+        if self.closed:
+            s = s % self.length
+        else:
+            s = np.clip(s, 0.0, self.length)
+        return np.interp(s, self._s_dense, self._u_dense)
+
+    def curvature(self, s):
+        """Analytic curvature from the spline's own derivatives, not from
+        differencing the recovered coordinates a second time."""
+        u = self._u_of_s(s)
+        dx, dy = splev(u, self._tck, der=1)
+        ddx, ddy = splev(u, self._tck, der=2)
+        denom = np.power(dx * dx + dy * dy, 1.5)
+        return (dx * ddy - dy * ddx) / denom
+
+    def centreline(self, n_points: int = 600):
+        """``(s, x, y, heading)`` of the centreline, matching ``Track``'s
+        interface. Read directly from the fitted spline (exact), not
+        re-integrated from curvature the way ``Track.centreline`` has to —
+        ``Track`` has no other source of ``(x, y)``; this class does."""
+        s = np.linspace(0.0, self.length, n_points)
+        u = self._u_of_s(s)
+        x, y = splev(u, self._tck)
+        dx, dy = splev(u, self._tck, der=1)
+        heading = np.arctan2(dy, dx)
+        return s, np.asarray(x), np.asarray(y), heading
+
+    def to_xy(self, s, n):
+        """Curvilinear ``(s, n)`` -> Cartesian ``(x, y)``, matching
+        ``Track.to_xy``'s convention (+n left of the direction of travel)."""
+        s_ref, x_ref, y_ref, h_ref = self.centreline(2000)
+        x0 = np.interp(s, s_ref, x_ref)
+        y0 = np.interp(s, s_ref, y_ref)
+        h = np.interp(s, s_ref, h_ref)
+        return x0 - n * np.sin(h), y0 + n * np.cos(h)
+
+
+__all__ = ["Segment", "Track", "short_exit", "long_exit", "hairpin",
+           "fast_sweep", "SampledTrack",
+           "CORNER_RADIUS", "ENTRY_STRAIGHT", "CORNER_ARC", "HALF_WIDTH",
+           "HAIRPIN_RADIUS", "FAST_SWEEP_RADIUS"]

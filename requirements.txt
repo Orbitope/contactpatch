@@ -12,3 +12,6 @@ casadi>=3.7
 # floating-point operations per step and the policy is a small MLP, so the
 # bottleneck is the physics loop, not the network.
 torch>=2.0
+# SampledTrack (TRACKS.md), for real-circuit centrelines: periodic cubic
+# spline fit + arclength reparameterisation + analytic curvature.
+scipy>=1.11

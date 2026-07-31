@@ -175,8 +175,25 @@ None of this is legal advice.
 
 ## 4. Staging
 
-1. **`SampledTrack` + the round-trip test**, validated against our own synthetic
-   tracks where the answer is known. No external data yet.
+1. ✅ **DONE** — `SampledTrack` (`physics/track.py`) + the round-trip test
+   (`tests/test_sampled_track.py`, 6 tests, all passing) validated against
+   `long_exit()` where the curvature answer is known exactly. Two real bugs
+   caught by the round-trip test itself before any external data was
+   touched, exactly per §2's stated purpose:
+   - `per=True` was hardcoded (correct for a real circuit, a closed loop)
+     but silently doubled the fitted length when validated against the
+     deliberately-open `long_exit`. Fixed with a `closed: bool` parameter,
+     `True` by default for real circuits, `False` for open test tracks.
+   - An untuned `smoothing` constant (0.05) recovered curvature *worse*
+     than the naive finite-difference trap it exists to beat (err 42 vs.
+     8.7 against the corner's 0.025 signal). scipy's own unweighted-data
+     convention, `s ~= m` (the point count), matched this doc's own
+     measured "tuned smoothing spline" row almost exactly (err 0.015 vs.
+     0.013) — smoothing must scale with point count, not be a fixed
+     constant. Recorded in the class docstring so real-data import starts
+     from `s = len(x)`, not another guess.
+
+   No external data yet — that is step 3.
 2. **Closed-loop support** — `s` wrapping, lap counting, `half_width(s)`.
    Touches `rl_env` termination and the driver's preview.
 3. **One real circuit, imported and validated** against published corner radii

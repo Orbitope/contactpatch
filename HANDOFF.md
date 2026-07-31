@@ -794,12 +794,13 @@ against **published** figures (rule 2). Staging is in `TRACKS.md` §4; step 1 is
 
 **Two things scoped but not built** (read-only investigation this session):
 
-- **`SampledTrack` design question, unresolved.** `physics/track.py`'s existing
-  `Track.curvature(s)` is analytic and **symbolic-safe — the CasADi
-  optimal-control solver calls it**. A `SampledTrack` built on `scipy`
-  splines cannot be, and `scipy` is not currently a dependency. Decide whether
-  sampled tracks are RL-only or need a hand-rolled `mathkit`-compatible spline
-  before writing the class. Also: **"the track locator" does not exist yet** —
+- **`SampledTrack` design question — resolved in Session 25.** Built on
+  `scipy` (`>=1.11`, now a real dependency, verified via `pip show scipy` not
+  guessed), **not** CasADi-safe, by design: RL training (`rl_env.py`,
+  `batched_env.py`) is pure NumPy and is what the project is prioritising
+  (D13); the optimal-control solver needs an analytic `Track` and was never
+  going to get real-circuit geometry through this class regardless. Also:
+  **"the track locator" does not exist yet** —
   `rl_env.py` carries `(s, n, xi)` as integrated state in the curvilinear frame
   and never inverts from Cartesian. That inverse is only needed once real
   (x, y) circuits arrive.
@@ -1145,7 +1146,48 @@ now prioritized ahead of Phase 3 of the power review:
    episode budget both need rederiving).
 5. Only then retrain.
 
-**Next action:** start on step 1, `SampledTrack`.
+**Next action (superseded by Session 25):** start on step 1, `SampledTrack`.
+
+### Session 25 — `SampledTrack` (TRACKS.md staging step 1) done
+
+Step 1 of the staging order above is complete: `SampledTrack` in
+`physics/track.py`, validated by `tests/test_sampled_track.py` (6 tests,
+round-tripped against `long_exit()` where the curvature answer is known
+exactly), full suite green (599 passed). `scipy>=1.11` added to
+`requirements.txt` (checked via `pip show scipy` that it was not already an
+indirect dependency, per rule 3 — don't claim a provenance you haven't
+verified).
+
+The round-trip test did its job and caught two real bugs before any external
+circuit data was touched, exactly TRACKS.md §2's stated reason for writing it
+first:
+
+1. **Periodic vs. open fit.** The constructor hardcoded `per=True`
+   (periodic spline — correct for a real circuit, which is a closed loop).
+   Validated against `long_exit()`, which is deliberately open (entry
+   straight → corner → exit straight, start far from end), it silently fit a
+   loop roughly double the intended length (`length` came out ~785 m against
+   a known 393 m) — forcing periodicity on an open curve does not error, it
+   just closes a gap that was never there. Fixed with a `closed: bool = True`
+   parameter threaded through both the `splprep(per=...)` call and the
+   chord-length arclength sum; real circuits keep the default, `long_exit`
+   and other open synthetic tracks pass `closed=False`.
+2. **Untuned smoothing constant.** An arbitrary `smoothing=0.05` recovered
+   curvature *worse* than the naive finite-difference trap it exists to beat
+   (err 42 vs. the trap's own 8.7, against a 0.025 corner signal) — smoothing
+   has to scale with point count, not be a fixed guess. scipy's own
+   unweighted-data convention, `s ~= m` (the point count), matched TRACKS.md's
+   own measured "tuned smoothing spline" row almost exactly (err 0.015 vs.
+   0.013 there). Recorded in the class docstring so real-data import starts
+   from `s = len(x)`, not another guess.
+
+TRACKS.md §4 updated to mark step 1 done with this detail. Both bugs were
+caught by running the test and reading the failure, not assumed away or
+argued around — same discipline as the rest of this session.
+
+**Next action:** TRACKS.md staging step 2 — closed-loop support (`s`
+wrapping, lap counting, `half_width(s)`); touches `rl_env.py`'s termination
+condition and the driver's track preview.
 
 ### Superseded — Episode 13 planning notes
 

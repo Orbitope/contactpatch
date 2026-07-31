@@ -1697,7 +1697,63 @@ magnitude — per the user's explicit direction, while keeping
 testing item 11's original intention (explicit and implicit deterrents
 reinforcing each other) rather than stacking two large ones at once.
 
-**Next action:** design and run the `off_track_penalty` reduction test.
+**Next action (done):** the penalty test, then two measurements and a
+literature review that together resolved this whole arc.
+
+### Session 25 continued — cause found, and the literature says the structure is wrong
+
+Full detail in `TRACKS.md` §4 items 18-19.
+
+**The cause (item 18), found by measuring the critic's OUTPUT rather than
+its error.** `off_track_penalty` 500→200 was a third clean negative
+(EV −0.002). Then: the critic's predictions span a ±20 band while returns
+span ±1000 — **it never leaves its initialisation.** Adam at `lr=3e-4`
+over the ~760-1520 gradient steps available gives each parameter a total
+travel of ~0.2-0.5, so a 64-unit head reaches ~±30 at best against a
+required ±1000. None of the three fixes changed the required output
+magnitude, which is exactly why none of them did anything. This also
+reframes the "healthy" runs: the old reward's critic spanned only 2.1% of
+its return spread, and its EV=0.33 was substantially GAE bootstrapping
+correlation. **The critic has been weak in every tracks-pilot run.**
+
+A secondary, real finding: the observation reaches 55 m ahead with no
+track position, and a k-NN ceiling estimate says only ~0.25-0.28 EV is
+*achievable* from it on a 7 km circuit — which explains why full-lap
+spawning halved EV (0.72 → 0.33) versus near-start spawning, but not the
+drop to 0.00.
+
+**The literature review (item 19), two independent agents corroborating.**
+Our penalty:progress ratio is **500-5000:1 delivered as one terminal
+sample**; the field's maximum is ~20:1 delivered densely. GT Sophy is
+literally a continuing task (`dones = [False]`); Fuchs et al. use fixed
+100 s rollouts with no terminal condition. Where termination exists the
+penalty is −1 to −50, never large.
+
+**Fuchs et al. (RA-L 2021) documents our exact bifurcation verbatim** —
+fixed-value wall penalties make the agent "either not react to the
+penalty or end up in a strategy of full braking and standing still,
+depending on the strength of the penalty." That is item 11's
+under-deterrence and item 12's stalling exploit, same order, same cause.
+**Their fix was not tuning the constant — it was making the penalty
+proportional to kinetic energy** (`−c_w‖v‖²`, `c_w = 5e-4`).
+
+Also: progress weight is pinned at 1.0 universally (we swept it); our
+γ=0.9995 @50 Hz = 40 s is 4-8× longer than any published system; Evans et
+al. independently validate rule 4 by reporting a dense reward that taught
+an agent to drift at 30° slip on a model valid to 8°; and Czechmanowski
+et al. — single-track **MF6.1 Magic Formula** tyres, PPO, beats MPC — use
+a two-line reward with a **−1** non-terminal boundary penalty.
+
+Redesign proposed in item 19h (8 structural changes, not coefficients).
+Item 19i states the cost honestly: five 40M-step runs and four 20M-step
+diagnostics spent tuning inside a structure the field abandoned, chasing
+a failure mode a 2021 paper already names. **Reviewing the literature
+first would have cost an hour.** Carry that into Season 5, which plans
+considerably more RL than this.
+
+**Next action:** implement the item 19h redesign — get direction on
+whether to do it as one coherent change (it is a structural rewrite, and
+one-at-a-time would be 8 more runs) or staged.
 
 ### Superseded — Episode 13 planning notes
 

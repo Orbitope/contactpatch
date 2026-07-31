@@ -1071,16 +1071,167 @@ valid (if noisy) policy gradient.
 measurement rather than chosen by elimination: normalise the value
 targets / returns** (PopArt — van Hasselt et al. 2016, "Learning values
 across many orders of magnitude" — or the running-return normalisation
-shipped in most production PPO implementations). It attacks the actual
+shipped in most production PPO implementations). **Superseded by item 19
+— the literature says the reward STRUCTURE is the thing to change, and
+normalisation is at best a secondary tool.** It attacks the actual
 problem: it puts the regression target in a range the network can
 represent from its initialisation, instead of asking a freshly-initialised
 head to travel three orders of magnitude. To be validated against the
 racing-RL literature review (item 19) before implementing, since the user
 asked what the field actually does here.
 
----
+**19. The literature review (two independent agents, corroborating).
+Verdict: our reward is structurally unlike anything published, and the
+STRUCTURE — not the coefficients, not normalisation — is what to change.**
 
-## 5. What this unlocks, and what it does not
+**19a. The single most important number.** Across every system surveyed,
+the ratio of the largest safety penalty to one step's progress reward:
+
+| system | penalty : per-step progress | delivery |
+|---|---|---|
+| GT Sophy (Maggiore, 200 km/h) | ~7 : 1 | dense, every 0.1 s while off course |
+| GT Sophy (Sarthe, 300 km/h) | ~18 : 1 (36:1 in chicanes) | dense |
+| GT7 (Sony, 2025) | ~20 : 1 | dense |
+| Czechmanowski F1TENTH (MF6.1 tyres, PPO) | ~3-4 : 1 | per-violation, **not terminal** |
+| Evans F1TENTH (all variants) | 5 : 1 | terminal, penalty = −1 |
+| Swift (drone, Nature 2023) | small | terminal, penalty = 5.0 |
+| TC-Driver / Chisari (ETH) | **0.1 : 1** | per-violation, not terminal |
+| **ours** | **500-5000 : 1** | **single sample, terminal** |
+
+We are one to three orders of magnitude outside the entire field, and we
+deliver it as one terminal sample rather than spread across the offence.
+
+**19b. Two flagship systems never terminate on crashing at all.** GT
+Sophy's rollout worker is literally `dones = [False]` — a *continuing*
+task with fixed 150 s episodes; off-course, wall contact and collisions
+are all penalise-and-continue. Fuchs et al. (ETH GTS) likewise use fixed
+100 s rollouts with no terminal condition defined. Where termination does
+exist, its penalty is **small**: −1 (Evans ×3, Czechmanowski, Unity),
+5.0 (Swift), −25 to −50 (Trumpp, Learn-to-Race). **No surveyed system
+both terminates and applies a large penalty.**
+
+**19c. Fuchs et al. documents OUR EXACT BIFURCATION, verbatim** — this is
+the most valuable single sentence in the review:
+
+> "Without this additional wall contact penalty, we found the learned
+> policies did not brake and simply grinded along the track's walls in
+> sharp curves. When using **fixed valued wall contact penalties**, we
+> found the agent **either did not react to the penalty or ended up in a
+> strategy of full braking and standing still to not risk any wall
+> contact**, depending on the strength of the penalty."
+
+That is item 11's under-deterrence (`otp=50`, ignored) and item 12's
+stalling exploit (`otp=500`, coast to a stop) — the same two failure
+modes, in the same order, from the same cause. **Their fix was not to
+tune the constant: it was to make the penalty proportional to kinetic
+energy**, `−c_w‖v‖²` with `c_w = 5×10⁻⁴`, justified physically as "the
+energy-dependent loss in acceleration that takes place when hitting a
+wall." A fixed-value penalty is the thing they explicitly report as
+unfixable by tuning. We spent five runs discovering this independently.
+
+**19d. Universal conventions we violate.**
+- **Progress weight is pinned at exactly 1.0** in every major system, with
+  safety tuned relative to it. Our `progress_scale` sweep (item 12) was
+  tuning the one coefficient the field holds fixed by convention.
+- **Discount horizon.** GT Sophy γ=0.9896 @10 Hz = **9.6 s**; Fuchs
+  γ=0.98; Czechmanowski γ=0.99 @20 Hz = 5 s; Hildisch γ=0.96; Steiner
+  γ=0.95. **Ours: γ=0.9995 @50 Hz = 40 s** — 4-8× longer than anyone,
+  and directly responsible for the ±1000 value targets item 18 measured.
+- **Spawn at speed.** Near-universal random-position spawning, and Fuchs
+  spawns rolling at **100 km/h** "which we found can accelerate
+  training." Jaritz et al. proved fixed-start spawning generalises worse.
+  We do spawn randomly — but at a fixed 15 m/s that D6 (item 14) already
+  flagged as *above* Spa's tightest corner's 10.1 m/s limit.
+- **n-step returns:** GT Sophy 7-step, Fuchs 5-step, Hildisch 3-step.
+
+**19e. On normalisation — the review partly contradicts item 18's
+proposed fix, and that is worth stating plainly.** *No* surveyed racing
+system normalises value targets or returns; only Trumpp (TUM) normalises
+rewards at all ("a running statistics calculation"). GT Sophy hit the
+identical large-loss instability and fixed it with **critic-only gradient
+clipping at global norm 10** — note that is *looser* than our default 0.5
+and far tighter than the 1e6 item 17 tried, so neither of our two
+settings resembles theirs. Andrychowicz et al. (ICLR 2021) find value
+normalisation "influences the performance very strongly" but *helps on
+some environments and significantly hurts on others* — check, don't
+assume. Andy Jones' debugging guide gives the operational target
+directly: **hand-tune the reward scale so value targets land in roughly
+[−10, +10]**, and names our exact symptom ("if residual variance drops to
+zero, some scenarios are generating vastly larger returns than others").
+So: normalisation is a legitimate secondary tool, but the field's answer
+to our problem is to not create the huge targets in the first place.
+
+**19f. A finding that independently validates rule 4.** Evans et al.
+(RA-L 2023) report that a dense `v·cosψ − d_c` reward taught their agent
+to **drift at over 30° slip on a single-track model valid to ~8°** —
+"thus exploiting the simulation model." GT Sophy carries a dedicated tyre
+term, `R_ts = −Σ min(|κ_i|,1)⁴·|α_i|` at **weight 0.25**, the only reward
+term in the literature that addresses the contact patch directly. Our
+`envelope_penalty` is the same idea and should be **kept and probably
+strengthened**, not dropped — and this is direct external evidence that
+dense progress shaping *without* it would produce exactly the
+model-exploiting slip behaviour rule 4 exists to catch.
+
+**19g. Closest analogue to this project, worth copying almost verbatim.**
+Czechmanowski et al. (arXiv:2504.02420): single-track dynamic model with
+**MF6.1 Magic Formula tyres identified from real data**, PPO, first RL
+policy to beat expert humans in RC racing and to beat MPC. Their entire
+reward:
+
+```
+r_t = −1                    if the track boundary is exceeded
+    = s_t − s_{t−1}         otherwise        (centreline progress, Frenet)
+```
+
+No wall shaping, no smoothness terms, no stall penalty. Boundary
+violation is **not terminal** — "it is reset to a random position on the
+track to ensure full track exploration." γ=0.99, 400 parallel envs,
+1024-step rollouts, 120M steps, 20 Hz. Observations normalised by
+dividing by max; **no reward or value normalisation.** Their penalty is
+~3-4× one step's progress.
+
+**19h. Proposed redesign — following the field rather than continuing to
+guess.** Each item is a structural change, not a coefficient:
+
+1. **`progress_scale = 1.0`** — pin progress at 1, tune safety relative
+   (universal convention; stop sweeping this).
+2. **Replace the terminal `off_track_penalty` with a dense, speed-scaled
+   boundary cost** — Fuchs' `−c_w‖v‖²` form, which is the documented cure
+   for exactly our bifurcation. Charge it per step while off/near the
+   edge rather than once at death.
+3. **Penalise-and-continue, or reset-to-random-position** (GT Sophy,
+   Fuchs, Czechmanowski) instead of terminate-with-a-cliff. This also
+   removes the ±500 spike that item 18 measured as unreachable.
+4. **`gamma` → ~0.99** (2 s at 50 Hz) or at most ~0.998 (GT Sophy's 9.6 s
+   equivalent at our rate). This alone shrinks value targets by ~10-20×.
+5. **Keep `envelope_penalty`** (19f), and consider GT Sophy's
+   slip-ratio×slip-angle form at weight ~0.25 relative to progress.
+6. **Spawn at a speed the local corner allows** — fixes D6's
+   `the_task_is_completable` failure (item 14) and matches Fuchs' rolling
+   start.
+7. **Then re-check value-target magnitude against [−10, +10]** and only
+   add return normalisation if it is still out of range — as a measured
+   decision, not a default.
+8. **Timeout-vs-terminal bootstrap: a real defect, but currently
+   INERT — checked rather than assumed.** `rl_env.step` folds `timeout`
+   into `done` and `_gae` cuts the bootstrap on `done` (`mask = 1.0 -
+   dones[t]`), so a truncated episode is taught its future value is zero.
+   Remonda et al. name this exact bug in a racing context and call the
+   fix "essential". **But it is not firing here**: measured episode
+   lengths are 371-2,672 steps against `max_steps=15,000`, so `timeout`
+   never triggers. Worth fixing before it *becomes* live — which it will,
+   the moment a policy survives long enough to matter, i.e. exactly when
+   the project starts succeeding. Not a contributor to the current dead
+   critic.
+
+**19i. Cost of the detour, stated plainly.** Items 11-18 spent five
+40M-step runs and four 20M-step diagnostics tuning coefficients inside a
+reward structure the field abandoned — and the specific failure we spent
+the most compute on is documented in a 2021 paper as the known
+consequence of fixed-value penalties. **Reviewing the literature before
+designing the reward would have cost an hour and saved all of it.** That
+is the lesson worth carrying into Season 5, which plans considerably more
+RL than this.
 
 **Does:** recognisable results, a much richer test of a controller (many corner
 types, direction changes, braking zones of different severity), and a lap time

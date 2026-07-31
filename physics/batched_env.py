@@ -372,8 +372,8 @@ class BatchedDrivingEnv:
         self.steps += 1
 
         speed = np.hypot(self.v_x, self.v_y)
-        off = np.abs(self.n_off) > self.cfg.track.half_width
-        finished = self.s >= self.cfg.track.length
+        off = np.abs(self.n_off) > self.cfg.track.half_width_at(self.s)
+        finished = self.s >= self.cfg.track.length * self.cfg.n_laps
         stalled = speed < self.cfg.min_speed
         timeout = self.steps >= self.cfg.max_steps
         done = off | finished | stalled | timeout
@@ -436,14 +436,20 @@ class BatchedDrivingEnv:
     def observe(self) -> np.ndarray:
         speed = np.hypot(self.v_x, self.v_y)
         beta = np.arctan2(self.v_y, np.maximum(self.v_x, 1e-3))
+        # See rl_env.DrivingEnv._curvature_ahead: a closed track wraps s %
+        # length internally, so clamping to `length` here would flatten the
+        # preview at the finish line instead of showing the next corner. An
+        # open Track has no wraparound and must stay clamped.
+        closed = getattr(self.cfg.track, "closed", False)
         ahead = np.stack(
             [self.cfg.track.curvature(
+                self.s + d if closed else
                 np.minimum(self.s + d, self.cfg.track.length))
              for d in PREVIEW_DISTANCES], axis=1) * 40.0
         return np.concatenate([
             np.stack([
                 speed / 50.0,
-                self.n_off / self.cfg.track.half_width,
+                self.n_off / self.cfg.track.half_width_at(self.s),
                 self.xi / math.radians(60.0),
                 self.yaw_rate / 2.0,
                 beta / math.radians(30.0),

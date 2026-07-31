@@ -78,6 +78,14 @@ class Track:
             k = k + (seg.curvature - prev) * ramp
         return k
 
+    def half_width_at(self, s):
+        """Usable half-width at distance ``s``. Constant here — every
+        synthetic track in this file is one width throughout — but a real
+        circuit is not (TRACKS.md staging step 2), so callers that will ever
+        see a ``SampledTrack`` go through this rather than the ``half_width``
+        attribute directly."""
+        return np.full(np.asarray(s, dtype=float).shape, self.half_width)
+
     def centreline(self, n_points: int = 600):
         """``(s, x, y, heading)`` of the centreline, for drawing.
 
@@ -200,10 +208,14 @@ class SampledTrack:
     — and does not implement the naive version at all, so there is no
     tempting shortcut sitting next to the right answer.
 
-    ``half_width`` is a single scalar here, matching ``Track``'s current
-    interface exactly so this is a drop-in wherever a ``Track`` is used.
-    Variable width along ``s`` is TRACKS.md staging step 2, deliberately not
-    this one.
+    ``half_width`` is the fallback constant, matching ``Track``'s interface
+    for a drop-in when a track really is constant-width. Pass ``width``
+    (one value per ``(x, y)`` point, TRACKS.md staging step 2) for a real
+    circuit's varying half-width; ``half_width_at(s)`` then interpolates it
+    instead of returning the constant. TUM's own source data is
+    **asymmetric** (separate left/right), and collapsing that to one
+    symmetric ``width(s)`` is a modelling choice to record when real data is
+    adopted (TRACKS.md §3), not something this class decides.
 
     ``closed`` defaults to ``True`` because a real circuit is a loop and
     that is the actual target of this class — but the round-trip test
@@ -237,7 +249,7 @@ class SampledTrack:
     def __init__(self, name: str, x, y, half_width: float,
                  blend: float = 4.0, description: str = "",
                  n_resample: int = 4000, smoothing: float = 0.0,
-                 closed: bool = True):
+                 closed: bool = True, width=None):
         assert half_width > 0
         x = np.asarray(x, dtype=float)
         y = np.asarray(y, dtype=float)
@@ -258,7 +270,7 @@ class SampledTrack:
         # round-trip test); `smoothing>0` fits through noisy data rather than
         # chasing every sample (TRACKS.md's own measurement: this is what
         # keeps recovered curvature usable against real, noisy survey data).
-        self._tck, _ = splprep([x, y], s=smoothing, per=closed, k=3)
+        self._tck, u_raw = splprep([x, y], s=smoothing, per=closed, k=3)
 
         # Arclength reparameterisation: densely resample the fitted spline
         # in u, integrate the chord lengths to get s(u), then invert for
@@ -279,6 +291,28 @@ class SampledTrack:
         self._s_dense = s_dense
         self.length = float(s_dense[-1])
 
+        # Width samples arrive at the RAW points' own parameter values
+        # (`u_raw`, splprep's own chord-length parameterisation), not at the
+        # dense resampling grid -- convert through the same u(s) table used
+        # for everything else so a width lookup is one more np.interp along
+        # arclength, no separate spline.
+        self._width_s = None
+        if width is not None:
+            width = np.asarray(width, dtype=float)
+            assert width.shape == x.shape, \
+                "width must have one value per (x, y) point"
+            width_s = np.interp(u_raw, self._u_dense, self._s_dense)
+            if closed:
+                # A periodic fit never requires the last raw point to equal
+                # the first (the spline itself supplies the join), so the
+                # raw width samples alone leave a gap at the seam -- close it
+                # explicitly or np.interp would flat-extrapolate there
+                # instead of wrapping.
+                width_s = np.concatenate([width_s, [width_s[0] + self.length]])
+                width = np.concatenate([width, width[:1]])
+            self._width_s = width_s
+            self._width_vals = width
+
     def _u_of_s(self, s):
         s = np.asarray(s, dtype=float)
         if self.closed:
@@ -286,6 +320,19 @@ class SampledTrack:
         else:
             s = np.clip(s, 0.0, self.length)
         return np.interp(s, self._s_dense, self._u_dense)
+
+    def half_width_at(self, s):
+        """Usable half-width at distance ``s``. Constant unless ``width``
+        was passed at construction, in which case it is interpolated along
+        arclength the same way curvature is (TRACKS.md staging step 2)."""
+        s = np.asarray(s, dtype=float)
+        if self._width_s is None:
+            return np.full(s.shape, self.half_width)
+        if self.closed:
+            s = s % self.length
+        else:
+            s = np.clip(s, 0.0, self.length)
+        return np.interp(s, self._width_s, self._width_vals)
 
     def curvature(self, s):
         """Analytic curvature from the spline's own derivatives, not from

@@ -76,3 +76,15 @@ def test_radius_is_the_only_thing_that_differs_from_long_exit():
         le_angle = le.segments[1].length / le.segments[1].radius
         new_angle = trk.segments[1].length / radius
         assert new_angle == pytest.approx(le_angle)
+
+
+def test_half_width_at_matches_the_scalar_constant():
+    """TRACKS.md staging step 2 introduces half_width_at(s) as the interface
+    every caller should use (SampledTrack's may vary with s); Track's own
+    every synthetic track is one width throughout, so this must exactly
+    reproduce the scalar for any s, in and out of segment bounds."""
+    trk = long_exit()
+    probe = np.array([-10.0, 0.0, 50.0, trk.length, trk.length + 10.0])
+    got = trk.half_width_at(probe)
+    assert np.all(got == trk.half_width)
+    assert got.shape == probe.shape

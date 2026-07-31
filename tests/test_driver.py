@@ -19,7 +19,7 @@ from physics import schema
 from physics.double_track import DoubleTrackBackend
 from physics.driver import (BRAKE_MAX, DRIVE_MAX, Driver, SpeedProfile,
                             TrackLocator, drive_lap)
-from physics.track import CORNER_RADIUS, long_exit, short_exit
+from physics.track import CORNER_RADIUS, HALF_WIDTH, SampledTrack, long_exit, short_exit
 
 
 @pytest.fixture
@@ -143,3 +143,71 @@ def test_the_lap_logs_everything_rule_4_asks_for(track):
     # The file's own load bound, enforced (rule 4).
     assert lap.log["load_min"].min() >= 0.0
     assert lap.log["fz_fl"].max() < 10_125.0
+
+
+# --- closed loop (TRACKS.md staging step 2) ---------------------------------
+
+def _circle_track(radius=80.0, n=400, half_width=HALF_WIDTH):
+    """A circle through the origin, tangent to +x there (heading 0) --
+    matching where every synthetic ``Track`` in this file starts and where
+    ``DoubleTrackBackend.reset`` always places the car (``BicycleState``'s
+    ``x=y=heading=0`` defaults). A circle centred on the origin instead would
+    start the car 80 m from the road with nothing in ``drive_lap`` to place
+    it there; that pose-alignment problem is real for a real circuit but is
+    TRACKS.md staging step 3's problem, not this fixture's."""
+    theta = np.linspace(0.0, 2 * np.pi, n, endpoint=False)
+    x, y = radius * np.sin(theta), radius * (1.0 - np.cos(theta))
+    return SampledTrack("circle", x, y, half_width, closed=True, smoothing=0.0)
+
+
+def test_locator_inverts_to_xy_across_the_seam_on_a_closed_track():
+    """The seam (s=0 == s=length) is exactly where a wraparound bug would
+    show up first -- same inverse-map check as the open-track test above,
+    straddling s=0/length instead of staying safely in the middle."""
+    circle = _circle_track()
+    loc = TrackLocator(circle)
+    loc.window = circle.length
+    for s in (circle.length - 5.0, circle.length - 0.5, 0.5, 5.0):
+        for n in (-1.5, 0.0, 1.5):
+            x, y = circle.to_xy(np.array([s]), np.array([n]))
+            loc._last_i = 0
+            s_hat, n_hat, _ = loc.locate(float(x[0]), float(y[0]), 0.0)
+            # s is defined mod length on a closed track
+            d = min(abs(s_hat - s), abs(s_hat - s + circle.length),
+                   abs(s_hat - s - circle.length))
+            assert d < 1.0
+            assert n_hat == pytest.approx(n, abs=0.05)
+
+
+def test_preview_wraps_instead_of_flattening_at_the_finish_line():
+    """rl_env._curvature_ahead has the same bug fixed the same way: an open
+    track's preview is deliberately clamped/extrapolated (see the test
+    above), but a closed track's road genuinely continues past s=length, so
+    the preview point there must be the START of the next lap, not a
+    straight-line extrapolation off into space."""
+    circle = _circle_track()
+    loc = TrackLocator(circle)
+    px, py = loc.preview(circle.length - 5.0, 10.0)         # wraps 5 m in
+    qx, qy = loc.preview(5.0, 0.0)                           # same point directly
+    assert px == pytest.approx(qx, abs=0.5)
+    assert py == pytest.approx(qy, abs=0.5)
+
+
+def test_drive_lap_completes_two_laps_of_a_closed_track():
+    """A circle has constant curvature, so SpeedProfile's single-lap plan
+    (TRACKS.md staging step 2 does not extend it across multiple laps) is
+    still the right target speed at every s, wrapped or not -- this isolates
+    the wraparound plumbing (locate/preview/n_laps termination) from the
+    still-open question of multi-lap speed planning."""
+    circle = _circle_track()
+    b = DoubleTrackBackend(schema.RV_1, diff="open")
+    prof = SpeedProfile(circle, a_lat=0.85 * 9.3, a_brake=8.0, a_drive=3.3,
+                        v_max=40.0)
+    driver = Driver(schema.RV_1, prof, TrackLocator(circle))
+
+    one = drive_lap(b, circle, driver, grip_use=0.85, n_laps=1, max_steps=2000)
+    assert one.valid and one.reason == "finished"
+
+    two = drive_lap(b, circle, driver, grip_use=0.85, n_laps=2, max_steps=4000)
+    assert two.valid and two.reason == "finished"
+    assert two.lap_time == pytest.approx(2 * one.lap_time, rel=0.05)

@@ -137,9 +137,17 @@ class TrackLocator:
     def locate(self, x: float, y: float, heading: float) -> tuple[float, float, float]:
         step = self.s_ref[1] - self.s_ref[0]
         w = int(self.window / step)
-        lo, hi = max(0, self._last_i - 4), min(len(self.s_ref), self._last_i + w)
-        d2 = (self.x_ref[lo:hi] - x) ** 2 + (self.y_ref[lo:hi] - y) ** 2
-        i = lo + int(np.argmin(d2))
+        n = len(self.s_ref)
+        if getattr(self.track, "closed", False):
+            # TRACKS.md staging step 2: a closed track's s=0 and s=length are
+            # the same physical point, so the search window has to wrap
+            # across that seam too, or a car just past the finish line loses
+            # its fix instead of relocating near index 0.
+            idx = np.arange(self._last_i - 4, self._last_i + w) % n
+        else:
+            idx = np.arange(max(0, self._last_i - 4), min(n, self._last_i + w))
+        d2 = (self.x_ref[idx] - x) ** 2 + (self.y_ref[idx] - y) ** 2
+        i = int(idx[np.argmin(d2)])
         self._last_i = i
         s, h = float(self.s_ref[i]), float(self.h_ref[i])
         # +n is to the LEFT of the direction of travel, matching schema's frame
@@ -152,16 +160,24 @@ class TrackLocator:
     def preview(self, s: float, ahead: float) -> tuple[float, float]:
         """Cartesian position of the centreline point ``ahead`` metres along.
 
-        **Extrapolated past the end of the track along its final heading**, which
-        is not cosmetic. Clamping the preview point to the last centreline sample
-        makes the effective lookahead shrink to zero as the car arrives, and a
-        pure-pursuit controller with no lookahead is unstable: the first version
-        of this ran a clean lap and then threw the car into a 45-degree slide over
-        the last ten metres, every time, on a straight. The road ends; the driver's
-        idea of where it goes should not.
+        **On a closed track, wraps** — TRACKS.md staging step 2. There the road
+        genuinely continues (into the next lap), so unlike the open case below,
+        wrapping IS the correct road, not an approximation of one.
+
+        **On an open track, extrapolated past the end along its final heading**,
+        which is not cosmetic. Clamping the preview point to the last centreline
+        sample makes the effective lookahead shrink to zero as the car arrives,
+        and a pure-pursuit controller with no lookahead is unstable: the first
+        version of this ran a clean lap and then threw the car into a 45-degree
+        slide over the last ten metres, every time, on a straight. The road ends;
+        the driver's idea of where it goes should not.
         """
-        end = float(self.s_ref[-1])
         sp = s + ahead
+        if getattr(self.track, "closed", False):
+            sp = sp % self.track.length
+            return (float(np.interp(sp, self.s_ref, self.x_ref)),
+                    float(np.interp(sp, self.s_ref, self.y_ref)))
+        end = float(self.s_ref[-1])
         if sp <= end:
             return (float(np.interp(sp, self.s_ref, self.x_ref)),
                     float(np.interp(sp, self.s_ref, self.y_ref)))
@@ -308,7 +324,8 @@ class Lap:
 
 def drive_lap(backend: DoubleTrackBackend, track: Track, driver: Driver,
               tv=None, dt: float = DT, max_steps: int = 4000,
-              grip_use: float = 1.0, seed: int | None = None) -> Lap:
+              grip_use: float = 1.0, seed: int | None = None,
+              n_laps: int = 1) -> Lap:
     """Drive one lap and return it, valid or not.
 
     Ordering inside the loop is load-bearing: the driver chooses, then the upper
@@ -316,6 +333,25 @@ def drive_lap(backend: DoubleTrackBackend, track: Track, driver: Driver,
     command held constant across its four RK4 substeps (see
     ``TorqueVectoring``'s docstring). Everything is logged from the arrays
     afterwards, never computed inside the loop (rule 7).
+
+    ``n_laps`` (TRACKS.md staging step 2): **1 reproduces every existing call
+    unchanged** — every ``track`` here is open and finishes at its own
+    length regardless of this argument's value for an open track's single
+    traversal. Only meaningful once ``track`` is a closed ``SampledTrack``.
+
+    ``s`` from ``locator.locate`` is bounded to ``[0, track.length)`` on a
+    closed track — it is "where on the road", not a cumulative distance, and
+    wraps back near 0 every lap. ``finished``/``lap_time`` therefore
+    accumulate total distance separately, as a running sum of each step's
+    SHORTEST signed circular delta from the last ``s`` — not as ``s`` itself
+    against ``track.length * n_laps``, which a wrapping ``s`` could never
+    reach. The shortest-delta form also resolves the one genuinely ambiguous
+    point on a closed track: the start line, where ``s=0`` and ``s=length``
+    are the same physical point, so the very first ``locate()`` call can
+    return either one — a naive "did s jump backward a lot" wrap detector
+    reads that ambiguity as an instant final-lap finish; the signed delta
+    reads it as approximately zero distance travelled, correctly, however
+    the tie broke.
     """
     locator = driver.locator
     locator._last_i = 0
@@ -325,20 +361,29 @@ def drive_lap(backend: DoubleTrackBackend, track: Track, driver: Driver,
         backend.attach_torque_vectoring(tv)
     backend.reset(driver.profile.target(0.0))
     log = {k: [] for k in
-           ("t", "s", "n", "xi", "speed", "v_target", "steer", "drive", "yaw_rate",
-            "a_x", "a_y", "alpha_max_deg", "load_min", "utilisation_max",
-            "envelope_violation")}
+           ("t", "s", "s_total", "n", "xi", "speed", "v_target", "steer",
+            "drive", "yaw_rate", "a_x", "a_y", "alpha_max_deg", "load_min",
+            "utilisation_max", "envelope_violation")}
     for c in CORNERS:
         log[f"fx_{c}"] = []
         log[f"fy_{c}"] = []
         log[f"fz_{c}"] = []
         log[f"util_{c}"] = []
 
+    closed = getattr(track, "closed", False)
+    s_prev, s_total = 0.0, 0.0
     reason, steps = "", 0
     s = n = xi = 0.0
     for steps in range(1, max_steps + 1):
         st = backend.state
         s, n, xi = locator.locate(st.x, st.y, st.heading)
+        if closed:
+            length = track.length
+            delta = ((s - s_prev + length / 2.0) % length) - length / 2.0
+            s_total += delta
+        else:
+            s_total = s
+        s_prev = s
         steer_rate, drive = driver.control(st, s, n, xi, dt)
         if tv is not None:
             # Both layers, once, on what the car's sensors could know at the top
@@ -372,6 +417,7 @@ def drive_lap(backend: DoubleTrackBackend, track: Track, driver: Driver,
         alphas = backend.slip_angles()
         log["t"].append(steps * dt)
         log["s"].append(s)
+        log["s_total"].append(s_total)
         log["n"].append(n)
         log["xi"].append(xi)
         log["speed"].append(float(backend.state.v_x))
@@ -387,7 +433,7 @@ def drive_lap(backend: DoubleTrackBackend, track: Track, driver: Driver,
         log["utilisation_max"].append(max(util.values()))
         log["envelope_violation"].append(bool(info.envelope_violation))
 
-        if abs(n) > track.half_width:
+        if abs(n) > float(track.half_width_at(s)):
             reason = "off track"
             break
         if backend.state.v_x < 3.0:
@@ -397,7 +443,7 @@ def drive_lap(backend: DoubleTrackBackend, track: Track, driver: Driver,
                                        max(backend.state.v_x, 1.0)))) > 45.0:
             reason = "spun"
             break
-        if s >= track.length - 1.0:
+        if s_total >= track.length * n_laps - 1.0:
             reason = "finished"
             break
     else:
@@ -418,8 +464,9 @@ def drive_lap(backend: DoubleTrackBackend, track: Track, driver: Driver,
     # about are a few hundredths — F47 is the same defect in a different variable
     # (an apex snapped to the node grid), and it reached a published figure.
     lap_time = steps * dt
-    if valid and len(arrays["s"]) > 1:
-        lap_time = float(np.interp(track.length - 1.0, arrays["s"], arrays["t"]))
+    if valid and len(arrays["s_total"]) > 1:
+        lap_time = float(np.interp(track.length * n_laps - 1.0,
+                                   arrays["s_total"], arrays["t"]))
     return Lap(valid=valid, reason=reason, lap_time=lap_time,
                grip_use=grip_use, log=arrays,
                tv_log=(tv.history() if tv is not None else {}))

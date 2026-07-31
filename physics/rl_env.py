@@ -295,6 +295,16 @@ class EnvConfig:
     #: 4b for the variant table this reproduces.
     tv_mode: str = "none"
 
+    #: --- TRACKS.md staging step 2: closed-loop support. Number of laps that
+    #: makes an episode "finished" on a closed (looped) track. **1 reproduces
+    #: every existing episode's semantics exactly** — every ``Track`` here is
+    #: open, ``self.s`` never approaches ``track.length`` a second time before
+    #: the episode ends some other way, and ``track.length * 1 == track.length``
+    #: is the termination condition every prior episode already used. Only
+    #: meaningful once ``cfg.track`` is a closed ``SampledTrack`` (TRACKS.md §4
+    #: step 3 onward).
+    n_laps: int = 1
+
 
 class DrivingEnv:
     """One car on one road, stepped at fixed dt. Gym-like but not gym-dependent.
@@ -376,6 +386,16 @@ class DrivingEnv:
                                self._ref_head))
 
     def _curvature_ahead(self) -> np.ndarray:
+        # A closed track's curvature already wraps s % length internally
+        # (SampledTrack._u_of_s) -- clamping to `length` here would flatten
+        # the preview to a single repeated point right where a real circuit's
+        # driver needs to see the NEXT corner coming. An open Track has no
+        # wraparound and must stay clamped, or curvature(s) beyond the last
+        # segment just extrapolates that segment flat, which is at least
+        # bounded rather than wrong -- clamping keeps that behaviour exactly.
+        if getattr(self.cfg.track, "closed", False):
+            return np.array([self.cfg.track.curvature(self.s + d)
+                             for d in PREVIEW_DISTANCES])
         return np.array([self.cfg.track.curvature(
             min(self.s + d, self.cfg.track.length)) for d in PREVIEW_DISTANCES])
 
@@ -440,7 +460,7 @@ class DrivingEnv:
         return np.concatenate([
             np.array([
                 speed / 50.0,               # normalised, schema-style
-                self.n / self.cfg.track.half_width,
+                self.n / float(self.cfg.track.half_width_at(self.s)),
                 self.xi / math.radians(60.0),
                 st.yaw_rate / 2.0,
                 beta / math.radians(30.0),
@@ -522,8 +542,8 @@ class DrivingEnv:
         self.xi = self._wrap(self.xi + xi_dot * self.cfg.dt)
 
         self.steps += 1
-        off = abs(self.n) > self.cfg.track.half_width
-        finished = self.s >= self.cfg.track.length
+        off = abs(self.n) > float(self.cfg.track.half_width_at(self.s))
+        finished = self.s >= self.cfg.track.length * self.cfg.n_laps
         stalled = speed < self.cfg.min_speed
         timeout = self.steps >= self.cfg.max_steps
         self.done = bool(off or finished or stalled or timeout)
@@ -652,8 +672,9 @@ def rollout(env: DrivingEnv, policy, seed: int | None = None) -> dict:
         **h,
         "return": total,
         "steps": int(env.steps),
-        "finished": bool(h["s"][-1] >= env.cfg.track.length),
-        "off_track": bool(abs(h["n"][-1]) > env.cfg.track.half_width),
+        "finished": bool(h["s"][-1] >= env.cfg.track.length * env.cfg.n_laps),
+        "off_track": bool(abs(h["n"][-1]) >
+                          float(env.cfg.track.half_width_at(h["s"][-1]))),
         "distance_m": float(h["s"][-1]),
         "lap_time_s": float(env.steps * env.cfg.dt),
         "worst_slip_deg": float(np.max(h["alpha_max_deg"])),

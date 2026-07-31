@@ -130,3 +130,54 @@ def test_to_xy_round_trips_through_centreline():
         j = np.argmin(np.abs(sref - sv))
         assert xs[i] == pytest.approx(xref[j], abs=0.5)
         assert ys[i] == pytest.approx(yref[j], abs=0.5)
+
+
+def _circle(radius, n=400):
+    theta = np.linspace(0.0, 2 * np.pi, n, endpoint=False)
+    return theta, radius * np.cos(theta), radius * np.sin(theta)
+
+
+def test_half_width_at_defaults_to_constant():
+    """No `width=` given: half_width_at must reproduce the scalar constant
+    everywhere, matching Track's interface exactly -- this is the backward
+    compatibility every existing caller relies on."""
+    truth = long_exit()
+    s, x, y = _clean_sample(truth)
+    sampled = SampledTrack("long_exit_roundtrip", x, y, truth.half_width,
+                           smoothing=0.0, closed=False)
+    probe = np.array([0.0, 50.0, 200.0, truth.length])
+    got = sampled.half_width_at(probe)
+    assert np.all(got == truth.half_width)
+
+
+def test_half_width_at_recovers_variable_width_on_a_closed_track():
+    """TRACKS.md staging step 2: a real circuit's half-width varies along s.
+    Round-trip against a known width function on a closed synthetic track
+    (a circle), the same known-ground-truth pattern the curvature test uses
+    at step 1."""
+    radius = 50.0
+    theta, x, y = _circle(radius)
+    width_true = 5.0 + 5.0 * (theta / (2 * np.pi))  # ramps 5 m -> 10 m
+    track = SampledTrack("circle", x, y, half_width=7.5, closed=True,
+                         width=width_true, smoothing=0.0)
+
+    s_test = np.linspace(0.0, track.length, 50, endpoint=False)
+    w_true = 5.0 + 5.0 * ((s_test / radius) / (2 * np.pi))
+    w_got = track.half_width_at(s_test)
+    err = np.max(np.abs(w_got - w_true))
+    assert err < 0.01, f"variable-width recovery error {err:.4f} exceeds 0.01 m"
+
+
+def test_half_width_at_wraps_at_the_seam_on_a_closed_track():
+    """s=0 and s=length are the same physical point on a closed track;
+    half_width_at must not silently flat-extrapolate past the raw points'
+    own range at the seam (a real risk since periodic splprep does not
+    require the last raw point to equal the first)."""
+    radius = 50.0
+    theta, x, y = _circle(radius)
+    width_true = 7.0 + 0.5 * np.sin(theta)  # smooth, genuinely periodic
+    track = SampledTrack("circle", x, y, half_width=7.5, closed=True,
+                         width=width_true, smoothing=0.0)
+    just_before_end = track.half_width_at(np.array([track.length - 1e-3]))[0]
+    just_after_start = track.half_width_at(np.array([1e-3]))[0]
+    assert just_before_end == pytest.approx(just_after_start, abs=0.05)

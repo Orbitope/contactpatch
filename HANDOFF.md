@@ -1185,9 +1185,51 @@ TRACKS.md §4 updated to mark step 1 done with this detail. Both bugs were
 caught by running the test and reading the failure, not assumed away or
 argued around — same discipline as the rest of this session.
 
-**Next action:** TRACKS.md staging step 2 — closed-loop support (`s`
-wrapping, lap counting, `half_width(s)`); touches `rl_env.py`'s termination
-condition and the driver's track preview.
+**Next action (done later this session):** TRACKS.md staging step 2 —
+closed-loop support (`s` wrapping, lap counting, `half_width(s)`); touches
+`rl_env.py`'s termination condition and the driver's track preview.
+
+### Session 25 continued — TRACKS.md staging step 2 done
+
+Full detail in `TRACKS.md` §4 step 2. Summary: `Track`/`SampledTrack` gained
+`half_width_at(s)` (replacing the plain `.half_width` scalar attribute
+everywhere it was consumed as a boundary check — `rl_env.py`,
+`batched_env.py`, `driver.py`), `EnvConfig.n_laps` and `drive_lap`'s
+`n_laps` argument (both default 1, every existing call reproduced exactly),
+and `SampledTrack` can now take a per-point `width` array for real varying
+half-width. Full suite: 606 passed (599 + 7 new tests), zero regressions.
+
+Two more real bugs, caught by tests rather than assumed away:
+
+1. The curvature-ahead preview in both `rl_env.py` and `batched_env.py`
+   clamped to `track.length`, which is correct for an open track but
+   flattens a closed track's lookahead to a repeated point right at the
+   spot a driver most needs to see the next corner. Fixed by skipping the
+   clamp when `track.closed`.
+2. `driver.drive_lap`'s new `n_laps` support first used a "big backward
+   jump in `s` = one lap" wrap counter, and a synthetic closed-circle test
+   caught it misreading the one genuinely ambiguous point on any loop: the
+   start line, where `s=0` and `s=length` are the same physical point, so
+   the very first position fix can land on either — the naive counter read
+   that as an instant final-lap finish (`lap_time=0.04s`). Fixed with a
+   running sum of each step's shortest signed circular delta from the
+   previous `s`, which resolves the ambiguity to ~0 distance travelled
+   however the tie breaks.
+
+**Deliberately not done** (recorded so it isn't rediscovered as a surprise
+later): `SpeedProfile`'s backward/forward passes still plan a single lap
+(`s` in `[0, length]`) — a real circuit's corner-braking continuity across
+the seam needs its own pass, deferred to whenever a real circuit's speed
+plan is actually driven. `drive_lap` also still assumes the car starts at
+the world origin with heading 0, true of every synthetic `Track` here by
+construction but not automatic for a real circuit's raw coordinates — a
+real circuit will need its start pose derived from the track itself.
+
+**Next action:** TRACKS.md staging step 3 — import one real circuit (TUM
+`racetrack-database`, TRACKS.md §3's own recommendation) and validate the
+recovered curvature against **published** corner radii, not our own fit
+(rule 2). That is also where the two deferred items above first become
+load-bearing rather than hypothetical.
 
 ### Superseded — Episode 13 planning notes
 

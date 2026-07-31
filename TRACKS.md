@@ -194,8 +194,46 @@ None of this is legal advice.
      from `s = len(x)`, not another guess.
 
    No external data yet — that is step 3.
-2. **Closed-loop support** — `s` wrapping, lap counting, `half_width(s)`.
-   Touches `rl_env` termination and the driver's preview.
+2. ✅ **DONE** — closed-loop support: `s` wrapping, lap counting,
+   `half_width_at(s)`. Two more real bugs caught by tests before anything
+   drives a real circuit:
+   - `rl_env`'s and `batched_env`'s curvature-ahead preview clamped the
+     lookahead to `track.length`, flattening it to a single repeated point
+     right where a closed track's driver most needs to see the next corner
+     coming (the same clamp `driver.TrackLocator.preview` already had a
+     documented, deliberate reason for on an OPEN track — closing the loop
+     makes that reason not apply). Both now skip the clamp for
+     `track.closed` and let the track's own `s % length` wraparound
+     (`SampledTrack._u_of_s`) supply the right answer.
+   - A synthetic closed-circle regression test for `driver.drive_lap`
+     (`tests/test_driver.py`) found that `s` from `TrackLocator.locate` is
+     bounded to `[0, length)` on a closed track — "where on the road", not
+     a cumulative distance — so a naive `s >= length * n_laps` finish check
+     can never fire, and a naive "big backward jump = one lap" wrap counter
+     misreads the one genuinely ambiguous point on a loop (the start line,
+     where `s=0` and `s=length` are the same physical point, so the very
+     first fix can land on either). Fixed with a running sum of each step's
+     *shortest signed circular delta* from the previous `s`, which resolves
+     the start-line ambiguity to ~0 distance however the tie breaks, rather
+     than reading it as an instant finish.
+   - `half_width` also gained a `SampledTrack` implementation that
+     interpolates a per-point `width` array along arclength (with its own
+     wraparound at the seam), not just the constant fallback — validated by
+     a round-trip test against a known width function, the same
+     known-ground-truth pattern step 1 used for curvature.
+
+   `Track` and `SampledTrack` both went from a plain `.half_width` scalar
+   attribute to a `.half_width_at(s)` method; every caller in `rl_env.py`,
+   `batched_env.py`, and `driver.py` was migrated, `Track`'s own returning
+   the old scalar broadcast unchanged. `EnvConfig.n_laps` and
+   `drive_lap`'s `n_laps` argument both default to 1, reproducing every
+   existing open-track call exactly. **Not done**: `SpeedProfile`'s
+   backward/forward passes still plan one lap only (`s` in `[0, length]`);
+   multi-lap corner-braking continuity across the seam is deferred to
+   whenever a real circuit's speed plan is actually needed (step 3+), same
+   for `drive_lap`'s implicit assumption that the car starts at the world
+   origin with heading 0 — true of every synthetic `Track` here by
+   construction, but not automatic for a real circuit's raw coordinates.
 3. **One real circuit, imported and validated** against published corner radii
    and total length. One is enough to prove the pipeline; a second is cheap.
 4. **Batched env support for long tracks** — the current curvature lookup is

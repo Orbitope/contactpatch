@@ -1294,12 +1294,45 @@ None of these are guessable without an actual training run to calibrate
 against (rule 9) — they're step 5's work, not a separable step 4, so
 recorded here rather than invented as numbers now.
 
-**Next action:** TRACKS.md staging step 5 — retrain on Spa. **Large
-compute** (multi-hour-plus per configuration, per the four items above,
-plus wiring `BatchedDrivingEnv` into a training script that doesn't exist
-yet) — check scope with the user before starting, per the same pattern
-POWER-REVIEW's own RL-retrain phase was held for rather than launched
-speculatively.
+**Next action (done later this session, user chose "scope it out first,
+don't run yet"):** step 5 scoping.
+
+### Session 25 continued — TRACKS.md staging step 5 scoped, not run
+
+Full detail in `TRACKS.md` §4 step 5. User explicitly chose to scope this
+before running anything (step 5 is Episode 19's own subject). Measured
+rather than estimated:
+
+- `BatchedDrivingEnv` already works on Spa — built and stepped one
+  directly, no crash, no NaN. The gap is that no experiment script passes
+  `make_batched_env` to `ppo.train()` yet.
+- **First pass at the batched-vs-unbatched comparison was wrong and got
+  caught before it went in the doc**: dividing batched aggregate
+  throughput by `n_envs` and comparing to single-instance made batching
+  look ~10x SLOWER. The real baseline — `n_envs=8` run sequentially, which
+  is today's actual unbatched path — measures at 2,648 instance-steps/s,
+  statistically identical to one instance alone (2,699), because
+  sequential single-core work can't parallelise regardless of how many
+  "envs" are configured. Against that corrected baseline, batched
+  throughput on Spa specifically: 29.1x at `n_envs=256` (matches this
+  doc's prior "29x" estimate), 47.1x at `n_envs=1024`.
+- Concretely: matching Episode 10's experience budget (5M steps at
+  ~1,300-step laps ≈ 3,846 completed laps) on ~10,000-step Spa laps needs
+  ~38.5M steps. Env-stepping alone: **~4.0 hours unbatched** (today's
+  path, before ≥3 seeds × 2-3 tracks multiply it further — this is where
+  "multi-overnight" comes from) vs **~5 minutes batched** at
+  `n_envs=1024`. Wiring the batched path in is not an optimisation, it's
+  the difference between an afternoon and a week.
+- `gamma=0.995`, `rollout_steps=512`, and `total_steps` all need
+  retuning — proposed starting points recorded in TRACKS.md (gamma→0.999,
+  rollout_steps toward a lap-length multiple or a partial-episode-stats
+  fix instead, total_steps~38.5M), explicitly flagged as guesses a pilot
+  run needs to confirm, not final answers (rule 9).
+
+**Next action:** a short pilot run (SEASON5.md §7's own "budget rederived
+from a pilot before the production run" plan) at `n_envs=1024` batched on
+Spa — check with the user before launching, since this is the first
+actual training compute this thread would spend.
 
 ### Superseded — Episode 13 planning notes
 

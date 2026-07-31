@@ -306,14 +306,93 @@ None of this is legal advice.
    one is inseparable from actually retraining on a real circuit. They are
    step 5's work, not a separate step 4 — recorded here rather than
    invented a number for now.
-5. **Retrain.** A real circuit changes what "a lap" costs, so every
-   step-count and wall-clock number in Season 3 and 4 is re-derived, not
-   inherited — including the hyperparameters step 4 surfaced
-   (`rollout_steps`, `total_steps`, `gamma`) and wiring training through
-   `BatchedDrivingEnv` for throughput. **Large compute, likely
-   multi-hour-plus per configuration** — check scope with the user before
-   starting, the same way POWER-REVIEW's own RL-retrain phase was held for
-   confirmation rather than launched speculatively.
+5. **Retrain — scoped below, not yet run.** A real circuit changes what "a
+   lap" costs, so every step-count and wall-clock number in Season 3 and 4
+   is re-derived, not inherited. This is Episode 19's own subject
+   (SEASON5.md §4), not a detour — this section is that episode's technical
+   prerequisite, written before any run so the choices are on the record
+   and checkable, per rule 9.
+
+### Step 5 scoping (measured, nothing launched)
+
+**1. `BatchedDrivingEnv` already works on Spa, checked directly.** Built
+one with `EnvConfig(track=load_real_track("Spa"), max_steps=12000)`,
+stepped it: no crash, no NaN in the observation, `closed`-track wraparound
+(step 2) behaves as expected. No plumbing gap here — the gap is that no
+experiment script passes `make_batched_env` to `ppo.train()` yet, even
+though `train()` has accepted it as an optional argument all along.
+
+**2. The batched speedup is real, measured on this machine, and bigger
+than assumed going in — but not for the reason first assumed.** A first
+pass compared batched aggregate throughput divided by `n_envs` against
+single-instance throughput and found batching apparently *losing* by
+~10x — alarming enough to stop and re-derive rather than write it down.
+The error was the comparison, not the code: running `n_envs` single-instance
+`DrivingEnv`s **sequentially** (`ppo.py`'s current unbatched path, one
+Python `.step()` per env per rollout tick) does not parallelise on one
+core — measured directly, `n_envs=8` sequential gives **2,648
+instance-steps/s aggregate**, statistically the same as ONE instance alone
+(2,699 steps/s). Aggregate sequential throughput is flat regardless of
+`n_envs` — it has to be, it's the same core doing proportionally more
+work in proportionally more wall-time. That is the correct baseline to
+compare against, not "aggregate ÷ n_envs".
+
+Against that baseline, measured on Spa specifically (not the old track):
+
+| `n_envs` | instance-steps/s | speedup vs. 2,700 sequential |
+|---|---|---|
+| 8 (batched) | 4,831 | 1.8x |
+| 256 | 78,559 | 29.1x — matches this doc's prior "29x" estimate |
+| 1,024 | 127,143 | 47.1x |
+| 4,096 | 157,709 | 58.4x (strongly diminishing) |
+
+`n_envs=1024` is the reasonable working point: past it, throughput keeps
+rising but the PPO rollout buffer (`[rollout_steps, n_envs, obs_dim]`)
+grows just as fast for shrinking return.
+
+**3. What this means for wall-clock, concretely.** Matching Episode 10's
+own experience budget (`total_steps=5,000,000` at ~1,300 steps/lap ≈ 3,846
+completed laps across training) on a ~10,000-step Spa lap needs ~7.7x more
+total steps to buy the same number of completed laps: **~38.5M steps.**
+Env-stepping cost alone (excludes the PPO gradient update, not yet
+measured for this setup):
+- **Unbatched (today's path): 38.5M / 2,700 ≈ 4.0 hours**, and that is
+  BEFORE the ≥3 seeds × 2-3 tracks SEASON5.md §7 already calls for — this
+  is where "multi-overnight" comes from if nothing changes.
+- **Batched, `n_envs=1024`: 38.5M / 127,143 ≈ 5 minutes.**
+
+Wiring `make_batched_env` into a Spa training script is not an
+optimisation, it is the difference between a run that fits in an
+afternoon and one that does not fit in a week once seeds and tracks
+multiply. This is the one item from step 4's list that is unambiguous
+without a pilot.
+
+**4. Hyperparameters that ARE guesses until a pilot confirms them (rule
+9 — proposed starting points, not final answers):**
+- `gamma`: `0.995` (4 s effective horizon, already short against the old
+  26 s lap) cannot connect corner-exit speed to its payoff across Spa's
+  10+ second straights. Proposed starting point: `0.999` (≈1,000-step /
+  20 s horizon). Needs a pilot to check learning stability at the higher
+  variance this trades for.
+- `rollout_steps=512` is under 1/19th of a Spa lap — most episodes will
+  not finish inside a rollout window, so `finished_returns`-derived stats
+  go `nan` for long stretches. Two candidate fixes, not yet chosen between:
+  raise `rollout_steps` toward a multiple of the lap length (e.g. 12,288 ≈
+  1.2 laps), which changes PPO's update cadence and sample efficiency; or
+  add partial-episode return/off-track reporting so short rollouts stay
+  informative without changing the update cadence at all. A pilot is what
+  distinguishes these, not a guess now.
+- `total_steps`: ~38.5M is the "same experience budget as Ep 10" starting
+  point above, not a validated target — the pilot's job is to check
+  whether that budget is anywhere near enough for a track 7.7x longer and
+  more complex than a single corner, not just proportionally rescaled.
+
+**5. Recommended next step, when resumed:** a short pilot (SEASON5.md §7's
+own "budget rederived from a pilot before the production run" plan,
+Episode 14's pattern, which caught three defects early) — enough steps to
+see whether `gamma=0.999` is stable and whether the rollout-statistics fix
+is needed, at `n_envs=1024` batched, on Spa, before committing to a
+38.5M-step production run.
 
 ---
 

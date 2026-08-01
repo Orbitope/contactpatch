@@ -1,0 +1,39 @@
+{
+  "total_steps": 5120,
+  "wall_s": 3.4551169872283936,
+  "n_updates": 10,
+  "cap_start": 9.0,
+  "cap_final": 10.0,
+  "cap_raises": [
+    {
+      "update": 3,
+      "steps": 2048,
+      "cap": 10.0,
+      "reason": "plateau",
+      "off_track_rate": 1.0
+    }
+  ],
+  "per_cap_best": [
+    {
+      "cap": 9.0,
+      "best_distance": 2688.039542866956,
+      "until_update": 3
+    }
+  ],
+  "entropy_anneal": true,
+  "explained_variance_tail": 0.3581759264960813,
+  "passes_d6_ev_gate": true,
+  "section_distance_mean": 150.87107419201027,
+  "section_fraction_of_lap": 0.02155459563609362,
+  "section_off_track_rate": 1.0,
+  "section_finish_rate": 0.0,
+  "section_worst_slip_deg": 0.802104386881427,
+  "sections_over_12deg": 0,
+  "section_envelope_occupancy": 0.0,
+  "best_update": 8,
+  "best_eval": {
+    "eval_return": 49.01376307676511,
+    "eval_distance": 2686.703101690605,
+    "eval_finish_rate": 0.0
+  }
+}

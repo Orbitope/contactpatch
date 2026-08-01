@@ -1367,6 +1367,48 @@ that. The remaining work is raising the cap *without* losing competence,
 which is now a well-posed problem with a working baseline and a diagnosed
 failure mode rather than an open-ended search.
 
+**28. Spa is solved: 100% of the lap from every start, rule-4 valid — and
+the bug that hid it changed how results get scored here.**
+
+`cross_track_penalty=2.0`, 40M steps, progressive cap, checkpoint scored at
+its own cap (13.0 m/s). Verified at two probe densities:
+
+| | 24 probes | 48 probes |
+|---|---|---|
+| fraction of lap | **100.0%** | **100.0%** |
+| finished | **24/24** | **48/48** |
+| off-track | 0% | 0% |
+| worst slip | 10.4° | 10.4° |
+| outside the 12° fit | **0/24** | **0/48** |
+| `|n|` / half-width | 0.17 | 0.17 |
+| lap time | — | 537.8 s (13.0 m/s) |
+
+**The missing ingredient was the centreline term.** Item 27's failure
+analysis showed the policy drifting off on *straights* (radius 3,934 m,
+1.4° slip, 0/24 exits in a corner tighter than 40 m) — it could not hold a
+line, and `edge_penalty` only fires past 75% of half-width, so below that
+there was no restoring force at all. `cross_track_penalty` is the term
+every dense reward in the item 19 survey carries and ours lacked. It took
+Spa from 40.7% to 100%. **Not monotone:** 2.0 is valid; 5.0 travels further
+before crashing (3753 m) but puts 24/24 sections outside the fit and is not
+quotable — the same inverted U as item 21.
+
+**The `finished` bug (FINDINGS F110).** `finished` was
+`self.s >= track.length` — absolute position — while every training env
+(`start_jitter_m = length`) and every probe (`env.reset(); env.s = s0`)
+starts at non-zero `s`. An episode starting at `s0` needed only
+`length − s0`. It corrupted **training** (episodes truncated early and
+flagged as successes) as well as reporting, and put a false claim into
+F109, now withdrawn: that policy finishes 0/24, not 1/24.
+
+**It survived ~20 runs because every result was scored by a throwaway
+script.** `experiments/tracks_pilot/policy_eval.py` is now the single
+evaluator (D16): fixed metric set, termination reasons that must sum to 1,
+a rule-4 verdict that refuses to quote a distance for an invalid result.
+Audited in four passes — and pass 3 is the keeper: one test passed
+*vacuously*, its only assertion inside an `if len(...)` guard, and had to be
+strengthened until it failed against the old code too.
+
 **19i. Cost of the detour, stated plainly.** Items 11-18 spent five
 40M-step runs and four 20M-step diagnostics tuning coefficients inside a
 reward structure the field abandoned — and the specific failure we spent

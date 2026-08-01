@@ -1839,6 +1839,65 @@ starts, at a capped 11 m/s.
    `spa_track.svg` is the obvious base — a lap trace over the circuit outline,
    coloured by speed, with the envelope-compliant sections marked.
 
+### Season 5 RL plan — track budget and staging (2026-08-01)
+
+**Where we are.** Spa is solved and quotable: 100% of the lap from all 24
+and all 48 probes, 0% off-track, 0 sections outside the tyre fit, 537.8 s
+(13.0 m/s). The recipe is `spa_curriculum.py` with `cross_track_penalty=2.0`
+at 40M steps. `policy_eval.py` (D16) is the only scorer.
+
+**Track budget: 24 of the 25 circuits, split 17 train / 7 held out.**
+
+`IMS` is excluded outright — it is an oval (197 m minimum radius, 0.0% of
+the lap below 15 m/s) and would teach and test nothing the other 24 do.
+
+Stratified by the axis that actually separates circuits (fraction of lap
+below 15 m/s), then split *within* each band so neither set is accidentally
+all-easy or all-hard:
+
+| band | held out (7) | trained on (17) |
+|---|---|---|
+| tight | **MexicoCity**, Sochi | YasMarina, Norisring, MoscowRaceway, Montreal, Austin, Sepang |
+| mixed | Catalunya, Suzuka | Sakhir, Shanghai, Melbourne, Budapest, Hockenheim, SaoPaulo |
+| fast | **Spa**, **Monza**, Zandvoort | Spielberg, Nuerburgring, Silverstone, Oschersleben, BrandsHatch |
+
+**Why held-out at all.** A generalist that trains on every circuit and is
+then scored on them measures capacity, not generalisation. The gap SEASON5
+Ep 19 asks for — "where it lives, which corner types" — only exists against
+circuits the policy has never seen. The three bolded circuits get
+specialists, so the gap is measured against a real denominator on the same
+track; the other four measure breadth of transfer.
+
+**Why 17 and not 3.** Multi-track training needs enough variety that the
+policy cannot memorise a curvature sequence. Seven would likely be
+memorisable at 40M steps; 17 is the largest set that leaves a stratified
+held-out group and still fits the compute below.
+
+**Staging, in order. Each stage gates the next.**
+
+1. **Confirm the recipe transfers** — Monza and MexicoCity specialists, one
+   seed, 40M each (~1.5 h). If `cross_track_penalty=2.0` does not also solve
+   a fast and a tight circuit, it is a Spa constant, not a finding, and the
+   sweep has to be redone per band before anything else proceeds.
+2. **Seeds on Spa** — 2 more, rule 5 wants ≥3 before any of this is quotable
+   as a trend (~1.5 h). F110 is currently one seed.
+3. **Multi-track infrastructure** — `BatchedDrivingEnv` holds one track, so
+   this needs a wrapper allocating the 256 envs across the 17 training
+   circuits (e.g. 16 envs each) and concatenating. Differential-tested
+   against the single-track path before use.
+4. **Generalist** — 200-300M steps over the 17, then scored by `policy_eval`
+   on all 7 held-out circuits.
+5. **The gap** — generalist vs specialist on Spa / Monza / MexicoCity, plus
+   generalist-only on the other four, broken down by corner type.
+
+**Compute:** roughly 3 h for stages 1-2, 3-4 h for stage 4, at the ~28k
+steps/s these runs measure.
+
+**Outstanding and unglamorous:** rules 1 and 13 are still unmet for this
+entire thread — there is no pictorial figure of any of it. `spa_track.svg`
+plus the ct2 lap trace, coloured by speed, is the obvious first one and
+should land before the generalist, not after.
+
 ### Superseded — Episode 13 planning notes
 
 **Question:** if pushing one wheel harder rotates the car, why not just do that?

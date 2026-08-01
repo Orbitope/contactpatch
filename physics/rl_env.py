@@ -239,6 +239,19 @@ class EnvConfig:
     #: car's own ~9.5 m/s² limit, so the spawn is inside the envelope rather
     #: than exactly on it.
     spawn_lat_budget: float = 7.6
+    #: Distances ahead, in metres, at which curvature is sampled into the
+    #: observation. ``None`` uses the module default ``PREVIEW_DISTANCES``,
+    #: reproducing every existing episode exactly.
+    #:
+    #: **Measured, TRACKS.md item 23**: the default reaches 55 m, but the
+    #: trained policy runs at up to 42.7 m/s, where braking to a 10 m/s
+    #: hairpin needs ~89 m. Above ~32 m/s the car cannot see far enough to
+    #: brake for what is coming — 1.29 s of lookahead at peak speed. That is
+    #: a structural blindness no reward coefficient can fix, and it is the
+    #: most likely reason every configuration so far crashes at 100% of
+    #: probes. Changing this changes ``obs_dim``, so a policy trained at one
+    #: setting cannot be warm-started into another.
+    preview_distances: tuple[float, ...] | None = None
     #: Cost per step for operating outside the slip envelope, scaled by how far
     #: outside. **0.0 reproduces Episode 9 exactly**, where the envelope is
     #: instrumented and deliberately unenforced.
@@ -401,7 +414,7 @@ class DrivingEnv:
     # -- geometry ---------------------------------------------------------
     @property
     def obs_dim(self) -> int:
-        return 6 + len(PREVIEW_DISTANCES) + len(self.cfg.design_keys)
+        return 6 + len(self._preview) + len(self.cfg.design_keys)
 
     def _build_tv_adapter(self):
         """The Episode 14 hook. ``None`` (mode "none") leaves the backend
@@ -454,6 +467,10 @@ class DrivingEnv:
         return float(np.interp(s % self.cfg.track.length, self._ref_s,
                                self._ref_head))
 
+    @property
+    def _preview(self) -> tuple[float, ...]:
+        return self.cfg.preview_distances or PREVIEW_DISTANCES
+
     def _curvature_ahead(self) -> np.ndarray:
         # A closed track's curvature already wraps s % length internally
         # (SampledTrack._u_of_s) -- clamping to `length` here would flatten
@@ -464,9 +481,9 @@ class DrivingEnv:
         # bounded rather than wrong -- clamping keeps that behaviour exactly.
         if getattr(self.cfg.track, "closed", False):
             return np.array([self.cfg.track.curvature(self.s + d)
-                             for d in PREVIEW_DISTANCES])
+                             for d in self._preview])
         return np.array([self.cfg.track.curvature(
-            min(self.s + d, self.cfg.track.length)) for d in PREVIEW_DISTANCES])
+            min(self.s + d, self.cfg.track.length)) for d in self._preview])
 
     def _spawn_speed(self) -> float:
         """Entry speed for this episode's own spawn point.

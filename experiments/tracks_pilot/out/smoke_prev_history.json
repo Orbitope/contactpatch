@@ -1,0 +1,77 @@
+[
+  {
+    "update": 0,
+    "steps": 512,
+    "wall_s": 0.38805413246154785,
+    "lr": 0.0003,
+    "log_std": [
+      -2.49493145942688,
+      -1.0052424669265747
+    ],
+    "explained_variance": -0.027603763971647988,
+    "policy_loss": -0.0048591006197966635,
+    "value_loss": 12.818137764930725,
+    "entropy": -0.661536405980587,
+    "approx_kl": 0.0018993907142430544,
+    "clip_fraction": 0.023828125,
+    "episodes_finished": 0,
+    "return_mean": NaN,
+    "distance_mean": NaN,
+    "worst_slip_mean_deg": NaN,
+    "off_track_rate": NaN,
+    "entropy_coef": 0.0005,
+    "eval_return": 26.74505237821495,
+    "eval_distance": 2680.3107027527867,
+    "eval_finish_rate": 0.0
+  },
+  {
+    "update": 1,
+    "steps": 1024,
+    "wall_s": 1.254702091217041,
+    "lr": 0.0002,
+    "log_std": [
+      -2.491595506668091,
+      -1.0044159889221191
+    ],
+    "explained_variance": -0.028693813794779643,
+    "policy_loss": -0.009192003961652517,
+    "value_loss": 10.675203537940979,
+    "entropy": -0.6606948092579842,
+    "approx_kl": 0.0042235035682097076,
+    "clip_fraction": 0.0505859375,
+    "episodes_finished": 5,
+    "return_mean": 15.930939105504706,
+    "distance_mean": 3345.955658750274,
+    "worst_slip_mean_deg": 3.577937932095854,
+    "off_track_rate": 1.0,
+    "entropy_coef": 0.0005,
+    "eval_return": 19.888717244536444,
+    "eval_distance": 2656.6948123326274,
+    "eval_finish_rate": 0.0
+  },
+  {
+    "update": 2,
+    "steps": 1536,
+    "wall_s": 1.7555932998657227,
+    "lr": 0.0001,
+    "log_std": [
+      -2.4907498359680176,
+      -1.0046418905258179
+    ],
+    "explained_variance": -0.10055899051255257,
+    "policy_loss": -0.0026045061531476676,
+    "value_loss": 12.660586094856262,
+    "entropy": -0.6576109960675239,
+    "approx_kl": 0.0013943013618700206,
+    "clip_fraction": 0.0076171875,
+    "episodes_finished": 11,
+    "return_mean": 16.596052960019257,
+    "distance_mean": 2613.299185064274,
+    "worst_slip_mean_deg": 2.869471683234608,
+    "off_track_rate": 1.0,
+    "entropy_coef": 0.0005,
+    "eval_return": 24.540995052647208,
+    "eval_distance": 2661.4119355570433,
+    "eval_finish_rate": 0.0
+  }
+]

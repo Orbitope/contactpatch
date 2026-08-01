@@ -372,3 +372,23 @@ def test_slip_angles_match_the_reference():
         want = ref.slip_angles(s)
         for j, c in enumerate(CORNERS):
             assert got[i, j] == pytest.approx(want[c], rel=1e-12)
+
+
+def test_preview_distances_resize_both_implementations_together():
+    """TRACKS.md item 23: the preview horizon is configurable because 55 m is
+    only 1.29 s of lookahead at the 42.7 m/s the trained policy reaches, while
+    braking to a 10 m/s hairpin from there needs ~89 m.
+
+    Changing it changes ``obs_dim``, and that is exactly the kind of resize
+    that silently mis-sizes one implementation and not the other -- caught
+    once already during this change, where ``DrivingEnv.obs_dim`` still read
+    the module constant while the batched env read the config."""
+    long_preview = (10.0, 25.0, 45.0, 70.0, 100.0, 140.0, 190.0, 250.0)
+    for preview, expected in ((None, 6 + 6), (long_preview, 6 + 8)):
+        cfg = EnvConfig(preview_distances=preview)
+        ref, bat = DrivingEnv(cfg), BatchedDrivingEnv(cfg, n=2, seed=0)
+        o_ref, o_bat = ref.reset(0), bat.reset(0)
+        assert ref.obs_dim == expected
+        assert bat.obs_dim == expected
+        assert o_bat.shape == (2, expected)
+        assert o_bat[0] == pytest.approx(o_ref, abs=1e-12)

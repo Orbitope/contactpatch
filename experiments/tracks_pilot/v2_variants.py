@@ -63,6 +63,19 @@ N_SECTIONS = 24
 #: is for.
 ENVELOPE_LEVELS = (0.5, 2.0, 6.0, 15.0)
 
+#: Item 23. The default preview reaches 55 m == 1.29 s of lookahead at the
+#: 42.7 m/s the trained policy actually reaches, while braking from there to a
+#: 10 m/s hairpin needs ~89 m. Above ~32 m/s the car is structurally blind to
+#: what it must brake for -- which no reward coefficient can fix, and which is
+#: consistent with five runs of coefficient tuning failing to move the 100%
+#: crash rate. These extend the horizon past the braking distance at the
+#: speeds actually reached. The control is `env6` (default 55 m), already run
+#: at this exact budget and config in item 21.
+PREVIEW_SETS = {
+    "prev120": (5.0, 15.0, 30.0, 50.0, 75.0, 120.0),          # same 6 points
+    "prev250": (10.0, 25.0, 45.0, 70.0, 100.0, 140.0, 190.0, 250.0),
+}
+
 #: Each entry reverts ONE v2 change to its pre-v2 value. `ppo` keys go to
 #: PPOConfig, everything else to EnvConfig.
 ABLATIONS = {
@@ -146,7 +159,8 @@ def _table(rows):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--job", choices=("envelope", "ablation"), required=True)
+    ap.add_argument("--job", choices=("envelope", "ablation", "preview"),
+                    required=True)
     ap.add_argument("--steps", type=int, default=TOTAL_STEPS)
     a = ap.parse_args()
     OUT.mkdir(parents=True, exist_ok=True)
@@ -158,6 +172,14 @@ def main():
              "16/24 sections over the 12 deg bound.")
         for lv in ENVELOPE_LEVELS:
             rows.append(run_variant(f"env{lv:g}", {"envelope_penalty": lv}, {},
+                                    a.steps))
+    elif a.job == "preview":
+        print("Item 23 -- preview horizon (single variable over v2+envelope 6.0)")
+        print("  55 m is 1.29 s of lookahead at the 42.7 m/s reached; braking "
+             "to a 10 m/s hairpin from there needs ~89 m.")
+        print("  Control is env6 (default 55 m), already run at this budget.")
+        for label, pv in PREVIEW_SETS.items():
+            rows.append(run_variant(label, {"preview_distances": pv}, {},
                                     a.steps))
     else:
         print("Item 22 -- ablation: revert each v2 change individually")

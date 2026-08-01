@@ -146,7 +146,8 @@ class BatchedDrivingEnv:
 
     def observe_one_probe(self) -> np.ndarray:
         """Observation width, taken from the reference so the two cannot drift."""
-        return np.concatenate([np.zeros(6), np.zeros(len(PREVIEW_DISTANCES))])
+        preview = self.cfg.preview_distances or PREVIEW_DISTANCES
+        return np.concatenate([np.zeros(6), np.zeros(len(preview))])
 
     def _alloc(self) -> None:
         z = lambda: np.zeros(self.n, dtype=float)
@@ -463,11 +464,12 @@ class BatchedDrivingEnv:
         # preview at the finish line instead of showing the next corner. An
         # open Track has no wraparound and must stay clamped.
         closed = getattr(self.cfg.track, "closed", False)
+        preview = self.cfg.preview_distances or PREVIEW_DISTANCES
         ahead = np.stack(
             [self.cfg.track.curvature(
                 self.s + d if closed else
                 np.minimum(self.s + d, self.cfg.track.length))
-             for d in PREVIEW_DISTANCES], axis=1) * 40.0
+             for d in preview], axis=1) * 40.0
         return np.concatenate([
             np.stack([
                 speed / 50.0,

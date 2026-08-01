@@ -1,0 +1,242 @@
+[
+  {
+    "start_s": 0.0,
+    "distance_travelled": 386.750327121414,
+    "off_track": true,
+    "stalled": false,
+    "finished": false,
+    "worst_slip_deg": 15.068506660741615,
+    "envelope_occupancy": 0.008036739380022962,
+    "steps": 871
+  },
+  {
+    "start_s": 291.645218687095,
+    "distance_travelled": 107.99366615711938,
+    "off_track": true,
+    "stalled": false,
+    "finished": false,
+    "worst_slip_deg": 10.639107284897193,
+    "envelope_occupancy": 0.0,
+    "steps": 318
+  },
+  {
+    "start_s": 583.29043737419,
+    "distance_travelled": 546.5558234965482,
+    "off_track": true,
+    "stalled": false,
+    "finished": false,
+    "worst_slip_deg": 9.030941293982439,
+    "envelope_occupancy": 0.0,
+    "steps": 1124
+  },
+  {
+    "start_s": 874.935656061285,
+    "distance_travelled": 253.39087975561688,
+    "off_track": true,
+    "stalled": false,
+    "finished": false,
+    "worst_slip_deg": 7.563638202049238,
+    "envelope_occupancy": 0.0,
+    "steps": 626
+  },
+  {
+    "start_s": 1166.58087474838,
+    "distance_travelled": 1250.817096909978,
+    "off_track": true,
+    "stalled": false,
+    "finished": false,
+    "worst_slip_deg": 9.936773510709942,
+    "envelope_occupancy": 0.0,
+    "steps": 2074
+  },
+  {
+    "start_s": 1458.226093435475,
+    "distance_travelled": 962.5317405072142,
+    "off_track": true,
+    "stalled": false,
+    "finished": false,
+    "worst_slip_deg": 10.03436311620875,
+    "envelope_occupancy": 0.0,
+    "steps": 1687
+  },
+  {
+    "start_s": 1749.87131212257,
+    "distance_travelled": 673.4188230044692,
+    "off_track": true,
+    "stalled": false,
+    "finished": false,
+    "worst_slip_deg": 10.770881649143156,
+    "envelope_occupancy": 0.0,
+    "steps": 1307
+  },
+  {
+    "start_s": 2041.516530809665,
+    "distance_travelled": 386.5643950919332,
+    "off_track": true,
+    "stalled": false,
+    "finished": false,
+    "worst_slip_deg": 11.246797855037594,
+    "envelope_occupancy": 0.0,
+    "steps": 867
+  },
+  {
+    "start_s": 2333.16174949676,
+    "distance_travelled": 108.5637830794135,
+    "off_track": true,
+    "stalled": false,
+    "finished": false,
+    "worst_slip_deg": 5.514136391013202,
+    "envelope_occupancy": 0.0,
+    "steps": 312
+  },
+  {
+    "start_s": 2624.806968183855,
+    "distance_travelled": 389.8883304449546,
+    "off_track": true,
+    "stalled": false,
+    "finished": false,
+    "worst_slip_deg": 6.835792099429439,
+    "envelope_occupancy": 0.0,
+    "steps": 903
+  },
+  {
+    "start_s": 2916.45218687095,
+    "distance_travelled": 99.90315666829974,
+    "off_track": true,
+    "stalled": false,
+    "finished": false,
+    "worst_slip_deg": 6.916860474239207,
+    "envelope_occupancy": 0.0,
+    "steps": 287
+  },
+  {
+    "start_s": 3208.097405558045,
+    "distance_travelled": 627.9039443533816,
+    "off_track": true,
+    "stalled": false,
+    "finished": false,
+    "worst_slip_deg": 12.246416121421342,
+    "envelope_occupancy": 0.0,
+    "steps": 1319
+  },
+  {
+    "start_s": 3499.74262424514,
+    "distance_travelled": 994.4741133211992,
+    "off_track": true,
+    "stalled": false,
+    "finished": false,
+    "worst_slip_deg": 10.868459659542996,
+    "envelope_occupancy": 0.0,
+    "steps": 1880
+  },
+  {
+    "start_s": 3791.387842932235,
+    "distance_travelled": 690.4353767181638,
+    "off_track": true,
+    "stalled": false,
+    "finished": false,
+    "worst_slip_deg": 7.090518321599473,
+    "envelope_occupancy": 0.0,
+    "steps": 1379
+  },
+  {
+    "start_s": 4083.03306161933,
+    "distance_travelled": 406.18703674366543,
+    "off_track": true,
+    "stalled": false,
+    "finished": false,
+    "worst_slip_deg": 7.237520935321226,
+    "envelope_occupancy": 0.0,
+    "steps": 902
+  },
+  {
+    "start_s": 4374.678280306425,
+    "distance_travelled": 576.6416324121592,
+    "off_track": true,
+    "stalled": false,
+    "finished": false,
+    "worst_slip_deg": 10.458798127612077,
+    "envelope_occupancy": 0.0,
+    "steps": 1283
+  },
+  {
+    "start_s": 4666.32349899352,
+    "distance_travelled": 285.1373859724881,
+    "off_track": true,
+    "stalled": false,
+    "finished": false,
+    "worst_slip_deg": 8.741141270236806,
+    "envelope_occupancy": 0.0,
+    "steps": 693
+  },
+  {
+    "start_s": 4957.968717680615,
+    "distance_travelled": 276.7036029293031,
+    "off_track": true,
+    "stalled": false,
+    "finished": false,
+    "worst_slip_deg": 6.152023448516407,
+    "envelope_occupancy": 0.0,
+    "steps": 710
+  },
+  {
+    "start_s": 5249.61393636771,
+    "distance_travelled": 954.7639565002064,
+    "off_track": true,
+    "stalled": false,
+    "finished": false,
+    "worst_slip_deg": 11.196890517011772,
+    "envelope_occupancy": 0.0,
+    "steps": 1695
+  },
+  {
+    "start_s": 5541.259155054805,
+    "distance_travelled": 656.477594854362,
+    "off_track": true,
+    "stalled": false,
+    "finished": false,
+    "worst_slip_deg": 11.825986841387861,
+    "envelope_occupancy": 0.0,
+    "steps": 1293
+  },
+  {
+    "start_s": 5832.9043737419,
+    "distance_travelled": 917.0715925930781,
+    "off_track": true,
+    "stalled": false,
+    "finished": false,
+    "worst_slip_deg": 11.251041039851165,
+    "envelope_occupancy": 0.0,
+    "steps": 1669
+  },
+  {
+    "start_s": 6124.549592428995,
+    "distance_travelled": 625.6995467577399,
+    "off_track": true,
+    "stalled": false,
+    "finished": false,
+    "worst_slip_deg": 11.490005700903417,
+    "envelope_occupancy": 0.0,
+    "steps": 1256
+  },
+  {
+    "start_s": 6416.19481111609,
+    "distance_travelled": 339.44713526293435,
+    "off_track": true,
+    "stalled": false,
+    "finished": false,
+    "worst_slip_deg": 6.341408612056775,
+    "envelope_occupancy": 0.0,
+    "steps": 790
+  },
+  {
+    "start_s": 6707.840029803185,
+    "distance_travelled": 47.49011740407332,
+    "off_track": true,
+    "stalled": false,
+    "finished": false,
+    "worst_slip_deg": 1.6075782407255945,
+    "envelope_occupancy": 0.0,
+    "steps": 154
+  }
+]

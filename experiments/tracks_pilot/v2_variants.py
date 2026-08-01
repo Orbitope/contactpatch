@@ -94,10 +94,12 @@ ABLATIONS = {
 def run_variant(label: str, env_over: dict, ppo_over: dict,
                total_steps: int = TOTAL_STEPS) -> dict:
     n_envs = ppo_over.get("n_envs", V2.N_ENVS)
-    cfg = PPOConfig(total_steps=total_steps, n_envs=n_envs,
-                    rollout_steps=V2.ROLLOUT_STEPS,
-                    gamma=ppo_over.get("gamma", V2.GAMMA), seed=V2.SEED,
-                    eval_every=V2.EVAL_EVERY, eval_episodes=V2.EVAL_EPISODES)
+    ppo_kw = dict(total_steps=total_steps, n_envs=n_envs,
+                  rollout_steps=V2.ROLLOUT_STEPS,
+                  gamma=V2.GAMMA, seed=V2.SEED,
+                  eval_every=V2.EVAL_EVERY, eval_episodes=V2.EVAL_EPISODES)
+    ppo_kw.update(ppo_over)          # any PPOConfig field, not just gamma/n_envs
+    cfg = PPOConfig(**ppo_kw)
     n_upd = total_steps // (n_envs * V2.ROLLOUT_STEPS)
     print(f"\n=== {label} ===  env={env_over or '{}'} ppo={ppo_over or '{}'}  "
          f"({n_upd} updates, {n_upd * cfg.epochs * cfg.minibatches:,} grad steps)",
@@ -159,8 +161,8 @@ def _table(rows):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--job", choices=("envelope", "ablation", "preview"),
-                    required=True)
+    ap.add_argument("--job", choices=("envelope", "ablation", "preview",
+                                      "entropy"), required=True)
     ap.add_argument("--steps", type=int, default=TOTAL_STEPS)
     a = ap.parse_args()
     OUT.mkdir(parents=True, exist_ok=True)
@@ -173,6 +175,15 @@ def main():
         for lv in ENVELOPE_LEVELS:
             rows.append(run_variant(f"env{lv:g}", {"envelope_penalty": lv}, {},
                                     a.steps))
+    elif a.job == "entropy":
+        print("Item 24 -- exploration schedule (single variable over the best config)")
+        print("  D6's exploration_is_not_growing FAILS on every run: entropy")
+        print("  rises -0.661 -> -0.514 in env6 while eval_return falls 315 ->")
+        print("  137. F51's documented failure -- the entropy bonus beating the")
+        print("  policy gradient, so the mean action never sharpens. entropy_anneal")
+        print("  is 19h.D's pre-registered contingency and has never been tried.")
+        rows.append(run_variant("ent_anneal", {}, {"entropy_anneal": True}, a.steps))
+        rows.append(run_variant("ent_zero", {}, {"entropy_coef": 0.0}, a.steps))
     elif a.job == "preview":
         print("Item 23 -- preview horizon (single variable over v2+envelope 6.0)")
         print("  55 m is 1.29 s of lookahead at the 42.7 m/s reached; braking "

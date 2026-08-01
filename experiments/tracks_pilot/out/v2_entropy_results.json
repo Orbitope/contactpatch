@@ -1,0 +1,46 @@
+[
+  {
+    "label": "ent_anneal",
+    "env_over": {},
+    "ppo_over": {
+      "entropy_anneal": true
+    },
+    "total_steps": 20000000,
+    "n_updates": 76,
+    "wall_s": 740.5741980075836,
+    "explained_variance_tail": 0.35621548892126187,
+    "passes_d6_ev_gate": true,
+    "best_update": 36,
+    "best_eval_return": 517.7169369694892,
+    "section_distance_mean": 549.0361491857002,
+    "section_distance_std": 330.97587174564336,
+    "section_off_track_rate": 1.0,
+    "section_stall_rate": 0.0,
+    "section_finish_rate": 0.0,
+    "section_worst_slip_deg": 12.85250582302235,
+    "sections_over_12deg": 3,
+    "section_envelope_occupancy": 0.001960419721107248
+  },
+  {
+    "label": "ent_zero",
+    "env_over": {},
+    "ppo_over": {
+      "entropy_coef": 0.0
+    },
+    "total_steps": 20000000,
+    "n_updates": 76,
+    "wall_s": 759.1219770908356,
+    "explained_variance_tail": 0.4960822480854439,
+    "passes_d6_ev_gate": true,
+    "best_update": 36,
+    "best_eval_return": 537.3132902114957,
+    "section_distance_mean": 522.5666542612377,
+    "section_distance_std": 332.7746138248362,
+    "section_off_track_rate": 1.0,
+    "section_stall_rate": 0.0,
+    "section_finish_rate": 0.0,
+    "section_worst_slip_deg": 12.493629098859033,
+    "sections_over_12deg": 1,
+    "section_envelope_occupancy": 7.846829880728185e-05
+  }
+]

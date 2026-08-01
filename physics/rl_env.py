@@ -252,6 +252,20 @@ class EnvConfig:
     #: probes. Changing this changes ``obs_dim``, so a policy trained at one
     #: setting cannot be warm-started into another.
     preview_distances: tuple[float, ...] | None = None
+    #: Hard ceiling on speed, m/s. ``None`` (default) reproduces every
+    #: existing episode. Above the cap the policy's positive drive is clamped
+    #: to zero — a speed limiter, not a penalty, so it cannot be traded away
+    #: against progress the way a reward term can.
+    #:
+    #: **Item 25's finding is why this exists**: the classical driver laps Spa
+    #: cleanly at 2.3° slip with ``v_max=12`` but spins at ``v_max=45``, and
+    #: the RL policy reaches 42.7 m/s. The task is completable; the policy
+    #: simply drives faster than it can control. Hildisch et al. (RLC 2025,
+    #: item 19 §4b) use exactly this as a curriculum — "the action space for
+    #: the speed command is [0.5; α] with α ∈ [1;7] m/s; α is increased by
+    #: 0.5 m/s as soon as the agent completes three consecutive laps without
+    #: track-boundary violation."
+    speed_cap: float | None = None
     #: Cost per step for operating outside the slip envelope, scaled by how far
     #: outside. **0.0 reproduces Episode 9 exactly**, where the envelope is
     #: instrumented and deliberately unenforced.
@@ -609,6 +623,14 @@ class DrivingEnv:
                 self._tv_adapter.fractions[c] = float(a[1 + i])
 
         drive_action = 0.0 if self.cfg.tv_mode == "end_to_end" else float(a[1])
+        if self.cfg.speed_cap is not None:
+            # Speed limiter, applied to the ACTION before the physics: above
+            # the cap the policy may coast or brake but not accelerate. A
+            # limiter rather than a reward term, so it cannot be traded away
+            # against progress -- see EnvConfig.speed_cap.
+            v_now = math.hypot(self.backend.state.v_x, self.backend.state.v_y)
+            if v_now >= self.cfg.speed_cap:
+                drive_action = min(drive_action, 0.0)
         act = self.backend.act_space.pack(
             steer_rate=a[0] * STEER_RATE_MAX,
             # In "end_to_end" mode this net demand is never read — the

@@ -162,7 +162,7 @@ def _table(rows):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--job", choices=("envelope", "ablation", "preview",
-                                      "entropy"), required=True)
+                                      "entropy", "speedcap"), required=True)
     ap.add_argument("--steps", type=int, default=TOTAL_STEPS)
     a = ap.parse_args()
     OUT.mkdir(parents=True, exist_ok=True)
@@ -175,6 +175,14 @@ def main():
         for lv in ENVELOPE_LEVELS:
             rows.append(run_variant(f"env{lv:g}", {"envelope_penalty": lv}, {},
                                     a.steps))
+    elif a.job == "speedcap":
+        print("Item 25 -- speed cap (single variable over the best config)")
+        print("  The classical driver LAPS Spa at v_max=12 with 2.3 deg slip")
+        print("  and spins at 45; the RL reaches 42.7 m/s. The task is")
+        print("  completable -- the policy drives faster than it can control.")
+        print("  Hildisch et al. (RLC 2025) use exactly this as a curriculum.")
+        for cap in (14.0, 20.0, 28.0):
+            rows.append(run_variant(f"cap{cap:g}", {"speed_cap": cap}, {}, a.steps))
     elif a.job == "entropy":
         print("Item 24 -- exploration schedule (single variable over the best config)")
         print("  D6's exploration_is_not_growing FAILS on every run: entropy")

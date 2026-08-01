@@ -392,3 +392,41 @@ def test_preview_distances_resize_both_implementations_together():
         assert bat.obs_dim == expected
         assert o_bat.shape == (2, expected)
         assert o_bat[0] == pytest.approx(o_ref, abs=1e-12)
+
+
+def _flat_out(obs: np.ndarray) -> np.ndarray:
+    o = np.atleast_2d(obs)
+    return np.stack([np.zeros(len(o)), np.ones(len(o))], axis=1)
+
+
+def test_speed_cap_matches_the_reference_and_actually_binds():
+    """TRACKS.md item 25: the classical driver laps Spa cleanly at v_max=12
+    but spins at 45, and the RL reaches 42.7 m/s -- the task is completable,
+    the policy just drives faster than it can control. speed_cap is a
+    limiter on the action, so it must clamp identically in both
+    implementations, and must actually hold the speed down."""
+    cfg = EnvConfig(speed_cap=18.0, envelope_penalty=0.0)
+    ref, bat = DrivingEnv(cfg), BatchedDrivingEnv(cfg, n=1, seed=0)
+    o = ref.reset(0)
+    bat.reset(0)
+    worst_v = top = 0.0
+    for _ in range(400):
+        a = _flat_out(o)[0]
+        o, _, d, i_ref = ref.step(a)
+        _, _, _, i_bat = bat.step(a[None, :])
+        worst_v = max(worst_v, abs(i_ref["speed"] - i_bat["speed"][0]))
+        top = max(top, i_ref["speed"])
+        if d:
+            break
+    assert worst_v < 1e-4, f"speed diverged by {worst_v:.2e}"
+    assert top <= 18.0 + 0.5, f"cap did not bind: reached {top:.1f} m/s"
+    # ...and without the cap the same flat-out policy goes well past it.
+    free = DrivingEnv(EnvConfig(envelope_penalty=0.0))
+    o = free.reset(0)
+    top_free = 0.0
+    for _ in range(400):
+        o, _, d, i = free.step(_flat_out(o)[0])
+        top_free = max(top_free, i["speed"])
+        if d:
+            break
+    assert top_free > 20.0, f"uncapped only reached {top_free:.1f} -- test is vacuous"

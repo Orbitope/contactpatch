@@ -345,6 +345,11 @@ class BatchedDrivingEnv:
             demand = np.zeros(self.n)
         else:
             drive = a[:, 1]
+            if self.cfg.speed_cap is not None:
+                # Mirrors rl_env.step: above the cap, no positive drive.
+                v_now = np.hypot(self.v_x, self.v_y)
+                drive = np.where(v_now >= self.cfg.speed_cap,
+                                 np.minimum(drive, 0.0), drive)
             demand = np.where(drive >= 0, drive * DRIVE_MAX, drive * BRAKE_MAX)
 
         dt = self.cfg.dt

@@ -67,6 +67,13 @@ CAP_BINDING_RATIO = 0.90
 #: the policy is now choosing its own speed, which is the goal.
 CAP_RELEASE_PATIENCE = 4
 CAP_MIN_UPDATES_BETWEEN = 3
+#: Updates to let the policy ADAPT after a raise before its speed is allowed
+#: to count as evidence that grip binds. Without this the curriculum stops
+#: almost immediately: mean speed always dips right after a raise, because the
+#: policy has not learnt to use the new headroom yet, and that dip is
+#: indistinguishable from "the tyres will not allow more". Caught in the smoke
+#: test, where the release fired 4 updates in.
+CAP_ADAPT_UPDATES = 10
 
 #: The real tyre-model bound (12 deg), not stage 1's conservative 10. Driving
 #: at the limit means slip in the 8-12 range; a guard below that would stop
@@ -115,7 +122,9 @@ def main(track_name: str = "Spa", total_steps: int = TOTAL_STEPS,
         over = np.isfinite(slip) and slip > SLIP_BOUND_DEG
         if binding:
             st["hot"] += 1; st["cold"] = 0
-        else:
+        elif rec["update"] - st["last"] >= CAP_ADAPT_UPDATES:
+            # Only count as "not using the cap" once the policy has had time
+            # to adapt to the last raise -- see CAP_ADAPT_UPDATES.
             st["cold"] += 1; st["hot"] = 0
         raised = False
         if (binding and not over and not st["released"]
@@ -130,7 +139,9 @@ def main(track_name: str = "Spa", total_steps: int = TOTAL_STEPS,
                 if e is not None:
                     e.cfg.speed_cap = st["cap"]
             env_over["speed_cap"] = st["cap"]
-        if st["cold"] >= CAP_RELEASE_PATIENCE and not st["released"]:
+        settled = rec["update"] - st["last"] >= CAP_ADAPT_UPDATES
+        if (st["cold"] >= CAP_RELEASE_PATIENCE and settled
+                and not st["released"]):
             st["released"] = True
             print(f"  >>> update {rec['update']}: mean speed {v:.1f} is "
                  f"{ratio:.0%} of cap {st['cap']:.1f} -- GRIP is now binding, "

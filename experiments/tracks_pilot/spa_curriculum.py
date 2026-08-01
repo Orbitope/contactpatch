@@ -77,6 +77,11 @@ CAP_PATIENCE = 3
 #: this paces the curriculum to use roughly the whole budget even if the
 #: mastery gate never fires.
 CAP_PLATEAU_PATIENCE = 12
+#: Stop raising the cap once the deployed policy drops below this fraction of
+#: the best eval seen, for this many consecutive evaluations. Without it the
+#: curriculum climbs past competence -- see the comment at the gate.
+CAP_DEGRADE_FRAC = 0.5
+CAP_DEGRADE_PATIENCE = 3
 N_SECTIONS = 24
 
 
@@ -108,7 +113,8 @@ def main():
         return e
 
     state = {"cap": CAP_START, "clean": 0, "raises": [], "best": -1.0,
-             "stale": 0, "per_cap": []}
+             "stale": 0, "per_cap": [], "eval_caps": [], "best_eval_seen": -1e30,
+             "degraded": 0}
 
     def on_update(rec):
         # --- the curriculum gate: mastery OR plateau ---
@@ -122,10 +128,25 @@ def main():
             state["best"], state["stale"] = dist, 0
         else:
             state["stale"] += 1
+        if "eval_return" in rec:
+            if rec["eval_return"] > state["best_eval_seen"]:
+                state["best_eval_seen"] = rec["eval_return"]
+                state["degraded"] = 0
+            elif rec["eval_return"] < CAP_DEGRADE_FRAC * state["best_eval_seen"]:
+                state["degraded"] += 1
         mastered = state["clean"] >= CAP_PATIENCE
         plateaued = state["stale"] >= CAP_PLATEAU_PATIENCE
+        # Freeze the curriculum once the deployed policy has clearly fallen
+        # away from its own best. Measured on the first run: eval peaked at
+        # 3521.7 (cap 11, update 80) and never recovered as the cap kept
+        # climbing to 28 -- ending at 741.8. The plateau arm alone will happily
+        # raise the cap past the policy's competence and destroy it. This risk
+        # was identified while designing the curriculum and deliberately not
+        # implemented "to keep it simpler"; that was the wrong call and it cost
+        # a 75-minute run.
+        frozen = state["degraded"] >= CAP_DEGRADE_PATIENCE
         raised = False
-        if (mastered or plateaued) and state["cap"] < CAP_MAX:
+        if (mastered or plateaued) and not frozen and state["cap"] < CAP_MAX:
             state["per_cap"].append({"cap": state["cap"],
                                      "best_distance": float(state["best"]),
                                      "until_update": rec["update"]})
@@ -145,6 +166,17 @@ def main():
                     e.cfg.speed_cap = state["cap"]
             env_over["speed_cap"] = state["cap"]
         rec["speed_cap"] = state["cap"]
+        if "eval_return" in rec:
+            # Remember the cap AT SELECTION TIME. Evaluating the chosen
+            # checkpoint at the FINAL cap instead is a real bug that already
+            # bit once: the update-80 policy was trained at cap 11 and scored
+            # at cap 28, reporting 699.7 m / 36 deg slip / 15-of-24 outside
+            # the tyre model when its true numbers at its own cap are
+            # 2834.9 m / 9.8 deg / 0-of-24. It made the best result of the
+            # thread look like a failure.
+            state["eval_caps"].append({"update": rec["update"],
+                                       "cap": state["cap"],
+                                       "eval_return": rec["eval_return"]})
         if rec["update"] % 8 == 0 or raised:
             ev = f" eval={rec['eval_return']:7.1f}" if "eval_return" in rec else ""
             print(f"  upd {rec['update']:4d} steps={rec['steps']:>11,} "
@@ -165,8 +197,18 @@ def main():
     print(f"  final cap {state['cap']:.1f} m/s after {len(state['raises'])} raises")
     print(f"  EV tail {ev_tail:+.3f} ({'PASS' if ev_tail>0.3 else 'FAIL'})")
 
+    # Evaluate the SELECTED checkpoint at the cap it was trained under, not
+    # at whatever the curriculum happened to reach by the end.
+    sel = res.get("best_update")
+    eval_cap = state["cap"]
+    for e in state["eval_caps"]:
+        if e["update"] == sel:
+            eval_cap = e["cap"]
+            break
+    print(f"  evaluating the selected checkpoint at ITS OWN cap "
+         f"{eval_cap:.1f} m/s (final curriculum cap was {state['cap']:.1f})")
     sec = V2.evaluate_per_section(res["model"], n_sections=N_SECTIONS,
-                                 env_over={"speed_cap": state["cap"]})
+                                 env_over={"speed_cap": eval_cap})
     d = np.array([r["distance_travelled"] for r in sec])
     slip = np.array([r["worst_slip_deg"] for r in sec])
     occ = np.array([r["envelope_occupancy"] for r in sec])
@@ -186,6 +228,8 @@ def main():
     (OUT / "curriculum_summary.json").write_text(json.dumps({
         "total_steps": TOTAL_STEPS, "wall_s": wall, "n_updates": n,
         "cap_start": CAP_START, "cap_final": state["cap"],
+        "eval_cap_used": eval_cap, "eval_caps": state["eval_caps"],
+        "curriculum_frozen": bool(state["degraded"] >= CAP_DEGRADE_PATIENCE),
         "cap_raises": state["raises"], "per_cap_best": state["per_cap"],
         "entropy_anneal": True,
         "explained_variance_tail": ev_tail, "passes_d6_ev_gate": bool(ev_tail>0.3),

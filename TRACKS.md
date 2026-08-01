@@ -1311,6 +1311,62 @@ third independent confirmation of it inside this project.
 is still 1.00 at every level — the car does not yet complete sections —
 so this fixes validity, not competence. But the numbers are now quotable.
 
+**27. A learned policy completed a lap of Spa** — and the run that did it
+was nearly written off by an evaluation bug of mine.
+
+`experiments/tracks_pilot/spa_curriculum.py`, 120M steps, 457 updates,
+74.8 min, progressive speed cap 9.0 → 28.0 m/s over 19 raises,
+`entropy_anneal=True`. EV tail **+0.977**.
+
+**The corrected result** (selected checkpoint = update 80, trained at
+cap 11.0):
+
+| metric | at cap 28 (as first reported — WRONG) | at cap 11 (its own — correct) |
+|---|---|---|
+| per-section distance | 699.7 m (10.0%) | **2,834.9 m (40.5%)** |
+| best single section | 1,836.7 m | **6,122.8 m (87%)** |
+| worst slip | 36.0° | **9.8°** |
+| sections > 12° | 15/24 | **0/24** |
+| envelope occupancy | 0.0287 | **0.0000** |
+| **completed a full lap** | 0/24 | **1/24** |
+
+**`off_track_rate` is finally off 1.00** — the gate that had not moved
+across roughly twenty training runs — and the result is rule-4 valid:
+zero sections outside the tyre model's fit. Independently verified on the
+`cap14` policy that the driving is genuine rather than gamed: `|n|` sits
+at 0.51 of half-width (mid-road, 0.2% of time beyond 80%), `s` is strictly
+monotonic (min Δs +0.196 m/step, never reverses), speed steady at the cap.
+It drives the road.
+
+**Defect 1 — the evaluation bug, mine.** The per-section probe ran the
+selected checkpoint at `state["cap"]`, the cap the curriculum had reached
+by the END (28.0), not the cap that checkpoint was trained under (11.0).
+A policy trained for 11 m/s driven at 28 m/s slides — hence 36° slip and
+15/24 outside the envelope. **It made the best result in this thread read
+as a failure.** Fixed: the cap in force at each evaluation is recorded,
+and the selected checkpoint is scored at its own.
+
+**Defect 2 — the curriculum climbs past competence.** `eval_return`
+peaked at **3,521.7 at update 80 (cap 11)** and never recovered as the cap
+kept rising: 181.7 at cap 14, ~780 at caps 24-27, 741.8 at the end. The
+plateau arm raises the cap whenever distance stalls, which is exactly what
+a policy at the edge of its competence looks like — so it kept promoting a
+policy that was getting worse. **This risk was identified while designing
+the curriculum and deliberately skipped "to keep it simpler"; that was the
+wrong call and it cost a 75-minute run.** Fixed with a freeze: stop
+raising once the deployed policy sits below half its best eval for three
+consecutive evaluations.
+
+**What this establishes.** The task is learnable: a policy trained purely
+by PPO, with no reference trajectory and no imitation, drives 40% of Spa
+on average and a full lap from one start, entirely inside the tyre model.
+The binding constraint was never the reward coefficients, the observation
+horizon, or the track import — it was that nothing stopped the policy from
+driving faster than it could control, and item 26's cap is what removed
+that. The remaining work is raising the cap *without* losing competence,
+which is now a well-posed problem with a working baseline and a diagnosed
+failure mode rather than an open-ended search.
+
 **19i. Cost of the detour, stated plainly.** Items 11-18 spent five
 40M-step runs and four 20M-step diagnostics tuning coefficients inside a
 reward structure the field abandoned — and the specific failure we spent

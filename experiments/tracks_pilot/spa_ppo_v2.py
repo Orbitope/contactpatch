@@ -89,36 +89,41 @@ EVAL_EPISODES = 8
 N_SECTIONS = 24
 
 
-def _cfg(**over):
+#: The v2 baseline, as a dict so a sweep or an ablation can override one
+#: key at a time instead of copying this script (items 20-21).
+V2_ENV = dict(max_steps=MAX_STEPS,
+              envelope_penalty=ENVELOPE_PENALTY,
+              off_track_penalty=OFF_TRACK_PENALTY,
+              stall_penalty=STALL_PENALTY,
+              progress_scale=PROGRESS_SCALE,
+              edge_penalty=EDGE_PENALTY,
+              edge_threshold=EDGE_THRESHOLD,
+              spawn_speed_from_curvature=True)
+
+
+def _cfg(env_over=None, **over):
     spa = load_real_track("Spa")
-    base = dict(track=spa, max_steps=MAX_STEPS,
-                envelope_penalty=ENVELOPE_PENALTY,
-                off_track_penalty=OFF_TRACK_PENALTY,
-                stall_penalty=STALL_PENALTY,
-                progress_scale=PROGRESS_SCALE,
-                edge_penalty=EDGE_PENALTY,
-                edge_threshold=EDGE_THRESHOLD,
-                spawn_speed_from_curvature=True,
-                start_jitter_m=spa.length)
+    base = dict(track=spa, start_jitter_m=spa.length, **V2_ENV)
+    base.update(env_over or {})
     base.update(over)
     return EnvConfig(**base)
 
 
-def make_batched_env(n_envs, seed=SEED):
-    return BatchedDrivingEnv(_cfg(), n=n_envs, seed=seed)
+def make_batched_env(n_envs, seed=SEED, env_over=None):
+    return BatchedDrivingEnv(_cfg(env_over), n=n_envs, seed=seed)
 
 
-def make_eval_env():
-    return DrivingEnv(_cfg())
+def make_eval_env(env_over=None):
+    return DrivingEnv(_cfg(env_over))
 
 
-def evaluate_per_section(model, n_sections=N_SECTIONS):
+def evaluate_per_section(model, n_sections=N_SECTIONS, env_over=None):
     spa = load_real_track("Spa")
     starts = np.linspace(0.0, spa.length, n_sections, endpoint=False)
     policy = greedy_policy(model)
     rows = []
     for s0 in starts:
-        env = DrivingEnv(_cfg(start_jitter_m=0.0))
+        env = DrivingEnv(_cfg(env_over, start_jitter_m=0.0))
         env.reset(0)
         env.s = float(s0)
         env.backend.reset(env._spawn_speed())

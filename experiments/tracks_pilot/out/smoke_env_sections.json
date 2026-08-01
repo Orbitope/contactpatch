@@ -1,0 +1,22 @@
+[
+  {
+    "start_s": 0.0,
+    "distance_travelled": 35.7281163145433,
+    "off_track": true,
+    "stalled": false,
+    "finished": false,
+    "worst_slip_deg": 2.3673826682998924,
+    "envelope_occupancy": 0.0,
+    "steps": 123
+  },
+  {
+    "start_s": 3499.74262424514,
+    "distance_travelled": 30.753394386011223,
+    "off_track": true,
+    "stalled": false,
+    "finished": false,
+    "worst_slip_deg": 2.038565396635899,
+    "envelope_occupancy": 0.0,
+    "steps": 105
+  }
+]

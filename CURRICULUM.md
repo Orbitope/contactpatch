@@ -117,3 +117,33 @@ does the work of keeping it inside.
   `EvalResult.headline()` enforces this; do not work around it.
 * **≥3 seeds before any of it is a trend** (rule 5). Everything measured so far
   is one seed.
+
+---
+
+## Why the gates get tested by replay, not by smoke test
+
+Four bugs in this curriculum's gate logic reached a full training run before
+anyone noticed:
+
+1. the selected checkpoint scored at the curriculum's **final** cap, not the
+   one it was trained under (F109)
+2. the cap **raised past the policy's competence** and destroyed it —
+   `eval_return` peaked at 3521 and ended at 741
+3. the release **latched** at update 49, mid-adaptation, freezing the cap for
+   the remaining 195 updates
+4. the gate read `speed_mean`, which PPO **did not record** — it would have
+   read NaN forever and never fired
+
+Every one of them was smoke-tested first, and every smoke test passed. That is
+the lesson: **a smoke test proves the code runs; it cannot exercise a feedback
+loop whose failure appears at update 49.** Running one and calling the gate
+validated is the mistake, not the smoke test itself.
+
+`tests/test_curriculum_gate.py` drives the gate with synthetic update records
+describing behaviours we know matter — a policy slowly learning to use new
+headroom (the measured 85%→97%-over-60-updates shape), one genuinely at the
+grip limit, one already outside the tyre fit — and asserts what the cap does.
+It reproduces the 75-minute failure in 1.6 seconds, and both of the relevant
+tests were confirmed to **fail against the old gate** before being trusted.
+
+**Any new curriculum gate gets a replay test before it gets a training run.**

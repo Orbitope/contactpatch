@@ -63,9 +63,16 @@ CAP_MAX = 60.0            # above anything this car can use; never meant to bind
 #: Raise while the policy is PINNED at the cap. If mean speed is within this
 #: fraction of the cap, the limiter is what is holding it back, so lift it.
 CAP_BINDING_RATIO = 0.90
-#: ...and stop once it sits below that for this many consecutive updates:
-#: the policy is now choosing its own speed, which is the goal.
-CAP_RELEASE_PATIENCE = 4
+#: How many settled updates below the binding ratio before the run REPORTS
+#: that grip looks like the active constraint. **Reporting only -- it does not
+#: latch.** An earlier version froze the curriculum on this signal and it
+#: fired at update 49, at 88%, while the policy was still climbing toward the
+#: cap (85 -> 88 -> 91 -> 97% over the following 60 updates). It was
+#: mid-adaptation, not grip-limited, and because the freeze was a latch the
+#: cap then sat unchanged for 195 updates. The curriculum now simply stops
+#: raising whenever the condition to raise is not met, and resumes if it is
+#: met again -- self-correcting instead of one-shot.
+CAP_RELEASE_PATIENCE = 6
 CAP_MIN_UPDATES_BETWEEN = 3
 #: Updates to let the policy ADAPT after a raise before its speed is allowed
 #: to count as evidence that grip binds. Without this the curriculum stops
@@ -73,7 +80,10 @@ CAP_MIN_UPDATES_BETWEEN = 3
 #: policy has not learnt to use the new headroom yet, and that dip is
 #: indistinguishable from "the tyres will not allow more". Caught in the smoke
 #: test, where the release fired 4 updates in.
-CAP_ADAPT_UPDATES = 10
+#: Raised from 10 after the above: the policy took ~60 updates to work its
+#: way from 85% to 97% of a new cap. Adaptation to a speed increase is slow
+#: because it means relearning braking points, not just pressing harder.
+CAP_ADAPT_UPDATES = 30
 
 #: The real tyre-model bound (12 deg), not stage 1's conservative 10. Driving
 #: at the limit means slip in the 8-12 range; a guard below that would stop
@@ -127,7 +137,7 @@ def main(track_name: str = "Spa", total_steps: int = TOTAL_STEPS,
             # to adapt to the last raise -- see CAP_ADAPT_UPDATES.
             st["cold"] += 1; st["hot"] = 0
         raised = False
-        if (binding and not over and not st["released"]
+        if (binding and not over
                 and st["cap"] < CAP_MAX
                 and rec["update"] - st["last"] >= CAP_MIN_UPDATES_BETWEEN):
             st["cap"] = min(st["cap"] + CAP_STEP, CAP_MAX)
@@ -142,7 +152,7 @@ def main(track_name: str = "Spa", total_steps: int = TOTAL_STEPS,
         settled = rec["update"] - st["last"] >= CAP_ADAPT_UPDATES
         if (st["cold"] >= CAP_RELEASE_PATIENCE and settled
                 and not st["released"]):
-            st["released"] = True
+            st["released"] = True      # reported once; does NOT stop raising
             print(f"  >>> update {rec['update']}: mean speed {v:.1f} is "
                  f"{ratio:.0%} of cap {st['cap']:.1f} -- GRIP is now binding, "
                  f"cap frozen", flush=True)

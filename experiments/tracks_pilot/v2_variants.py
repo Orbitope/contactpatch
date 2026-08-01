@@ -14,7 +14,8 @@ baseline.
 some". v2 changed seven things at once, deliberately, because one-at-a-time
 inside a broken structure had already failed for eight runs. Now that a
 working configuration exists, each change is reverted **individually** back
-to its pre-v2 value to find which ones carried the critic fix. This is the
+to its pre-v2 value (including item 21's `envelope_penalty`, now part of the
+baseline) to find which ones carried the critic fix. This is the
 right order — ablate *from* something that works — and it is the part the
 previous arc never reached.
 
@@ -70,6 +71,7 @@ ABLATIONS = {
     "minus_small_offtrack": {"env": {"off_track_penalty": 500.0}},
     "minus_small_stall":    {"env": {"stall_penalty": 150.0}},
     "minus_edge_penalty":   {"env": {"edge_penalty": 0.0}},
+    "minus_strong_envelope": {"env": {"envelope_penalty": 0.5}},
     "minus_spawn_speed":    {"env": {"spawn_speed_from_curvature": False}},
     "minus_short_gamma":    {"ppo": {"gamma": 0.9995}},
     "minus_more_updates":   {"ppo": {"n_envs": 1024}},

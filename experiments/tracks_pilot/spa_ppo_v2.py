@@ -73,7 +73,13 @@ OFF_TRACK_PENALTY = 5.0
 STALL_PENALTY = 2.0
 EDGE_PENALTY = 0.15
 EDGE_THRESHOLD = 0.75
-ENVELOPE_PENALTY = 0.5
+#: 6.0, not v2's 0.5 -- item 21's sweep. At 0.5 the redesigned reward still
+#: paid for sliding (17/24 sections over the 12 deg bound, occupancy 0.0074);
+#: at 6.0 it is 0/24 and 0.0000, the first rule-4-valid configuration in this
+#: thread, for 12% less distance. 15.0 is WORSE, not safer: EV collapses to
+#: 0.073 and fails D6's gate -- item 18's magnitude problem recurring in this
+#: term, so the relationship is an inverted U, not monotone.
+ENVELOPE_PENALTY = 6.0
 SEED = 0
 #: Raised from 15,000. A Spa lap at ~30 m/s is ~11,650 steps, uncomfortably
 #: close to the old cap -- and `timeout` is folded into `done` while `_gae`

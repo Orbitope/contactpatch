@@ -1280,6 +1280,37 @@ user asked for — subtract the seven v2 changes one at a time to find
 which carried the critic fix, now that there is a working configuration
 to ablate *from*.
 
+**21. `envelope_penalty` swept — the first rule-4-valid configuration in
+this thread, and a second sighting of item 18's magnitude failure.**
+Single variable over the v2 baseline, 20M steps each
+(`experiments/tracks_pilot/v2_variants.py --job envelope`):
+
+| `envelope_penalty` | EV | D6 gate | distance | worst slip | >12° | occupancy |
+|---|---|---|---|---|---|---|
+| 0.5 (v2) | +0.479 | pass | 534.0 m | 18.4° | 17/24 | 0.0074 |
+| 2.0 | +0.709 | pass | 477.0 m | 14.5° | 6/24 | 0.0038 |
+| **6.0** | **+0.703** | **pass** | **468.0 m** | **11.0°** | **0/24** | **0.0000** |
+| 15.0 | +0.073 | **FAIL** | 412.1 m | 12.7° | 2/24 | 0.0001 |
+
+**6.0 puts every one of the 24 sections inside the tire model's own 12°
+fit, at exactly zero envelope occupancy** — rule 4 satisfied for the first
+time in this thread, costing 12% of the distance. Item 20 established that
+every earlier distance figure was measuring how freely a policy could
+slide; this is the first one that is not.
+
+**15.0 is worse, not safer, and the way it fails matters**: EV collapses
+to +0.073 and fails D6's gate, and its slip is *worse* than 6.0's (12.7°,
+2/24). That is item 18's mechanism recurring in a different term — a
+reward component large enough to dominate the value targets kills the
+critic, and a dead critic then drives worse. **The relationship is an
+inverted U, not "more penalty is more safety"**, which is precisely the
+shape Fuchs et al. describe for fixed-value penalties (item 19c) and a
+third independent confirmation of it inside this project.
+
+`envelope_penalty = 6.0` is promoted to the v2 baseline. Off-track rate
+is still 1.00 at every level — the car does not yet complete sections —
+so this fixes validity, not competence. But the numbers are now quotable.
+
 **19i. Cost of the detour, stated plainly.** Items 11-18 spent five
 40M-step runs and four 20M-step diagnostics tuning coefficients inside a
 reward structure the field abandoned — and the specific failure we spent

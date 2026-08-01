@@ -1,0 +1,90 @@
+[
+  {
+    "label": "env0.5",
+    "env_over": {
+      "envelope_penalty": 0.5
+    },
+    "ppo_over": {},
+    "total_steps": 20000000,
+    "n_updates": 76,
+    "wall_s": 792.5469672679901,
+    "explained_variance_tail": 0.47905322741535594,
+    "passes_d6_ev_gate": true,
+    "best_update": 40,
+    "best_eval_return": 568.4526890446758,
+    "section_distance_mean": 533.9593341071526,
+    "section_distance_std": 328.46199268866695,
+    "section_off_track_rate": 1.0,
+    "section_stall_rate": 0.0,
+    "section_finish_rate": 0.0,
+    "section_worst_slip_deg": 18.386622214684742,
+    "sections_over_12deg": 17,
+    "section_envelope_occupancy": 0.007408101560186643
+  },
+  {
+    "label": "env2",
+    "env_over": {
+      "envelope_penalty": 2.0
+    },
+    "ppo_over": {},
+    "total_steps": 20000000,
+    "n_updates": 76,
+    "wall_s": 812.8531761169434,
+    "explained_variance_tail": 0.7089891099061074,
+    "passes_d6_ev_gate": true,
+    "best_update": 32,
+    "best_eval_return": 407.6076498262877,
+    "section_distance_mean": 477.0259509020666,
+    "section_distance_std": 300.7372201509597,
+    "section_off_track_rate": 1.0,
+    "section_stall_rate": 0.0,
+    "section_finish_rate": 0.0,
+    "section_worst_slip_deg": 14.471212615196654,
+    "sections_over_12deg": 6,
+    "section_envelope_occupancy": 0.0038483086763310657
+  },
+  {
+    "label": "env6",
+    "env_over": {
+      "envelope_penalty": 6.0
+    },
+    "ppo_over": {},
+    "total_steps": 20000000,
+    "n_updates": 76,
+    "wall_s": 709.964882850647,
+    "explained_variance_tail": 0.7026276193076966,
+    "passes_d6_ev_gate": true,
+    "best_update": 36,
+    "best_eval_return": 473.5932114351599,
+    "section_distance_mean": 468.0454820365539,
+    "section_distance_std": 351.8154682926263,
+    "section_off_track_rate": 1.0,
+    "section_stall_rate": 0.0,
+    "section_finish_rate": 0.0,
+    "section_worst_slip_deg": 10.965125114124792,
+    "sections_over_12deg": 0,
+    "section_envelope_occupancy": 0.0
+  },
+  {
+    "label": "env15",
+    "env_over": {
+      "envelope_penalty": 15.0
+    },
+    "ppo_over": {},
+    "total_steps": 20000000,
+    "n_updates": 76,
+    "wall_s": 749.1276800632477,
+    "explained_variance_tail": 0.07332428734750807,
+    "passes_d6_ev_gate": false,
+    "best_update": 36,
+    "best_eval_return": 384.9612115768961,
+    "section_distance_mean": 412.102585895957,
+    "section_distance_std": 257.50702255890474,
+    "section_off_track_rate": 1.0,
+    "section_stall_rate": 0.0,
+    "section_finish_rate": 0.0,
+    "section_worst_slip_deg": 12.7059959965206,
+    "sections_over_12deg": 2,
+    "section_envelope_occupancy": 0.00012354735977111478
+  }
+]

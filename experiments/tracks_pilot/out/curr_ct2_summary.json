@@ -1,0 +1,210 @@
+{
+  "total_steps": 40000000,
+  "wall_s": 2571.2733929157257,
+  "n_updates": 152,
+  "cap_start": 9.0,
+  "cap_final": 15.0,
+  "eval_cap_used": 13.0,
+  "eval_caps": [
+    {
+      "update": 0,
+      "cap": 9.0,
+      "eval_return": 30.142076381536242
+    },
+    {
+      "update": 8,
+      "cap": 9.0,
+      "eval_return": 39.624507818562435
+    },
+    {
+      "update": 16,
+      "cap": 9.0,
+      "eval_return": 93.58132068516464
+    },
+    {
+      "update": 24,
+      "cap": 9.0,
+      "eval_return": 468.17115593447414
+    },
+    {
+      "update": 32,
+      "cap": 9.0,
+      "eval_return": 424.61869477127703
+    },
+    {
+      "update": 40,
+      "cap": 9.0,
+      "eval_return": 374.4433200175931
+    },
+    {
+      "update": 48,
+      "cap": 10.0,
+      "eval_return": 616.2969542367432
+    },
+    {
+      "update": 56,
+      "cap": 10.0,
+      "eval_return": 3170.195250801785
+    },
+    {
+      "update": 64,
+      "cap": 10.0,
+      "eval_return": 3373.498630419798
+    },
+    {
+      "update": 72,
+      "cap": 10.0,
+      "eval_return": 3452.0785118569165
+    },
+    {
+      "update": 80,
+      "cap": 10.0,
+      "eval_return": 3425.7648561319365
+    },
+    {
+      "update": 88,
+      "cap": 12.0,
+      "eval_return": 3697.158015750742
+    },
+    {
+      "update": 96,
+      "cap": 13.0,
+      "eval_return": 3721.9938012397824
+    },
+    {
+      "update": 104,
+      "cap": 14.0,
+      "eval_return": 3669.5208379248975
+    },
+    {
+      "update": 112,
+      "cap": 14.0,
+      "eval_return": 3602.985480039253
+    },
+    {
+      "update": 120,
+      "cap": 14.0,
+      "eval_return": 3475.016337254492
+    },
+    {
+      "update": 128,
+      "cap": 14.0,
+      "eval_return": 3410.5774566899863
+    },
+    {
+      "update": 136,
+      "cap": 15.0,
+      "eval_return": 3371.6287926972145
+    },
+    {
+      "update": 144,
+      "cap": 15.0,
+      "eval_return": 3317.5426488915646
+    },
+    {
+      "update": 151,
+      "cap": 15.0,
+      "eval_return": 3288.3176605126987
+    }
+  ],
+  "curriculum_frozen": false,
+  "cap_slip_headroom_deg": 10.0,
+  "cap_raises": [
+    {
+      "update": 41,
+      "steps": 11010048,
+      "cap": 10.0,
+      "reason": "plateau",
+      "worst_slip_mean_deg": 4.07255065265272,
+      "off_track_rate": 1.0
+    },
+    {
+      "update": 82,
+      "steps": 21757952,
+      "cap": 11.0,
+      "reason": "plateau",
+      "worst_slip_mean_deg": 3.3839880501836865,
+      "off_track_rate": 0.9
+    },
+    {
+      "update": 88,
+      "steps": 23330816,
+      "cap": 12.0,
+      "reason": "mastery",
+      "worst_slip_mean_deg": 5.334971009369778,
+      "off_track_rate": 0.0
+    },
+    {
+      "update": 91,
+      "steps": 24117248,
+      "cap": 13.0,
+      "reason": "mastery",
+      "worst_slip_mean_deg": 7.585279375563477,
+      "off_track_rate": 0.08
+    },
+    {
+      "update": 98,
+      "steps": 25952256,
+      "cap": 14.0,
+      "reason": "mastery",
+      "worst_slip_mean_deg": 9.903917684710866,
+      "off_track_rate": 0.0
+    },
+    {
+      "update": 133,
+      "steps": 35127296,
+      "cap": 15.0,
+      "reason": "plateau",
+      "worst_slip_mean_deg": 8.765871224464124,
+      "off_track_rate": 0.96
+    }
+  ],
+  "per_cap_best": [
+    {
+      "cap": 9.0,
+      "best_distance": 4772.097573989038,
+      "until_update": 41
+    },
+    {
+      "cap": 10.0,
+      "best_distance": 6594.906339037705,
+      "until_update": 82
+    },
+    {
+      "cap": 11.0,
+      "best_distance": 6975.942440975455,
+      "until_update": 88
+    },
+    {
+      "cap": 12.0,
+      "best_distance": 6601.378828087072,
+      "until_update": 91
+    },
+    {
+      "cap": 13.0,
+      "best_distance": 6999.621515418596,
+      "until_update": 98
+    },
+    {
+      "cap": 14.0,
+      "best_distance": 6987.926464209804,
+      "until_update": 133
+    }
+  ],
+  "entropy_anneal": true,
+  "explained_variance_tail": 0.9663761990821423,
+  "passes_d6_ev_gate": true,
+  "section_distance_mean": 3645.7296052089273,
+  "section_fraction_of_lap": 0.5208568167202403,
+  "section_off_track_rate": 0.0,
+  "section_finish_rate": 1.0,
+  "section_worst_slip_deg": 9.690093499131176,
+  "sections_over_12deg": 0,
+  "section_envelope_occupancy": 0.0,
+  "best_update": 96,
+  "best_eval": {
+    "eval_return": 3721.9938012397824,
+    "eval_distance": 6999.612324310772,
+    "eval_finish_rate": 1.0
+  }
+}

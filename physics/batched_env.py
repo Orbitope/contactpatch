@@ -153,6 +153,7 @@ class BatchedDrivingEnv:
         z = lambda: np.zeros(self.n, dtype=float)
         self.v_x, self.v_y, self.yaw_rate, self.steer = z(), z(), z(), z()
         self.s, self.n_off, self.xi = z(), z(), z()
+        self._start_s = z()
         self.steps = np.zeros(self.n, dtype=np.int64)
         self.a_x, self.a_y = z(), z()
         self.wheel_fz = np.zeros((self.n, 4), dtype=float)
@@ -188,6 +189,12 @@ class BatchedDrivingEnv:
                                   size=self.n)
         s0 = jitter if self.cfg.start_jitter_m > 0 else np.zeros(self.n)
         self.s = np.where(m, s0, self.s)
+        # Per-instance start position, so `finished`/`episode_distance` can
+        # be measured relative to it -- see the comment at `finished` in
+        # `step()`. Set on EVERY reset (not just the first), mirroring `s0`
+        # above: an instance that auto-resets mid-training gets a fresh
+        # baseline just like a fresh start does.
+        self._start_s = np.where(m, s0, self._start_s)
         self.n_off = np.where(m, 0.0, self.n_off)
         self.xi = np.where(m, 0.0, self.xi)
         # Spawn speed, per instance -- mirrors rl_env._spawn_speed. Computed
@@ -391,7 +398,14 @@ class BatchedDrivingEnv:
 
         speed = np.hypot(self.v_x, self.v_y)
         off = np.abs(self.n_off) > self.cfg.track.half_width_at(self.s)
-        finished = self.s >= self.cfg.track.length * self.cfg.n_laps
+        # Relative to each instance's OWN start, not absolute position --
+        # see rl_env.DrivingEnv.step's comment on the same bug. An instance
+        # starting late in the lap (start_jitter_m, or the eval harness's
+        # manually-set probe start) must otherwise cover only
+        # `length - start_s` to be called "finished", inflating both the
+        # training-time finish signal and every per-section eval reading it.
+        finished = ((self.s - self._start_s)
+                   >= self.cfg.track.length * self.cfg.n_laps)
         stalled = speed < self.cfg.min_speed
         timeout = self.steps >= self.cfg.max_steps
         done = off | finished | stalled | timeout
@@ -451,7 +465,7 @@ class BatchedDrivingEnv:
             # Completed episodes only — the terminal values, captured before the
             # reset wipes them. Empty arrays on a step where nothing ended.
             "episode_return": self._ep_return[done].copy(),
-            "episode_distance": self.s[done].copy(),
+            "episode_distance": (self.s - self._start_s)[done].copy(),
             "episode_worst_slip_deg": self._ep_max_slip[done].copy(),
             "episode_off_track": off[done].copy(),
         }

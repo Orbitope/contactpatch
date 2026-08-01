@@ -557,6 +557,12 @@ class DrivingEnv:
             self.rng = np.random.default_rng(seed)
         self.s = float(self.rng.uniform(0.0, self.cfg.start_jitter_m)
                        if self.cfg.start_jitter_m > 0 else 0.0)
+        #: Distance covered SINCE this reset, independent of `self.s`'s
+        #: absolute value. `finished` is defined against this, not against
+        #: `self.s >= track.length` -- see the comment on `finished` in
+        #: `step()` for why the absolute form is a real bug on a closed
+        #: track with a jittered or externally-set start.
+        self._dist_since_reset = 0.0
         self.n = 0.0
         self.xi = 0.0
         # One surface per lap. Drawn before the backend is built so the design
@@ -684,12 +690,26 @@ class DrivingEnv:
         xi_dot = st.yaw_rate - kappa * s_dot
         ds = s_dot
         self.s += s_dot * self.cfg.dt
+        self._dist_since_reset += s_dot * self.cfg.dt
         self.n += n_dot * self.cfg.dt
         self.xi = self._wrap(self.xi + xi_dot * self.cfg.dt)
 
         self.steps += 1
         off = abs(self.n) > float(self.cfg.track.half_width_at(self.s))
-        finished = self.s >= self.cfg.track.length * self.cfg.n_laps
+        # NOT `self.s >= track.length * n_laps`. That is absolute position,
+        # so on a closed track a jittered or manually-set start (every
+        # per-section probe does `env.reset(); env.s = s0`, and training
+        # itself uses `start_jitter_m`) needs to cover only
+        # `track.length - s0` to satisfy it -- an easier bar the further
+        # around the lap the episode starts, silently inflating both the
+        # training-time finish signal and every per-section "finished"
+        # count read from it. Found chasing an eval that reported
+        # off_track=0.00, finished=1.00 for a policy that, correctly
+        # scored, had never actually driven a full lap from most of its
+        # 24 starts. `_dist_since_reset` is independent of where `self.s`
+        # started or was set from outside.
+        finished = (self._dist_since_reset
+                   >= self.cfg.track.length * self.cfg.n_laps)
         stalled = speed < self.cfg.min_speed
         timeout = self.steps >= self.cfg.max_steps
         self.done = bool(off or finished or stalled or timeout)
@@ -837,10 +857,14 @@ def rollout(env: DrivingEnv, policy, seed: int | None = None) -> dict:
         **h,
         "return": total,
         "steps": int(env.steps),
-        "finished": bool(h["s"][-1] >= env.cfg.track.length * env.cfg.n_laps),
+        # Relative to this episode's own start, not absolute `s` -- the
+        # env tracks it; recomputing from `h["s"][-1]` is the bug this
+        # module's `step()` documents at `finished`.
+        "finished": bool(env._dist_since_reset
+                         >= env.cfg.track.length * env.cfg.n_laps),
         "off_track": bool(abs(h["n"][-1]) >
                           float(env.cfg.track.half_width_at(h["s"][-1]))),
-        "distance_m": float(h["s"][-1]),
+        "distance_m": float(env._dist_since_reset),
         "lap_time_s": float(env.steps * env.cfg.dt),
         "worst_slip_deg": float(np.max(h["alpha_max_deg"])),
         "envelope_occupancy": float(np.mean(h["envelope_violation"])),

@@ -4322,13 +4322,23 @@ Selected checkpoint update 80 (cap 11.0), scored at its own cap.
 | worst slip | **9.8°** (bound 12°) |
 | sections > 12° | **0 / 24** |
 | envelope occupancy | **0.0000** |
-| **completed a full lap** | **1 / 24** |
+| ~~completed a full lap~~ | ~~1 / 24~~ → **0 / 24, see F110** |
 
 **`off_track_rate` came off 1.00 for the first time in ~20 training runs**,
 and the result is rule-4 valid. The driving is genuine, not gamed: `|n|` sits
 at **0.51** of half-width (mid-road; 0.2% of time beyond 80%, 0.0% beyond
 95%), `s` is strictly monotonic (min Δs +0.196 m/step — never reverses), speed
 steady at the cap.
+
+> **CORRECTION (F110, 2026-08-01).** The "completed a full lap · 1/24"
+> line above is **withdrawn**. It came from `info["finished"]`, which was
+> defined as `self.s >= track.length` — *absolute* position — so a probe
+> started at `s0` needed to cover only `length − s0` to be flagged finished.
+> Re-scored with the corrected, start-relative definition this policy
+> finishes **0 of 24** and covers 2849.6 m (40.7%). The rest of the entry —
+> distance, EV, envelope compliance, the lateral-discipline checks — is
+> unaffected and stands. See F110 for the bug and for the result that
+> genuinely does complete a lap.
 
 **What this establishes:** the task is learnable by plain PPO with no
 reference trajectory and no imitation, on a real circuit, within the tyre
@@ -4356,6 +4366,63 @@ both nearly changed the conclusion:**
    once the deployed policy falls below half its best. **This risk was
    identified while designing the curriculum and skipped "to keep it simpler";
    that was the wrong call and it cost a 75-minute run.**
+
+
+### F110 · A learned policy drives a complete lap of Spa from every start — and the bug that hid it was scoring "finished" against absolute track position. · 2026-08-01
+
+**Source:** `[MEASURED]` — `experiments/tracks_pilot/spa_curriculum.py`
+(`cross_track_penalty=2.0`, 40M steps, progressive speed cap, selected
+checkpoint at its own cap 13.0 m/s), scored by
+`experiments/tracks_pilot/policy_eval.py`.
+
+| metric | 24 probes | 48 probes |
+|---|---|---|
+| distance | **6999.7 m** | **6999.6 m** |
+| **fraction of lap** | **100.0%** | **100.0%** |
+| **finished** | **24 / 24** | **48 / 48** |
+| off-track | **0%** | **0%** |
+| worst slip | 10.4° | 10.4° |
+| sections outside the 12° fit | **0 / 24** | **0 / 48** |
+| envelope occupancy | **0.0000** | **0.0000** |
+| `|n|` / half-width | 0.17 | 0.17 |
+| lap time | — | 537.8 s (13.0 m/s) |
+
+**Rule-4 valid**, verified at two probe densities. The car drives mid-road
+(`|n|` at 0.17 of half-width, 0.3% of time beyond 80%), `s` is strictly
+monotonic, and every probe ends by completing the lap rather than by
+crashing, stalling or timing out.
+
+**The missing ingredient was the centreline term** (F108 diagnosed the
+symptom: the policy drifted off on *straights*, at 1.4° slip, radius
+3,934 m). Adding `cross_track_penalty` — the single most universal term in
+the racing-RL literature and the one this project's reward lacked — took
+Spa from 40.7% to 100%. **The coefficient matters and is not monotone:**
+2.0 is valid at 100%; 5.0 drives *further before crashing* (3753 m) but
+puts **24/24 sections outside the tyre fit** and is not quotable. Same
+inverted-U as F107.
+
+**The bug, which is the more transferable finding.** `finished` was
+`self.s >= track.length * n_laps` — **absolute** position. Every training
+env (`start_jitter_m = track.length`) and every per-section probe
+(`env.reset(); env.s = s0`) starts at non-zero `s`, so an episode starting
+at `s0` needed to cover only `length − s0` to be flagged finished. The bar
+got easier the further round the lap the episode began.
+
+It corrupted **both** halves of the loop:
+
+- **Training** — episodes were truncated early and flagged as successes, so
+  the finish signal and `episode_distance` partly measured start position
+  rather than driving.
+- **Reporting** — the tell was distances forming an exact arithmetic
+  sequence (7000, 6708, 6416, … = `length − s0`). It also **put a false
+  claim into F109** ("completed a full lap · 1/24"), now withdrawn: that
+  policy finishes 0/24.
+
+**Why it survived ~20 runs: every policy was scored by a fresh inline
+script.** No single version was ever audited, so a wrong flag propagated
+untouched. The fix is process, not arithmetic — see D16.
+
+---
 
 
 # Decisions
@@ -4679,4 +4746,34 @@ follow-up finds no correlation between how closely a generated reward matches
 their hand-tuned one and how well it performs. It is an instruction to know
 the shape of the solution space before searching it. An hour of reading would
 have saved nine runs.
+
+### D16 · There is one policy evaluator, it lives in version control, and no run writes its own. · 2026-08-01
+
+**Why.** The `finished` bug (F110) survived roughly twenty training runs and
+reached FINDINGS.md because every result was scored by a throwaway script
+written fresh for that run. Each was slightly different, none was ever
+reviewed, and the harness that should have caught the bug was the thing
+being rewritten each time. The arithmetic error was trivial; the process
+that let it live for twenty runs was not.
+
+**The rule.** `experiments/tracks_pilot/policy_eval.py` is the evaluator.
+Import it. Do not write a per-run eval, not even "just to check something" —
+that is exactly how this happened. It reports a fixed metric set every time,
+so two runs are always comparable, and it carries:
+
+- distance measured **from each probe's own start**, never absolute `s`
+- a termination-reason breakdown that **must sum to 1** — a probe ending for
+  an unnamed reason is a bug in the report, and is asserted in the tests
+- a rule-4 validity verdict, with `headline()` **refusing to quote a
+  distance** when any probe sits outside the tyre fit
+- lateral-discipline and `s`-monotonicity checks, so "it drove far" cannot
+  be confused with "it drove the road"
+
+**Auditing a shared harness is worth doing in explicit passes.** This one was
+done in four: (1) write tests for the bug; (2) **verify they fail against the
+old code** — 3 of 4 did; (3) find that the 4th passed *vacuously*, its only
+assertion wrapped in an `if len(...)` guard, and strengthen it until it also
+failed; (4) re-score every affected claim. Pass 3 is the one worth
+institutionalising: a test that cannot fail is indistinguishable from a test
+that passes, and rule 11 already says so.
 

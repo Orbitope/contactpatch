@@ -93,11 +93,15 @@ CAP_DEGRADE_PATIENCE = 3
 #: project is not allowed to quote. Gated on the training history's own
 #: `worst_slip_mean_deg`, so it costs nothing extra to evaluate.
 CAP_SLIP_HEADROOM_DEG = 10.0
+#: Centreline restoring term -- the omission that capped Spa at 40% of a lap
+#: (see EnvConfig.cross_track_penalty). Swept before use.
+CROSS_TRACK = 5.0
 N_SECTIONS = 24
 
 
 def main(track: str = "Spa", total_steps: int = TOTAL_STEPS,
         tag: str | None = None):
+    global CROSS_TRACK
     """``track`` selects the circuit; SEASON5 Ep 19 wants specialists on
     circuits with distinct corner-speed distributions (fast / mixed / tight)
     before the multi-track generalist, so the generalisation gap has a
@@ -107,7 +111,8 @@ def main(track: str = "Spa", total_steps: int = TOTAL_STEPS,
     TOTAL_STEPS = total_steps
     tag = tag or track.lower()
     OUT.mkdir(parents=True, exist_ok=True)
-    env_over = {"speed_cap": CAP_START, "track": load_real_track(track)}
+    env_over = {"speed_cap": CAP_START, "track": load_real_track(track),
+                "cross_track_penalty": CROSS_TRACK}
     ppo_over = {"entropy_anneal": True}   # D6's exploration gate fails without it
 
     cfg = PPOConfig(total_steps=TOTAL_STEPS, n_envs=V2.N_ENVS,
@@ -275,4 +280,7 @@ if __name__ == "__main__":
     import sys
     tr = sys.argv[1] if len(sys.argv) > 1 else "Spa"
     st = int(sys.argv[2]) if len(sys.argv) > 2 else TOTAL_STEPS
-    main(tr, st)
+    if len(sys.argv) > 3:
+        CROSS_TRACK = float(sys.argv[3])
+    tg = sys.argv[4] if len(sys.argv) > 4 else None
+    main(tr, st, tg)

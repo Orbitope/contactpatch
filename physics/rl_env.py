@@ -226,6 +226,26 @@ class EnvConfig:
     #: width, so this must read as "you are about to leave", not "stay in the
     #: middle" — otherwise it fights the very behaviour the series is about.
     edge_threshold: float = 0.75
+    #: Per-step cost for being off the centreline, scaled by ``|n|`` as a
+    #: fraction of the usable half-width. **0.0 reproduces every existing
+    #: episode.**
+    #:
+    #: **This was the omission that capped the Spa policy at 40% of a lap.**
+    #: Measured on the best valid policy (cap 11 m/s): at the moment it left
+    #: the road the corner radius was 3,934 m (i.e. straight), speed 11.5 m/s
+    #: against a 199 m/s corner limit, slip 1.4 deg, and 0 of 24 exits were
+    #: in a corner tighter than 40 m. It was not losing grip or arriving too
+    #: fast — it simply could not hold a line, and drifted off on straights.
+    #:
+    #: ``edge_penalty`` only fires past ``edge_threshold`` (0.75), so below
+    #: that there was no restoring force at all and lateral position was a
+    #: random walk with an absorbing barrier. Every dense reward in the F105
+    #: survey carries a centreline term and this one did not: Jaritz
+    #: ``v(cos a − d)``; Evans CTH ``(v/v_max)cos psi − d_c``; Remonda
+    #: ``V_x(cos th − sin th − |dist to axis|)``; TC-Driver ``progress − |n|``;
+    #: DeepRacer's reward bands. Adding it is not a new idea, it is the
+    #: single most universal term in the field.
+    cross_track_penalty: float = 0.0
     #: Spawn at a speed the LOCAL corner can actually hold, rather than a flat
     #: ``entry_speed`` everywhere. **False reproduces every existing episode.**
     #:
@@ -681,6 +701,12 @@ class DrivingEnv:
             reward -= self.cfg.off_track_penalty
         if stalled and self.cfg.stall_penalty > 0.0:
             reward -= self.cfg.stall_penalty
+        if self.cfg.cross_track_penalty > 0.0:
+            # Gentle, everywhere -- a restoring pull toward the centreline,
+            # unlike edge_penalty which only bites near the boundary.
+            use_ct = abs(self.n) / max(
+                float(self.cfg.track.half_width_at(self.s)), 1e-9)
+            reward -= self.cfg.cross_track_penalty * self.cfg.dt * use_ct
         if self.cfg.edge_penalty > 0.0:
             # Dense, speed-scaled, charged every step near the edge -- see
             # EnvConfig.edge_penalty. Uses |n| BEFORE the off-track test so a

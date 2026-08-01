@@ -430,3 +430,29 @@ def test_speed_cap_matches_the_reference_and_actually_binds():
         if d:
             break
     assert top_free > 20.0, f"uncapped only reached {top_free:.1f} -- test is vacuous"
+
+
+def test_cross_track_penalty_matches_the_reference_and_fires_everywhere():
+    """The centreline term omitted from this project's reward until the Spa
+    policy was measured drifting off STRAIGHTS (3,934 m radius, 1.4 deg slip)
+    -- see EnvConfig.cross_track_penalty. Unlike edge_penalty it must bite at
+    any offset, not only near the boundary."""
+    div = _reward_divergence(steps=300, policy=_tracker,
+                             cross_track_penalty=5.0, envelope_penalty=0.0)
+    assert div < 1e-5
+    # ...and it must actually change the reward well inside the track.
+    base, pen = EnvConfig(envelope_penalty=0.0), EnvConfig(
+        cross_track_penalty=5.0, envelope_penalty=0.0)
+    a, b = DrivingEnv(base), DrivingEnv(pen)
+    o_a, o_b = a.reset(0), b.reset(0)
+    seen_inside = False
+    for _ in range(300):
+        act = _tracker(o_a)[0]
+        o_a, r_a, d_a, _ = a.step(act)
+        o_b, r_b, d_b, _ = b.step(act)
+        frac = abs(a.n) / float(a.cfg.track.half_width_at(a.s))
+        if frac < 0.5 and abs(r_a - r_b) > 1e-9:
+            seen_inside = True
+        if d_a or d_b:
+            break
+    assert seen_inside, "cross_track_penalty never fired inside 50% of the width"

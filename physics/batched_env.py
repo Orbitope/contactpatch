@@ -411,6 +411,10 @@ class BatchedDrivingEnv:
         reward = reward - np.where(off, self.cfg.off_track_penalty, 0.0)
         if self.cfg.stall_penalty > 0.0:
             reward = reward - np.where(stalled, self.cfg.stall_penalty, 0.0)
+        if self.cfg.cross_track_penalty > 0.0:
+            use_ct = np.abs(self.n_off) / np.maximum(
+                self.cfg.track.half_width_at(self.s), 1e-9)
+            reward = reward - (self.cfg.cross_track_penalty * dt * use_ct)
         if self.cfg.edge_penalty > 0.0:
             # Mirrors rl_env.step exactly -- see EnvConfig.edge_penalty.
             thr = self.cfg.edge_threshold

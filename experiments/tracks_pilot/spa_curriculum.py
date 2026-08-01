@@ -84,6 +84,15 @@ CAP_PLATEAU_PATIENCE = 12
 #: curriculum climbs past competence -- see the comment at the gate.
 CAP_DEGRADE_FRAC = 0.5
 CAP_DEGRADE_PATIENCE = 3
+#: Do not raise the cap while the policy is already at the tyre model's own
+#: limit. Measured: with the degradation freeze alone the cap reached 16 and
+#: selection landed on a cap-13 checkpoint that exceeded 12 deg in 21 of 24
+#: sections -- more distance than the cap-11 policy (41.4% vs 40.5%) but
+#: rule-4 INVALID, where the slower one was clean (0/24) and completed a lap.
+#: Raising the speed limit past what the tyres can hold buys distance the
+#: project is not allowed to quote. Gated on the training history's own
+#: `worst_slip_mean_deg`, so it costs nothing extra to evaluate.
+CAP_SLIP_HEADROOM_DEG = 10.0
 N_SECTIONS = 24
 
 
@@ -156,8 +165,13 @@ def main(track: str = "Spa", total_steps: int = TOTAL_STEPS,
         # implemented "to keep it simpler"; that was the wrong call and it cost
         # a 75-minute run.
         frozen = state["degraded"] >= CAP_DEGRADE_PATIENCE
+        # Rule 4: a faster cap that puts the car outside the tyre fit is not
+        # an improvement, it is an unquotable number.
+        slip = rec.get("worst_slip_mean_deg", 0.0)
+        at_grip_limit = np.isfinite(slip) and slip > CAP_SLIP_HEADROOM_DEG
         raised = False
-        if (mastered or plateaued) and not frozen and state["cap"] < CAP_MAX:
+        if ((mastered or plateaued) and not frozen and not at_grip_limit
+                and state["cap"] < CAP_MAX):
             state["per_cap"].append({"cap": state["cap"],
                                      "best_distance": float(state["best"]),
                                      "until_update": rec["update"]})
@@ -169,6 +183,7 @@ def main(track: str = "Spa", total_steps: int = TOTAL_STEPS,
                                     "steps": rec["steps"],
                                     "cap": state["cap"],
                                     "reason": "mastery" if mastered else "plateau",
+                                    "worst_slip_mean_deg": float(slip),
                                     "off_track_rate": float(off)})
             # Mutate BOTH envs -- the eval env is a separate object and would
             # otherwise silently keep scoring at the old cap.
@@ -240,6 +255,7 @@ def main(track: str = "Spa", total_steps: int = TOTAL_STEPS,
         "cap_start": CAP_START, "cap_final": state["cap"],
         "eval_cap_used": eval_cap, "eval_caps": state["eval_caps"],
         "curriculum_frozen": bool(state["degraded"] >= CAP_DEGRADE_PATIENCE),
+        "cap_slip_headroom_deg": CAP_SLIP_HEADROOM_DEG,
         "cap_raises": state["raises"], "per_cap_best": state["per_cap"],
         "entropy_anneal": True,
         "explained_variance_tail": ev_tail, "passes_d6_ev_gate": bool(ev_tail>0.3),

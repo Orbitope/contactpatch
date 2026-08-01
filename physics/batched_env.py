@@ -189,7 +189,19 @@ class BatchedDrivingEnv:
         self.s = np.where(m, s0, self.s)
         self.n_off = np.where(m, 0.0, self.n_off)
         self.xi = np.where(m, 0.0, self.xi)
-        self.v_x = np.where(m, self.cfg.entry_speed, self.v_x)
+        # Spawn speed, per instance -- mirrors rl_env._spawn_speed. Computed
+        # for the WHOLE batch and then masked, like every other draw here, so
+        # the result cannot depend on how many instances happened to reset
+        # together (see this method's own docstring).
+        if self.cfg.spawn_speed_from_curvature:
+            kappa = np.abs(self.cfg.track.curvature(s0))
+            v_corner = np.sqrt(self.cfg.spawn_lat_budget
+                               / np.maximum(kappa, 1e-9))
+            v0 = np.minimum(self.cfg.entry_speed,
+                           np.maximum(v_corner, self.cfg.min_speed + 1.0))
+        else:
+            v0 = np.full(self.n, self.cfg.entry_speed, dtype=float)
+        self.v_x = np.where(m, v0, self.v_x)
         self.v_y = np.where(m, 0.0, self.v_y)
         self.yaw_rate = np.where(m, 0.0, self.yaw_rate)
         self.steer = np.where(m, 0.0, self.steer)
@@ -393,6 +405,14 @@ class BatchedDrivingEnv:
         reward = reward - np.where(off, self.cfg.off_track_penalty, 0.0)
         if self.cfg.stall_penalty > 0.0:
             reward = reward - np.where(stalled, self.cfg.stall_penalty, 0.0)
+        if self.cfg.edge_penalty > 0.0:
+            # Mirrors rl_env.step exactly -- see EnvConfig.edge_penalty.
+            thr = self.cfg.edge_threshold
+            use = np.abs(self.n_off) / np.maximum(
+                self.cfg.track.half_width_at(self.s), 1e-9)
+            ramp = np.clip((use - thr) / max(1.0 - thr, 1e-9), 0.0, 1.0)
+            reward = reward - (self.cfg.edge_penalty * dt
+                               * speed * speed * ramp)
         if self.cfg.envelope_penalty > 0.0:
             excess = np.maximum(
                 0.0, worst_deg - math.degrees(ENVELOPE_SLIP_MAX))

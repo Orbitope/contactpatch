@@ -33,6 +33,7 @@ import pytest
 
 from physics.batched_env import BatchedDrivingEnv
 from physics.rl_env import DrivingEnv, EnvConfig
+from physics.track import CORNER_ARC as ARC, ENTRY_STRAIGHT as ENTRY
 
 
 def _tracker(obs: np.ndarray) -> np.ndarray:
@@ -175,6 +176,67 @@ def _full_brake(obs: np.ndarray) -> np.ndarray:
     which _tracker's normal driving would not do on its own."""
     o = np.atleast_2d(obs)
     return np.stack([np.zeros(len(o)), np.full(len(o), -1.0)], axis=1)
+
+
+def _hug_the_edge(obs: np.ndarray) -> np.ndarray:
+    """Steer hard one way so the car runs out to the track edge, where
+    edge_penalty actually fires -- _tracker deliberately stays centred and
+    would never trigger it."""
+    o = np.atleast_2d(obs)
+    return np.stack([np.full(len(o), 0.35), np.full(len(o), 0.5)], axis=1)
+
+
+def test_edge_penalty_matches_the_reference():
+    """TRACKS.md item 19h: the dense speed-scaled edge cost must fire
+    identically in both implementations, or the batched path trains against
+    a different reward than the one being designed."""
+    div = _reward_divergence(steps=300, policy=_hug_the_edge,
+                             edge_penalty=0.15, envelope_penalty=0.0)
+    assert div < 1e-4
+
+
+def test_edge_penalty_actually_fires_on_this_trajectory():
+    """Guards the test above: a divergence test passes trivially if the term
+    is never exercised. Checks the penalty changes the reward at all."""
+    base = EnvConfig(edge_penalty=0.0, envelope_penalty=0.0)
+    pen = EnvConfig(edge_penalty=0.15, envelope_penalty=0.0)
+    a, b = DrivingEnv(base), DrivingEnv(pen)
+    o_a, o_b = a.reset(0), b.reset(0)
+    diff = 0.0
+    for _ in range(300):
+        act = _hug_the_edge(o_a)[0]
+        o_a, r_a, d_a, _ = a.step(act)
+        o_b, r_b, d_b, _ = b.step(act)
+        diff = max(diff, abs(r_a - r_b))
+        if d_a or d_b:
+            break
+    assert diff > 1e-6, "edge_penalty never fired -- the divergence test is vacuous"
+
+
+def test_spawn_speed_from_curvature_matches_the_reference():
+    """Both implementations must pick the same spawn speed, or the batched
+    path starts every episode from a different state than the reference."""
+    cfg = EnvConfig(spawn_speed_from_curvature=True, start_jitter_m=200.0)
+    ref, bat = DrivingEnv(cfg), BatchedDrivingEnv(cfg, n=1, seed=0)
+    ref.reset(3)
+    bat.reset(3)
+    # Same seed -> same drawn s0 -> same curvature -> same spawn speed.
+    assert ref.s == pytest.approx(float(bat.s[0]), abs=1e-9)
+    assert ref.backend.state.v_x == pytest.approx(float(bat.v_x[0]), abs=1e-9)
+
+
+def test_spawn_speed_from_curvature_actually_slows_the_spawn_in_a_corner():
+    """Guards the test above from passing vacuously: dropped inside
+    long_exit's 40 m corner, the capped spawn must be BELOW entry_speed
+    (sqrt(7.6 * 40) = 17.4 m/s here, under the 20 m/s asked for)."""
+    cfg = EnvConfig(spawn_speed_from_curvature=True, entry_speed=20.0)
+    env = DrivingEnv(cfg)
+    env.reset(0)
+    env.s = ENTRY + 0.5 * ARC          # mid-corner
+    assert env._spawn_speed() < cfg.entry_speed
+    # ...and unchanged on the straight, where no cap should apply.
+    env.s = 10.0
+    assert env._spawn_speed() == pytest.approx(cfg.entry_speed)
 
 
 def test_stall_penalty_matches_the_reference():

@@ -196,6 +196,49 @@ class EnvConfig:
     #: matching this project's stated priority order for Season 4:
     #: on-track, then inside the slip envelope, then fast.
     stall_penalty: float = 0.0
+    #: --- TRACKS.md item 19h: the field's actual structure.
+    #:
+    #: DENSE, speed-scaled cost for running near the track edge, charged every
+    #: step rather than once at the boundary. **0.0 reproduces every existing
+    #: episode exactly.**
+    #:
+    #: This is Fuchs et al. (RA-L 2021) `−c_w‖v‖²` and GT Sophy's
+    #: `−(time off course)·speed²`, adapted: they penalise wall CONTACT / time
+    #: off course and keep driving, which this project's physics cannot do
+    #: (there is no off-surface friction model — the car would be on grass with
+    #: tarmac grip), so the cost is charged on PROXIMITY to the edge instead,
+    #: ramping in over the last ``1 - edge_threshold`` of the usable width.
+    #:
+    #: Fuchs is explicit that a FIXED-value penalty is the thing that cannot be
+    #: fixed by tuning — "the agent either did not react to the penalty or
+    #: ended up in a strategy of full braking and standing still, depending on
+    #: the strength of the penalty", which is exactly this project's items 11
+    #: (ignored at 50) and 12 (stalling exploit at 500). Scaling with kinetic
+    #: energy is their documented cure and the reason this term exists.
+    #:
+    #: Calibration `[DERIVED]`: at 30 m/s hard against the edge, 0.15 · dt ·
+    #: v² = 0.15 · 0.02 · 900 = 2.7/step against ~0.6/step of progress — a
+    #: ~4.5:1 ratio, inside the field's measured 3-20:1 band (GT Sophy ~7:1 at
+    #: Maggiore). Compare the ~500:1 this project used before.
+    edge_penalty: float = 0.0
+    #: Fraction of the usable half-width beyond which ``edge_penalty`` starts
+    #: to ramp. High on purpose: a racing line legitimately uses the full
+    #: width, so this must read as "you are about to leave", not "stay in the
+    #: middle" — otherwise it fights the very behaviour the series is about.
+    edge_threshold: float = 0.75
+    #: Spawn at a speed the LOCAL corner can actually hold, rather than a flat
+    #: ``entry_speed`` everywhere. **False reproduces every existing episode.**
+    #:
+    #: D6 (item 14) fails ``the_task_is_completable`` on all five prior runs:
+    #: Spa's tightest corner caps at 10.1 m/s and every episode spawned at
+    #: 15.0 m/s, so any spawn near it began already unsurvivable. Fuchs et al.
+    #: spawn rolling at 100 km/h; the fix is a spawn speed the corner allows,
+    #: not a fixed number inherited from a single-corner synthetic track.
+    spawn_speed_from_curvature: bool = False
+    #: Lateral-acceleration budget for that spawn speed, m/s². ~0.8 of the
+    #: car's own ~9.5 m/s² limit, so the spawn is inside the envelope rather
+    #: than exactly on it.
+    spawn_lat_budget: float = 7.6
     #: Cost per step for operating outside the slip envelope, scaled by how far
     #: outside. **0.0 reproduces Episode 9 exactly**, where the envelope is
     #: instrumented and deliberately unenforced.
@@ -425,6 +468,24 @@ class DrivingEnv:
         return np.array([self.cfg.track.curvature(
             min(self.s + d, self.cfg.track.length)) for d in PREVIEW_DISTANCES])
 
+    def _spawn_speed(self) -> float:
+        """Entry speed for this episode's own spawn point.
+
+        ``cfg.entry_speed`` unless ``spawn_speed_from_curvature`` is on, in
+        which case it is capped at what the LOCAL corner can hold —
+        ``sqrt(a_lat / |kappa|)``. See ``EnvConfig.spawn_speed_from_curvature``
+        for why (D6's ``the_task_is_completable`` fails on every run so far).
+        Floored just above ``min_speed`` so a spawn inside a hairpin does not
+        begin already stalled, which would be a different unwinnable start
+        rather than a fix for the first one.
+        """
+        if not self.cfg.spawn_speed_from_curvature:
+            return self.cfg.entry_speed
+        kappa = abs(float(self.cfg.track.curvature(self.s)))
+        v_corner = math.sqrt(self.cfg.spawn_lat_budget / max(kappa, 1e-9))
+        return float(min(self.cfg.entry_speed,
+                        max(v_corner, self.cfg.min_speed + 1.0)))
+
     # -- the loop ---------------------------------------------------------
     def _tire_for(self, grip: float):
         """The tire at ``grip`` x nominal peak lateral friction.
@@ -464,7 +525,7 @@ class DrivingEnv:
             # silently wrong in exactly the way F72 was silently wrong.
             self._tv_adapter = self._build_tv_adapter()
         self.backend.attach_torque_vectoring(self._tv_adapter)
-        self.backend.reset(self.cfg.entry_speed)
+        self.backend.reset(self._spawn_speed())
         self.steps = 0
         self.done = False
         self.log = {k: [] for k in
@@ -581,6 +642,17 @@ class DrivingEnv:
             reward -= self.cfg.off_track_penalty
         if stalled and self.cfg.stall_penalty > 0.0:
             reward -= self.cfg.stall_penalty
+        if self.cfg.edge_penalty > 0.0:
+            # Dense, speed-scaled, charged every step near the edge -- see
+            # EnvConfig.edge_penalty. Uses |n| BEFORE the off-track test so a
+            # step that leaves the road is also charged for the speed it left
+            # at, rather than only the flat terminal penalty.
+            thr = self.cfg.edge_threshold
+            use = abs(self.n) / max(float(self.cfg.track.half_width_at(self.s)), 1e-9)
+            ramp = min(max((use - thr) / max(1.0 - thr, 1e-9), 0.0), 1.0)
+            if ramp > 0.0:
+                reward -= (self.cfg.edge_penalty * self.cfg.dt
+                           * speed * speed * ramp)
         if self.cfg.envelope_penalty > 0.0:
             sl = self.backend.slip_angles()
             worst = math.degrees(max(abs(v) for v in sl.values()))

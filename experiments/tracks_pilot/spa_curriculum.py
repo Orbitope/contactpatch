@@ -46,6 +46,8 @@ import numpy as np
 import torch
 
 from physics.ppo import PPOConfig, train
+from physics.rl_env import EnvConfig
+from physics.tracks_data import load_real_track
 from experiments.tracks_pilot import spa_ppo_v2 as V2
 
 ROOT = Path(__file__).resolve().parent.parent.parent
@@ -85,9 +87,18 @@ CAP_DEGRADE_PATIENCE = 3
 N_SECTIONS = 24
 
 
-def main():
+def main(track: str = "Spa", total_steps: int = TOTAL_STEPS,
+        tag: str | None = None):
+    """``track`` selects the circuit; SEASON5 Ep 19 wants specialists on
+    circuits with distinct corner-speed distributions (fast / mixed / tight)
+    before the multi-track generalist, so the generalisation gap has a
+    denominator. Measured spread, % of lap below 15 m/s: Monza 1.8 (fast),
+    Spa 1.5 (mixed, p10 23.9), MexicoCity 5.6 (tight)."""
+    global TOTAL_STEPS
+    TOTAL_STEPS = total_steps
+    tag = tag or track.lower()
     OUT.mkdir(parents=True, exist_ok=True)
-    env_over = {"speed_cap": CAP_START}
+    env_over = {"speed_cap": CAP_START, "track": load_real_track(track)}
     ppo_over = {"entropy_anneal": True}   # D6's exploration gate fails without it
 
     cfg = PPOConfig(total_steps=TOTAL_STEPS, n_envs=V2.N_ENVS,
@@ -95,7 +106,7 @@ def main():
                     seed=V2.SEED, eval_every=8, eval_episodes=V2.EVAL_EPISODES,
                     **ppo_over)
     n_upd = TOTAL_STEPS // (V2.N_ENVS * V2.ROLLOUT_STEPS)
-    print("TRACKS.md item 26 -- progressive speed-limit curriculum, 120M steps")
+    print(f"Curriculum specialist -- {track}, {total_steps:,} steps")
     print(f"  cap {CAP_START} -> {CAP_MAX} m/s, +{CAP_STEP} when off_track_rate "
          f"< {CAP_CLEAN_BELOW} for {CAP_PATIENCE} consecutive updates")
     print(f"  {n_upd} updates x {cfg.epochs*cfg.minibatches} = "
@@ -214,18 +225,17 @@ def main():
     occ = np.array([r["envelope_occupancy"] for r in sec])
     off = np.mean([r["off_track"] for r in sec])
     fin = np.mean([r["finished"] for r in sec])
-    from physics.tracks_data import load_real_track
-    L = load_real_track("Spa").length
+    L = env_over["track"].length
     print(f"\n  per-section: dist mean={d.mean():.1f} ({100*d.mean()/L:.1f}% of lap) "
          f"max={d.max():.1f}")
     print(f"    off_track={off:.2f}  finished={fin:.2f}  "
          f"slip_max={slip.max():.1f}  over12={int((slip>12).sum())}/{N_SECTIONS}  "
          f"occ={occ.mean():.4f}")
 
-    torch.save(res["model"].state_dict(), OUT / "curriculum_policy.pt")
-    (OUT / "curriculum_history.json").write_text(json.dumps(h, indent=2)+"\n")
-    (OUT / "curriculum_sections.json").write_text(json.dumps(sec, indent=2)+"\n")
-    (OUT / "curriculum_summary.json").write_text(json.dumps({
+    torch.save(res["model"].state_dict(), OUT / f"curr_{tag}_policy.pt")
+    (OUT / f"curr_{tag}_history.json").write_text(json.dumps(h, indent=2)+"\n")
+    (OUT / f"curr_{tag}_sections.json").write_text(json.dumps(sec, indent=2)+"\n")
+    (OUT / f"curr_{tag}_summary.json").write_text(json.dumps({
         "total_steps": TOTAL_STEPS, "wall_s": wall, "n_updates": n,
         "cap_start": CAP_START, "cap_final": state["cap"],
         "eval_cap_used": eval_cap, "eval_caps": state["eval_caps"],
@@ -242,8 +252,11 @@ def main():
         "best_update": res.get("best_update"),
         "best_eval": res.get("best_eval"),
     }, indent=2)+"\n")
-    print(f"\n  wrote {OUT.relative_to(ROOT)}/curriculum_*")
+    print(f"\n  wrote {OUT.relative_to(ROOT)}/curr_{tag}_*")
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+    tr = sys.argv[1] if len(sys.argv) > 1 else "Spa"
+    st = int(sys.argv[2]) if len(sys.argv) > 2 else TOTAL_STEPS
+    main(tr, st)

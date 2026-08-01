@@ -112,4 +112,17 @@ def load_real_track(name: str, cache_dir: Path | None = None,
                     f"LGPL-3.0, derived from OpenStreetMap (ODbL).")
 
 
-__all__ = ["download_track_csv", "load_real_track"]
+#: Every circuit in TUM's racetrack-database, verbatim from the repository
+#: listing (GitHub contents API), not guessed. Recorded because guessing cost
+#: two spurious import "failures" -- "Yas Marina" (the file is `YasMarina`)
+#: and "Yeongam" (no such circuit; the one actually missing from a hand-typed
+#: list was Suzuka).
+TRACK_NAMES = (
+    "Austin", "BrandsHatch", "Budapest", "Catalunya", "Hockenheim", "IMS",
+    "Melbourne", "MexicoCity", "Montreal", "Monza", "MoscowRaceway",
+    "Norisring", "Nuerburgring", "Oschersleben", "Sakhir", "SaoPaulo",
+    "Sepang", "Shanghai", "Silverstone", "Sochi", "Spa", "Spielberg",
+    "Suzuka", "YasMarina", "Zandvoort",
+)
+
+__all__ = ["download_track_csv", "load_real_track", "TRACK_NAMES"]

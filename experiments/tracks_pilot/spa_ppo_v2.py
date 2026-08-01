@@ -108,9 +108,10 @@ V2_ENV = dict(max_steps=MAX_STEPS,
 
 
 def _cfg(env_over=None, **over):
-    spa = load_real_track("Spa")
-    base = dict(track=spa, start_jitter_m=spa.length, **V2_ENV)
-    base.update(env_over or {})
+    env_over = dict(env_over or {})
+    trk = env_over.pop("track", None) or load_real_track("Spa")
+    base = dict(track=trk, start_jitter_m=trk.length, **V2_ENV)
+    base.update(env_over)
     base.update(over)
     return EnvConfig(**base)
 

@@ -1,0 +1,30 @@
+{
+  "n_envs": 256,
+  "rollout_steps": 1024,
+  "total_steps": 40000000,
+  "gamma": 0.995,
+  "progress_scale": 1.0,
+  "off_track_penalty": 5.0,
+  "stall_penalty": 2.0,
+  "edge_penalty": 0.15,
+  "edge_threshold": 0.75,
+  "envelope_penalty": 0.5,
+  "spawn_speed_from_curvature": true,
+  "wall_s": 970.6946568489075,
+  "n_updates": 152,
+  "explained_variance_tail_median": 0.8810778594620184,
+  "passes_d6_ev_gate": true,
+  "section_distance_mean": 519.670914780604,
+  "section_distance_std": 272.6937417330516,
+  "section_off_track_rate": 1.0,
+  "section_stall_rate": 0.0,
+  "section_finish_rate": 0.0,
+  "section_worst_slip_deg": 17.780986126780913,
+  "section_envelope_occupancy": 0.012403737511509657,
+  "best_update": 28,
+  "best_eval": {
+    "eval_return": 436.83038524945937,
+    "eval_distance": 3644.887953114576,
+    "eval_finish_rate": 0.0
+  }
+}

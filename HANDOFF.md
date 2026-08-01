@@ -1751,9 +1751,46 @@ a failure mode a 2021 paper already names. **Reviewing the literature
 first would have cost an hour.** Carry that into Season 5, which plans
 considerably more RL than this.
 
-**Next action:** implement the item 19h redesign — get direction on
-whether to do it as one coherent change (it is a structural rewrite, and
-one-at-a-time would be 8 more runs) or staged.
+**Next action (done, user said "just add a bunch and see if it works,
+then we can subtract some"):** the redesign below.
+
+### Session 25 continued — redesign works: critic fixed, and every prior distance number retracted
+
+Full detail in `TRACKS.md` §4 item 20. `spa_ppo_v2.py`, 152 updates, 971 s.
+
+**`explained_variance` = +0.881**, climbing 0.007 → 0.89 and passing D6's
+gate **for the first time in this thread**, after nine runs pinned at
+~0.000. Item 18's diagnosis confirmed — shrink the targets (penalties
+500→5, γ 0.9995→0.995) and quadruple the gradient budget (`n_envs`
+1024→256) and the critic learns normally. No algorithm change needed.
+
+**Retraction.** The 653.5 m reported as "the best yet" (items 12, 15, 18)
+was driven **entirely outside the tire model**: 30.1° peak slip, all 24
+sections over the 12° bound, 3.5% envelope occupancy. Never quotable
+under rule 4. The arc's whole "distance keeps improving" story
+(536.6 → 595.2 → 653.5) was tracking how freely each policy could slide.
+
+| policy | distance | worst slip | >12° | envelope occ |
+|---|---|---|---|---|
+| stage1 (EV 0.00) | 653.5 m | 30.1° | 24/24 | 0.0352 |
+| v2 (EV 0.88) | 519.7 m | 17.8° | 16/24 | 0.0124 |
+
+v2 gives up 20% distance and cuts peak slip 41%, sections-over-bound by a
+third, occupancy 65%. **Correctly scored, that reverses the conclusion** —
+v2 is better. Rule 4 doing its job, and a second independent confirmation
+of Evans et al. The earlier runs' slip was never checked because the
+per-section probe did not log it; it does now.
+
+**Still wrong:** 16/24 sections over bound, occupancy 0.0124 vs rule 4's
+~0, off-track still 1.00. `eval_return` peaks at updates 24-40 (a real
+broad optimum, checked — not noise) then declines as EV rises, consistent
+with an accurate critic finally optimising a reward that still pays for
+sliding more than it charges.
+
+**Next action:** raise `envelope_penalty` (the one term 19h deliberately
+left alone, now the binding weakness) as a single-variable change, then
+the ablation — subtract v2's seven changes one at a time, now that there
+is a working configuration to ablate from.
 
 ### Superseded — Episode 13 planning notes
 

@@ -1224,6 +1224,62 @@ guess.** Each item is a structural change, not a coefficient:
    the project starts succeeding. Not a contributor to the current dead
    critic.
 
+**20. The redesign ran — the critic is fixed, and the fix exposed that
+every distance number in this arc was measuring tyre-model exploitation.**
+`experiments/tracks_pilot/spa_ppo_v2.py`, 152 updates, 970.7 s.
+
+**`explained_variance` = +0.881**, climbing 0.007 → 0.89 across the run
+and passing D6's >0.3 gate **for the first time in this entire thread**,
+after nine consecutive runs pinned at ~0.000. Item 18's diagnosis — the
+value head could not travel far enough to represent the targets — is
+confirmed: shrink the targets (penalties 500→5, γ 0.9995→0.995) and
+quadruple the gradient-step budget (`n_envs` 1024→256), and the critic
+learns normally. Nothing about the network or the algorithm needed to
+change.
+
+**The retraction.** Item 12 reported 653.5 m as "the best yet" and item
+15/18 repeated it. Measured properly, with the envelope instrumentation
+rule 4 mandates:
+
+| policy | distance | worst slip | sections >12° | envelope occupancy |
+|---|---|---|---|---|
+| stage1 two-phase (EV 0.00) | 653.5 m | **30.1°** | **24 / 24** | 0.0352 |
+| v2 redesign (EV 0.88) | 519.7 m | 17.8° | 16 / 24 | 0.0124 |
+
+**That 653.5 m was driven entirely outside the tire model's fit** — every
+one of the 24 sections over the 12° bound, peak 30.1°, 3.5% occupancy. By
+rule 4 it was never a quotable number, and the whole reward-tuning arc's
+"distance keeps improving" narrative (536.6 → 595.2 → 653.5) was tracking
+how freely each policy was allowed to slide, not how well it drove. **The
+comparison that matters reverses the conclusion**: v2 gives up 20% of the
+distance and cuts peak slip by 41%, sections-over-bound by a third, and
+envelope occupancy by 65%. Cleaner driving, correctly scored as better.
+
+This is rule 4 doing exactly its job, and it is the second independent
+confirmation of Evans et al.'s finding (item 19f) — a dense progress
+reward will buy distance by sliding on a model that cannot support it,
+and only envelope instrumentation catches it. Worth noting the earlier
+runs' slip was never checked because the per-section probe did not log it;
+v2's does now (`worst_slip_deg`, `envelope_occupancy` per section).
+
+**What is still wrong.** 16/24 sections remain over the bound and
+occupancy is 0.0124 against rule 4's ~0; off-track rate is still 1.00.
+And `eval_return` peaks at updates 24-40 (363-437, a genuine broad
+optimum, not a noise spike — checked) then declines to ~175-320 as EV
+rises. The most plausible reading: **an accurate critic lets PPO optimise
+the reward properly for the first time, and this reward still pays for
+sliding more than it charges** — `envelope_penalty` is the one term item
+19h deliberately left untouched, and at 0.5 (≈0.24/step at 17.8° against
+~0.6/step of progress) it is now the binding weakness rather than a
+safe default.
+
+**Next, and it is a single-variable change:** raise `envelope_penalty`
+(GT Sophy carries its tyre term at 0.25 relative to progress 1.0 and
+switches it off only where the surface allows it). Then the ablation the
+user asked for — subtract the seven v2 changes one at a time to find
+which carried the critic fix, now that there is a working configuration
+to ablate *from*.
+
 **19i. Cost of the detour, stated plainly.** Items 11-18 spent five
 40M-step runs and four 20M-step diagnostics tuning coefficients inside a
 reward structure the field abandoned — and the specific failure we spent

@@ -123,3 +123,38 @@ def _stub_model():
     from physics.ppo import ActorCritic
     probe = DrivingEnv(EnvConfig(track=long_exit()))
     return ActorCritic(probe.obs_dim, probe.act_dim, 64, (-2.5, -1.0))
+
+
+# --- PASS 5: the two further instances of the F110 bug, in ppo.py ------------
+
+def test_ppo_records_speed_so_a_cap_curriculum_can_see_what_binds():
+    """Stage 2's curriculum raises the cap while the policy is PINNED against
+    it. That gate reads `speed_mean`; without it the gate silently reads NaN,
+    never fires, and the run trains at a fixed cap for its whole budget while
+    looking healthy. Caught before launching, not after."""
+    from physics.ppo import PPOConfig, train
+    from physics.batched_env import BatchedDrivingEnv
+    cfg = PPOConfig(total_steps=8 * 64 * 2, n_envs=8, rollout_steps=64)
+    res = train(make_batched_env=lambda n: BatchedDrivingEnv(
+        EnvConfig(track=long_exit(), speed_cap=12.0), n=n, seed=0), cfg=cfg)
+    for rec in res["history"]:
+        assert "speed_mean" in rec
+        assert np.isfinite(rec["speed_mean"]), "speed_mean is NaN"
+        assert 0.0 < rec["speed_mean"] < 60.0
+
+
+def test_ppo_eval_distance_is_start_relative():
+    """`_evaluate_deployed` recorded `info['s']` -- absolute position, the
+    third instance of the same bug. On a closed track with a jittered start
+    that overstates distance by the start offset."""
+    from physics.ppo import _evaluate_deployed, ActorCritic
+    spa = _closed_spa()
+    env = DrivingEnv(EnvConfig(track=spa, max_steps=40, start_jitter_m=spa.length))
+    probe = DrivingEnv(EnvConfig(track=spa))
+    model = ActorCritic(probe.obs_dim, probe.act_dim, 64, (-2.5, -1.0))
+    out = _evaluate_deployed(model, env, episodes=3, seed0=0)
+    # 40 steps at 50 Hz cannot cover more than a few hundred metres, whatever
+    # the start offset was.
+    assert out["eval_distance"] < 0.2 * spa.length, (
+        f"eval_distance {out['eval_distance']:.0f} looks absolute "
+        f"(lap {spa.length:.0f})")

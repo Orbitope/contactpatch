@@ -223,7 +223,10 @@ def _evaluate_deployed(model, env, episodes: int, seed0: int) -> dict:
             o, r, done, info = env.step(a)
             total += r
         rets.append(total)
-        dists.append(float(info.get("s", float("nan"))))
+        # `info["s"]` is ABSOLUTE track position; on a closed circuit with a
+        # non-zero start that is not distance covered (F110). The env tracks
+        # the start-relative figure itself.
+        dists.append(float(getattr(env, "_dist_since_reset", float("nan"))))
         fins.append(float(bool(info.get("finished", False))))
     return {"eval_return": float(np.mean(rets)),
             "eval_distance": float(np.mean(dists)),
@@ -289,6 +292,11 @@ def train(make_env=None, cfg: PPOConfig | None = None, on_update=None,
     finished_distance: list[float] = []
     finished_slip: list[float] = []
     finished_offtrack: list[float] = []
+    #: Mean speed over the rollout, every step of every instance. Rollout-level
+    #: rather than per-episode on purpose: "is the policy pinned against the
+    #: cap" is a question about the whole distribution of driving, not about
+    #: how episodes happened to end.
+    step_speeds: list[float] = []
     t_start = time.time()
 
     eval_env = None
@@ -335,6 +343,8 @@ def train(make_env=None, cfg: PPOConfig | None = None, on_update=None,
                 finished_slip.extend(info["episode_worst_slip_deg"].tolist())
                 finished_offtrack.extend(
                     info["episode_off_track"].astype(float).tolist())
+                if "speed" in info:
+                    step_speeds.append(float(np.mean(info["speed"])))
             else:
                 for i, e in enumerate(envs):
                     o, r, done, info = e.step(a_np[i])
@@ -343,9 +353,13 @@ def train(make_env=None, cfg: PPOConfig | None = None, on_update=None,
                     if done:
                         h = e.history()
                         finished_returns.append(float(np.sum(h["reward"])))
-                        finished_distance.append(float(h["s"][-1]))
+                        # start-relative, not h["s"][-1] -- see F110
+                        finished_distance.append(
+                            float(getattr(e, "_dist_since_reset", np.nan)))
                         finished_slip.append(float(np.max(h["alpha_max_deg"])))
                         finished_offtrack.append(float(bool(info["off_track"])))
+                    if "speed" in info:
+                        step_speeds.append(float(info["speed"]))
                         o = e.reset(int(rng.integers(1 << 30)))
                     obs[i] = o
 
@@ -427,6 +441,8 @@ def train(make_env=None, cfg: PPOConfig | None = None, on_update=None,
             "distance_mean": _tail_mean(finished_distance),
             "worst_slip_mean_deg": _tail_mean(finished_slip),
             "off_track_rate": _tail_mean(finished_offtrack),
+            "speed_mean": (float(np.mean(step_speeds)) if step_speeds
+                          else float("nan")),
             "entropy_coef": ent_coef,
         }
 

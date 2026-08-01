@@ -4076,6 +4076,288 @@ a footnote to hide.
 
 ---
 
+### F103 · A real circuit imports cleanly, but the smoothing constant must be measured on the data in front of you — carrying one over is worth a factor of two in recovered corner radius. · 2026-08-01
+
+**Source:** `[MEASURED]` — `physics/tracks_data.py`, `physics/track.py`
+(`SampledTrack`), `tests/test_sampled_track.py`, `tests/test_tracks_data.py`.
+Spa-Francorchamps from TUM's `racetrack-database` (`[SOURCED]`, LGPL-3.0 over
+OpenStreetMap), never vendored — downloader plus converter, per TRACKS.md §3's
+licensing survey.
+
+**The import validates against an external figure (rule 2):** recovered length
+**6999.5 m** against the published Grand Prix layout's **7.004 km** — 0.064%.
+Bounding box 1270 × 2040 m, consistent with the real circuit's footprint.
+
+**No independently published per-corner radius was found for La Source**
+despite repeated search; TRACKS.md's own prior "~25 m" has no citation either
+and was *not* reused as though it were external. Recovered minimum radius
+(11.4 m) is `[MEASURED]` only, checked for plausibility against a modern FIA
+circuit's tightest-corner range rather than against a number.
+
+**The transferable finding is about smoothing.** `scipy`'s `splprep` `s`
+parameter has no good universal default and must scale with the data:
+
+| smoothing | length error | min radius | verdict |
+|---|---|---|---|
+| 0.0 (exact interpolation) | −0.048% | **5.8 m** | fits residual 5 m point-spacing noise as a spurious corner |
+| 20 | −0.064% | 11.4 m | in the stable plateau |
+| 1401 (`s ≈ m`, step 1's own convention) | −0.242% | 9.9 m | over-smoothed; worst length match |
+
+Step 1's synthetic round-trip (0.1 m spacing, i.i.d. noise) had established
+`s ≈ m` as the rule. On Spa (5 m spacing, already-processed centreline) that
+rule is **wrong in the other direction**. Both the too-low and too-high
+failures are silent — they return a plausible track. The lesson generalises:
+measure smoothing against the dataset, never inherit it.
+
+---
+
+### F104 · Every tracks-pilot training run had a dead critic, and the cause was that the value head could not physically reach the required output magnitude within its gradient budget. · 2026-08-01
+
+**Source:** `[MEASURED]` — `experiments/tracks_pilot/`, nine runs on Spa;
+`critic_gamma_test.py`, `critic_value_clip_test.py`, `critic_penalty_test.py`,
+`d6_spa.py`.
+
+`explained_variance` (D6's own `the_critic_predicts_returns`, gate > 0.3):
+
+| runs | gamma | `off_track_penalty` | EV |
+|---|---|---|---|
+| long, stage1-oldreward | 0.999 | 50 | +0.72, +0.33 |
+| all later stage-1 runs | 0.9995 | 500 | +0.01, +0.00, +0.00 |
+
+**Three single-variable fixes, three clean negatives** — reverting gamma
+(−0.001), unclipping the value head entirely at 1e6 (−0.001), reducing the
+penalty 500 → 200 (−0.002). None moved EV at all.
+
+**The cause, found by measuring the critic's OUTPUT rather than its error:**
+
+| | critic V(s) | actual return G | V spans |
+|---|---|---|---|
+| old reward | mean 19.7, sd 2.8 | mean 177, sd 133 | **2.1%** of G's spread |
+| current reward | mean −14.7, sd 1.4 | mean 133, sd 365 | **0.39%** |
+
+The critic had barely left its initialisation. The arithmetic explains it:
+Adam at `lr=3e-4` over the available gradient steps (`total_steps /
+(n_envs · rollout_steps) · epochs · minibatches` ≈ 1,520) gives each parameter
+a **total** possible travel of ~0.2-0.5, so a 64-unit output layer reaches
+~±30 against a required ±1000. **None of the three fixes changed the required
+output magnitude, which is exactly why none of them did anything.**
+
+**This also retracts the healthy-looking baseline:** the old reward's critic
+spanned only 2.1% of its spread too, and its EV = 0.33 was substantially GAE's
+own bootstrapping correlation (`ret = adv + V`), not prediction.
+
+**Two consequences for this project.** (a) `n_envs` is not a free throughput
+knob — it *divides* the gradient-step budget, and choosing 1024 for speed
+quartered the critic's ability to learn. (b) **D6 exists, has a check for
+precisely this, and was never run on any tracks pilot.** Three consecutive
+40M-step runs trained on advantage estimates that were mostly noise while
+reward coefficients were tuned on top.
+
+---
+
+### F105 · This project's reward was structurally unlike anything in published racing RL — by one to three orders of magnitude — and the specific failure it produced is documented in a 2021 paper. · 2026-08-01
+
+**Source:** `[SOURCED]` — literature review, two independent agents,
+corroborating. GT Sophy (Wurman et al., *Nature* 602:223-228, 2022, Extended
+Data Table 1); Fuchs et al. (RA-L 6(3):4257-4264, 2021); Sony GT7
+(arXiv:2504.09021); Czechmanowski et al. (arXiv:2504.02420); Evans et al.
+(RA-L 8(9), 2023); Hildisch et al. (RLC 2025, arXiv:2505.07321).
+
+**Ratio of largest safety penalty to one step's progress reward:**
+
+| system | ratio | delivery |
+|---|---|---|
+| GT Sophy (Maggiore) | ~7:1 | dense, every 0.1 s while off course |
+| GT Sophy (Sarthe) | ~18:1 | dense |
+| Czechmanowski (MF6.1 tyres, PPO) | ~3-4:1 | per-violation, **not terminal** |
+| Evans F1TENTH | 5:1 | terminal, penalty = **−1** |
+| **this project, before the redesign** | **500-5000:1** | **one terminal sample** |
+
+**Two flagship systems never terminate on crashing at all** — GT Sophy's
+rollout worker is literally `dones = [False]`, a continuing task with 150 s
+episodes; Fuchs uses fixed 100 s rollouts. Where termination exists the
+penalty is −1 to −50. **No surveyed system both terminates and applies a
+large penalty.**
+
+**Fuchs et al. documents this project's exact bifurcation, verbatim:**
+
+> "Without this additional wall contact penalty, we found the learned policies
+> did not brake and simply grinded along the track's walls... When using
+> **fixed valued wall contact penalties**, we found the agent **either did not
+> react to the penalty or ended up in a strategy of full braking and standing
+> still**, depending on the strength of the penalty."
+
+That is this project's under-deterrence at `off_track_penalty=50` and its
+stalling exploit at 500 — same two failure modes, same order, same cause.
+**Their fix was not tuning the constant: it was making the penalty
+proportional to kinetic energy** (`−c_w‖v‖²`, `c_w = 5×10⁻⁴`). Five runs were
+spent rediscovering a documented result.
+
+**Other conventions violated:** progress weight is pinned at exactly 1.0
+everywhere (this project swept it); γ=0.9995 at 50 Hz is a **40 s** horizon
+against GT Sophy's 9.6 s, Fuchs' 0.98, Czechmanowski's 5 s.
+
+**Process finding, recorded because Season 5 plans considerably more RL:**
+reviewing the literature *before* designing the reward would have cost about
+an hour and saved nine training runs.
+
+---
+
+### F106 · Distance-before-crash measured tyre-model exploitation, not driving — and rule 4's envelope instrumentation is the only reason it was caught. · 2026-08-01
+
+**Source:** `[MEASURED]` — `experiments/tracks_pilot/v2_variants.py`,
+per-section probes (24 fixed points around Spa) with `worst_slip_deg` and
+`envelope_occupancy` logged.
+
+The reward-tuning arc reported a rising sequence — 536.6 → 595.2 → **653.5 m**,
+the last called "the best yet". Measured against the tyre model:
+
+| policy | distance | worst slip | sections > 12° | occupancy |
+|---|---|---|---|---|
+| best-distance policy | **653.5 m** | **30.1°** | **24 / 24** | 0.0352 |
+| redesigned policy | 519.7 m | 17.8° | 16 / 24 | 0.0124 |
+
+**Every one of the 24 sections was outside the tyre file's own 12° fit.** By
+rule 4 that number was never quotable, and the whole "distance keeps
+improving" narrative was tracking how freely each policy was permitted to
+slide. Correctly scored, the comparison **reverses**.
+
+This independently reproduces Evans et al. (RA-L 2023), who report a dense
+progress reward teaching an agent to drift at over 30° slip on a single-track
+model valid to ~8° — "thus exploiting the simulation model" — and it is why
+GT Sophy carries a dedicated `min(|κ|,1)⁴·|α|` tyre term at weight 0.25.
+
+**The earlier runs' slip was never checked because the per-section probe did
+not log it.** Rule 4's instrumentation is core-loop for exactly this reason:
+the metric that looked like progress was measuring the model's failure.
+
+---
+
+### F107 · `envelope_penalty` has an inverted-U optimum: 6.0 puts every section inside the tyre model, 15.0 breaks the critic and drives worse. · 2026-08-01
+
+**Source:** `[MEASURED]` — `v2_variants.py --job envelope`, single variable
+over the redesigned reward, 20M steps each, 24 per-section probes.
+
+| `envelope_penalty` | EV | D6 gate | distance | worst slip | > 12° | occupancy |
+|---|---|---|---|---|---|---|
+| 0.5 | +0.479 | pass | 534.0 m | 18.4° | 17/24 | 0.0074 |
+| 2.0 | +0.709 | pass | 477.0 m | 14.5° | 6/24 | 0.0038 |
+| **6.0** | **+0.703** | **pass** | 468.0 m | **11.0°** | **0/24** | **0.0000** |
+| 15.0 | +0.073 | **FAIL** | 412.1 m | 12.7° | 2/24 | 0.0001 |
+
+**6.0 is the first rule-4-valid configuration in the thread** — zero sections
+outside the fit, at a cost of 12% distance.
+
+**15.0 is worse, not safer, and the way it fails is the point:** EV collapses
+to +0.073, failing D6's gate, and its slip is *worse* than 6.0's. That is
+F104's magnitude mechanism recurring in a different term — **any reward
+component large enough to dominate the value targets kills the critic, and a
+dead critic then drives worse.** The relationship is an inverted U, which is
+the same shape F105's Fuchs quote describes for fixed-value penalties. Third
+independent sighting inside this project.
+
+---
+
+### F108 · The binding constraint on the learned driver was speed versus competence — not the reward, the observation horizon, or the track. · 2026-08-01
+
+**Source:** `[MEASURED]` — `experiments/tracks_pilot/`, failure analysis over
+24 per-section probes; `classical_baseline_spa.py`; `v2_variants.py`.
+
+**Three candidate blockers were tested and rejected**, each recorded rather
+than quietly dropped:
+
+- **Reward coefficients** — nine variants (ablation + envelope sweep). Every
+  revert was worse; none moved `off_track_rate` off 1.00.
+- **Observation horizon** — extending preview 55 m → 120 m → 250 m did not
+  move the crash rate and made envelope compliance *worse*, despite the
+  braking arithmetic being real (42.7 m/s needs ~89 m to reach 10 m/s; the
+  observation reaches 55 m = 1.29 s).
+- **Track import quality** — more curvature smoothing reduced sign changes
+  58 → 22 but made the *classical* driver do worse (1018 → 338 m).
+
+**The existence proof that reframed it:** the classical driver
+**completes a full lap of Spa** — 6999.5 m, 100%, 2.3° slip — at `v_max=12`,
+and also at 8 and 6. It spins at 45. **The geometry is driveable and the task
+is completable; the failure was purely speed.**
+
+**The failure mode, measured at the moment each probe leaves the road:**
+
+| | |
+|---|---|
+| speed | 27.9 m/s (peak 42.7) |
+| speed the corner allows | 24.0 m/s |
+| **above the corner's limit** | **15 / 24 probes, by 9.0 m/s** |
+| **slip at exit** | **4.2°** — against a 12° bound |
+
+**It is not out of grip.** At 4.2° the tyres are doing perhaps 40% of what
+they can. It arrives too fast and then does not turn hard enough — it
+under-brakes and under-steers. The progress reward pays immediately for speed;
+braking pays later and only if the corner is *then* taken correctly, so the
+policy learns the first half and never the compound second half. The classical
+driver never has to discover it: `SpeedProfile` computes the braking point
+analytically from the whole track.
+
+**A `speed_cap` limiter on the action** (above the cap, no positive drive — a
+limiter rather than a reward term, so it cannot be traded against progress)
+took per-section distance from **468 m to 3448 m** in one 20M-step run.
+
+**Also retracted here:** a "required deceleration to follow the limit curve"
+metric, which scored `long_exit` (driven by every episode 4-13) *worse* than
+Spa and therefore does not discriminate. Caught only by running the control.
+
+---
+
+### F109 · A learned policy drove a lap of Spa: 40.5% of the circuit on average, one full lap, entirely inside the tyre model. · 2026-08-01
+
+**Source:** `[MEASURED]` — `experiments/tracks_pilot/spa_curriculum.py`,
+120M steps, 457 updates, 74.8 min, `n_envs=256`, γ=0.995,
+`entropy_anneal=True`, progressive speed cap 9.0 → 28.0 m/s over 19 raises.
+Selected checkpoint update 80 (cap 11.0), scored at its own cap.
+
+| metric | value |
+|---|---|
+| explained variance (tail) | **+0.977** |
+| per-section distance | **2834.9 m — 40.5% of the lap** |
+| best single section | **6122.8 m — 87%** |
+| worst slip | **9.8°** (bound 12°) |
+| sections > 12° | **0 / 24** |
+| envelope occupancy | **0.0000** |
+| **completed a full lap** | **1 / 24** |
+
+**`off_track_rate` came off 1.00 for the first time in ~20 training runs**,
+and the result is rule-4 valid. The driving is genuine, not gamed: `|n|` sits
+at **0.51** of half-width (mid-road; 0.2% of time beyond 80%, 0.0% beyond
+95%), `s` is strictly monotonic (min Δs +0.196 m/step — never reverses), speed
+steady at the cap.
+
+**What this establishes:** the task is learnable by plain PPO with no
+reference trajectory and no imitation, on a real circuit, within the tyre
+model this project can defend. **This is a rung-2 result throughout (rule 15)**
+— flat track, no elevation, ~5% of a real car's understeer — and the lap is
+slow, capped at 11 m/s where the classical driver's own clean lap runs at 12.
+It is a demonstration that the learning problem is solvable, **not** a lap time
+and not a claim about a real car.
+
+**Two defects found in the reporting of this very run, both recorded because
+both nearly changed the conclusion:**
+
+1. **Evaluation at the wrong configuration.** The per-section probe scored the
+   selected checkpoint at the cap the curriculum had reached by the *end*
+   (28 m/s) rather than the cap it was trained under (11 m/s). A policy trained
+   for 11 m/s driven at 28 slides: it reported 699.7 m, 36.0° slip, 15/24
+   outside the envelope — **making the best result in the thread read as a
+   failure.** A checkpoint must be evaluated at the configuration it was
+   selected under.
+2. **A curriculum that advances on plateau will climb past competence.**
+   `eval_return` peaked at 3521.7 (cap 11, update 80) and never recovered as
+   the cap rose — 181.7 at cap 14, 741.8 at the end. "Distance stopped
+   improving" is exactly what a policy at its competence edge looks like, so
+   the gate kept promoting a policy that was getting worse. Fixed with a freeze
+   once the deployed policy falls below half its best. **This risk was
+   identified while designing the curriculum and skipped "to keep it simpler";
+   that was the wrong call and it cost a 75-minute run.**
+
+
 # Decisions
 
 ### D1 · The project drives an offset-free tire. · 2026-07-25
@@ -4347,3 +4629,54 @@ Its predict-then-check structure is not being used, by decision. Validation
 against published ranges and against Chrono (the table above) is the mechanism
 we are relying on instead. The scaffold's concept explanations remain useful as
 reference; its Prediction/Reality slots are not part of the workflow.
+
+### D14 · Every training run in this project runs D6, and every checkpoint is evaluated at the configuration it was selected under. · 2026-08-01
+
+**Why.** Two failures in the Spa RL thread were caused by skipping steps this
+project already had:
+
+- **D6 was never run on any tracks pilot.** Its own
+  `the_critic_predicts_returns` check describes the dead critic exactly, and
+  three consecutive 40M-step runs trained on noise-dominated advantages while
+  reward coefficients were tuned on top (F104). Every Season 3/4 episode ran
+  D6; the pilots quietly did not.
+- **A checkpoint was scored at a configuration it was never trained for**,
+  reporting the best result in the thread as a failure (F109).
+
+**The rule.** A training run is not finished until D6 (or its track-adapted
+form, `experiments/tracks_pilot/d6_spa.py`) has run against its history and
+checkpoint, and the per-run summary carries `explained_variance` alongside the
+performance numbers. Where a curriculum varies the environment during
+training, the configuration in force at each evaluation is recorded, and the
+selected checkpoint is scored at **its own** — never at whatever the schedule
+happened to reach by the end.
+
+**Scope.** `d6_spa.py` adapts exactly two of D6's seven checks — the two
+hardcoded to `physics.track.CORNER_RADIUS`, meaningless on a 20-corner
+circuit — to use the circuit's own tightest corner. Everything else is D6's
+logic unmodified. Adaptation is not permission to loosen a gate.
+
+---
+
+### D15 · Reward design starts from the published literature, not from first principles. · 2026-08-01
+
+**Why.** The Spa reward was designed from scratch and tuned over nine
+training runs. The literature review that followed (F105) found the resulting
+structure was one to three orders of magnitude outside anything published —
+a 500-5000:1 terminal penalty against per-step progress, where the field uses
+3-20:1 delivered densely — and that the exact failure mode it produced
+(a policy that either ignores the penalty or freezes) is documented verbatim
+in Fuchs et al. (2021), along with its cure.
+
+**The rule.** Before designing or substantially re-weighting a reward, check
+what comparable published systems use, and record the comparison. The specific
+anchors this project now has: progress weight pinned at 1.0; safety penalties
+3-20:1 against per-step progress and **speed-scaled rather than fixed**;
+discount horizons of 5-10 s, not 40; random-position spawning at speed.
+
+**What this is not.** Not an instruction to copy coefficients — Sony's own
+follow-up finds no correlation between how closely a generated reward matches
+their hand-tuned one and how well it performs. It is an instruction to know
+the shape of the solution space before searching it. An hour of reading would
+have saved nine runs.
+

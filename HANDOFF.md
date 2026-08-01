@@ -1792,6 +1792,53 @@ left alone, now the binding weakness) as a single-variable change, then
 the ablation — subtract v2's seven changes one at a time, now that there
 is a working configuration to ablate from.
 
+### Session 25 close-out — findings written to FINDINGS.md (F103-F109, D14-D15)
+
+The Spa RL thread reached a real result and is written up in the canonical
+record, not only in TRACKS.md:
+
+- **F103** real-circuit import validates to 0.064% on length; smoothing must
+  be measured per-dataset (inheriting step 1's `s ≈ m` is wrong on 5 m data).
+- **F104** every tracks pilot had a dead critic — the value head could not
+  reach the required output magnitude within its gradient budget. `n_envs` is
+  not a free throughput knob; it divides that budget.
+- **F105** the reward was 1-3 orders of magnitude outside published racing RL,
+  and Fuchs et al. (2021) documents its exact failure mode and cure.
+- **F106** distance-before-crash was measuring tyre-model exploitation; the
+  "best" 653.5 m was 30.1° slip with all 24 sections invalid. Rule 4 caught it.
+- **F107** `envelope_penalty` has an inverted-U optimum (6.0 valid, 15.0 kills
+  the critic) — F104's magnitude mechanism in a third term.
+- **F108** the binding constraint was speed vs competence. Reward, observation
+  horizon and track import were each tested and **rejected** as blockers. The
+  classical driver laps Spa cleanly at 12 m/s, which is the existence proof.
+- **F109** a learned policy drove 40.5% of Spa on average, one full lap,
+  0/24 sections outside the tyre model, EV +0.977.
+- **D14** every training run runs D6; checkpoints are evaluated at the config
+  they were selected under.
+- **D15** reward design starts from the literature.
+
+**Where this leaves TRACKS.md staging.** Steps 1-5 are done: `SampledTrack`,
+closed-loop support, a real circuit imported and validated, the step-count
+question answered, and a policy trained on it that drives. Step 5's original
+gate ("the deployed policy completes a lap") is **partially** met — 1 of 24
+starts, at a capped 11 m/s.
+
+**Next action, in order:**
+
+1. **Re-run the curriculum with both F109 defects fixed** (evaluate at the
+   selected cap; freeze on degradation). The first run's cap climbed to 28
+   while its best policy lived at 11, so the budget was largely spent
+   destroying the result it had already found. The same 120M steps with the
+   freeze in place should hold and extend the peak rather than pass through it.
+2. **Then raise the ceiling deliberately** — the open question is how far the
+   cap can go before competence falls away, which is now well-posed.
+3. **Seeds.** F109 is one seed. Rule 5 wants ≥3 before any of it is quotable
+   as a trend, and nothing here has been replicated yet.
+4. **Figures.** Rule 1 and rule 13 are outstanding for this whole thread: no
+   pictorial figure exists for the Spa result. `viz/` has the primitives and
+   `spa_track.svg` is the obvious base — a lap trace over the circuit outline,
+   coloured by speed, with the envelope-compliant sections marked.
+
 ### Superseded — Episode 13 planning notes
 
 **Question:** if pushing one wheel harder rotates the car, why not just do that?

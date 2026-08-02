@@ -1,0 +1,52 @@
+"""Generated circuits must be closed, drivable, and corner-dense.
+
+Each of these encodes a failure the generator actually produced during
+development, so none of them is decoration (CLAUDE.md rule 11).
+"""
+
+import numpy as np
+import pytest
+
+from physics.track_gen import generate_track, generate_set, track_stats
+
+
+def test_generated_tracks_close_exactly():
+    """Closure is structural (periodic radial perturbation), so this should
+    hold to floating point, not to a tolerance that hides a real gap."""
+    for seed in (1, 7, 23):
+        t = generate_track(seed)
+        _, x, y, _ = t.centreline(2000)
+        gap = float(np.hypot(x[0] - x[-1], y[0] - y[-1]))
+        assert gap < 15.0, f"seed {seed} leaves a {gap:.1f} m gap"
+
+
+def test_minimum_radius_is_drivable():
+    """The first generator produced 0.4-1.3 m minimum radii -- the car needs
+    ~8 m at 0.97 g. Caused by a 1/h harmonic envelope, where curvature
+    (~ amplitude x frequency^2) is dominated by the HIGHEST harmonic."""
+    for t in generate_set(6, seed0=100):
+        st = track_stats(t)
+        assert st["min_radius_m"] >= 8.0, (
+            f"{t.name} has a {st['min_radius_m']:.1f} m corner -- undrivable")
+
+
+def test_tracks_are_corner_dense_which_is_the_whole_point():
+    """Real circuits average 40.7% cornering time. If generated ones do not
+    clearly beat that, this module has no reason to exist."""
+    fracs = [track_stats(t)["corner_time_fraction"] for t in generate_set(6, seed0=200)]
+    assert np.mean(fracs) > 0.55, f"mean corner time only {np.mean(fracs):.1%}"
+
+
+def test_the_filter_actually_rejects_things():
+    """A filter that accepts everything is not a filter. The raw generator at
+    a high lobe count produces sub-8 m radii, so demanding them must fail."""
+    with pytest.raises(RuntimeError, match="passed the filter"):
+        generate_set(3, seed0=300, n_lobes=18, amplitude=0.40,
+                     min_radius_m=8.0)
+
+
+def test_generation_is_deterministic():
+    a, b = generate_track(42), generate_track(42)
+    s = np.linspace(0.0, min(a.length, b.length), 500, endpoint=False)
+    assert np.allclose(a.curvature(s), b.curvature(s))
+    assert not np.allclose(a.curvature(s), generate_track(43).curvature(s))

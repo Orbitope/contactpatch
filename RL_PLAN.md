@@ -275,3 +275,105 @@ policy re-scored there too rather than quoting its old number.
 - **≥3 seeds before any of this is a trend** (rule 5). Everything measured so
   far is one seed, including F110.
 - **Preserve prior artefacts** under distinct names; never overwrite.
+
+---
+
+## Season 5 recalibration — what the multi-track and TV research changed
+
+Added after the fourth research pass. These do not affect Phases 0–4, which
+are about one circuit. They change what Episode 19 and 21 can claim.
+
+### The 17/7 split has no precedent, and a large gap is the *expected* result
+
+**Almost nobody trains on more than one circuit.** The largest real-circuit
+training sets found are **3 tracks** (Jaritz, ICRA 2018) and **4** (Siegert,
+ETH 2026). The standard protocol is train-on-one, test-on-others.
+
+**GT Sophy is a specialist.** Wurman et al. trained a version *per car-track
+combination*; the "mixed-scenario training" in the abstract is opponent counts
+and start positions, not circuits. Sony still require explicit training per
+new track. **The best racing agent in the world does not generalise across
+tracks and does not try to** — that is the framing for Episode 19, and it is
+a more interesting story than a gap number.
+
+**Calibration from general RL:** Cobbe et al. (CoinRun, 256M steps) close the
+generalisation gap only past ~10,000 training levels; Procgen says the same.
+**17 circuits is three orders of magnitude below that.** So:
+
+> **Pre-registered expectation: the generalist will be substantially worse on
+> held-out circuits. That is what the field predicts, and "we measured a gap
+> with 17 environments" is not a finding.** The finding is the *shape* — which
+> corner types it fails on, and whether the gap closes with more circuits.
+
+The nearest quantitative analogue is drone racing (Green et al. 2026, 40
+unseen tracks): **generalist 14.52% slower than per-track specialists, but the
+specialists score 0% off their own track.** Pre-register against that shape.
+
+### The trap: an under-trained specialist flatters the generalist
+
+Wang et al. (ICRA 2025) report a generalist **beating** the specialist on 2 of
+6 tracks at equal success. That should not happen if the specialists were
+converged. **Budget the specialists as carefully as the generalist and report
+their seed variance** — otherwise the gap measures our training budget, not
+generalisation. This compounds rule 5: three seeds on the specialists is not
+optional here, it is the whole comparison.
+
+### Training-set composition matters more than its size
+
+Two independent groups, same conclusion: **complex circuits generalise, simple
+ones do not.** Formula RL — trained on complex Aalborg transfers to both
+simple and complex held-outs; trained on simple Michigan **"did not finish the
+unseen tracks."** Evans's survey — the MCO map produces the best
+generalisation, all agents 100% on all test maps.
+
+**Action: over-weight tight, complex circuits in the 17-track training set.**
+The current stratified split takes 6 tight / 6 mixed / 5 fast, which is
+defensible, but the literature predicts a fast-biased training set fails on
+tight held-outs — worth stating as a directional prediction we can check.
+
+Also: Toromanoff (CARLA) went from **2.4% → 58.4%** on an unseen town moving
+from 1 to 3 training towns. Most of the benefit may arrive early; a 3-track
+generalist is worth running before the 17-track one.
+
+### Torque vectoring — the destination, recalibrated
+
+- **No RL torque-vectoring paper reports a lap time. Not one.** The literature
+  is road-car stability and energy efficiency on ISO manoeuvres.
+- **Classical TV is worth 4–9% of lap time** on small low-downforce cars
+  (Antunes 2019: **7.6%**, real Formula Student car, real track, PI yaw-rate
+  controller). That is the magnitude to expect and to design the experiment
+  to resolve.
+- **The 50–75% RL-beats-classical figures are baseline artefacts.** The same
+  table shows −57.6% against LQR+SQP and **−5.2%** against SMC+SQP. Realistic:
+  single-digit to low-double-digit percent against a competently tuned
+  baseline.
+- **No RL-TV paper reports seed variance.** Under rule 5 essentially every
+  RL-vs-RL claim in that literature would be "no measurable effect."
+
+**Prior art for our own POWER-REVIEW nulls:** Medina et al. (*Vehicles* 3(1),
+2021) compared PID / SMC / LQR / MPC / LPV-MPC by lap time on a real circuit —
+**all five within 0.13 s** — and state plainly that *"the error in the yaw
+rate is not critical for lap times."* That is an independent, published
+instance of exactly our Season 2 conclusion: lap time is a blunt instrument
+for a chassis controller. Cite it.
+
+**One paper does the joint thing we are building toward:** Bári & Palkovics
+(arXiv:2506.06077, 2025) — PPO, 5 continuous actions (steering + four wheel
+torques), TORCS, ~1.5×10⁹ steps. It **discovered torque vectoring from a bare
+progress reward**: more torque to outer wheels, *negative* torque on the
+inside rear against understeer. No lap time quoted, single track, and the
+authors concede the powertrain difference confounds their comparison. It is a
+proof that emergence is possible, not a magnitude.
+
+### What this project is structurally set up to produce that does not exist
+
+Recorded because it changes what is worth writing up, not just what to run:
+
+1. A training-track-count sweep against held-out real circuits.
+2. A specialist-vs-generalist lap-time gap on real circuits.
+3. An observation-representation ablation for cross-track transfer.
+4. A controlled comparison of TV action spaces (four torques vs `Mz` +
+   allocator vs residual) with everything else fixed.
+5. **Seed-variance reporting anywhere in RL torque vectoring.**
+6. A joint-policy vs fixed-driver-plus-RL-TV ablation with vehicle, tyre model
+   and reward held fixed.

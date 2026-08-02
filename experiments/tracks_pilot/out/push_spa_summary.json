@@ -1,0 +1,56 @@
+{
+  "track": "Spa",
+  "total_steps": 120000000,
+  "wall_s": 5877.186977863312,
+  "warm_start": "curr_ct2_policy.pt",
+  "cap_start": 13.0,
+  "cap_final": 23.5,
+  "cap_at_selection": 14.5,
+  "cap_raises": [
+    {
+      "update": 0,
+      "cap": 14.5,
+      "speed_mean": 13.729162475564,
+      "slip": 8.88120699477187
+    },
+    {
+      "update": 33,
+      "cap": 16.0,
+      "speed_mean": 14.485365083923325,
+      "slip": 10.527991601026802
+    },
+    {
+      "update": 36,
+      "cap": 17.5,
+      "speed_mean": 14.608473224501154,
+      "slip": 8.778092357230587
+    },
+    {
+      "update": 63,
+      "cap": 19.0,
+      "speed_mean": 15.82721148583552,
+      "slip": 11.91447238077176
+    },
+    {
+      "update": 107,
+      "cap": 20.5,
+      "speed_mean": 17.115001777664926,
+      "slip": 6.1491920450469175
+    },
+    {
+      "update": 181,
+      "cap": 22.0,
+      "speed_mean": 18.4554848755791,
+      "slip": 7.341800204242055
+    },
+    {
+      "update": 300,
+      "cap": 23.5,
+      "speed_mean": 19.80325457452496,
+      "slip": 7.450427371854168
+    }
+  ],
+  "grip_binding": true,
+  "explained_variance_tail": 0.9832870761552776,
+  "best_update": 0
+}

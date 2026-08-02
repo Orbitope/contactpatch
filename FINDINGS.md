@@ -4425,6 +4425,55 @@ untouched. The fix is process, not arithmetic — see D16.
 ---
 
 
+### F111 · Raising a uniform speed cap does not teach a policy to drive at the limit — it makes it arrive at corners faster and crash. Negative result. · 2026-08-01
+
+**Source:** `[MEASURED]` — `experiments/tracks_pilot/spa_pushlimit.py`, 120M
+steps warm-started from F110's policy, 98 min, cap raised 13.0 → 23.5 m/s
+over 7 raises on a gate that lifts the cap while mean speed sits within 90%
+of it.
+
+| update | cap (m/s) | `eval_return` | `off_track_rate` |
+|---|---|---|---|
+| **0** | 14.5 | **6800.2** | 1.00 |
+| 96 | 19.0 | 3421.3 | 1.00 |
+| 192 | 22.0 | 896.7 | 1.00 |
+| 456 | 23.5 | **790.9** | 1.00 |
+
+**The best checkpoint was update 0.** 120M steps made the policy
+monotonically worse — 8.6× by eval return — and the final policy is not
+quotable: 24/24 sections outside the 12° fit, worst slip 25.6°, occupancy
+0.0318. It did get faster (13.7 → 20.9 m/s mean) and the critic stayed
+healthy throughout (EV +0.983), so this is not a training failure. **It is
+the objective being wrong.**
+
+**The mechanism, and it is the transferable part.** The gate lifted the cap
+on *"is the policy pinned against it"* and never on *"can it still complete
+a lap"*. `off_track_rate` was 1.00 from update 0 and never recovered, and
+the cap rose seven times regardless. Stage 1's gate had a mastery condition;
+replacing it with a pure speed-ratio gate silently dropped the only term
+checking competence.
+
+**Two further observations that a gate fix alone does not answer:**
+
+1. **Training `off_track_rate` is a poor competence signal.** It is measured
+   under sampled actions with exploration noise; the same policy showing 1.00
+   there completes 48/48 probes when deployed. F61 already says a result is
+   the deployed policy's performance, and `_evaluate_deployed` already
+   returns `eval_finish_rate` every 8 updates — the gate should read that.
+2. **A uniform cap only binds on straights.** In corners the policy must
+   still choose to slow, and nothing in this curriculum teaches that.
+   Raising a global ceiling lets the car arrive at corners faster without
+   ever rewarding the decision to brake for one — which is exactly the
+   observed behaviour.
+
+**What this does not show:** whether a competence-gated cap would work, or
+whether the uniform-cap instrument is wrong in principle. Both are open, and
+the literature is being consulted before another 98 minutes is spent
+guessing (D15).
+
+---
+
+
 # Decisions
 
 ### D1 · The project drives an offset-free tire. · 2026-07-25

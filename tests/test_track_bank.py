@@ -93,3 +93,65 @@ def test_bank_lookup_is_fast_enough_to_be_worth_it():
     assert per < per_spline, (
         f"bank {per*1e6:.1f} us vs shared spline {per_spline*1e6:.1f} us -- "
         f"the bank is supposed to be FASTER, not just possible")
+
+
+# --- the banked batched env against the single-instance reference ----------
+
+def test_banked_batched_env_matches_the_reference_on_each_circuit():
+    """The whole point of BankTrackView: the scalar reference env can drive a
+    bank circuit, so it stays the oracle for the batched multi-track path.
+    Without this the multi-track env has NO independent check at all."""
+    from physics.rl_env import DrivingEnv, EnvConfig
+    from physics.batched_env import BatchedDrivingEnv
+
+    tracks = generate_set(3, seed0=900)
+    bank = TrackBank(tracks)
+    n = 3
+    cfg = EnvConfig(track=tracks[0], start_jitter_m=0.0, envelope_penalty=0.0,
+                    max_steps=250)
+    bat = BatchedDrivingEnv(cfg, n=n, seed=0, bank=bank)
+    bat.reset(0)
+    # Pin one instance per circuit so each is checked.
+    bat.track_id = np.arange(n) % len(tracks)
+    bat.s[:] = 0.0
+    bat._start_s[:] = 0.0
+
+    refs = []
+    for i in range(n):
+        rcfg = EnvConfig(track=BankTrackView(bank, int(bat.track_id[i])),
+                         start_jitter_m=0.0, envelope_penalty=0.0, max_steps=250)
+        r = DrivingEnv(rcfg)
+        r.reset(0)
+        r.s = 0.0
+        refs.append(r)
+
+    obs = bat.observe()
+    worst = 0.0
+    for step in range(120):
+        a = np.tile(np.array([0.15, 0.6]), (n, 1))
+        _, r_bat, d_bat, i_bat = bat.step(a)
+        for i, ref in enumerate(refs):
+            _, r_ref, d_ref, _ = ref.step(a[i])
+            worst = max(worst, abs(r_ref - r_bat[i]))
+            if d_ref or d_bat[i]:
+                break
+        else:
+            continue
+        break
+    assert worst < 1e-6, f"banked batched env diverges from reference by {worst:.2e}"
+
+
+def test_bank_actually_assigns_different_circuits_across_instances():
+    """Guard against a silently degenerate bank: if every instance draws the
+    same circuit the multi-track training is single-track and would look
+    fine."""
+    from physics.rl_env import EnvConfig
+    from physics.batched_env import BatchedDrivingEnv
+    tracks = generate_set(6, seed0=950)
+    bank = TrackBank(tracks)
+    cfg = EnvConfig(track=tracks[0], start_jitter_m=1.0, max_steps=50)
+    bat = BatchedDrivingEnv(cfg, n=64, seed=0, bank=bank)
+    bat.reset(0)
+    assert len(np.unique(bat.track_id)) >= 4, (
+        f"only {len(np.unique(bat.track_id))} distinct circuits across 64 "
+        f"instances -- the bank is not being sampled")

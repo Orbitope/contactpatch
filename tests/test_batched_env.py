@@ -456,3 +456,31 @@ def test_cross_track_penalty_matches_the_reference_and_fires_everywhere():
         if d_a or d_b:
             break
     assert seen_inside, "cross_track_penalty never fired inside 50% of the width"
+
+
+def test_speed_scaled_penalties_match_the_reference():
+    """F112: every published system scales safety penalties by speed or
+    kinetic energy; fixed-magnitude ones can be minimised by driving slowly,
+    which is what teaches timidity. Both implementations must agree, and the
+    scaling must actually change the reward."""
+    div = _reward_divergence(steps=350, policy=_tracker,
+                             speed_scaled_penalties=True,
+                             cross_track_penalty=2.0, envelope_penalty=6.0)
+    assert div < 1e-5
+    # ...and it must not be a no-op: at a speed away from penalty_speed_ref
+    # the scaled reward must differ from the fixed one.
+    base = EnvConfig(cross_track_penalty=2.0, envelope_penalty=6.0)
+    scaled = EnvConfig(cross_track_penalty=2.0, envelope_penalty=6.0,
+                       speed_scaled_penalties=True, penalty_speed_ref=25.0)
+    a, b = DrivingEnv(base), DrivingEnv(scaled)
+    o_a, o_b = a.reset(0), b.reset(0)
+    seen = False
+    for _ in range(350):
+        act = _tracker(o_a)[0]
+        o_a, r_a, d_a, i_a = a.step(act)
+        o_b, r_b, d_b, _ = b.step(act)
+        if abs(i_a["speed"] - 25.0) > 3.0 and abs(r_a - r_b) > 1e-9:
+            seen = True
+        if d_a or d_b:
+            break
+    assert seen, "speed scaling never changed the reward -- vacuous"

@@ -90,8 +90,19 @@ class BatchedDrivingEnv:
     """
 
     def __init__(self, cfg: EnvConfig | None = None, n: int = 8,
-                 seed: int = 0):
+                 seed: int = 0, bank=None):
+        """``bank``: an optional :class:`physics.track_bank.TrackBank`. When
+        given, each instance is assigned its own circuit from the bank and
+        redrawn on every reset, so a rollout covers many circuits rather than
+        one. ``cfg.track`` is then used only for its scalar geometry defaults
+        and MUST NOT be read for curvature or width -- every such lookup is
+        routed through the bank below.
+
+        ``None`` (the default) reproduces every existing single-track run
+        bit-for-bit: the bank branches are skipped entirely.
+        """
         cfg = cfg or EnvConfig()
+        self.bank = bank
         self._reject_unsupported(cfg)
         self.cfg, self.n = cfg, int(n)
         self.rng = np.random.default_rng(seed)
@@ -120,6 +131,23 @@ class BatchedDrivingEnv:
         self.obs_dim = len(self.observe_one_probe())
         self.act_dim = {"none": 2, "end_to_end": 5}[cfg.tv_mode]
         self._alloc()
+
+    # -- geometry, routed through the bank when there is one ---------------
+
+    def _kappa_at(self, s_arr: np.ndarray) -> np.ndarray:
+        if self.bank is None:
+            return np.asarray(self.cfg.track.curvature(s_arr))
+        return self.bank.curvature(self.track_id, s_arr)
+
+    def _halfwidth_at(self, s_arr: np.ndarray) -> np.ndarray:
+        if self.bank is None:
+            return np.asarray(self.cfg.track.half_width_at(s_arr))
+        return self.bank.half_width_at(self.track_id, s_arr)
+
+    def _track_length(self) -> np.ndarray | float:
+        if self.bank is None:
+            return self.cfg.track.length
+        return self.bank.length_of(self.track_id)
 
     # -- setup -----------------------------------------------------------
 
@@ -154,6 +182,9 @@ class BatchedDrivingEnv:
         self.v_x, self.v_y, self.yaw_rate, self.steer = z(), z(), z(), z()
         self.s, self.n_off, self.xi = z(), z(), z()
         self._start_s = z()
+        # Which circuit each instance is currently driving. All zeros without
+        # a bank, and then never read.
+        self.track_id = np.zeros(self.n, dtype=np.int64)
         self.steps = np.zeros(self.n, dtype=np.int64)
         self.a_x, self.a_y = z(), z()
         self.wheel_fz = np.zeros((self.n, 4), dtype=float)
@@ -185,8 +216,22 @@ class BatchedDrivingEnv:
         terminate together, which is the kind of order dependence that makes a
         run irreproducible without ever looking wrong.
         """
+        # New circuit per reset, drawn for the WHOLE batch then masked, like
+        # every other draw here -- so the stream cannot depend on how many
+        # instances happened to terminate together (see this method's
+        # docstring).
+        if self.bank is not None:
+            draw = self.rng.integers(0, len(self.bank), size=self.n)
+            self.track_id = np.where(m, draw, self.track_id)
+
         jitter = self.rng.uniform(0.0, max(self.cfg.start_jitter_m, 1e-12),
                                   size=self.n)
+        # Jitter is a FRACTION of each circuit's own length when banked --
+        # circuits differ in length, and a fixed metre jitter would start
+        # short circuits several laps in.
+        if self.bank is not None and self.cfg.start_jitter_m > 0:
+            jitter = (self.rng.uniform(0.0, 1.0, size=self.n)
+                      * self.bank.length_of(self.track_id))
         s0 = jitter if self.cfg.start_jitter_m > 0 else np.zeros(self.n)
         self.s = np.where(m, s0, self.s)
         # Per-instance start position, so `finished`/`episode_distance` can
@@ -202,7 +247,8 @@ class BatchedDrivingEnv:
         # the result cannot depend on how many instances happened to reset
         # together (see this method's own docstring).
         if self.cfg.spawn_speed_from_curvature:
-            kappa = np.abs(self.cfg.track.curvature(s0))
+            kappa = np.abs(self._kappa_at(s0) if self.bank is not None
+                           else self.cfg.track.curvature(s0))
             v_corner = np.sqrt(self.cfg.spawn_lat_budget
                                / np.maximum(kappa, 1e-9))
             v0 = np.minimum(self.cfg.entry_speed,
@@ -386,7 +432,7 @@ class BatchedDrivingEnv:
         self.wheel_fx, self.wheel_fz = fx, fz
 
         # curvilinear kinematics, all rates from the pre-integration state
-        kappa = self.cfg.track.curvature(self.s)
+        kappa = self._kappa_at(self.s)
         s_dot = ((self.v_x * np.cos(self.xi) - self.v_y * np.sin(self.xi))
                  / np.maximum(1.0 - self.n_off * kappa, 1e-3))
         n_dot = self.v_x * np.sin(self.xi) + self.v_y * np.cos(self.xi)
@@ -397,7 +443,7 @@ class BatchedDrivingEnv:
         self.steps += 1
 
         speed = np.hypot(self.v_x, self.v_y)
-        off = np.abs(self.n_off) > self.cfg.track.half_width_at(self.s)
+        off = np.abs(self.n_off) > self._halfwidth_at(self.s)
         # Relative to each instance's OWN start, not absolute position --
         # see rl_env.DrivingEnv.step's comment on the same bug. An instance
         # starting late in the lap (start_jitter_m, or the eval harness's
@@ -405,7 +451,7 @@ class BatchedDrivingEnv:
         # `length - start_s` to be called "finished", inflating both the
         # training-time finish signal and every per-section eval reading it.
         finished = ((self.s - self._start_s)
-                   >= self.cfg.track.length * self.cfg.n_laps)
+                   >= self._track_length() * self.cfg.n_laps)
         stalled = speed < self.cfg.min_speed
         timeout = self.steps >= self.cfg.max_steps
         done = off | finished | stalled | timeout
@@ -425,22 +471,26 @@ class BatchedDrivingEnv:
         reward = reward - np.where(off, self.cfg.off_track_penalty, 0.0)
         if self.cfg.stall_penalty > 0.0:
             reward = reward - np.where(stalled, self.cfg.stall_penalty, 0.0)
+        pscale = 1.0
+        if self.cfg.speed_scaled_penalties:
+            pscale = speed / max(self.cfg.penalty_speed_ref, 1e-9)
         if self.cfg.cross_track_penalty > 0.0:
             use_ct = np.abs(self.n_off) / np.maximum(
-                self.cfg.track.half_width_at(self.s), 1e-9)
-            reward = reward - (self.cfg.cross_track_penalty * dt * use_ct)
+                self._halfwidth_at(self.s), 1e-9)
+            reward = reward - (self.cfg.cross_track_penalty * dt * use_ct
+                              * pscale)
         if self.cfg.edge_penalty > 0.0:
             # Mirrors rl_env.step exactly -- see EnvConfig.edge_penalty.
             thr = self.cfg.edge_threshold
             use = np.abs(self.n_off) / np.maximum(
-                self.cfg.track.half_width_at(self.s), 1e-9)
+                self._halfwidth_at(self.s), 1e-9)
             ramp = np.clip((use - thr) / max(1.0 - thr, 1e-9), 0.0, 1.0)
             reward = reward - (self.cfg.edge_penalty * dt
                                * speed * speed * ramp)
         if self.cfg.envelope_penalty > 0.0:
             excess = np.maximum(
                 0.0, worst_deg - math.degrees(ENVELOPE_SLIP_MAX))
-            reward = reward - (self.cfg.envelope_penalty * excess
+            reward = reward - (pscale * self.cfg.envelope_penalty * excess
                                / math.degrees(ENVELOPE_SLIP_MAX))
         if self.cfg.workload_penalty > 0.0:
             # Mean squared friction-ellipse utilisation, from the FIRST RK4
@@ -489,14 +539,14 @@ class BatchedDrivingEnv:
         closed = getattr(self.cfg.track, "closed", False)
         preview = self.cfg.preview_distances or PREVIEW_DISTANCES
         ahead = np.stack(
-            [self.cfg.track.curvature(
+            [self._kappa_at(
                 self.s + d if closed else
                 np.minimum(self.s + d, self.cfg.track.length))
              for d in preview], axis=1) * 40.0
         return np.concatenate([
             np.stack([
                 speed / 50.0,
-                self.n_off / self.cfg.track.half_width_at(self.s),
+                self.n_off / self._halfwidth_at(self.s),
                 self.xi / math.radians(60.0),
                 self.yaw_rate / 2.0,
                 beta / math.radians(30.0),

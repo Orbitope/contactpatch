@@ -56,7 +56,8 @@ class TrackBank:
     instance using that instance's own length.
     """
 
-    __slots__ = ("names", "lengths", "n_grid", "_kappa", "_halfwidth", "n")
+    __slots__ = ("names", "lengths", "n_grid", "_kappa", "_halfwidth", "n",
+                 "_x", "_y", "_head")
 
     def __init__(self, tracks: list[Track], n_grid: int = 16000):
         if not tracks:
@@ -67,12 +68,21 @@ class TrackBank:
         self.lengths = np.array([float(t.length) for t in tracks], dtype=float)
         self._kappa = np.zeros((self.n, self.n_grid), dtype=np.float32)
         self._halfwidth = np.zeros((self.n, self.n_grid), dtype=np.float32)
+        # Cartesian centreline too: the single-instance env builds a
+        # TrackLocator from `centreline()`, and without it a bank circuit
+        # cannot be driven by the reference implementation -- which would
+        # leave the batched multi-track path with no differential oracle.
+        self._x = np.zeros((self.n, self.n_grid), dtype=np.float32)
+        self._y = np.zeros((self.n, self.n_grid), dtype=np.float32)
+        self._head = np.zeros((self.n, self.n_grid), dtype=np.float32)
         for i, t in enumerate(tracks):
             s = np.linspace(0.0, float(t.length), self.n_grid, endpoint=False)
             self._kappa[i] = np.asarray(t.curvature(s), dtype=float)
             hw = t.half_width_at(s)
             self._halfwidth[i] = (np.asarray(hw, dtype=float)
                                   if np.ndim(hw) else np.full(self.n_grid, float(hw)))
+            _, cx, cy, ch = t.centreline(self.n_grid)
+            self._x[i], self._y[i], self._head[i] = cx, cy, ch
 
     # -- lookup ----------------------------------------------------------
 
@@ -99,6 +109,24 @@ class TrackBank:
 
     def length_of(self, track_id: np.ndarray) -> np.ndarray:
         return self.lengths[track_id]
+
+    def centreline_of(self, idx: int, n: int):
+        """``(s, x, y, heading)`` for one circuit, resampled to ``n`` points.
+
+        Heading is interpolated on its unwrapped form: a naive interpolation
+        across the +pi/-pi branch cut produces a spurious near-2pi swing,
+        which renders as a car pointing backwards -- the F36 failure mode,
+        and one a plausible-looking figure hides.
+        """
+        g = np.linspace(0.0, self.n_grid, n, endpoint=False)
+        i0 = g.astype(np.int64) % self.n_grid
+        w = g - g.astype(np.int64)
+        i1 = (i0 + 1) % self.n_grid
+        lerp = lambda tb: tb[idx, i0] * (1 - w) + tb[idx, i1] * w
+        head = np.unwrap(self._head[idx].astype(float))
+        h = head[i0] * (1 - w) + head[i1] * w
+        s = np.linspace(0.0, float(self.lengths[idx]), n, endpoint=False)
+        return s, lerp(self._x).astype(float), lerp(self._y).astype(float), h
 
     def __len__(self) -> int:
         return self.n
@@ -135,3 +163,21 @@ class BankTrackView:
         s = np.atleast_1d(np.asarray(s, dtype=float))
         out = self.bank.half_width_at(np.full(s.shape, self.idx), s)
         return float(out[0]) if out.size == 1 else out
+
+    def centreline(self, n: int = 2000):
+        return self.bank.centreline_of(self.idx, n)
+
+    def to_xy(self, s, n_off):
+        """Curvilinear -> Cartesian, for figures and the locator."""
+        s = np.atleast_1d(np.asarray(s, dtype=float))
+        n_off = np.atleast_1d(np.asarray(n_off, dtype=float))
+        g = (s / self.length) % 1.0 * self.bank.n_grid
+        i0 = g.astype(np.int64) % self.bank.n_grid
+        w = g - g.astype(np.int64)
+        i1 = (i0 + 1) % self.bank.n_grid
+        b, k = self.bank, self.idx
+        x = b._x[k, i0] * (1 - w) + b._x[k, i1] * w
+        y = b._y[k, i0] * (1 - w) + b._y[k, i1] * w
+        head = np.unwrap(b._head[k].astype(float))
+        h = head[i0] * (1 - w) + head[i1] * w
+        return x - n_off * np.sin(h), y + n_off * np.cos(h)

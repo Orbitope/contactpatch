@@ -286,6 +286,26 @@ class EnvConfig:
     #: 0.5 m/s as soon as the agent completes three consecutive laps without
     #: track-boundary violation."
     speed_cap: float | None = None
+    #: Scale penalties by speed instead of applying them at fixed magnitude.
+    #: ``False`` reproduces every existing episode.
+    #:
+    #: **The literature is unanimous and we were the outlier** (FINDINGS
+    #: F105/F112). No published limit-driving racing agent uses a dense,
+    #: permanently-active, fixed-weight penalty on a continuous state
+    #: variable; ours had two. GT Sophy scales off-course and wall penalties
+    #: by speed SQUARED (`-(s_o' - s_o)(s_kph')^2`); Fuchs by kinetic energy
+    #: (`c_w||v||^2`, c_w = 5e-4); TRI by speed (`q2 * v * alpha_excess`).
+    #:
+    #: The reason is mechanical: a fixed penalty can be minimised by driving
+    #: slowly, so it teaches timidity. A speed-scaled one cannot. Fuchs found
+    #: fixed-value penalties produced agents that "either did not react to
+    #: the penalty or ended up in a strategy of full braking and standing
+    #: still" -- both of which this project hit (F105).
+    speed_scaled_penalties: bool = False
+    #: Reference speed for the scaling, m/s. The penalty is multiplied by
+    #: ``(v / v_ref)``, so at ``v_ref`` it equals its nominal weight and the
+    #: existing coefficients keep their meaning.
+    penalty_speed_ref: float = 25.0
     #: Cost per step for operating outside the slip envelope, scaled by how far
     #: outside. **0.0 reproduces Episode 9 exactly**, where the envelope is
     #: instrumented and deliberately unenforced.
@@ -721,12 +741,17 @@ class DrivingEnv:
             reward -= self.cfg.off_track_penalty
         if stalled and self.cfg.stall_penalty > 0.0:
             reward -= self.cfg.stall_penalty
+        # One factor, computed once, applied to every dense penalty below.
+        pscale = 1.0
+        if self.cfg.speed_scaled_penalties:
+            pscale = speed / max(self.cfg.penalty_speed_ref, 1e-9)
         if self.cfg.cross_track_penalty > 0.0:
             # Gentle, everywhere -- a restoring pull toward the centreline,
             # unlike edge_penalty which only bites near the boundary.
             use_ct = abs(self.n) / max(
                 float(self.cfg.track.half_width_at(self.s)), 1e-9)
-            reward -= self.cfg.cross_track_penalty * self.cfg.dt * use_ct
+            reward -= (self.cfg.cross_track_penalty * self.cfg.dt * use_ct
+                      * pscale)
         if self.cfg.edge_penalty > 0.0:
             # Dense, speed-scaled, charged every step near the edge -- see
             # EnvConfig.edge_penalty. Uses |n| BEFORE the off-track test so a
@@ -743,7 +768,7 @@ class DrivingEnv:
             worst = math.degrees(max(abs(v) for v in sl.values()))
             excess = max(0.0, worst - math.degrees(ENVELOPE_SLIP_MAX))
             if excess > 0.0:
-                reward -= self.cfg.envelope_penalty * excess / math.degrees(
+                reward -= pscale * self.cfg.envelope_penalty * excess / math.degrees(
                     ENVELOPE_SLIP_MAX)
         if self.cfg.workload_penalty > 0.0:
             # Mean squared friction-ellipse utilisation over the four wheels.

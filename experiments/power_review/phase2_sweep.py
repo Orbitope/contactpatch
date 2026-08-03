@@ -32,7 +32,7 @@ from experiments.common import ROOT
 from experiments.ep13.run import (CONDITIONS, SHORT, Car, best_valid,
                                   measure, section_time)
 from physics import schema
-from physics.driver import Driver, SpeedProfile, TrackLocator, drive_lap
+from physics.driver import BRAKE_MAX, Driver, SpeedProfile, TrackLocator, drive_lap
 from physics.track import long_exit
 
 #: Same anchor as Phase 1: 1x is RV-1's real power / the flat cap's existing
@@ -43,7 +43,8 @@ DRIVE_MAX_1X_N = 4500.0
 #: Phase 0's brake-cap fix: BRAKE_MAX (12,000 N -> 0.899 g) sits below the
 #: tire's own demonstrated ~0.985 g under the same combined-slip demands.
 #: Raised once, independent of power level -- not a sweep axis.
-BRAKE_MAX_FIXED_N = 0.985 * schema.G * schema.RV_1.mass
+#: Imported, not redefined -- see physics/driver.BRAKE_MAX.
+BRAKE_MAX_FIXED_N = BRAKE_MAX
 POWER_MULTIPLIERS = (1.0, 1.5, 2.0)
 POWER_LABELS = ("1x", "1.5x", "2x")
 DRIVE_MODELS = ("flat", "power_limited")

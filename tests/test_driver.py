@@ -243,3 +243,30 @@ def test_drive_lap_starts_at_the_tracks_own_pose_not_the_world_origin():
     # locator would report a huge |n| on step one and the lap would break
     # immediately, not finish cleanly.
     assert abs(lap.log["n"][0]) < 1.0
+
+
+def test_brake_cap_is_the_demonstrated_tyre_capability_not_a_round_number():
+    """POWER-REVIEW Phase 0 item 3. The old 12,000 N cap was 0.899 g on
+    RV-1's 1,360 kg, below the ~0.985 g the OC solver demonstrates under real
+    combined-slip demands -- so above `grip_use` 0.899 the CAP, not the tyre
+    and not the design, set the braking demand. Episode 13 and phase2 both
+    bisect `grip_use` to the cornering limit, i.e. they measure entirely
+    inside that regime.
+
+    Pinned as a g-value rather than a force so it cannot silently drift if
+    the reference mass changes."""
+    from physics import schema
+    g_value = BRAKE_MAX / (schema.RV_1.mass * schema.G)
+    assert g_value == pytest.approx(0.985, abs=1e-6), (
+        f"brake cap is {g_value:.4f} g, expected 0.985")
+    # ...and it must exceed the old cap, or the fix did not take.
+    assert BRAKE_MAX > 12000.0
+
+
+def test_phase2_and_ep13_brake_from_the_same_constant():
+    """They did not, and that is the bug this pins. phase2_sweep defined its
+    own `BRAKE_MAX_FIXED_N = 0.985 * G * mass` while ep13 used the module's
+    12,000 N -- two experiments in one review braking differently, which is
+    how F99's staleness began."""
+    from experiments.power_review.phase2_sweep import BRAKE_MAX_FIXED_N
+    assert BRAKE_MAX_FIXED_N == BRAKE_MAX

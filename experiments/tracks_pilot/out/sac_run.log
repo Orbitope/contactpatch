@@ -1,64 +1,659 @@
-SAC multi-track — 1000 circuits, 30,000,000 steps
+SAC multi-track — 1000 circuits, 8,000,000 steps
   TrackBank(1000 circuits, 16000 grid points, 2981-9444 m, 128 MB)
   cornering 34.1%  longest straight 1979 m
-  SAC: gamma 0.98, alpha 0.01, 5-step, 256x2 hidden, replay 1,000,000
+  SAC: gamma 0.98, alpha AUTO (target entropy -2), 5-step, 256x2 hidden, batch 512, replay 1,000,000
 
-  upd    40 steps=    202,496 buf=  202,341 ret=-11039.8 off=0.96 slip= 37.3 ent=-17.18 eval=     3.0
-  upd    80 steps=    205,056 buf=  204,876 ret=  -231.1 off=1.00 slip= 23.3 ent=-21.94 eval=     1.5
-  upd   120 steps=    207,616 buf=  207,408 ret=    -3.4 off=1.00 slip= 25.9 ent=-25.12 eval=   -11.2
-  upd   160 steps=    210,176 buf=  209,949 ret=   -63.6 off=1.00 slip= 25.6 ent=-21.47 eval=   -60.8
-  upd   200 steps=    212,736 buf=  212,527 ret=     4.3 off=1.00 slip= 25.1 ent=-14.84 eval=   -41.6
-  upd   240 steps=    215,296 buf=  215,092 ret=    -1.6 off=1.00 slip= 27.4 ent=-10.21 eval=   -23.5
-  upd   280 steps=    217,856 buf=  217,645 ret=   -11.6 off=1.00 slip= 29.1 ent=-8.61 eval=    -0.4
-  upd   320 steps=    220,416 buf=  220,181 ret=   -10.0 off=1.00 slip= 28.2 ent=-6.51 eval=    -3.3
-  upd   360 steps=    222,976 buf=  222,750 ret=    -4.2 off=1.00 slip= 26.3 ent=-4.33 eval=     8.4
-  upd   400 steps=    225,536 buf=  225,306 ret=   -22.9 off=0.99 slip= 24.1 ent=-3.21 eval=    21.4
-  upd   440 steps=    228,096 buf=  227,870 ret=   -26.1 off=0.97 slip= 24.6 ent=-2.76 eval=    23.2
-  upd   480 steps=    230,656 buf=  230,430 ret=   -10.7 off=0.96 slip= 26.6 ent=-2.80 eval=     3.0
-  upd   520 steps=    233,216 buf=  233,002 ret=   -11.5 off=0.96 slip= 27.3 ent=-2.33 eval=     6.4
-  upd   560 steps=    235,776 buf=  235,548 ret=    -5.7 off=0.93 slip= 28.0 ent=-2.32 eval=    21.7
-  upd   600 steps=    238,336 buf=  238,092 ret=    -9.6 off=0.89 slip= 27.8 ent=-2.31 eval=    18.5
-  upd   640 steps=    240,896 buf=  240,666 ret=   -12.5 off=0.90 slip= 28.0 ent=-2.48 eval=     1.5
-  upd   680 steps=    243,456 buf=  243,213 ret=    -3.8 off=0.91 slip= 27.3 ent=-2.32 eval=    11.8
-  upd   720 steps=    246,016 buf=  245,784 ret=    -2.4 off=0.89 slip= 27.0 ent=-2.26 eval=    23.6
-  upd   760 steps=    248,576 buf=  248,348 ret=   -24.1 off=0.94 slip= 29.9 ent=-2.32 eval=     7.2
-  upd   800 steps=    251,136 buf=  250,910 ret=   -67.8 off=0.94 slip= 32.2 ent=-2.53 eval=     6.6
-  upd   840 steps=    253,696 buf=  253,468 ret=   -44.3 off=0.94 slip= 29.9 ent=-2.46 eval=     7.2
-  upd   880 steps=    256,256 buf=  256,033 ret=   -96.9 off=0.84 slip= 30.4 ent=-2.43 eval=     7.4
-  upd   920 steps=    258,816 buf=  258,612 ret=   -96.8 off=0.79 slip= 29.8 ent=-2.67 eval=    10.8
-  upd   960 steps=    261,376 buf=  261,159 ret=  -129.3 off=0.80 slip= 31.2 ent=-2.65 eval=     7.8
-  upd  1000 steps=    263,936 buf=  263,720 ret=  -164.5 off=0.77 slip= 31.5 ent=-2.94 eval=     0.1
-  upd  1040 steps=    266,496 buf=  266,293 ret=  -694.9 off=0.23 slip= 44.3 ent=-4.90 eval=  -346.1
-  upd  1080 steps=    269,056 buf=  268,846 ret= -1107.2 off=0.00 slip= 50.3 ent=-5.66 eval=  -414.5
-  upd  1120 steps=    271,616 buf=  271,404 ret= -1399.6 off=0.01 slip= 56.1 ent=-6.19 eval=  -558.6
-  upd  1160 steps=    274,176 buf=  273,975 ret= -1417.3 off=0.03 slip= 57.7 ent=-6.41 eval=  -480.0
-  upd  1200 steps=    276,736 buf=  276,522 ret= -1424.4 off=0.02 slip= 58.5 ent=-6.60 eval=  -614.8
-  upd  1240 steps=    279,296 buf=  279,092 ret= -1350.6 off=0.02 slip= 58.4 ent=-6.83 eval=  -631.0
-  upd  1280 steps=    281,856 buf=  281,647 ret= -1420.8 off=0.07 slip= 58.4 ent=-6.95 eval=  -725.3
-  upd  1320 steps=    284,416 buf=  284,231 ret= -1437.9 off=0.07 slip= 58.6 ent=-7.26 eval=  -830.1
-  upd  1360 steps=    286,976 buf=  286,759 ret= -1433.1 off=0.06 slip= 59.0 ent=-8.60 eval=  -861.6
-  upd  1400 steps=    289,536 buf=  289,324 ret= -1426.8 off=0.11 slip= 59.2 ent=-7.93 eval=  -918.0
-  upd  1440 steps=    292,096 buf=  291,875 ret= -1407.1 off=0.14 slip= 58.2 ent=-7.97 eval=  -919.7
-  upd  1480 steps=    294,656 buf=  294,436 ret= -1377.8 off=0.18 slip= 57.4 ent=-8.51 eval=  -871.3
-  upd  1520 steps=    297,216 buf=  296,986 ret= -1266.5 off=0.20 slip= 55.8 ent=-8.75 eval=  -651.4
-  upd  1560 steps=    299,776 buf=  299,553 ret= -1253.9 off=0.24 slip= 53.9 ent=-8.89 eval=  -672.3
-  upd  1600 steps=    302,336 buf=  302,110 ret= -1269.5 off=0.38 slip= 48.9 ent=-9.30 eval=  -584.0
-  upd  1640 steps=    304,896 buf=  304,680 ret= -1171.5 off=0.35 slip= 47.9 ent=-9.27 eval=  -559.3
-  upd  1680 steps=    307,456 buf=  307,242 ret= -1144.7 off=0.43 slip= 46.5 ent=-9.46 eval=  -524.0
-  upd  1720 steps=    310,016 buf=  309,812 ret= -1054.0 off=0.49 slip= 45.8 ent=-9.46 eval=  -475.3
-  upd  1760 steps=    312,576 buf=  312,370 ret= -1199.9 off=0.83 slip= 45.8 ent=-9.92 eval=  -469.1
-  upd  1800 steps=    315,136 buf=  314,917 ret= -1270.7 off=0.89 slip= 46.6 ent=-10.00 eval=  -815.9
-  upd  1840 steps=    317,696 buf=  317,475 ret= -1385.2 off=0.93 slip= 46.8 ent=-9.94 eval=  -823.7
-  upd  1880 steps=    320,256 buf=  320,064 ret= -1416.4 off=0.96 slip= 46.3 ent=-10.31 eval=  -761.7
-  upd  1920 steps=    322,816 buf=  322,627 ret= -1426.0 off=0.99 slip= 45.5 ent=-10.87 eval=  -800.4
-  upd  1960 steps=    325,376 buf=  325,176 ret= -1352.1 off=0.98 slip= 45.0 ent=-10.60 eval=  -667.1
-  upd  2000 steps=    327,936 buf=  327,745 ret= -1216.6 off=0.97 slip= 44.4 ent=-10.92 eval=  -721.9
-  upd  2040 steps=    330,496 buf=  330,292 ret= -1131.2 off=0.97 slip= 43.9 ent=-10.91 eval=  -686.4
-  upd  2080 steps=    333,056 buf=  332,859 ret= -1119.3 off=0.97 slip= 43.8 ent=-10.99 eval=  -678.1
-  upd  2120 steps=    335,616 buf=  335,413 ret= -1128.8 off=0.98 slip= 44.1 ent=-11.39 eval=  -674.1
-  upd  2160 steps=    338,176 buf=  337,952 ret= -1025.2 off=0.96 slip= 43.9 ent=-11.13 eval=  -637.9
-  upd  2200 steps=    340,736 buf=  340,524 ret= -1010.1 off=0.96 slip= 43.6 ent=-11.49 eval=  -682.6
-  upd  2240 steps=    343,296 buf=  343,078 ret=  -972.6 off=0.94 slip= 44.0 ent=-11.55 eval=  -656.5
-  upd  2280 steps=    345,856 buf=  345,643 ret=  -971.5 off=0.93 slip= 44.5 ent=-12.16 eval=  -689.0
-  upd  2320 steps=    348,416 buf=  348,214 ret=  -877.5 off=0.94 slip= 45.2 ent=-12.16 eval=  -561.2
-  upd  2360 steps=    350,976 buf=  350,741 ret=  -801.7 off=0.92 slip= 45.2 ent=-12.74 eval=  -667.8
+  upd    40 steps=    102,528 buf=  102,279 ret=-24113.4 off=0.89 slip= 45.9 ent=-9.15 a=0.012 eval=     1.9
+  upd    80 steps=    105,088 buf=  104,876 ret=  -392.3 off=1.00 slip= 21.0 ent=-15.68 a=0.017 eval=     2.1
+  upd   120 steps=    107,648 buf=  107,421 ret=  -168.9 off=1.00 slip= 25.3 ent=-18.09 a=0.023 eval=     1.8
+  upd   160 steps=    110,208 buf=  110,010 ret=    -1.3 off=1.00 slip= 21.6 ent=-19.38 a=0.031 eval=     1.0
+  upd   200 steps=    112,768 buf=  112,562 ret=     0.4 off=1.00 slip= 23.2 ent=-20.15 a=0.040 eval=    -5.7
+  upd   240 steps=    115,328 buf=  115,118 ret=  -268.4 off=1.00 slip= 27.0 ent=-19.63 a=0.051 eval=    -9.5
+  upd   280 steps=    117,888 buf=  117,672 ret=  -156.2 off=1.00 slip= 22.4 ent=-17.15 a=0.066 eval=   -17.6
+  upd   320 steps=    120,448 buf=  120,233 ret=     0.1 off=1.00 slip= 24.3 ent=-12.96 a=0.082 eval=   -31.5
+  upd   360 steps=    123,008 buf=  122,790 ret=    -3.3 off=1.00 slip= 26.6 ent=-8.54 a=0.097 eval=   -37.6
+  upd   400 steps=    125,568 buf=  125,365 ret=    -7.4 off=1.00 slip= 28.7 ent=-6.27 a=0.111 eval=   -33.2
+  upd   440 steps=    128,128 buf=  127,912 ret=   -10.1 off=1.00 slip= 29.6 ent=-4.50 a=0.125 eval=   -40.4
+  upd   480 steps=    130,688 buf=  130,471 ret=   -12.9 off=1.00 slip= 30.0 ent=-3.26 a=0.136 eval=   -17.9
+  upd   520 steps=    133,248 buf=  133,026 ret=   -15.8 off=1.00 slip= 30.9 ent=-2.47 a=0.144 eval=    -7.9
+  upd   560 steps=    135,808 buf=  135,589 ret=   -21.2 off=1.00 slip= 31.2 ent=-1.70 a=0.146 eval=   -13.4
+  upd   600 steps=    138,368 buf=  138,140 ret=   -18.9 off=1.00 slip= 30.8 ent=-1.37 a=0.139 eval=    -3.0
+  upd   640 steps=    140,928 buf=  140,720 ret=   -18.1 off=0.98 slip= 30.8 ent=-0.94 a=0.124 eval=     1.9
+  upd   680 steps=    143,488 buf=  143,262 ret=   -24.2 off=0.99 slip= 31.5 ent=-0.88 a=0.107 eval=    -6.5
+  upd   720 steps=    146,048 buf=  145,822 ret=   -26.9 off=0.99 slip= 31.5 ent=-0.78 a=0.091 eval=    -3.6
+  upd   760 steps=    148,608 buf=  148,388 ret=   -21.6 off=0.98 slip= 31.0 ent=-0.66 a=0.077 eval=     8.0
+  upd   800 steps=    151,168 buf=  150,952 ret=   -16.9 off=0.97 slip= 30.2 ent=-0.60 a=0.066 eval=     6.9
+  upd   840 steps=    153,728 buf=  153,511 ret=   -19.4 off=0.97 slip= 30.6 ent=-0.61 a=0.056 eval=     6.1
+  upd   880 steps=    156,288 buf=  156,066 ret=   -21.9 off=0.97 slip= 30.8 ent=-0.46 a=0.048 eval=     9.2
+  upd   920 steps=    158,848 buf=  158,622 ret=   -15.9 off=0.98 slip= 29.2 ent=-0.49 a=0.041 eval=     3.8
+  upd   960 steps=    161,408 buf=  161,178 ret=   -18.2 off=0.99 slip= 29.5 ent=-0.30 a=0.036 eval=     5.0
+  upd  1000 steps=    163,968 buf=  163,735 ret=   -29.6 off=0.99 slip= 29.9 ent=-0.47 a=0.031 eval=     5.1
+  upd  1040 steps=    166,528 buf=  166,306 ret=   -30.3 off=0.98 slip= 30.3 ent=-0.27 a=0.026 eval=     9.1
+  upd  1080 steps=    169,088 buf=  168,863 ret=   -23.3 off=0.98 slip= 30.9 ent=-0.42 a=0.023 eval=    12.7
+  upd  1120 steps=    171,648 buf=  171,421 ret=   -24.2 off=0.97 slip= 30.8 ent=-0.41 a=0.020 eval=     4.9
+  upd  1160 steps=    174,208 buf=  173,982 ret=   -14.4 off=0.96 slip= 29.6 ent=-0.36 a=0.017 eval=    10.0
+  upd  1200 steps=    176,768 buf=  176,533 ret=   -18.4 off=0.96 slip= 29.5 ent=-0.75 a=0.015 eval=     1.9
+  upd  1240 steps=    179,328 buf=  179,108 ret=   -29.1 off=0.96 slip= 30.3 ent=-0.32 a=0.013 eval=     8.5
+  upd  1280 steps=    181,888 buf=  181,661 ret=   -24.7 off=0.95 slip= 30.2 ent=-0.39 a=0.011 eval=    10.8
+  upd  1320 steps=    184,448 buf=  184,220 ret=   -35.9 off=0.96 slip= 31.1 ent=-0.27 a=0.010 eval=     9.2
+  upd  1360 steps=    187,008 buf=  186,796 ret=   -32.1 off=0.93 slip= 31.5 ent=-0.34 a=0.008 eval=     9.3
+  upd  1400 steps=    189,568 buf=  189,348 ret=  -510.7 off=0.39 slip= 41.1 ent=-3.10 a=0.008 eval=  -677.1
+  upd  1440 steps=    192,128 buf=  191,902 ret= -1427.6 off=0.00 slip= 52.6 ent=-3.02 a=0.010 eval=  -793.4
+  upd  1480 steps=    194,688 buf=  194,470 ret= -1650.5 off=0.01 slip= 53.8 ent=-2.68 a=0.011 eval= -1113.0
+  upd  1520 steps=    197,248 buf=  197,043 ret= -1782.4 off=0.00 slip= 54.0 ent=-2.68 a=0.013 eval= -1291.9
+  upd  1560 steps=    199,808 buf=  199,586 ret= -1979.4 off=0.02 slip= 54.8 ent=-2.90 a=0.016 eval= -1192.9
+  upd  1600 steps=    202,368 buf=  202,144 ret= -1956.9 off=0.06 slip= 54.7 ent=-2.49 a=0.019 eval= -1669.8
+  upd  1640 steps=    204,928 buf=  204,702 ret= -2004.5 off=0.17 slip= 54.4 ent=-2.45 a=0.022 eval= -1818.3
+  upd  1680 steps=    207,488 buf=  207,267 ret= -1857.9 off=0.18 slip= 52.9 ent=-2.58 a=0.027 eval= -2107.3
+  upd  1720 steps=    210,048 buf=  209,850 ret= -1621.2 off=0.33 slip= 50.7 ent=-2.47 a=0.033 eval=     3.5
+  upd  1760 steps=    212,608 buf=  212,393 ret= -1626.5 off=0.34 slip= 50.9 ent=-2.45 a=0.041 eval=     1.8
+  upd  1800 steps=    215,168 buf=  214,946 ret= -1864.0 off=0.28 slip= 52.2 ent=-2.38 a=0.049 eval=     1.9
+  upd  1840 steps=    217,728 buf=  217,516 ret= -1647.6 off=0.39 slip= 51.0 ent=-2.18 a=0.055 eval=     0.9
+  upd  1880 steps=    220,288 buf=  220,076 ret= -1658.2 off=0.42 slip= 50.5 ent=-2.68 a=0.062 eval=     5.1
+  upd  1920 steps=    222,848 buf=  222,630 ret= -1485.1 off=0.46 slip= 49.5 ent=-2.32 a=0.068 eval=     1.7
+  upd  1960 steps=    225,408 buf=  225,192 ret= -1393.9 off=0.49 slip= 48.4 ent=-2.12 a=0.075 eval=     1.6
+  upd  2000 steps=    227,968 buf=  227,755 ret= -1200.1 off=0.56 slip= 46.7 ent=-1.83 a=0.080 eval=     2.2
+  upd  2040 steps=    230,528 buf=  230,324 ret= -1126.0 off=0.57 slip= 46.1 ent=-1.66 a=0.078 eval=     1.8
+  upd  2080 steps=    233,088 buf=  232,867 ret=  -919.9 off=0.64 slip= 44.1 ent=-1.79 a=0.075 eval=     1.5
+  upd  2120 steps=    235,648 buf=  235,427 ret=  -848.0 off=0.59 slip= 44.9 ent=-2.12 a=0.070 eval=     3.2
+  upd  2160 steps=    238,208 buf=  237,983 ret=  -798.0 off=0.60 slip= 43.6 ent=-1.70 a=0.064 eval=     1.4
+  upd  2200 steps=    240,768 buf=  240,549 ret=  -862.0 off=0.62 slip= 43.4 ent=-2.00 a=0.063 eval=     1.3
+  upd  2240 steps=    243,328 buf=  243,109 ret= -1066.3 off=0.51 slip= 47.1 ent=-2.39 a=0.068 eval=  -153.0
+  upd  2280 steps=    245,888 buf=  245,668 ret= -1187.4 off=0.45 slip= 48.8 ent=-2.11 a=0.074 eval=     1.3
+  upd  2320 steps=    248,448 buf=  248,240 ret= -1081.5 off=0.45 slip= 47.2 ent=-2.18 a=0.088 eval=     1.5
+  upd  2360 steps=    251,008 buf=  250,786 ret= -1161.0 off=0.41 slip= 47.6 ent=-2.01 a=0.099 eval=     1.3
+  upd  2400 steps=    253,568 buf=  253,349 ret= -1148.3 off=0.42 slip= 47.5 ent=-2.28 a=0.115 eval=     1.8
+  upd  2440 steps=    256,128 buf=  255,921 ret=  -904.2 off=0.51 slip= 46.8 ent=-2.21 a=0.133 eval=     1.4
+  upd  2480 steps=    258,688 buf=  258,460 ret=  -947.9 off=0.53 slip= 47.3 ent=-2.32 a=0.158 eval=     1.5
+  upd  2520 steps=    261,248 buf=  261,035 ret= -1283.3 off=0.67 slip= 50.6 ent=-2.88 a=0.201 eval= -1391.5
+  upd  2560 steps=    263,808 buf=  263,591 ret= -3639.7 off=0.96 slip= 55.1 ent=-3.07 a=0.278 eval= -1306.0
+  upd  2600 steps=    266,368 buf=  266,141 ret= -4130.3 off=0.96 slip= 55.3 ent=-3.16 a=0.369 eval= -1531.0
+  upd  2640 steps=    268,928 buf=  268,699 ret= -4166.1 off=0.94 slip= 55.1 ent=-2.85 a=0.469 eval= -1379.0
+  upd  2680 steps=    271,488 buf=  271,274 ret= -3763.8 off=0.94 slip= 55.0 ent=-2.58 a=0.579 eval= -1436.8
+  upd  2720 steps=    274,048 buf=  273,839 ret= -3483.3 off=0.88 slip= 54.0 ent=-2.48 a=0.670 eval= -1203.3
+  upd  2760 steps=    276,608 buf=  276,392 ret= -2746.4 off=0.74 slip= 52.6 ent=-2.14 a=0.747 eval= -1019.2
+  upd  2800 steps=    279,168 buf=  278,951 ret= -2426.0 off=0.72 slip= 51.5 ent=-2.12 a=0.805 eval=  -875.7
+  upd  2840 steps=    281,728 buf=  281,515 ret= -2223.9 off=0.70 slip= 50.9 ent=-1.95 a=0.813 eval=  -754.7
+  upd  2880 steps=    284,288 buf=  284,062 ret= -1825.7 off=0.43 slip= 50.4 ent=-1.91 a=0.823 eval=  -738.9
+  upd  2920 steps=    286,848 buf=  286,642 ret= -1523.2 off=0.21 slip= 49.7 ent=-1.88 a=0.849 eval=  -645.2
+  upd  2960 steps=    289,408 buf=  289,188 ret= -1371.7 off=0.12 slip= 48.9 ent=-1.98 a=0.850 eval=  -629.9
+  upd  3000 steps=    291,968 buf=  291,754 ret= -1451.8 off=0.46 slip= 48.1 ent=-1.91 a=0.799 eval=  -275.7
+  upd  3040 steps=    294,528 buf=  294,316 ret= -1482.4 off=0.54 slip= 47.8 ent=-1.63 a=0.697 eval=  -194.8
+  upd  3080 steps=    297,088 buf=  296,866 ret= -1426.9 off=0.71 slip= 46.5 ent=-1.79 a=0.590 eval=    21.0
+  upd  3120 steps=    299,648 buf=  299,431 ret= -1247.8 off=0.84 slip= 44.2 ent=-1.50 a=0.489 eval=    17.2
+  upd  3160 steps=    302,208 buf=  301,968 ret= -1011.3 off=0.91 slip= 42.0 ent=-1.54 a=0.403 eval=    26.5
+  upd  3200 steps=    304,768 buf=  304,527 ret=  -829.4 off=0.94 slip= 39.6 ent=-1.57 a=0.344 eval=    72.1
+  upd  3240 steps=    307,328 buf=  307,093 ret=  -591.6 off=0.94 slip= 36.8 ent=-1.55 a=0.299 eval=    18.6
+  upd  3280 steps=    309,888 buf=  309,664 ret=  -485.6 off=0.95 slip= 34.6 ent=-1.61 a=0.264 eval=    11.4
+  upd  3320 steps=    312,448 buf=  312,215 ret=  -392.0 off=0.94 slip= 34.4 ent=-1.51 a=0.232 eval=     9.6
+  upd  3360 steps=    315,008 buf=  314,790 ret=  -272.5 off=0.96 slip= 33.2 ent=-1.57 a=0.205 eval=    13.4
+  upd  3400 steps=    317,568 buf=  317,347 ret=  -220.8 off=0.95 slip= 31.8 ent=-1.74 a=0.181 eval=    19.3
+  upd  3440 steps=    320,128 buf=  319,898 ret=  -210.7 off=0.95 slip= 31.6 ent=-1.64 a=0.162 eval=    11.8
+  upd  3480 steps=    322,688 buf=  322,474 ret=  -237.1 off=0.92 slip= 32.9 ent=-1.64 a=0.147 eval=    30.7
+  upd  3520 steps=    325,248 buf=  325,021 ret=  -201.4 off=0.93 slip= 32.5 ent=-1.74 a=0.134 eval=    17.3
+  upd  3560 steps=    327,808 buf=  327,584 ret=  -158.3 off=0.96 slip= 30.5 ent=-1.87 a=0.123 eval=    18.0
+  upd  3600 steps=    330,368 buf=  330,147 ret=  -218.0 off=0.97 slip= 32.6 ent=-1.79 a=0.115 eval=    24.2
+  upd  3640 steps=    332,928 buf=  332,696 ret=  -212.3 off=0.94 slip= 31.8 ent=-1.92 a=0.113 eval=    18.5
+  upd  3680 steps=    335,488 buf=  335,262 ret=  -239.7 off=0.92 slip= 32.4 ent=-1.97 a=0.110 eval=    34.4
+  upd  3720 steps=    338,048 buf=  337,831 ret=  -284.8 off=0.90 slip= 33.7 ent=-2.01 a=0.113 eval=    18.4
+  upd  3760 steps=    340,608 buf=  340,386 ret=  -240.3 off=0.94 slip= 32.4 ent=-1.91 a=0.112 eval=    13.8
+  upd  3800 steps=    343,168 buf=  342,941 ret=  -174.0 off=0.95 slip= 30.4 ent=-1.97 a=0.104 eval=    19.8
+  upd  3840 steps=    345,728 buf=  345,497 ret=  -109.1 off=0.95 slip= 28.3 ent=-1.93 a=0.098 eval=    14.8
+  upd  3880 steps=    348,288 buf=  348,057 ret=   -73.1 off=0.96 slip= 26.3 ent=-1.98 a=0.095 eval=     9.9
+  upd  3920 steps=    350,848 buf=  350,627 ret=  -117.4 off=0.94 slip= 29.1 ent=-2.01 a=0.095 eval=    17.7
+  upd  3960 steps=    353,408 buf=  353,185 ret=  -177.3 off=0.91 slip= 31.0 ent=-1.97 a=0.100 eval=    23.9
+  upd  4000 steps=    355,968 buf=  355,727 ret=  -160.6 off=0.91 slip= 31.2 ent=-2.04 a=0.108 eval=    12.0
+  upd  4040 steps=    358,528 buf=  358,311 ret=  -214.6 off=0.90 slip= 33.7 ent=-2.01 a=0.114 eval=    21.1
+  upd  4080 steps=    361,088 buf=  360,853 ret=  -192.9 off=0.94 slip= 32.5 ent=-1.91 a=0.115 eval=    14.3
+  upd  4120 steps=    363,648 buf=  363,424 ret=  -126.4 off=0.93 slip= 27.6 ent=-1.94 a=0.109 eval=    21.0
+  upd  4160 steps=    366,208 buf=  365,990 ret=   -85.2 off=0.95 slip= 26.3 ent=-1.89 a=0.105 eval=    13.4
+  upd  4200 steps=    368,768 buf=  368,546 ret=   -94.7 off=0.92 slip= 28.0 ent=-1.87 a=0.098 eval=    20.7
+  upd  4240 steps=    371,328 buf=  371,101 ret=  -172.9 off=0.87 slip= 31.0 ent=-2.01 a=0.095 eval=    21.7
+  upd  4280 steps=    373,888 buf=  373,669 ret=  -141.3 off=0.89 slip= 30.0 ent=-1.98 a=0.095 eval=    13.9
+  upd  4320 steps=    376,448 buf=  376,229 ret=  -100.8 off=0.92 slip= 28.7 ent=-2.43 a=0.098 eval=    14.0
+  upd  4360 steps=    379,008 buf=  378,777 ret=  -148.9 off=0.94 slip= 30.6 ent=-1.92 a=0.098 eval=    14.8
+  upd  4400 steps=    381,568 buf=  381,341 ret=  -159.4 off=0.94 slip= 31.0 ent=-1.95 a=0.094 eval=    10.7
+  upd  4440 steps=    384,128 buf=  383,887 ret=  -126.6 off=0.94 slip= 30.4 ent=-1.92 a=0.091 eval=    15.8
+  upd  4480 steps=    386,688 buf=  386,468 ret=  -215.0 off=0.91 slip= 33.2 ent=-2.15 a=0.092 eval=    12.0
+  upd  4520 steps=    389,248 buf=  389,028 ret=  -184.0 off=0.93 slip= 31.7 ent=-2.13 a=0.095 eval=     9.4
+  upd  4560 steps=    391,808 buf=  391,576 ret=  -174.4 off=0.88 slip= 31.3 ent=-2.08 a=0.097 eval=    25.3
+  upd  4600 steps=    394,368 buf=  394,144 ret=  -144.6 off=0.90 slip= 30.8 ent=-1.85 a=0.093 eval=     7.1
+  upd  4640 steps=    396,928 buf=  396,705 ret=   -89.2 off=0.92 slip= 27.6 ent=-1.90 a=0.085 eval=    26.1
+  upd  4680 steps=    399,488 buf=  399,258 ret=   -59.9 off=0.92 slip= 25.4 ent=-1.96 a=0.079 eval=    20.8
+  upd  4720 steps=    402,048 buf=  401,820 ret=  -110.6 off=0.92 slip= 24.1 ent=-1.93 a=0.072 eval=     5.8
+  upd  4760 steps=    404,608 buf=  404,400 ret=  -113.5 off=0.94 slip= 24.3 ent=-1.85 a=0.066 eval=     9.9
+  upd  4800 steps=    407,168 buf=  406,929 ret=   -43.7 off=0.92 slip= 23.9 ent=-1.85 a=0.063 eval=    16.5
+  upd  4840 steps=    409,728 buf=  409,497 ret=   -23.1 off=0.94 slip= 24.1 ent=-1.91 a=0.061 eval=    15.5
+  upd  4880 steps=    412,288 buf=  412,064 ret=   -63.1 off=0.95 slip= 24.5 ent=-1.86 a=0.065 eval=     7.2
+  upd  4920 steps=    414,848 buf=  414,618 ret=   -36.9 off=0.95 slip= 22.9 ent=-1.95 a=0.063 eval=    12.9
+  upd  4960 steps=    417,408 buf=  417,178 ret=   -86.1 off=0.93 slip= 23.7 ent=-1.99 a=0.061 eval=     4.8
+  upd  5000 steps=    419,968 buf=  419,732 ret=   -81.5 off=0.94 slip= 24.1 ent=-1.61 a=0.056 eval=    10.5
+  upd  5040 steps=    422,528 buf=  422,301 ret=   -32.6 off=0.95 slip= 21.5 ent=-1.63 a=0.049 eval=    22.0
+  upd  5080 steps=    425,088 buf=  424,857 ret=   -34.1 off=0.94 slip= 21.5 ent=-1.47 a=0.041 eval=     8.1
+  upd  5120 steps=    427,648 buf=  427,432 ret=   -28.5 off=0.97 slip= 21.9 ent=-1.49 a=0.035 eval=    10.5
+  upd  5160 steps=    430,208 buf=  429,980 ret=   -10.9 off=0.98 slip= 21.0 ent=-1.75 a=0.031 eval=     9.3
+  upd  5200 steps=    432,768 buf=  432,542 ret=   -19.6 off=0.96 slip= 22.1 ent=-1.68 a=0.029 eval=     7.9
+  upd  5240 steps=    435,328 buf=  435,106 ret=   -67.3 off=0.93 slip= 23.1 ent=-1.55 a=0.027 eval=     7.6
+  upd  5280 steps=    437,888 buf=  437,670 ret=   -61.0 off=0.95 slip= 23.6 ent=-1.73 a=0.024 eval=     6.4
+  upd  5320 steps=    440,448 buf=  440,227 ret=   -34.1 off=0.98 slip= 24.2 ent=-1.80 a=0.022 eval=     6.0
+  upd  5360 steps=    443,008 buf=  442,797 ret=   -61.8 off=0.96 slip= 24.9 ent=-2.28 a=0.021 eval=     7.3
+  upd  5400 steps=    445,568 buf=  445,352 ret=   -27.8 off=0.99 slip= 23.3 ent=-1.91 a=0.019 eval=     7.4
+  upd  5440 steps=    448,128 buf=  447,902 ret=   -17.2 off=0.98 slip= 23.7 ent=-1.89 a=0.018 eval=     7.2
+  upd  5480 steps=    450,688 buf=  450,486 ret=   -51.7 off=0.97 slip= 24.5 ent=-2.10 a=0.018 eval=     7.2
+  upd  5520 steps=    453,248 buf=  453,033 ret=   -49.4 off=0.97 slip= 24.4 ent=-2.29 a=0.018 eval=     5.9
+  upd  5560 steps=    455,808 buf=  455,583 ret=   -64.4 off=0.99 slip= 25.1 ent=-2.18 a=0.019 eval=    12.5
+  upd  5600 steps=    458,368 buf=  458,129 ret=   -71.0 off=0.99 slip= 25.3 ent=-1.97 a=0.020 eval=     8.8
+  upd  5640 steps=    460,928 buf=  460,708 ret=  -100.7 off=0.98 slip= 26.7 ent=-2.03 a=0.021 eval=    11.2
+  upd  5680 steps=    463,488 buf=  463,261 ret=   -66.6 off=0.99 slip= 24.9 ent=-2.03 a=0.021 eval=     6.6
+  upd  5720 steps=    466,048 buf=  465,820 ret=   -57.3 off=0.98 slip= 23.8 ent=-1.96 a=0.022 eval=     7.8
+  upd  5760 steps=    468,608 buf=  468,393 ret=   -43.3 off=0.98 slip= 23.7 ent=-2.16 a=0.023 eval=    10.4
+  upd  5800 steps=    471,168 buf=  470,948 ret=  -103.1 off=0.98 slip= 25.6 ent=-1.94 a=0.024 eval=     8.0
+  upd  5840 steps=    473,728 buf=  473,516 ret=   -67.9 off=0.98 slip= 24.3 ent=-2.17 a=0.028 eval=     7.4
+  upd  5880 steps=    476,288 buf=  476,077 ret=   -36.0 off=0.99 slip= 23.7 ent=-1.85 a=0.028 eval=     9.2
+  upd  5920 steps=    478,848 buf=  478,635 ret=   -31.3 off=0.99 slip= 22.9 ent=-2.04 a=0.026 eval=     9.8
+  upd  5960 steps=    481,408 buf=  481,185 ret=   -48.4 off=0.99 slip= 23.6 ent=-1.81 a=0.025 eval=     6.7
+  upd  6000 steps=    483,968 buf=  483,749 ret=   -17.9 off=0.99 slip= 23.1 ent=-1.97 a=0.022 eval=     8.5
+  upd  6040 steps=    486,528 buf=  486,301 ret=   -83.0 off=0.99 slip= 24.5 ent=-1.83 a=0.021 eval=     5.3
+  upd  6080 steps=    489,088 buf=  488,864 ret=  -454.3 off=0.99 slip= 26.3 ent=-1.70 a=0.018 eval=     5.9
+  upd  6120 steps=    491,648 buf=  491,412 ret=  -568.8 off=0.99 slip= 24.1 ent=-1.83 a=0.018 eval=     5.8
+  upd  6160 steps=    494,208 buf=  493,989 ret=   -49.9 off=0.99 slip= 22.3 ent=-1.72 a=0.017 eval=     6.3
+  upd  6200 steps=    496,768 buf=  496,541 ret=     9.0 off=0.98 slip= 20.1 ent=-1.93 a=0.016 eval=     7.9
+  upd  6240 steps=    499,328 buf=  499,112 ret=     4.9 off=0.98 slip= 19.8 ent=-1.88 a=0.014 eval=     8.7
+  upd  6280 steps=    501,888 buf=  501,667 ret=   -11.1 off=1.00 slip= 19.5 ent=-1.73 a=0.015 eval=     7.7
+  upd  6320 steps=    504,448 buf=  504,213 ret=   -36.2 off=0.99 slip= 20.6 ent=-1.82 a=0.014 eval=     9.1
+  upd  6360 steps=    507,008 buf=  506,788 ret=   -39.7 off=0.98 slip= 20.4 ent=-1.91 a=0.012 eval=    14.4
+  upd  6400 steps=    509,568 buf=  509,353 ret=     3.3 off=0.99 slip= 19.5 ent=-1.77 a=0.011 eval=     7.4
+  upd  6440 steps=    512,128 buf=  511,917 ret=     3.8 off=1.00 slip= 18.6 ent=-1.83 a=0.010 eval=     9.5
+  upd  6480 steps=    514,688 buf=  514,454 ret=     2.9 off=0.99 slip= 18.5 ent=-2.08 a=0.009 eval=    12.2
+  upd  6520 steps=    517,248 buf=  517,013 ret=     5.9 off=0.99 slip= 18.2 ent=-1.84 a=0.009 eval=     7.5
+  upd  6560 steps=    519,808 buf=  519,597 ret=     8.2 off=0.99 slip= 17.8 ent=-2.74 a=0.008 eval=     8.0
+  upd  6600 steps=    522,368 buf=  522,148 ret=   -23.2 off=0.99 slip= 19.7 ent=-2.12 a=0.008 eval=    16.4
+  upd  6640 steps=    524,928 buf=  524,693 ret=   -23.9 off=0.98 slip= 18.7 ent=-2.37 a=0.008 eval=    12.8
+  upd  6680 steps=    527,488 buf=  527,271 ret=    13.7 off=0.98 slip= 16.6 ent=-1.95 a=0.008 eval=    11.9
+  upd  6720 steps=    530,048 buf=  529,814 ret=    12.0 off=0.98 slip= 16.7 ent=-1.91 a=0.008 eval=     8.8
+  upd  6760 steps=    532,608 buf=  532,390 ret=    11.8 off=0.99 slip= 16.9 ent=-2.01 a=0.009 eval=    16.2
+  upd  6800 steps=    535,168 buf=  534,946 ret=     6.4 off=0.99 slip= 17.2 ent=-2.14 a=0.009 eval=    11.2
+  upd  6840 steps=    537,728 buf=  537,509 ret=     2.2 off=0.98 slip= 17.2 ent=-1.91 a=0.009 eval=    10.4
+  upd  6880 steps=    540,288 buf=  540,084 ret=     6.2 off=0.99 slip= 17.5 ent=-1.97 a=0.008 eval=    11.2
+  upd  6920 steps=    542,848 buf=  542,616 ret=    14.2 off=1.00 slip= 16.9 ent=-1.90 a=0.008 eval=    14.4
+  upd  6960 steps=    545,408 buf=  545,184 ret=    15.1 off=0.99 slip= 16.1 ent=-1.89 a=0.007 eval=    14.9
+  upd  7000 steps=    547,968 buf=  547,744 ret=    15.3 off=0.97 slip= 16.1 ent=-1.88 a=0.007 eval=    11.3
+  upd  7040 steps=    550,528 buf=  550,293 ret=    -7.6 off=0.98 slip= 17.0 ent=-2.05 a=0.007 eval=    14.1
+  upd  7080 steps=    553,088 buf=  552,855 ret=    13.7 off=0.98 slip= 16.1 ent=-1.84 a=0.006 eval=    29.7
+  upd  7120 steps=    555,648 buf=  555,423 ret=    -7.2 off=0.99 slip= 16.5 ent=-2.07 a=0.007 eval=    13.3
+  upd  7160 steps=    558,208 buf=  557,995 ret=   -11.3 off=0.98 slip= 15.9 ent=-1.85 a=0.006 eval=     6.1
+  upd  7200 steps=    560,768 buf=  560,546 ret=    12.6 off=0.99 slip= 15.4 ent=-1.95 a=0.006 eval=     5.8
+  upd  7240 steps=    563,328 buf=  563,101 ret=    14.4 off=0.99 slip= 15.5 ent=-2.09 a=0.006 eval=    17.1
+  upd  7280 steps=    565,888 buf=  565,663 ret=    14.7 off=1.00 slip= 16.3 ent=-2.02 a=0.005 eval=     5.8
+  upd  7320 steps=    568,448 buf=  568,232 ret=    16.2 off=0.99 slip= 15.8 ent=-1.85 a=0.005 eval=     7.6
+  upd  7360 steps=    571,008 buf=  570,772 ret=    15.8 off=0.98 slip= 15.3 ent=-2.11 a=0.005 eval=     7.0
+  upd  7400 steps=    573,568 buf=  573,352 ret=    17.1 off=0.98 slip= 14.3 ent=-1.90 a=0.005 eval=    14.6
+  upd  7440 steps=    576,128 buf=  575,903 ret=    14.8 off=0.99 slip= 14.9 ent=-1.84 a=0.004 eval=    17.7
+  upd  7480 steps=    578,688 buf=  578,483 ret=    18.4 off=0.98 slip= 13.3 ent=-2.30 a=0.004 eval=    10.1
+  upd  7520 steps=    581,248 buf=  581,023 ret=    16.9 off=0.98 slip= 13.6 ent=-2.07 a=0.004 eval=     7.5
+  upd  7560 steps=    583,808 buf=  583,585 ret=    12.8 off=0.98 slip= 14.5 ent=-1.90 a=0.004 eval=     4.1
+  upd  7600 steps=    586,368 buf=  586,144 ret=    13.6 off=0.97 slip= 14.0 ent=-1.94 a=0.004 eval=     6.0
+  upd  7640 steps=    588,928 buf=  588,698 ret=    17.7 off=0.97 slip= 13.4 ent=-1.92 a=0.005 eval=    17.2
+  upd  7680 steps=    591,488 buf=  591,293 ret=     0.8 off=0.99 slip= 14.0 ent=-2.07 a=0.004 eval=    26.1
+  upd  7720 steps=    594,048 buf=  593,815 ret=   -40.3 off=0.99 slip= 15.9 ent=-2.24 a=0.004 eval=     3.3
+  upd  7760 steps=    596,608 buf=  596,383 ret=   -33.0 off=0.97 slip= 16.9 ent=-1.67 a=0.004 eval=     4.1
+  upd  7800 steps=    599,168 buf=  598,947 ret=   -24.4 off=0.97 slip= 17.7 ent=-2.11 a=0.004 eval=    16.1
+  upd  7840 steps=    601,728 buf=  601,518 ret=  -161.8 off=0.98 slip= 18.4 ent=-1.94 a=0.005 eval=     5.4
+  upd  7880 steps=    604,288 buf=  604,061 ret=  -206.9 off=0.97 slip= 20.6 ent=-1.96 a=0.005 eval=     5.8
+  upd  7920 steps=    606,848 buf=  606,620 ret=  -371.8 off=0.98 slip= 19.9 ent=-2.17 a=0.005 eval=     5.3
+  upd  7960 steps=    609,408 buf=  609,202 ret= -2180.0 off=0.99 slip= 18.3 ent=-2.14 a=0.005 eval=     6.7
+  upd  8000 steps=    611,968 buf=  611,745 ret=   -73.9 off=0.99 slip= 16.9 ent=-1.97 a=0.005 eval=     3.3
+  upd  8040 steps=    614,528 buf=  614,310 ret=    14.7 off=0.99 slip= 15.4 ent=-2.03 a=0.005 eval=     4.6
+  upd  8080 steps=    617,088 buf=  616,869 ret=    14.3 off=0.98 slip= 15.4 ent=-2.09 a=0.005 eval=     6.2
+  upd  8120 steps=    619,648 buf=  619,429 ret=    13.5 off=0.98 slip= 15.3 ent=-1.71 a=0.005 eval=     7.6
+  upd  8160 steps=    622,208 buf=  621,992 ret=    13.0 off=0.99 slip= 16.6 ent=-1.93 a=0.005 eval=     4.0
+  upd  8200 steps=    624,768 buf=  624,529 ret=    10.4 off=0.99 slip= 15.8 ent=-1.75 a=0.005 eval=     9.8
+  upd  8240 steps=    627,328 buf=  627,089 ret=    15.0 off=0.97 slip= 14.9 ent=-1.84 a=0.005 eval=     2.8
+  upd  8280 steps=    629,888 buf=  629,662 ret=    11.5 off=0.99 slip= 16.3 ent=-1.92 a=0.005 eval=    19.1
+  upd  8320 steps=    632,448 buf=  632,227 ret=     6.0 off=0.97 slip= 12.8 ent=-1.82 a=0.005 eval=     5.9
+  upd  8360 steps=    635,008 buf=  634,783 ret=     3.3 off=0.98 slip= 12.9 ent=-2.43 a=0.005 eval=     7.7
+  upd  8400 steps=    637,568 buf=  637,339 ret=    -1.0 off=0.97 slip= 15.1 ent=-1.80 a=0.005 eval=     6.4
+  upd  8440 steps=    640,128 buf=  639,888 ret=    13.6 off=0.99 slip= 13.4 ent=-2.18 a=0.004 eval=     6.1
+  upd  8480 steps=    642,688 buf=  642,461 ret=     7.6 off=0.98 slip= 14.3 ent=-1.68 a=0.004 eval=     4.5
+  upd  8520 steps=    645,248 buf=  645,018 ret=    -7.8 off=1.00 slip= 17.0 ent=-2.44 a=0.004 eval=     3.1
+  upd  8560 steps=    647,808 buf=  647,581 ret=     9.3 off=1.00 slip= 14.5 ent=-1.76 a=0.004 eval=     3.0
+  upd  8600 steps=    650,368 buf=  650,140 ret=  -359.2 off=1.00 slip= 15.0 ent=-1.71 a=0.004 eval=     5.5
+  upd  8640 steps=    652,928 buf=  652,714 ret=  -484.7 off=1.00 slip= 14.2 ent=-2.04 a=0.004 eval=     6.4
+  upd  8680 steps=    655,488 buf=  655,267 ret=  -505.7 off=0.99 slip= 14.7 ent=-1.90 a=0.004 eval=     2.8
+  upd  8720 steps=    658,048 buf=  657,819 ret=  -619.5 off=0.98 slip= 17.0 ent=-2.48 a=0.004 eval=     3.4
+  upd  8760 steps=    660,608 buf=  660,395 ret=  -447.4 off=0.99 slip= 14.9 ent=-2.06 a=0.004 eval=     3.9
+  upd  8800 steps=    663,168 buf=  662,958 ret=   -84.0 off=0.99 slip= 15.3 ent=-2.01 a=0.004 eval=     3.9
+  upd  8840 steps=    665,728 buf=  665,513 ret= -1420.9 off=1.00 slip= 15.9 ent=-2.09 a=0.004 eval=     3.9
+  upd  8880 steps=    668,288 buf=  668,085 ret=  -852.6 off=0.99 slip= 15.5 ent=-2.30 a=0.004 eval=     2.9
+  upd  8920 steps=    670,848 buf=  670,638 ret=  -979.7 off=1.00 slip= 15.7 ent=-2.34 a=0.005 eval=     3.8
+  upd  8960 steps=    673,408 buf=  673,211 ret=  -288.8 off=0.99 slip= 15.3 ent=-2.47 a=0.005 eval=     3.2
+  upd  9000 steps=    675,968 buf=  675,738 ret=  -820.2 off=0.99 slip= 14.5 ent=-2.09 a=0.006 eval=     3.3
+  upd  9040 steps=    678,528 buf=  678,310 ret= -1301.9 off=0.99 slip= 13.1 ent=-1.69 a=0.006 eval=     2.3
+  upd  9080 steps=    681,088 buf=  680,870 ret=  -492.8 off=0.98 slip= 14.6 ent=-2.03 a=0.006 eval=     3.3
+  upd  9120 steps=    683,648 buf=  683,444 ret=  -551.0 off=0.97 slip= 14.0 ent=-2.58 a=0.006 eval=     3.3
+  upd  9160 steps=    686,208 buf=  686,033 ret=  -695.0 off=0.98 slip= 17.9 ent=-2.03 a=0.006 eval=     2.2
+  upd  9200 steps=    688,768 buf=  688,532 ret=   -90.7 off=0.99 slip= 16.5 ent=-2.06 a=0.006 eval=     5.0
+  upd  9240 steps=    691,328 buf=  691,099 ret=  -262.5 off=0.97 slip= 14.4 ent=-1.77 a=0.007 eval=     3.3
+  upd  9280 steps=    693,888 buf=  693,661 ret= -1083.1 off=0.96 slip= 16.6 ent=-1.89 a=0.007 eval=     7.0
+  upd  9320 steps=    696,448 buf=  696,223 ret= -1109.2 off=0.99 slip= 16.8 ent=-2.10 a=0.007 eval=     5.8
+  upd  9360 steps=    699,008 buf=  698,812 ret= -1102.0 off=0.98 slip= 16.4 ent=-2.14 a=0.008 eval=     5.0
+  upd  9400 steps=    701,568 buf=  701,347 ret= -1084.3 off=0.90 slip= 14.7 ent=-2.30 a=0.009 eval=     7.0
+  upd  9440 steps=    704,128 buf=  703,906 ret=  -518.3 off=0.89 slip= 14.5 ent=-2.29 a=0.009 eval=     4.5
+  upd  9480 steps=    706,688 buf=  706,465 ret=  -414.9 off=0.93 slip= 14.1 ent=-2.06 a=0.010 eval=     3.8
+  upd  9520 steps=    709,248 buf=  709,037 ret=  -226.5 off=0.93 slip= 14.9 ent=-1.80 a=0.011 eval=     3.6
+  upd  9560 steps=    711,808 buf=  711,596 ret=  -659.6 off=0.90 slip= 15.1 ent=-2.12 a=0.014 eval=     4.0
+  upd  9600 steps=    714,368 buf=  714,147 ret= -1272.0 off=0.88 slip= 15.1 ent=-1.99 a=0.014 eval=     5.9
+  upd  9640 steps=    716,928 buf=  716,707 ret=  -608.4 off=0.93 slip= 15.4 ent=-2.01 a=0.015 eval=     3.4
+  upd  9680 steps=    719,488 buf=  719,264 ret=   -79.1 off=0.98 slip= 16.6 ent=-2.29 a=0.018 eval=     4.0
+  upd  9720 steps=    722,048 buf=  721,827 ret=   -66.1 off=0.97 slip= 17.6 ent=-1.98 a=0.019 eval=     3.2
+  upd  9760 steps=    724,608 buf=  724,386 ret=  -240.6 off=0.96 slip= 18.2 ent=-2.10 a=0.020 eval=     3.6
+  upd  9800 steps=    727,168 buf=  726,953 ret=  -188.8 off=0.94 slip= 16.7 ent=-2.25 a=0.021 eval=     3.5
+  upd  9840 steps=    729,728 buf=  729,513 ret=    10.4 off=0.96 slip= 14.5 ent=-1.97 a=0.022 eval=     3.2
+  upd  9880 steps=    732,288 buf=  732,063 ret=    14.4 off=0.96 slip= 14.5 ent=-2.07 a=0.024 eval=     3.5
+  upd  9920 steps=    734,848 buf=  734,626 ret=    14.4 off=0.97 slip= 14.0 ent=-2.12 a=0.026 eval=     5.3
+  upd  9960 steps=    737,408 buf=  737,199 ret=    11.7 off=0.98 slip= 13.4 ent=-2.14 a=0.029 eval=     4.5
+  upd 10000 steps=    739,968 buf=  739,738 ret=    13.2 off=0.98 slip= 12.8 ent=-1.90 a=0.030 eval=     5.7
+  upd 10040 steps=    742,528 buf=  742,301 ret=    11.3 off=0.96 slip= 12.6 ent=-1.93 a=0.030 eval=     5.2
+  upd 10080 steps=    745,088 buf=  744,869 ret=    10.5 off=0.96 slip= 12.7 ent=-1.95 a=0.030 eval=     5.3
+  upd 10120 steps=    747,648 buf=  747,450 ret=    14.3 off=0.97 slip= 13.3 ent=-1.91 a=0.030 eval=     3.7
+  upd 10160 steps=    750,208 buf=  750,005 ret=    11.3 off=0.96 slip= 14.1 ent=-1.87 a=0.031 eval=     3.7
+  upd 10200 steps=    752,768 buf=  752,559 ret=    13.6 off=0.93 slip= 13.6 ent=-1.93 a=0.031 eval=     5.5
+  upd 10240 steps=    755,328 buf=  755,102 ret=    15.8 off=0.95 slip= 12.5 ent=-1.90 a=0.034 eval=     3.7
+  upd 10280 steps=    757,888 buf=  757,665 ret=    14.5 off=0.97 slip= 12.5 ent=-2.03 a=0.035 eval=     5.1
+  upd 10320 steps=    760,448 buf=  760,228 ret=    14.2 off=0.98 slip= 12.4 ent=-2.00 a=0.037 eval=     5.5
+  upd 10360 steps=    763,008 buf=  762,784 ret=    16.2 off=0.97 slip= 12.0 ent=-1.95 a=0.040 eval=     4.2
+  upd 10400 steps=    765,568 buf=  765,358 ret=    16.1 off=0.97 slip= 12.6 ent=-2.01 a=0.045 eval=     3.8
+  upd 10440 steps=    768,128 buf=  767,914 ret=    16.3 off=0.97 slip= 12.5 ent=-1.94 a=0.046 eval=     5.8
+  upd 10480 steps=    770,688 buf=  770,477 ret=    16.9 off=0.98 slip= 12.1 ent=-2.06 a=0.046 eval=     4.6
+  upd 10520 steps=    773,248 buf=  773,030 ret=    14.2 off=0.96 slip= 11.9 ent=-1.98 a=0.044 eval=     4.7
+  upd 10560 steps=    775,808 buf=  775,582 ret=    14.3 off=0.98 slip= 12.0 ent=-2.15 a=0.040 eval=     7.2
+  upd 10600 steps=    778,368 buf=  778,139 ret=    15.0 off=0.98 slip= 13.2 ent=-2.08 a=0.040 eval=     5.3
+  upd 10640 steps=    780,928 buf=  780,716 ret=     3.4 off=0.95 slip= 13.1 ent=-1.88 a=0.038 eval=     4.1
+  upd 10680 steps=    783,488 buf=  783,261 ret=    14.9 off=0.99 slip= 12.4 ent=-2.10 a=0.039 eval=     4.8
+  upd 10720 steps=    786,048 buf=  785,832 ret=    15.6 off=0.96 slip= 12.6 ent=-2.06 a=0.039 eval=     4.6
+  upd 10760 steps=    788,608 buf=  788,393 ret=    14.8 off=0.96 slip= 12.7 ent=-1.97 a=0.039 eval=     5.6
+  upd 10800 steps=    791,168 buf=  790,953 ret=    15.3 off=0.96 slip= 12.0 ent=-2.02 a=0.041 eval=     4.5
+  upd 10840 steps=    793,728 buf=  793,497 ret=    16.0 off=0.98 slip= 12.2 ent=-1.93 a=0.041 eval=     5.0
+  upd 10880 steps=    796,288 buf=  796,080 ret=    15.5 off=0.98 slip= 12.5 ent=-1.81 a=0.041 eval=     5.0
+  upd 10920 steps=    798,848 buf=  798,651 ret=    15.6 off=0.98 slip= 12.0 ent=-1.98 a=0.042 eval=     4.9
+  upd 10960 steps=    801,408 buf=  801,167 ret=    15.1 off=0.98 slip= 12.4 ent=-1.91 a=0.042 eval=     8.1
+  upd 11000 steps=    803,968 buf=  803,730 ret=    15.7 off=0.98 slip= 11.8 ent=-2.07 a=0.042 eval=     6.6
+  upd 11040 steps=    806,528 buf=  806,310 ret=    17.0 off=0.97 slip= 11.6 ent=-1.92 a=0.042 eval=     8.5
+  upd 11080 steps=    809,088 buf=  808,858 ret=    17.9 off=0.99 slip= 11.8 ent=-1.96 a=0.044 eval=     5.5
+  upd 11120 steps=    811,648 buf=  811,426 ret=    17.3 off=0.98 slip= 11.7 ent=-2.13 a=0.044 eval=     4.9
+  upd 11160 steps=    814,208 buf=  813,979 ret=    12.8 off=0.98 slip= 12.8 ent=-1.94 a=0.046 eval=     6.6
+  upd 11200 steps=    816,768 buf=  816,555 ret=    16.4 off=0.99 slip= 12.9 ent=-2.11 a=0.046 eval=     5.1
+  upd 11240 steps=    819,328 buf=  819,103 ret=    15.7 off=0.98 slip= 12.5 ent=-1.99 a=0.047 eval=     6.4
+  upd 11280 steps=    821,888 buf=  821,683 ret=    17.5 off=0.97 slip= 12.1 ent=-1.92 a=0.047 eval=     6.2
+  upd 11320 steps=    824,448 buf=  824,230 ret=    16.3 off=0.99 slip= 12.8 ent=-2.08 a=0.046 eval=     5.3
+  upd 11360 steps=    827,008 buf=  826,789 ret=    15.4 off=0.99 slip= 12.7 ent=-1.97 a=0.042 eval=     5.5
+  upd 11400 steps=    829,568 buf=  829,342 ret=    15.3 off=1.00 slip= 13.0 ent=-1.84 a=0.041 eval=     7.0
+  upd 11440 steps=    832,128 buf=  831,909 ret=    15.0 off=0.99 slip= 13.0 ent=-2.44 a=0.042 eval=     6.1
+  upd 11480 steps=    834,688 buf=  834,466 ret=    15.6 off=0.98 slip= 12.4 ent=-2.03 a=0.042 eval=     5.2
+  upd 11520 steps=    837,248 buf=  837,023 ret=  -152.3 off=0.99 slip= 12.3 ent=-1.94 a=0.042 eval=     5.4
+  upd 11560 steps=    839,808 buf=  839,594 ret=    16.0 off=1.00 slip= 12.7 ent=-1.97 a=0.043 eval=     5.2
+  upd 11600 steps=    842,368 buf=  842,126 ret=    15.8 off=0.99 slip= 12.6 ent=-1.97 a=0.043 eval=     5.7
+  upd 11640 steps=    844,928 buf=  844,712 ret=    15.8 off=0.99 slip= 12.8 ent=-1.83 a=0.043 eval=     5.0
+  upd 11680 steps=    847,488 buf=  847,252 ret=    15.8 off=1.00 slip= 13.4 ent=-2.13 a=0.045 eval=     5.7
+  upd 11720 steps=    850,048 buf=  849,822 ret=    15.1 off=0.99 slip= 12.9 ent=-1.99 a=0.045 eval=     6.6
+  upd 11760 steps=    852,608 buf=  852,394 ret=    15.1 off=0.99 slip= 12.2 ent=-2.08 a=0.043 eval=     5.8
+  upd 11800 steps=    855,168 buf=  854,949 ret=    15.5 off=0.99 slip= 12.6 ent=-2.04 a=0.043 eval=     7.1
+  upd 11840 steps=    857,728 buf=  857,515 ret=    15.8 off=1.00 slip= 13.6 ent=-2.21 a=0.045 eval=     6.6
+  upd 11880 steps=    860,288 buf=  860,066 ret=    16.0 off=1.00 slip= 13.4 ent=-2.21 a=0.048 eval=     6.5
+  upd 11920 steps=    862,848 buf=  862,627 ret=   -84.5 off=0.99 slip= 13.5 ent=-2.01 a=0.049 eval=    10.4
+  upd 11960 steps=    865,408 buf=  865,198 ret=    15.8 off=0.99 slip= 12.8 ent=-2.03 a=0.053 eval=     8.1
+  upd 12000 steps=    867,968 buf=  867,733 ret=  -220.5 off=0.99 slip= 12.8 ent=-1.88 a=0.052 eval=     6.1
+  upd 12040 steps=    870,528 buf=  870,308 ret=    16.8 off=0.99 slip= 12.4 ent=-2.07 a=0.052 eval=    10.2
+  upd 12080 steps=    873,088 buf=  872,856 ret=    16.7 off=0.98 slip= 13.0 ent=-2.03 a=0.050 eval=     6.0
+  upd 12120 steps=    875,648 buf=  875,431 ret=    14.6 off=0.99 slip= 13.4 ent=-1.92 a=0.051 eval=     7.3
+  upd 12160 steps=    878,208 buf=  877,978 ret=    15.8 off=0.98 slip= 12.7 ent=-2.09 a=0.050 eval=     5.6
+  upd 12200 steps=    880,768 buf=  880,562 ret=    15.4 off=0.99 slip= 12.9 ent=-2.02 a=0.048 eval=     6.4
+  upd 12240 steps=    883,328 buf=  883,109 ret=    15.5 off=0.99 slip= 12.6 ent=-1.84 a=0.047 eval=     7.1
+  upd 12280 steps=    885,888 buf=  885,658 ret=  -129.2 off=0.98 slip= 12.4 ent=-1.82 a=0.045 eval=     6.6
+  upd 12320 steps=    888,448 buf=  888,205 ret=    16.2 off=0.99 slip= 12.9 ent=-1.98 a=0.044 eval=     5.9
+  upd 12360 steps=    891,008 buf=  890,798 ret=  -183.4 off=0.98 slip= 13.2 ent=-2.03 a=0.044 eval=     7.0
+  upd 12400 steps=    893,568 buf=  893,355 ret=  -185.6 off=0.99 slip= 13.7 ent=-2.10 a=0.042 eval=     7.7
+  upd 12440 steps=    896,128 buf=  895,911 ret=    15.8 off=0.99 slip= 12.6 ent=-2.03 a=0.042 eval=     7.5
+  upd 12480 steps=    898,688 buf=  898,459 ret=    15.3 off=1.00 slip= 12.6 ent=-1.95 a=0.042 eval=     7.6
+  upd 12520 steps=    901,248 buf=  901,029 ret=    15.5 off=1.00 slip= 12.4 ent=-2.21 a=0.040 eval=     7.3
+  upd 12560 steps=    903,808 buf=  903,601 ret=    10.0 off=0.98 slip= 12.5 ent=-1.89 a=0.040 eval=     8.3
+  upd 12600 steps=    906,368 buf=  906,156 ret=    16.1 off=1.00 slip= 12.3 ent=-1.96 a=0.041 eval=    14.2
+  upd 12640 steps=    908,928 buf=  908,706 ret=    15.9 off=0.99 slip= 12.9 ent=-1.93 a=0.043 eval=     7.4
+  upd 12680 steps=    911,488 buf=  911,274 ret=    15.9 off=1.00 slip= 12.6 ent=-1.82 a=0.042 eval=     8.2
+  upd 12720 steps=    914,048 buf=  913,825 ret=  -159.4 off=0.99 slip= 13.1 ent=-2.00 a=0.041 eval=     6.6
+  upd 12760 steps=    916,608 buf=  916,384 ret=  -148.7 off=0.98 slip= 12.6 ent=-1.86 a=0.040 eval=     6.8
+  upd 12800 steps=    919,168 buf=  918,946 ret=   -89.2 off=0.98 slip= 13.3 ent=-1.90 a=0.039 eval=     9.7
+  upd 12840 steps=    921,728 buf=  921,527 ret=    15.7 off=0.98 slip= 12.6 ent=-1.87 a=0.038 eval=     8.3
+  upd 12880 steps=    924,288 buf=  924,071 ret=    15.6 off=0.97 slip= 12.8 ent=-1.88 a=0.037 eval=    11.8
+  upd 12920 steps=    926,848 buf=  926,620 ret=    16.6 off=0.98 slip= 12.6 ent=-2.02 a=0.038 eval=     8.4
+  upd 12960 steps=    929,408 buf=  929,195 ret=  -141.3 off=1.00 slip= 12.8 ent=-2.22 a=0.039 eval=    10.6
+  upd 13000 steps=    931,968 buf=  931,742 ret=  -142.5 off=1.00 slip= 13.2 ent=-1.96 a=0.039 eval=     9.0
+  upd 13040 steps=    934,528 buf=  934,316 ret=  -123.0 off=0.98 slip= 13.2 ent=-2.25 a=0.040 eval=    10.6
+  upd 13080 steps=    937,088 buf=  936,876 ret=  -122.6 off=0.98 slip= 13.1 ent=-1.88 a=0.040 eval=     7.6
+  upd 13120 steps=    939,648 buf=  939,433 ret=    16.9 off=1.00 slip= 13.1 ent=-1.94 a=0.040 eval=    10.6
+  upd 13160 steps=    942,208 buf=  941,992 ret=    17.2 off=0.98 slip= 12.5 ent=-2.00 a=0.039 eval=     9.3
+  upd 13200 steps=    944,768 buf=  944,553 ret=    17.3 off=0.96 slip= 12.1 ent=-1.89 a=0.038 eval=     9.1
+  upd 13240 steps=    947,328 buf=  947,104 ret=    17.5 off=0.96 slip= 12.1 ent=-2.05 a=0.039 eval=     6.4
+  upd 13280 steps=    949,888 buf=  949,670 ret=    16.3 off=0.99 slip= 13.4 ent=-2.01 a=0.040 eval=     6.5
+  upd 13320 steps=    952,448 buf=  952,219 ret=    16.1 off=0.99 slip= 13.2 ent=-1.91 a=0.041 eval=     6.6
+  upd 13360 steps=    955,008 buf=  954,789 ret=    17.1 off=1.00 slip= 12.5 ent=-1.98 a=0.041 eval=     8.2
+  upd 13400 steps=    957,568 buf=  957,349 ret=    17.9 off=0.99 slip= 12.3 ent=-1.91 a=0.042 eval=     7.6
+  upd 13440 steps=    960,128 buf=  959,896 ret=     3.6 off=1.00 slip= 12.7 ent=-1.96 a=0.045 eval=    11.7
+  upd 13480 steps=    962,688 buf=  962,455 ret=   -79.4 off=0.99 slip= 13.4 ent=-2.12 a=0.046 eval=     9.9
+  upd 13520 steps=    965,248 buf=  965,022 ret=    16.3 off=0.99 slip= 12.5 ent=-1.95 a=0.048 eval=     8.8
+  upd 13560 steps=    967,808 buf=  967,588 ret=    15.9 off=1.00 slip= 13.1 ent=-2.03 a=0.049 eval=     8.0
+  upd 13600 steps=    970,368 buf=  970,162 ret=    15.9 off=0.99 slip= 13.8 ent=-2.25 a=0.049 eval=     6.2
+  upd 13640 steps=    972,928 buf=  972,706 ret=    16.5 off=1.00 slip= 13.1 ent=-2.02 a=0.049 eval=     7.6
+  upd 13680 steps=    975,488 buf=  975,277 ret=    16.6 off=1.00 slip= 12.7 ent=-1.97 a=0.051 eval=     8.4
+  upd 13720 steps=    978,048 buf=  977,822 ret=    16.2 off=0.99 slip= 12.9 ent=-1.92 a=0.052 eval=    11.1
+  upd 13760 steps=    980,608 buf=  980,386 ret=    16.6 off=0.99 slip= 13.1 ent=-1.92 a=0.050 eval=    11.3
+  upd 13800 steps=    983,168 buf=  982,945 ret=    17.2 off=1.00 slip= 12.9 ent=-1.95 a=0.048 eval=     8.4
+  upd 13840 steps=    985,728 buf=  985,508 ret=    16.6 off=1.00 slip= 12.6 ent=-1.89 a=0.047 eval=     9.3
+  upd 13880 steps=    988,288 buf=  988,062 ret=   -83.4 off=0.99 slip= 13.5 ent=-2.04 a=0.045 eval=     8.7
+  upd 13920 steps=    990,848 buf=  990,645 ret=    16.5 off=1.00 slip= 12.5 ent=-1.78 a=0.044 eval=     8.8
+  upd 13960 steps=    993,408 buf=  993,176 ret=    17.0 off=0.99 slip= 12.2 ent=-2.03 a=0.044 eval=     8.3
+  upd 14000 steps=    995,968 buf=  995,745 ret=    18.0 off=0.99 slip= 11.8 ent=-2.00 a=0.042 eval=     9.1
+  upd 14040 steps=    998,528 buf=  998,302 ret=    17.4 off=1.00 slip= 12.7 ent=-2.08 a=0.041 eval=     9.5
+  upd 14080 steps=  1,001,088 buf=1,000,000 ret=    17.6 off=0.99 slip= 12.6 ent=-1.84 a=0.040 eval=     8.3
+  upd 14120 steps=  1,003,648 buf=1,000,000 ret=    17.2 off=0.99 slip= 12.0 ent=-2.20 a=0.040 eval=    12.2
+  upd 14160 steps=  1,006,208 buf=1,000,000 ret=    18.0 off=0.98 slip= 12.0 ent=-2.02 a=0.040 eval=    10.0
+  upd 14200 steps=  1,008,768 buf=1,000,000 ret=    17.4 off=0.98 slip= 11.7 ent=-1.99 a=0.039 eval=    10.3
+  upd 14240 steps=  1,011,328 buf=1,000,000 ret=    16.3 off=0.94 slip= 12.5 ent=-1.70 a=0.037 eval=     6.9
+  upd 14280 steps=  1,013,888 buf=1,000,000 ret=    16.7 off=0.94 slip= 12.8 ent=-2.00 a=0.035 eval=     9.9
+  upd 14320 steps=  1,016,448 buf=1,000,000 ret=   -43.1 off=0.98 slip= 13.4 ent=-1.85 a=0.034 eval=     9.2
+  upd 14360 steps=  1,019,008 buf=1,000,000 ret=    16.8 off=0.99 slip= 12.5 ent=-1.89 a=0.031 eval=     8.4
+  upd 14400 steps=  1,021,568 buf=1,000,000 ret=    15.6 off=0.99 slip= 12.7 ent=-2.25 a=0.030 eval=    16.8
+  upd 14440 steps=  1,024,128 buf=1,000,000 ret=    16.0 off=0.99 slip= 13.0 ent=-2.10 a=0.031 eval=    10.2
+  upd 14480 steps=  1,026,688 buf=1,000,000 ret=    16.0 off=0.99 slip= 13.0 ent=-1.91 a=0.030 eval=     8.1
+  upd 14520 steps=  1,029,248 buf=1,000,000 ret=    15.9 off=0.99 slip= 13.0 ent=-2.14 a=0.030 eval=    12.0
+  upd 14560 steps=  1,031,808 buf=1,000,000 ret=    17.0 off=0.99 slip= 13.1 ent=-2.06 a=0.030 eval=    16.3
+  upd 14600 steps=  1,034,368 buf=1,000,000 ret=    17.9 off=0.99 slip= 12.9 ent=-2.02 a=0.030 eval=     8.4
+  upd 14640 steps=  1,036,928 buf=1,000,000 ret=    16.5 off=0.99 slip= 13.4 ent=-2.00 a=0.029 eval=    11.7
+  upd 14680 steps=  1,039,488 buf=1,000,000 ret=    16.8 off=0.99 slip= 13.1 ent=-2.02 a=0.030 eval=     8.6
+  upd 14720 steps=  1,042,048 buf=1,000,000 ret=    16.8 off=0.99 slip= 13.0 ent=-1.96 a=0.031 eval=    10.3
+  upd 14760 steps=  1,044,608 buf=1,000,000 ret=    16.4 off=0.99 slip= 13.2 ent=-1.90 a=0.030 eval=     9.3
+  upd 14800 steps=  1,047,168 buf=1,000,000 ret=    16.5 off=1.00 slip= 12.8 ent=-2.10 a=0.030 eval=     7.0
+  upd 14840 steps=  1,049,728 buf=1,000,000 ret=    18.2 off=1.00 slip= 13.0 ent=-1.84 a=0.028 eval=    12.1
+  upd 14880 steps=  1,052,288 buf=1,000,000 ret=    18.2 off=1.00 slip= 13.0 ent=-1.77 a=0.026 eval=     7.5
+  upd 14920 steps=  1,054,848 buf=1,000,000 ret=    18.1 off=0.99 slip= 12.8 ent=-1.89 a=0.024 eval=    13.5
+  upd 14960 steps=  1,057,408 buf=1,000,000 ret=    18.4 off=0.99 slip= 12.7 ent=-1.87 a=0.024 eval=    10.4
+  upd 15000 steps=  1,059,968 buf=1,000,000 ret=    17.5 off=1.00 slip= 12.6 ent=-1.82 a=0.022 eval=     6.6
+  upd 15040 steps=  1,062,528 buf=1,000,000 ret=    16.4 off=1.00 slip= 13.0 ent=-1.88 a=0.021 eval=    10.9
+  upd 15080 steps=  1,065,088 buf=1,000,000 ret=    17.0 off=0.99 slip= 13.0 ent=-1.78 a=0.020 eval=     8.6
+  upd 15120 steps=  1,067,648 buf=1,000,000 ret=    16.7 off=1.00 slip= 12.9 ent=-1.85 a=0.018 eval=     8.8
+  upd 15160 steps=  1,070,208 buf=1,000,000 ret=    17.0 off=1.00 slip= 12.9 ent=-2.14 a=0.017 eval=     9.9
+  upd 15200 steps=  1,072,768 buf=1,000,000 ret=    14.3 off=1.00 slip= 12.9 ent=-1.80 a=0.016 eval=     9.3
+  upd 15240 steps=  1,075,328 buf=1,000,000 ret=    16.8 off=1.00 slip= 12.6 ent=-1.66 a=0.015 eval=     7.3
+  upd 15280 steps=  1,077,888 buf=1,000,000 ret=    15.7 off=0.99 slip= 13.0 ent=-1.94 a=0.013 eval=    10.1
+  upd 15320 steps=  1,080,448 buf=1,000,000 ret=    15.2 off=1.00 slip= 13.2 ent=-1.75 a=0.012 eval=     8.2
+  upd 15360 steps=  1,083,008 buf=1,000,000 ret=    15.8 off=1.00 slip= 13.0 ent=-1.87 a=0.011 eval=     9.1
+  upd 15400 steps=  1,085,568 buf=1,000,000 ret=    13.9 off=0.96 slip= 13.6 ent=-1.99 a=0.010 eval=     7.3
+  upd 15440 steps=  1,088,128 buf=1,000,000 ret=   -20.6 off=0.94 slip= 14.1 ent=-2.14 a=0.010 eval=     8.8
+  upd 15480 steps=  1,090,688 buf=1,000,000 ret=    13.0 off=0.97 slip= 13.1 ent=-2.11 a=0.010 eval=     6.1
+  upd 15520 steps=  1,093,248 buf=1,000,000 ret=    13.3 off=0.99 slip= 13.5 ent=-1.98 a=0.011 eval=     6.0
+  upd 15560 steps=  1,095,808 buf=1,000,000 ret=    13.8 off=0.97 slip= 14.0 ent=-2.04 a=0.010 eval=     5.5
+  upd 15600 steps=  1,098,368 buf=1,000,000 ret=     1.6 off=0.99 slip= 15.1 ent=-1.97 a=0.010 eval=     5.8
+  upd 15640 steps=  1,100,928 buf=1,000,000 ret=    11.8 off=0.96 slip= 14.7 ent=-2.13 a=0.010 eval=     6.0
+  upd 15680 steps=  1,103,488 buf=1,000,000 ret=     9.5 off=0.96 slip= 14.9 ent=-1.83 a=0.010 eval=     5.8
+  upd 15720 steps=  1,106,048 buf=1,000,000 ret=     8.9 off=0.95 slip= 14.6 ent=-1.85 a=0.010 eval=     6.4
+  upd 15760 steps=  1,108,608 buf=1,000,000 ret=    11.6 off=0.97 slip= 14.3 ent=-1.76 a=0.009 eval=     6.7
+  upd 15800 steps=  1,111,168 buf=1,000,000 ret=    11.1 off=0.97 slip= 14.1 ent=-2.05 a=0.009 eval=     6.4
+  upd 15840 steps=  1,113,728 buf=1,000,000 ret=     8.6 off=0.97 slip= 15.0 ent=-1.87 a=0.008 eval=     5.1
+  upd 15880 steps=  1,116,288 buf=1,000,000 ret=    11.4 off=0.99 slip= 14.7 ent=-1.93 a=0.008 eval=     8.8
+  upd 15920 steps=  1,118,848 buf=1,000,000 ret=    11.3 off=0.99 slip= 14.2 ent=-2.17 a=0.008 eval=     7.3
+  upd 15960 steps=  1,121,408 buf=1,000,000 ret=    -8.0 off=0.97 slip= 15.2 ent=-1.89 a=0.007 eval=     8.3
+  upd 16000 steps=  1,123,968 buf=1,000,000 ret=  -570.5 off=0.96 slip= 15.3 ent=-2.00 a=0.007 eval=    12.9
+  upd 16040 steps=  1,126,528 buf=1,000,000 ret=  -567.5 off=0.94 slip= 14.2 ent=-1.80 a=0.006 eval=     8.5
+  upd 16080 steps=  1,129,088 buf=1,000,000 ret=    10.0 off=0.96 slip= 14.1 ent=-1.99 a=0.006 eval=     9.8
+  upd 16120 steps=  1,131,648 buf=1,000,000 ret=    12.9 off=0.98 slip= 13.4 ent=-1.92 a=0.006 eval=     7.7
+  upd 16160 steps=  1,134,208 buf=1,000,000 ret=   -30.4 off=0.96 slip= 14.9 ent=-1.96 a=0.006 eval=     9.8
+  upd 16200 steps=  1,136,768 buf=1,000,000 ret=    11.4 off=0.99 slip= 13.9 ent=-1.97 a=0.006 eval=     7.3
+  upd 16240 steps=  1,139,328 buf=1,000,000 ret=    10.3 off=0.98 slip= 14.4 ent=-1.97 a=0.006 eval=    10.2
+  upd 16280 steps=  1,141,888 buf=1,000,000 ret=    12.1 off=0.97 slip= 13.0 ent=-2.58 a=0.006 eval=    13.3
+  upd 16320 steps=  1,144,448 buf=1,000,000 ret=    13.0 off=0.97 slip= 12.6 ent=-1.84 a=0.007 eval=    10.5
+  upd 16360 steps=  1,147,008 buf=1,000,000 ret=    12.3 off=0.96 slip= 13.7 ent=-2.22 a=0.006 eval=     7.2
+  upd 16400 steps=  1,149,568 buf=1,000,000 ret=     9.0 off=0.98 slip= 13.7 ent=-2.11 a=0.007 eval=     8.7
+  upd 16440 steps=  1,152,128 buf=1,000,000 ret=    11.6 off=0.98 slip= 12.8 ent=-1.98 a=0.007 eval=     8.0
+  upd 16480 steps=  1,154,688 buf=1,000,000 ret=     8.0 off=0.99 slip= 13.4 ent=-1.71 a=0.007 eval=    12.6
+  upd 16520 steps=  1,157,248 buf=1,000,000 ret=     5.7 off=0.98 slip= 13.1 ent=-1.92 a=0.007 eval=    10.0
+  upd 16560 steps=  1,159,808 buf=1,000,000 ret=     4.7 off=0.99 slip= 12.7 ent=-2.08 a=0.007 eval=    14.2
+  upd 16600 steps=  1,162,368 buf=1,000,000 ret=     8.5 off=1.00 slip= 12.3 ent=-2.12 a=0.007 eval=     7.1
+  upd 16640 steps=  1,164,928 buf=1,000,000 ret=    11.2 off=1.00 slip= 12.4 ent=-1.76 a=0.007 eval=    13.0
+  upd 16680 steps=  1,167,488 buf=1,000,000 ret=    13.1 off=1.00 slip= 12.2 ent=-2.08 a=0.007 eval=    10.4
+  upd 16720 steps=  1,170,048 buf=1,000,000 ret=     6.1 off=0.99 slip= 12.9 ent=-1.87 a=0.008 eval=    11.1
+  upd 16760 steps=  1,172,608 buf=1,000,000 ret=     8.2 off=0.98 slip= 12.5 ent=-1.98 a=0.007 eval=    12.9
+  upd 16800 steps=  1,175,168 buf=1,000,000 ret=     4.8 off=1.00 slip= 12.8 ent=-1.98 a=0.007 eval=    12.7
+  upd 16840 steps=  1,177,728 buf=1,000,000 ret=     3.1 off=0.99 slip= 13.3 ent=-1.82 a=0.007 eval=    13.8
+  upd 16880 steps=  1,180,288 buf=1,000,000 ret=    10.9 off=1.00 slip= 12.3 ent=-2.01 a=0.007 eval=    12.6
+  upd 16920 steps=  1,182,848 buf=1,000,000 ret=     3.7 off=1.00 slip= 12.2 ent=-2.17 a=0.007 eval=    33.0
+  upd 16960 steps=  1,185,408 buf=1,000,000 ret=     7.3 off=1.00 slip= 12.1 ent=-1.94 a=0.007 eval=    12.2
+  upd 17000 steps=  1,187,968 buf=1,000,000 ret=    10.8 off=1.00 slip= 12.2 ent=-2.03 a=0.007 eval=    11.8
+  upd 17040 steps=  1,190,528 buf=1,000,000 ret=     7.7 off=0.99 slip= 13.2 ent=-2.01 a=0.006 eval=    22.0
+  upd 17080 steps=  1,193,088 buf=1,000,000 ret=    -3.3 off=0.99 slip= 13.2 ent=-2.12 a=0.006 eval=    12.5
+  upd 17120 steps=  1,195,648 buf=1,000,000 ret=     2.4 off=0.99 slip= 12.1 ent=-1.90 a=0.006 eval=    10.9
+  upd 17160 steps=  1,198,208 buf=1,000,000 ret=   -23.5 off=0.98 slip= 13.4 ent=-2.08 a=0.005 eval=    14.1
+  upd 17200 steps=  1,200,768 buf=1,000,000 ret=     3.5 off=1.00 slip= 12.5 ent=-1.98 a=0.005 eval=    11.6
+  upd 17240 steps=  1,203,328 buf=1,000,000 ret=    -1.0 off=1.00 slip= 12.5 ent=-1.93 a=0.005 eval=     8.7
+  upd 17280 steps=  1,205,888 buf=1,000,000 ret=    16.8 off=0.99 slip= 11.8 ent=-2.18 a=0.005 eval=    12.0
+  upd 17320 steps=  1,208,448 buf=1,000,000 ret=    -6.9 off=0.97 slip= 12.4 ent=-1.91 a=0.005 eval=    10.9
+  upd 17360 steps=  1,211,008 buf=1,000,000 ret=    -4.6 off=0.98 slip= 12.5 ent=-1.74 a=0.004 eval=    12.8
+  upd 17400 steps=  1,213,568 buf=1,000,000 ret=     1.3 off=1.00 slip= 12.2 ent=-2.06 a=0.004 eval=     9.3
+  upd 17440 steps=  1,216,128 buf=1,000,000 ret=    10.3 off=1.00 slip= 11.9 ent=-1.75 a=0.004 eval=    16.1
+  upd 17480 steps=  1,218,688 buf=1,000,000 ret=    -0.6 off=0.99 slip= 12.5 ent=-1.82 a=0.004 eval=    19.2
+  upd 17520 steps=  1,221,248 buf=1,000,000 ret=     3.4 off=0.99 slip= 12.4 ent=-1.75 a=0.004 eval=    17.2
+  upd 17560 steps=  1,223,808 buf=1,000,000 ret=   -22.4 off=0.98 slip= 13.4 ent=-1.85 a=0.003 eval=    20.2
+  upd 17600 steps=  1,226,368 buf=1,000,000 ret=   -20.4 off=0.97 slip= 13.2 ent=-1.88 a=0.003 eval=    18.5
+  upd 17640 steps=  1,228,928 buf=1,000,000 ret=   -20.4 off=0.97 slip= 15.3 ent=-1.84 a=0.003 eval=    17.2
+  upd 17680 steps=  1,231,488 buf=1,000,000 ret=   -12.7 off=0.97 slip= 14.6 ent=-1.89 a=0.003 eval=    15.9
+  upd 17720 steps=  1,234,048 buf=1,000,000 ret=   -15.8 off=0.97 slip= 13.2 ent=-1.86 a=0.003 eval=    13.7
+  upd 17760 steps=  1,236,608 buf=1,000,000 ret=     1.2 off=0.99 slip= 13.6 ent=-1.95 a=0.002 eval=     9.7
+  upd 17800 steps=  1,239,168 buf=1,000,000 ret=    -0.5 off=0.99 slip= 14.5 ent=-1.69 a=0.002 eval=    19.0
+  upd 17840 steps=  1,241,728 buf=1,000,000 ret=    -6.1 off=0.99 slip= 14.7 ent=-1.87 a=0.002 eval=    13.4
+  upd 17880 steps=  1,244,288 buf=1,000,000 ret=    -8.3 off=0.99 slip= 16.0 ent=-1.81 a=0.002 eval=    14.0
+  upd 17920 steps=  1,246,848 buf=1,000,000 ret=   -11.0 off=0.97 slip= 16.1 ent=-1.80 a=0.002 eval=    11.5
+  upd 17960 steps=  1,249,408 buf=1,000,000 ret=   -30.9 off=0.99 slip= 19.1 ent=-1.90 a=0.002 eval=    11.8
+  upd 18000 steps=  1,251,968 buf=1,000,000 ret=   -41.6 off=1.00 slip= 19.6 ent=-1.51 a=0.002 eval=    15.9
+  upd 18040 steps=  1,254,528 buf=1,000,000 ret=   -34.6 off=0.99 slip= 17.7 ent=-1.92 a=0.002 eval=    12.8
+  upd 18080 steps=  1,257,088 buf=1,000,000 ret=   -36.8 off=0.98 slip= 16.7 ent=-2.20 a=0.001 eval=    21.0
+  upd 18120 steps=  1,259,648 buf=1,000,000 ret=   -12.7 off=0.99 slip= 15.9 ent=-1.99 a=0.001 eval=    12.7
+  upd 18160 steps=  1,262,208 buf=1,000,000 ret=    -9.0 off=0.99 slip= 14.6 ent=-1.97 a=0.001 eval=    16.3
+  upd 18200 steps=  1,264,768 buf=1,000,000 ret=    -2.4 off=0.99 slip= 14.6 ent=-1.85 a=0.001 eval=    19.4
+  upd 18240 steps=  1,267,328 buf=1,000,000 ret=     1.7 off=1.00 slip= 13.0 ent=-2.21 a=0.001 eval=    10.7
+  upd 18280 steps=  1,269,888 buf=1,000,000 ret=     8.8 off=1.00 slip=  9.5 ent=-2.45 a=0.001 eval=    11.3
+  upd 18320 steps=  1,272,448 buf=1,000,000 ret=    16.9 off=1.00 slip=  8.8 ent=-1.91 a=0.001 eval=    29.0
+  upd 18360 steps=  1,275,008 buf=1,000,000 ret=    22.6 off=1.00 slip=  8.4 ent=-1.93 a=0.001 eval=    13.3
+  upd 18400 steps=  1,277,568 buf=1,000,000 ret=    23.4 off=1.00 slip=  8.0 ent=-1.79 a=0.001 eval=    11.3
+  upd 18440 steps=  1,280,128 buf=1,000,000 ret=    24.0 off=1.00 slip=  8.4 ent=-1.91 a=0.001 eval=    18.0
+  upd 18480 steps=  1,282,688 buf=1,000,000 ret=    22.6 off=1.00 slip=  8.8 ent=-1.92 a=0.001 eval=     6.2
+  upd 18520 steps=  1,285,248 buf=1,000,000 ret=    14.7 off=1.00 slip= 15.1 ent=-7.07 a=0.001 eval=    -0.1
+  upd 18560 steps=  1,287,808 buf=1,000,000 ret=     7.4 off=1.00 slip= 21.6 ent=-7.37 a=0.002 eval=    -2.4
+  upd 18600 steps=  1,290,368 buf=1,000,000 ret=  -304.0 off=0.99 slip= 22.6 ent=-6.71 a=0.002 eval=    -0.1
+  upd 18640 steps=  1,292,928 buf=1,000,000 ret=  -136.8 off=1.00 slip= 22.8 ent=-6.96 a=0.003 eval=     0.4
+  upd 18680 steps=  1,295,488 buf=1,000,000 ret=     7.3 off=1.00 slip= 20.9 ent=-6.77 a=0.004 eval=    -0.6
+  upd 18720 steps=  1,298,048 buf=1,000,000 ret=   -67.3 off=0.99 slip= 21.3 ent=-5.38 a=0.005 eval=     0.6
+  upd 18760 steps=  1,300,608 buf=1,000,000 ret=     8.1 off=1.00 slip= 20.3 ent=-5.30 a=0.006 eval=    -0.2
+  upd 18800 steps=  1,303,168 buf=1,000,000 ret=     2.2 off=1.00 slip= 22.2 ent=-5.98 a=0.007 eval=    -3.1
+  upd 18840 steps=  1,305,728 buf=1,000,000 ret=  -217.8 off=0.99 slip= 20.6 ent=-5.82 a=0.009 eval=    -2.4
+  upd 18880 steps=  1,308,288 buf=1,000,000 ret=     6.4 off=1.00 slip= 20.0 ent=-5.22 a=0.012 eval=    -0.2
+  upd 18920 steps=  1,310,848 buf=1,000,000 ret=     9.0 off=1.00 slip= 18.3 ent=-3.00 a=0.015 eval=     1.8
+  upd 18960 steps=  1,313,408 buf=1,000,000 ret=     9.1 off=1.00 slip= 16.5 ent=-4.85 a=0.018 eval=     0.7
+  upd 19000 steps=  1,315,968 buf=1,000,000 ret=  -122.0 off=0.99 slip= 18.4 ent=-3.23 a=0.022 eval=     1.8
+  upd 19040 steps=  1,318,528 buf=1,000,000 ret=     9.6 off=1.00 slip= 14.9 ent=-2.34 a=0.026 eval=     1.7
+  upd 19080 steps=  1,321,088 buf=1,000,000 ret=    10.1 off=1.00 slip= 12.3 ent=-1.27 a=0.025 eval=     1.6
+  upd 19120 steps=  1,323,648 buf=1,000,000 ret=   -43.2 off=0.99 slip= 12.8 ent=-1.67 a=0.025 eval=     1.6
+  upd 19160 steps=  1,326,208 buf=1,000,000 ret=    10.1 off=1.00 slip= 11.3 ent=-2.35 a=0.024 eval=     1.6
+  upd 19200 steps=  1,328,768 buf=1,000,000 ret=    11.0 off=1.00 slip= 11.5 ent=-2.18 a=0.023 eval=     1.6
+  upd 19240 steps=  1,331,328 buf=1,000,000 ret=    10.7 off=1.00 slip= 11.2 ent=-1.54 a=0.022 eval=     1.8
+  upd 19280 steps=  1,333,888 buf=1,000,000 ret=   -44.4 off=0.99 slip= 11.3 ent=-2.07 a=0.019 eval=     1.6
+  upd 19320 steps=  1,336,448 buf=1,000,000 ret=    11.7 off=1.00 slip= 11.3 ent=-2.56 a=0.021 eval=     1.6
+  upd 19360 steps=  1,339,008 buf=1,000,000 ret=    10.5 off=1.00 slip= 11.6 ent=-2.47 a=0.021 eval=     1.5
+  upd 19400 steps=  1,341,568 buf=1,000,000 ret=    12.3 off=1.00 slip= 11.9 ent=-1.77 a=0.020 eval=     1.7
+  upd 19440 steps=  1,344,128 buf=1,000,000 ret=    12.5 off=1.00 slip= 11.3 ent=-1.22 a=0.015 eval=     1.9
+  upd 19480 steps=  1,346,688 buf=1,000,000 ret=    13.3 off=1.00 slip= 11.1 ent=-1.01 a=0.013 eval=     1.8
+  upd 19520 steps=  1,349,248 buf=1,000,000 ret=    11.8 off=1.00 slip= 11.6 ent=-1.83 a=0.013 eval=     1.6
+  upd 19560 steps=  1,351,808 buf=1,000,000 ret=    11.6 off=1.00 slip= 11.9 ent=-1.51 a=0.012 eval=     1.8
+  upd 19600 steps=  1,354,368 buf=1,000,000 ret=    12.4 off=1.00 slip= 11.4 ent=-1.49 a=0.010 eval=     2.0
+  upd 19640 steps=  1,356,928 buf=1,000,000 ret=     2.0 off=1.00 slip= 11.6 ent=-1.51 a=0.009 eval=     2.0
+  upd 19680 steps=  1,359,488 buf=1,000,000 ret=    -6.7 off=1.00 slip= 11.4 ent=-1.21 a=0.008 eval=     1.9
+  upd 19720 steps=  1,362,048 buf=1,000,000 ret=    12.4 off=0.99 slip= 11.5 ent=-1.15 a=0.006 eval=     2.0
+  upd 19760 steps=  1,364,608 buf=1,000,000 ret=     4.7 off=0.99 slip= 11.3 ent=-1.29 a=0.006 eval=     2.3
+  upd 19800 steps=  1,367,168 buf=1,000,000 ret=    10.1 off=0.99 slip= 11.1 ent=-1.31 a=0.005 eval=     2.2
+  upd 19840 steps=  1,369,728 buf=1,000,000 ret=     1.2 off=1.00 slip= 10.9 ent=-1.44 a=0.004 eval=     2.6
+  upd 19880 steps=  1,372,288 buf=1,000,000 ret=     4.9 off=1.00 slip= 11.0 ent=-1.52 a=0.004 eval=     2.7
+  upd 19920 steps=  1,374,848 buf=1,000,000 ret=    14.0 off=0.99 slip= 11.3 ent=-1.30 a=0.003 eval=     2.8
+  upd 19960 steps=  1,377,408 buf=1,000,000 ret=   -28.2 off=0.98 slip= 12.3 ent=-1.37 a=0.003 eval=     2.5
+  upd 20000 steps=  1,379,968 buf=1,000,000 ret=   -18.2 off=0.99 slip= 13.1 ent=-1.69 a=0.003 eval=     2.9
+  upd 20040 steps=  1,382,528 buf=1,000,000 ret=   -88.5 off=0.95 slip= 13.9 ent=-1.43 a=0.002 eval=     2.8
+  upd 20080 steps=  1,385,088 buf=1,000,000 ret=  -221.4 off=0.96 slip= 14.0 ent=-1.90 a=0.002 eval=     3.0
+  upd 20120 steps=  1,387,648 buf=1,000,000 ret=  -404.3 off=0.95 slip= 14.4 ent=-1.65 a=0.002 eval=     2.8
+  upd 20160 steps=  1,390,208 buf=1,000,000 ret=    13.2 off=0.97 slip= 13.5 ent=-1.83 a=0.002 eval=     2.8
+  upd 20200 steps=  1,392,768 buf=1,000,000 ret=    12.8 off=0.95 slip= 15.0 ent=-1.70 a=0.001 eval=     2.7
+  upd 20240 steps=  1,395,328 buf=1,000,000 ret=    12.6 off=0.94 slip= 14.7 ent=-1.73 a=0.001 eval=     3.3
+  upd 20280 steps=  1,397,888 buf=1,000,000 ret=    13.9 off=0.94 slip= 13.5 ent=-1.87 a=0.001 eval=     3.3
+  upd 20320 steps=  1,400,448 buf=1,000,000 ret=     7.7 off=0.97 slip= 13.0 ent=-2.04 a=0.001 eval=     3.3
+  upd 20360 steps=  1,403,008 buf=1,000,000 ret=    14.1 off=0.96 slip= 11.7 ent=-2.14 a=0.001 eval=     3.4
+  upd 20400 steps=  1,405,568 buf=1,000,000 ret=    13.2 off=0.98 slip= 12.5 ent=-1.96 a=0.001 eval=     2.9
+  upd 20440 steps=  1,408,128 buf=1,000,000 ret=    12.2 off=1.00 slip= 12.3 ent=-2.36 a=0.002 eval=     2.9
+  upd 20480 steps=  1,410,688 buf=1,000,000 ret=    12.9 off=0.98 slip= 11.1 ent=-1.86 a=0.002 eval=     3.1
+  upd 20520 steps=  1,413,248 buf=1,000,000 ret=    12.7 off=1.00 slip= 12.5 ent=-1.82 a=0.002 eval=     2.9
+  upd 20560 steps=  1,415,808 buf=1,000,000 ret=    11.8 off=0.99 slip= 12.8 ent=-2.22 a=0.002 eval=     2.8
+  upd 20600 steps=  1,418,368 buf=1,000,000 ret=    11.7 off=0.99 slip= 12.9 ent=-1.95 a=0.002 eval=     3.1
+  upd 20640 steps=  1,420,928 buf=1,000,000 ret=    11.4 off=1.00 slip= 13.7 ent=-1.86 a=0.002 eval=     3.1
+  upd 20680 steps=  1,423,488 buf=1,000,000 ret=    12.6 off=0.99 slip= 13.7 ent=-2.08 a=0.002 eval=     3.3
+  upd 20720 steps=  1,426,048 buf=1,000,000 ret=     1.6 off=0.99 slip= 12.3 ent=-1.94 a=0.002 eval=     3.5
+  upd 20760 steps=  1,428,608 buf=1,000,000 ret=    13.0 off=0.99 slip= 12.2 ent=-1.90 a=0.002 eval=     3.2
+  upd 20800 steps=  1,431,168 buf=1,000,000 ret=    12.6 off=1.00 slip= 12.1 ent=-2.04 a=0.002 eval=     3.2
+  upd 20840 steps=  1,433,728 buf=1,000,000 ret=    12.8 off=0.99 slip= 11.9 ent=-2.08 a=0.002 eval=     3.4
+  upd 20880 steps=  1,436,288 buf=1,000,000 ret=    12.1 off=1.00 slip= 12.0 ent=-1.77 a=0.002 eval=     3.7
+  upd 20920 steps=  1,438,848 buf=1,000,000 ret=    12.5 off=1.00 slip= 12.4 ent=-1.82 a=0.002 eval=     3.5
+  upd 20960 steps=  1,441,408 buf=1,000,000 ret=    12.1 off=1.00 slip= 13.2 ent=-2.17 a=0.002 eval=     3.5
+  upd 21000 steps=  1,443,968 buf=1,000,000 ret=    11.7 off=0.99 slip= 13.1 ent=-1.79 a=0.001 eval=     3.5
+  upd 21040 steps=  1,446,528 buf=1,000,000 ret=     9.8 off=1.00 slip= 13.7 ent=-1.90 a=0.001 eval=     3.2
+  upd 21080 steps=  1,449,088 buf=1,000,000 ret=    11.2 off=0.99 slip= 13.3 ent=-2.08 a=0.001 eval=     3.3
+  upd 21120 steps=  1,451,648 buf=1,000,000 ret=    11.3 off=1.00 slip= 12.5 ent=-2.08 a=0.001 eval=     3.9
+  upd 21160 steps=  1,454,208 buf=1,000,000 ret=    10.9 off=1.00 slip= 12.9 ent=-2.10 a=0.001 eval=     3.8
+  upd 21200 steps=  1,456,768 buf=1,000,000 ret=    12.1 off=0.99 slip= 12.7 ent=-2.15 a=0.001 eval=     3.7
+  upd 21240 steps=  1,459,328 buf=1,000,000 ret=     2.2 off=0.99 slip= 14.2 ent=-1.93 a=0.002 eval=     3.8
+  upd 21280 steps=  1,461,888 buf=1,000,000 ret=    11.1 off=1.00 slip= 14.5 ent=-1.95 a=0.001 eval=     3.8
+  upd 21320 steps=  1,464,448 buf=1,000,000 ret=    10.7 off=1.00 slip= 13.7 ent=-1.66 a=0.001 eval=     3.8
+  upd 21360 steps=  1,467,008 buf=1,000,000 ret=    10.8 off=1.00 slip= 14.5 ent=-1.91 a=0.001 eval=     3.6
+  upd 21400 steps=  1,469,568 buf=1,000,000 ret=    10.6 off=1.00 slip= 14.4 ent=-2.05 a=0.001 eval=     3.4
+  upd 21440 steps=  1,472,128 buf=1,000,000 ret=    12.1 off=1.00 slip= 13.9 ent=-2.02 a=0.001 eval=     3.4
+  upd 21480 steps=  1,474,688 buf=1,000,000 ret=    10.9 off=1.00 slip= 14.2 ent=-2.57 a=0.001 eval=     3.8
+  upd 21520 steps=  1,477,248 buf=1,000,000 ret=    11.0 off=0.99 slip= 13.4 ent=-2.12 a=0.002 eval=     3.6
+  upd 21560 steps=  1,479,808 buf=1,000,000 ret=    10.6 off=1.00 slip= 14.0 ent=-2.05 a=0.002 eval=     3.7
+  upd 21600 steps=  1,482,368 buf=1,000,000 ret=    10.9 off=1.00 slip= 14.6 ent=-1.97 a=0.002 eval=     3.5
+  upd 21640 steps=  1,484,928 buf=1,000,000 ret=    10.3 off=0.99 slip= 14.7 ent=-1.82 a=0.002 eval=     4.0
+  upd 21680 steps=  1,487,488 buf=1,000,000 ret=    10.8 off=1.00 slip= 15.1 ent=-1.82 a=0.002 eval=     3.8
+  upd 21720 steps=  1,490,048 buf=1,000,000 ret=    10.6 off=1.00 slip= 15.0 ent=-1.84 a=0.002 eval=     3.7
+  upd 21760 steps=  1,492,608 buf=1,000,000 ret=    11.0 off=1.00 slip= 14.9 ent=-1.80 a=0.002 eval=     3.4
+  upd 21800 steps=  1,495,168 buf=1,000,000 ret=    10.5 off=1.00 slip= 14.9 ent=-1.86 a=0.002 eval=     3.8
+  upd 21840 steps=  1,497,728 buf=1,000,000 ret=    10.0 off=1.00 slip= 14.7 ent=-1.96 a=0.002 eval=     3.9
+  upd 21880 steps=  1,500,288 buf=1,000,000 ret=    10.9 off=1.00 slip= 14.5 ent=-1.91 a=0.002 eval=     3.8
+  upd 21920 steps=  1,502,848 buf=1,000,000 ret=    10.8 off=1.00 slip= 14.0 ent=-2.19 a=0.002 eval=     4.1
+  upd 21960 steps=  1,505,408 buf=1,000,000 ret=     3.4 off=1.00 slip= 15.0 ent=-1.96 a=0.002 eval=     3.6
+  upd 22000 steps=  1,507,968 buf=1,000,000 ret=    10.2 off=1.00 slip= 15.3 ent=-1.96 a=0.002 eval=     3.7
+  upd 22040 steps=  1,510,528 buf=1,000,000 ret=    -2.3 off=0.99 slip= 15.3 ent=-1.97 a=0.002 eval=     3.5
+  upd 22080 steps=  1,513,088 buf=1,000,000 ret=    10.7 off=1.00 slip= 14.9 ent=-1.82 a=0.002 eval=     3.9
+  upd 22120 steps=  1,515,648 buf=1,000,000 ret=     8.1 off=1.00 slip= 15.3 ent=-2.00 a=0.002 eval=     3.8
+  upd 22160 steps=  1,518,208 buf=1,000,000 ret=     8.8 off=0.99 slip= 15.0 ent=-1.88 a=0.002 eval=     3.8
+  upd 22200 steps=  1,520,768 buf=1,000,000 ret=    10.7 off=1.00 slip= 14.2 ent=-1.95 a=0.002 eval=     3.8
+  upd 22240 steps=  1,523,328 buf=1,000,000 ret=    10.6 off=1.00 slip= 14.8 ent=-2.05 a=0.002 eval=     3.6
+  upd 22280 steps=  1,525,888 buf=1,000,000 ret=    10.7 off=1.00 slip= 14.7 ent=-1.96 a=0.002 eval=     3.8
+  upd 22320 steps=  1,528,448 buf=1,000,000 ret=    10.6 off=1.00 slip= 14.6 ent=-1.90 a=0.002 eval=     3.4
+  upd 22360 steps=  1,531,008 buf=1,000,000 ret=    11.1 off=1.00 slip= 15.1 ent=-1.98 a=0.002 eval=     3.9
+  upd 22400 steps=  1,533,568 buf=1,000,000 ret=    11.3 off=1.00 slip= 14.6 ent=-2.23 a=0.002 eval=     4.2
+  upd 22440 steps=  1,536,128 buf=1,000,000 ret=    10.7 off=1.00 slip= 15.1 ent=-2.09 a=0.002 eval=     4.6
+  upd 22480 steps=  1,538,688 buf=1,000,000 ret=    11.1 off=1.00 slip= 15.0 ent=-1.99 a=0.002 eval=     4.1
+  upd 22520 steps=  1,541,248 buf=1,000,000 ret=    11.2 off=1.00 slip= 14.8 ent=-2.05 a=0.002 eval=     4.6
+  upd 22560 steps=  1,543,808 buf=1,000,000 ret=    10.9 off=1.00 slip= 14.5 ent=-2.03 a=0.002 eval=     4.4
+  upd 22600 steps=  1,546,368 buf=1,000,000 ret=    10.5 off=1.00 slip= 15.1 ent=-2.05 a=0.002 eval=     4.0
+  upd 22640 steps=  1,548,928 buf=1,000,000 ret=    10.1 off=1.00 slip= 16.4 ent=-1.56 a=0.002 eval=     4.6
+  upd 22680 steps=  1,551,488 buf=1,000,000 ret=    10.4 off=1.00 slip= 15.5 ent=-2.09 a=0.002 eval=     4.1
+  upd 22720 steps=  1,554,048 buf=1,000,000 ret=    10.1 off=1.00 slip= 16.5 ent=-1.79 a=0.001 eval=     3.8
+  upd 22760 steps=  1,556,608 buf=1,000,000 ret=    10.7 off=1.00 slip= 15.6 ent=-2.19 a=0.001 eval=     4.1
+  upd 22800 steps=  1,559,168 buf=1,000,000 ret=    10.6 off=1.00 slip= 15.3 ent=-1.82 a=0.001 eval=     4.1
+  upd 22840 steps=  1,561,728 buf=1,000,000 ret=    11.7 off=1.00 slip= 15.0 ent=-1.83 a=0.001 eval=     4.7
+  upd 22880 steps=  1,564,288 buf=1,000,000 ret=    10.7 off=1.00 slip= 15.0 ent=-1.89 a=0.001 eval=     5.0
+  upd 22920 steps=  1,566,848 buf=1,000,000 ret=    11.7 off=1.00 slip= 15.8 ent=-2.13 a=0.001 eval=     4.4
+  upd 22960 steps=  1,569,408 buf=1,000,000 ret=    10.7 off=1.00 slip= 15.8 ent=-2.03 a=0.001 eval=     4.2
+  upd 23000 steps=  1,571,968 buf=1,000,000 ret=     9.9 off=1.00 slip= 15.8 ent=-1.95 a=0.001 eval=     4.1
+  upd 23040 steps=  1,574,528 buf=1,000,000 ret=    11.2 off=1.00 slip= 15.0 ent=-2.11 a=0.001 eval=     3.7
+  upd 23080 steps=  1,577,088 buf=1,000,000 ret=    10.4 off=1.00 slip= 16.1 ent=-2.12 a=0.001 eval=     3.8
+  upd 23120 steps=  1,579,648 buf=1,000,000 ret=    10.5 off=1.00 slip= 15.8 ent=-2.07 a=0.001 eval=     3.9
+  upd 23160 steps=  1,582,208 buf=1,000,000 ret=     9.4 off=1.00 slip= 16.3 ent=-2.10 a=0.001 eval=     4.8
+  upd 23200 steps=  1,584,768 buf=1,000,000 ret=    10.3 off=1.00 slip= 16.1 ent=-1.93 a=0.001 eval=     4.0
+  upd 23240 steps=  1,587,328 buf=1,000,000 ret=    10.8 off=1.00 slip= 15.7 ent=-1.95 a=0.001 eval=     4.2
+  upd 23280 steps=  1,589,888 buf=1,000,000 ret=     3.7 off=1.00 slip= 15.1 ent=-2.31 a=0.001 eval=     4.1
+  upd 23320 steps=  1,592,448 buf=1,000,000 ret=    10.0 off=1.00 slip= 15.1 ent=-2.08 a=0.001 eval=     4.7
+  upd 23360 steps=  1,595,008 buf=1,000,000 ret=    10.2 off=1.00 slip= 15.5 ent=-1.85 a=0.001 eval=     4.7
+  upd 23400 steps=  1,597,568 buf=1,000,000 ret=    10.8 off=1.00 slip= 15.4 ent=-2.16 a=0.001 eval=     4.0
+  upd 23440 steps=  1,600,128 buf=1,000,000 ret=    10.6 off=1.00 slip= 14.8 ent=-1.92 a=0.001 eval=     4.2
+  upd 23480 steps=  1,602,688 buf=1,000,000 ret=    10.6 off=1.00 slip= 14.7 ent=-1.96 a=0.001 eval=     3.9
+  upd 23520 steps=  1,605,248 buf=1,000,000 ret=    10.5 off=1.00 slip= 14.0 ent=-2.10 a=0.001 eval=     4.0
+  upd 23560 steps=  1,607,808 buf=1,000,000 ret=    10.8 off=1.00 slip= 14.3 ent=-2.03 a=0.001 eval=     4.4
+  upd 23600 steps=  1,610,368 buf=1,000,000 ret=    10.3 off=1.00 slip= 14.7 ent=-1.84 a=0.001 eval=     3.9
+  upd 23640 steps=  1,612,928 buf=1,000,000 ret=    11.9 off=1.00 slip= 14.6 ent=-1.81 a=0.001 eval=     5.2
+  upd 23680 steps=  1,615,488 buf=1,000,000 ret=    10.9 off=1.00 slip= 14.6 ent=-1.76 a=0.001 eval=     4.8
+  upd 23720 steps=  1,618,048 buf=1,000,000 ret=    11.8 off=1.00 slip= 14.5 ent=-1.90 a=0.001 eval=     5.2
+  upd 23760 steps=  1,620,608 buf=1,000,000 ret=    11.0 off=1.00 slip= 14.5 ent=-1.90 a=0.001 eval=     4.5
+  upd 23800 steps=  1,623,168 buf=1,000,000 ret=    10.8 off=1.00 slip= 14.4 ent=-1.75 a=0.001 eval=     4.1
+  upd 23840 steps=  1,625,728 buf=1,000,000 ret=     1.7 off=1.00 slip= 15.2 ent=-2.03 a=0.001 eval=     3.6
+  upd 23880 steps=  1,628,288 buf=1,000,000 ret=    10.8 off=1.00 slip= 14.8 ent=-2.14 a=0.001 eval=     4.0
+  upd 23920 steps=  1,630,848 buf=1,000,000 ret=    10.4 off=1.00 slip= 14.1 ent=-1.91 a=0.001 eval=     3.9
+  upd 23960 steps=  1,633,408 buf=1,000,000 ret=    10.0 off=1.00 slip= 14.5 ent=-1.99 a=0.001 eval=     5.2
+  upd 24000 steps=  1,635,968 buf=1,000,000 ret=    11.0 off=1.00 slip= 14.2 ent=-1.77 a=0.001 eval=     4.2
+  upd 24040 steps=  1,638,528 buf=1,000,000 ret=    10.4 off=1.00 slip= 14.7 ent=-1.95 a=0.001 eval=     3.6
+  upd 24080 steps=  1,641,088 buf=1,000,000 ret=     9.7 off=1.00 slip= 14.2 ent=-1.94 a=0.001 eval=     3.7
+  upd 24120 steps=  1,643,648 buf=1,000,000 ret=     9.9 off=1.00 slip= 14.6 ent=-1.80 a=0.001 eval=     3.6
+  upd 24160 steps=  1,646,208 buf=1,000,000 ret=    10.7 off=1.00 slip= 14.8 ent=-2.02 a=0.001 eval=     3.7
+  upd 24200 steps=  1,648,768 buf=1,000,000 ret=     9.8 off=1.00 slip= 15.2 ent=-1.95 a=0.001 eval=     3.9
+  upd 24240 steps=  1,651,328 buf=1,000,000 ret=    11.0 off=1.00 slip= 15.8 ent=-2.02 a=0.001 eval=     3.7
+  upd 24280 steps=  1,653,888 buf=1,000,000 ret=    10.8 off=1.00 slip= 15.9 ent=-1.90 a=0.001 eval=     4.4
+  upd 24320 steps=  1,656,448 buf=1,000,000 ret=    10.1 off=1.00 slip= 16.5 ent=-1.77 a=0.001 eval=     3.8
+  upd 24360 steps=  1,659,008 buf=1,000,000 ret=    10.5 off=1.00 slip= 16.1 ent=-1.50 a=0.001 eval=     3.3
+  upd 24400 steps=  1,661,568 buf=1,000,000 ret=     7.8 off=1.00 slip= 15.6 ent=-1.78 a=0.001 eval=     3.3
+  upd 24440 steps=  1,664,128 buf=1,000,000 ret=     9.3 off=1.00 slip= 16.0 ent=-1.66 a=0.001 eval=     4.1
+  upd 24480 steps=  1,666,688 buf=1,000,000 ret=     9.6 off=1.00 slip= 16.1 ent=-2.26 a=0.001 eval=     4.0
+  upd 24520 steps=  1,669,248 buf=1,000,000 ret=     9.3 off=1.00 slip= 16.2 ent=-1.58 a=0.001 eval=     3.7
+  upd 24560 steps=  1,671,808 buf=1,000,000 ret=     9.7 off=1.00 slip= 16.2 ent=-2.03 a=0.001 eval=     3.6
+  upd 24600 steps=  1,674,368 buf=1,000,000 ret=     9.1 off=1.00 slip= 16.3 ent=-2.10 a=0.001 eval=     2.8
+  upd 24640 steps=  1,676,928 buf=1,000,000 ret=     9.1 off=1.00 slip= 17.2 ent=-2.07 a=0.001 eval=     7.0
+  upd 24680 steps=  1,679,488 buf=1,000,000 ret=     9.1 off=1.00 slip= 16.2 ent=-1.95 a=0.001 eval=     4.1
+  upd 24720 steps=  1,682,048 buf=1,000,000 ret=     8.9 off=1.00 slip= 16.9 ent=-1.80 a=0.001 eval=     6.1
+  upd 24760 steps=  1,684,608 buf=1,000,000 ret=     9.2 off=1.00 slip= 17.2 ent=-2.03 a=0.001 eval=     6.3
+  upd 24800 steps=  1,687,168 buf=1,000,000 ret=     8.7 off=0.99 slip= 17.4 ent=-2.11 a=0.001 eval=     2.3
+  upd 24840 steps=  1,689,728 buf=1,000,000 ret=     8.9 off=0.99 slip= 18.0 ent=-2.19 a=0.001 eval=     5.9
+  upd 24880 steps=  1,692,288 buf=1,000,000 ret=     9.5 off=0.99 slip= 17.4 ent=-1.87 a=0.001 eval=     5.3
+  upd 24920 steps=  1,694,848 buf=1,000,000 ret=     8.8 off=1.00 slip= 19.2 ent=-2.02 a=0.001 eval=     5.7
+  upd 24960 steps=  1,697,408 buf=1,000,000 ret=     9.2 off=0.99 slip= 18.7 ent=-2.01 a=0.000 eval=     5.3
+  upd 25000 steps=  1,699,968 buf=1,000,000 ret=     8.9 off=0.99 slip= 18.4 ent=-1.80 a=0.000 eval=     5.8
+  upd 25040 steps=  1,702,528 buf=1,000,000 ret=     8.9 off=0.99 slip= 18.2 ent=-1.61 a=0.000 eval=     5.7
+  upd 25080 steps=  1,705,088 buf=1,000,000 ret=     8.8 off=0.98 slip= 18.4 ent=-1.49 a=0.000 eval=     6.0
+  upd 25120 steps=  1,707,648 buf=1,000,000 ret=     8.7 off=0.99 slip= 18.2 ent=-1.98 a=0.000 eval=     5.0
+  upd 25160 steps=  1,710,208 buf=1,000,000 ret=     7.7 off=1.00 slip= 18.8 ent=-1.69 a=0.000 eval=     6.6
+  upd 25200 steps=  1,712,768 buf=1,000,000 ret=     8.7 off=0.99 slip= 19.3 ent=-2.06 a=0.000 eval=     4.6
+  upd 25240 steps=  1,715,328 buf=1,000,000 ret=     7.9 off=0.99 slip= 19.5 ent=-1.75 a=0.000 eval=     5.0
+  upd 25280 steps=  1,717,888 buf=1,000,000 ret=     8.8 off=0.97 slip= 19.0 ent=-2.41 a=0.000 eval=     5.4
+  upd 25320 steps=  1,720,448 buf=1,000,000 ret=     8.7 off=0.96 slip= 19.1 ent=-1.86 a=0.000 eval=     4.9
+  upd 25360 steps=  1,723,008 buf=1,000,000 ret=     8.1 off=0.98 slip= 19.8 ent=-2.01 a=0.000 eval=     5.6
+  upd 25400 steps=  1,725,568 buf=1,000,000 ret=     8.1 off=0.98 slip= 18.6 ent=-1.91 a=0.000 eval=     4.3
+  upd 25440 steps=  1,728,128 buf=1,000,000 ret=     8.3 off=0.96 slip= 18.5 ent=-1.94 a=0.000 eval=     4.3
+  upd 25480 steps=  1,730,688 buf=1,000,000 ret=     9.3 off=0.97 slip= 17.5 ent=-2.14 a=0.000 eval=     4.8
+  upd 25520 steps=  1,733,248 buf=1,000,000 ret=     9.3 off=0.98 slip= 18.4 ent=-1.57 a=0.000 eval=     4.8
+  upd 25560 steps=  1,735,808 buf=1,000,000 ret=     8.4 off=0.98 slip= 19.3 ent=-1.93 a=0.000 eval=     6.0
+  upd 25600 steps=  1,738,368 buf=1,000,000 ret=     8.3 off=1.00 slip= 18.6 ent=-2.04 a=0.000 eval=     4.9
+  upd 25640 steps=  1,740,928 buf=1,000,000 ret=     7.9 off=1.00 slip= 18.5 ent=-1.83 a=0.000 eval=     4.4
+  upd 25680 steps=  1,743,488 buf=1,000,000 ret=     7.8 off=0.98 slip= 19.7 ent=-2.14 a=0.000 eval=     4.2
+  upd 25720 steps=  1,746,048 buf=1,000,000 ret=     8.4 off=0.96 slip= 20.2 ent=-2.03 a=0.000 eval=     5.5
+  upd 25760 steps=  1,748,608 buf=1,000,000 ret=     8.3 off=0.98 slip= 18.7 ent=-2.25 a=0.000 eval=     4.5
+  upd 25800 steps=  1,751,168 buf=1,000,000 ret=     7.9 off=0.98 slip= 19.0 ent=-1.90 a=0.000 eval=     4.8
+  upd 25840 steps=  1,753,728 buf=1,000,000 ret=     8.3 off=0.95 slip= 19.1 ent=-1.75 a=0.000 eval=     4.1
+  upd 25880 steps=  1,756,288 buf=1,000,000 ret=     8.7 off=0.97 slip= 18.3 ent=-2.02 a=0.000 eval=     4.1
+  upd 25920 steps=  1,758,848 buf=1,000,000 ret=     8.6 off=0.97 slip= 19.3 ent=-1.23 a=0.000 eval=     4.3
+  upd 25960 steps=  1,761,408 buf=1,000,000 ret=     8.8 off=0.95 slip= 18.5 ent=-2.02 a=0.000 eval=     4.3
+  upd 26000 steps=  1,763,968 buf=1,000,000 ret=     8.3 off=0.98 slip= 18.1 ent=-1.59 a=0.000 eval=     5.0
+  upd 26040 steps=  1,766,528 buf=1,000,000 ret=     7.4 off=0.99 slip= 19.3 ent=-1.51 a=0.000 eval=     4.7
+  upd 26080 steps=  1,769,088 buf=1,000,000 ret=     8.2 off=0.98 slip= 19.2 ent=-1.57 a=0.000 eval=     5.1
+  upd 26120 steps=  1,771,648 buf=1,000,000 ret=     8.3 off=0.98 slip= 19.7 ent=-1.08 a=0.000 eval=     5.8
+  upd 26160 steps=  1,774,208 buf=1,000,000 ret=     6.6 off=0.96 slip= 19.9 ent=-1.42 a=0.000 eval=     5.7

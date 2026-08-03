@@ -62,7 +62,37 @@ DT = 0.02
 STEER_RATE_MAX = math.radians(200.0)
 STEER_MAX = math.radians(30.0)
 DRIVE_MAX = 4500.0
-BRAKE_MAX = 12000.0
+#: Closed-loop brake-force cap, N. **13,141 N = 0.985 g on RV-1's 1,360 kg**,
+#: raised from 12,000 N (0.899 g) by POWER-REVIEW Phase 0 item 3.
+#:
+#: **Why it mattered.** `ep13/run.py` builds its speed plan as
+#: `a_brake = min(BRAKE_MAX / mass, grip_use * G)`, so above `grip_use` 0.899
+#: the cap — not the tyre, not the design — sets the braking demand. Episode
+#: 13 and `power_review/phase2_sweep.py` both BISECT `grip_use` to the
+#: cornering limit, i.e. they spend their whole measurement in the regime
+#: where this binds, and braking was therefore design-blind by construction
+#: exactly where the design comparison was being made.
+#:
+#: **Where 0.985 g comes from:** the OC solver's own revealed capability
+#: under real (combined-slip) demands, per POWER-REVIEW §1. Cross-checked
+#: here by an independent route — iterating longitudinal load transfer
+#: against `tire.peak_fx` gives **1.164 g** for PURE straight-line braking,
+#: which is the right ordering: a tyre also doing lateral work delivers less
+#: than one doing none. 0.985 g is the conservative figure and the correct
+#: one for a plan that must also corner.
+#:
+#: **`rl_env.BRAKE_MAX` is deliberately NOT changed with it.** There the
+#: constant scales the policy's ACTION (`drive_action * BRAKE_MAX`), so
+#: altering it redefines the action space and invalidates every trained
+#: checkpoint. Same name, different role; they are separate constants for
+#: this reason and the RL-side cap is its own decision.
+#: Derived, not written twice. `power_review/phase2_sweep.py` had already
+#: applied this fix as its own local `BRAKE_MAX_FIXED_N = 0.985 * G * mass`
+#: while `ep13/run.py` still used the old module constant -- so the two
+#: experiments were silently braking differently. Two hand-maintained copies
+#: of one number is how F99's staleness started; there is now one source and
+#: phase2 imports it.
+BRAKE_MAX = 0.985 * schema.G * schema.RV_1.mass
 
 #: The slip bound every minimum-time solve in Seasons 1-2 enforces and the edge of
 #: the region the tire file was fitted over. Ours, not the file's (CLAUDE.md rule 4).

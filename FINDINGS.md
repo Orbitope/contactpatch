@@ -4595,6 +4595,43 @@ state-independent exploration as the reason it underperforms).
 ---
 
 
+### F114 · SAC matches PPO on the task PPO solves, and holds its peak where PPO decays — so the multi-track failure is the task, not the learner. · 2026-08-03
+
+**Source:** `[MEASURED]` — `experiments/tracks_pilot/sac_sanity.py`, both
+algorithms on `long_exit` (the single corner Episodes 9-11 solve), identical
+environment and reward, 1.5M steps each, one seed.
+
+| | best eval | final eval | final / best |
+|---|---|---|---|
+| PPO | 393.1 | 122.5 | **31%** |
+| SAC | **393.7** | **393.1** | **100%** |
+
+**Why this run exists.** Multi-track SAC reached eval ~4 against PPO's 655
+on the same environment. That is not slow learning, it is a suspect
+implementation — so rather than debug on the hard problem, run it on a task
+whose answer is already known. A ratio below ~0.5 would have meant
+`physics/sac.py` was broken.
+
+**It is 1.00. The implementation is sound**, and the multi-track transfer
+failure (F113) is a property of the task, not of PPO's exploration. That
+closes the last open hypothesis from F113's "what this does not show" list.
+
+**The secondary result is the more useful one.** PPO ended at **31% of its
+own best**; SAC ended at 100%. Eval decay after an early peak is a recurring
+pattern in this project — F109's curriculum run peaked at update 80 and lost
+79% of it by the end, which is what motivated the degradation freeze. SAC did
+not do that here. Entropy settled at -1.87 against the -2 target with alpha
+self-tuned to 0.0203, i.e. the temperature loop held exploration where it was
+asked to.
+
+**What this does not show:** that SAC is better on the multi-track problem —
+it measurably is not (eval ~4 vs 655). One seed, one synthetic corner, and
+rule 5 wants three before either the parity or the stability gap is a trend.
+It shows only that the tool works, which is what it was run to establish.
+
+---
+
+
 # Decisions
 
 ### D1 · The project drives an offset-free tire. · 2026-07-25

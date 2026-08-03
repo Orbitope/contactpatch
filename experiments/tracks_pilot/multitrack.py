@@ -47,7 +47,7 @@ from physics.batched_env import BatchedDrivingEnv
 from physics.ppo import PPOConfig, train
 from physics.rl_env import DrivingEnv, EnvConfig
 from physics.track_bank import TrackBank, BankTrackView
-from physics.track_gen import generate_set, track_stats
+from physics.track_gen import generate_mixed_set, track_stats
 from physics.tracks_data import load_real_track
 from experiments.tracks_pilot import policy_eval as PE
 
@@ -87,12 +87,20 @@ def main(n_tracks: int = N_TRACKS, total_steps: int = TOTAL_STEPS):
     print(f"Multi-track training — {n_tracks} generated circuits, "
          f"{total_steps:,} steps")
 
-    tracks = generate_set(n_tracks + N_HELDOUT, seed0=10_000)
+    # MIXED: corner-dense harmonic circuits AND straight-bearing ones.
+    # The first multi-track run used harmonic circuits only, completed 100%
+    # of held-out generated laps, and then spun at 85.8 deg on real Spa --
+    # it had never seen a straight long enough to reach 40 m/s, so it had
+    # never experienced a high-speed corner entry (F113).
+    tracks = generate_mixed_set(n_tracks + N_HELDOUT, seed0=10_000)
     train_tracks, heldout = tracks[:n_tracks], tracks[n_tracks:]
     bank = TrackBank(train_tracks)
-    cf = np.mean([track_stats(t)["corner_time_fraction"] for t in train_tracks])
+    st = [track_stats(t) for t in train_tracks]
+    cf = np.mean([x["corner_time_fraction"] for x in st])
+    lf = np.mean([x["longest_fast_m"] for x in st])
     print(f"  {bank}")
-    print(f"  mean cornering time {100*cf:.1f}% (real circuits: 40.7%)")
+    print(f"  cornering time {100*cf:.1f}% (real: 40.7%)  "
+         f"longest straight {lf:.0f} m (real Spa: 1501 m)")
     print(f"  held out: {len(heldout)} generated circuits + real Spa\n")
 
     cfg = PPOConfig(total_steps=total_steps, n_envs=N_ENVS,

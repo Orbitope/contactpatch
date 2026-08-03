@@ -4,24 +4,24 @@
 
 **What this checks.** Two layers: a reference model and a PID decide how much the car should rotate, a QP allocator decides which wheels pay for it. The checks ask whether each layer does its job, whether the tires were saturated enough for any of it to matter, and whether the result survives the numbers it was built on.
 
-**FAILED — 1 of 12** · 11/12 checks · 4 technical notes
+**FAILED — 2 of 12** · 10/12 checks · 4 technical notes
 
 ---
 
 ## What this found
 
-- The two-layer controller works as advertised: the allocator delivers the demanded yaw moment to within 60.23 N.m, and yaw-rate tracking error through the corner falls 88%.
-- It is worth +5.2% of cornering limit, +0.69% of the corner section and +0.51% of the whole lap — the last number is small because 260 of the lap's 393 m are a power-limited straight where a yaw controller has nothing to do.
-- On the skidpad, which is what the ~9% published figure measured, it is worth +1.30% of sustained lateral acceleration.
-- About 40% of the gain is the allocator alone, with its yaw demand forced to zero. Most of what a torque-vectoring system buys on this lap is not torque vectoring.
-- The number depends on the driver as much as on the car: across a +/-30% change in how far ahead the SAME driver looks, the gain runs from -0.34% to +11.55%. A controller is tuned against a driver whether or not anyone says so.
-- The passive limited-slip differential is the slowest configuration tested (14.719 s against the open differential's 14.508 s), which is Episode 12's push-wide appearing in a lap time.
+- The two-layer controller works as advertised: the allocator delivers the demanded yaw moment to within 124.43 N.m, and yaw-rate tracking error through the corner falls 85%.
+- It is worth +4.6% of cornering limit, +0.31% of the corner section and +0.34% of the whole lap — the last number is small because 260 of the lap's 393 m are a power-limited straight where a yaw controller has nothing to do.
+- On the skidpad, which is what the ~9% published figure measured, it is worth +1.06% of sustained lateral acceleration.
+- About 44% of the gain is the allocator alone, with its yaw demand forced to zero. Most of what a torque-vectoring system buys on this lap is not torque vectoring.
+- The number depends on the driver as much as on the car: across a +/-30% change in how far ahead the SAME driver looks, the gain runs from +0.00% to +13.18%. A controller is tuned against a driver whether or not anyone says so.
+- The passive limited-slip differential is the slowest configuration tested (14.697 s against the open differential's 14.468 s), which is Episode 12's push-wide appearing in a lap time.
 
 ## What was checked
 
 | Question | Checks | |
 |---|---|---|
-| Does the controller reach the wheels at all? | 2/2 | ok |
+| Does the controller reach the wheels at all? | 1/2 | **1 FAILED** |
 | Were the tires saturated enough for it to matter? | 2/2 | ok |
 | What is it worth? | 3/3 | ok |
 | Is it the yaw control, or just better bookkeeping? | 1/1 | ok |
@@ -30,9 +30,13 @@
 
 ## Failures
 
+### `the_allocator_delivers_the_moment_it_is_asked_for`
+
+across the whole lap the largest gap between the moment the PID asked for and the moment the four wheels produced is 124.4 N.m, against a peak demand of 915 N.m — 13.6% at the worst instant of the lap and near zero for the rest of it. The lower layer is almost never the limitation: the tires have longitudinal capacity to spare nearly every time they are asked, and what shortfall there is comes from the allocation being computed once per control interval on the previous instant's loads, which is what a real ECU has to do.
+
 ### `the_conclusion_survives_the_driver_being_tuned_differently`
 
-**This check is expected to fail, and the failure is the finding.** The driver's preview time is [ASSUMED], and it is exactly the unstated protocol choice rule 9 was written about. Nominal gain +5.18%. At 30% LESS preview it is -0.34% — the passive car improves to 1.057 and the controlled one falls to 1.054, a difference of 0.0036 in grip_use against a bisection resolution of 0.002, so it is barely more than nothing rather than a reversal. At 30% MORE preview the gain is +11.55%. **The measured value of the controller therefore varies by more than the controller is worth, depending on how the driver it is helping was tuned** — and the threshold is not being loosened to hide that (F69).
+**This check is expected to fail, and the failure is the finding.** The driver's preview time is [ASSUMED], and it is exactly the unstated protocol choice rule 9 was written about. Nominal gain +4.64%. At 30% LESS preview it is +0.00% — the passive car improves to 1.054 and the controlled one falls to 1.054, a difference of 0.0000 in grip_use against a bisection resolution of 0.002, so it is barely more than nothing rather than a reversal. At 30% MORE preview the gain is +13.18%. **The measured value of the controller therefore varies by more than the controller is worth, depending on how the driver it is helping was tuned** — and the threshold is not being loosened to hide that (F69).
 
 ## Technical notes
 
@@ -40,11 +44,11 @@
 
 ### on_the_skidpad_the_allocator_alone_buys_nothing
 
-sustained lateral acceleration: open 0.939 g, allocator-only 0.932 g, full controller 0.951 g. On a steady circle there is no braking to distribute and almost no drive force to spread, so the lower layer has nothing to be clever with and lands slightly BELOW the passive car — the whole skidpad gain is yaw control. The same two layers therefore split the credit completely differently in the two manoeuvres, which is an argument for reporting the decomposition per manoeuvre rather than once.
+sustained lateral acceleration: open 0.941 g, allocator-only 0.931 g, full controller 0.951 g. On a steady circle there is no braking to distribute and almost no drive force to spread, so the lower layer has nothing to be clever with and lands slightly BELOW the passive car — the whole skidpad gain is yaw control. The same two layers therefore split the credit completely differently in the two manoeuvres, which is an argument for reporting the decomposition per manoeuvre rather than once.
 
 ### what_the_disturbance_study_found
 
-open diff: 40/40 valid, 14.59 +/- 0.00 s · LSD: 0/40 valid, nan +/- nan s · allocator only: 40/40 valid, 14.60 +/- 0.00 s · TV (4 wheels): 40/40 valid, 14.57 +/- 0.00 s · TV (rear axle): 40/40 valid, 14.59 +/- 0.00 s — all at grip_use 0.991.
+open diff: 40/40 valid, 14.55 +/- 0.00 s · LSD: 0/40 valid, nan +/- nan s · allocator only: 40/40 valid, 14.57 +/- 0.00 s · TV (4 wheels): 40/40 valid, 14.54 +/- 0.00 s · TV (rear axle): 40/40 valid, 14.55 +/- 0.00 s — all at grip_use 0.995.
 
 ### the_two_headline_numbers_are_not_independent
 

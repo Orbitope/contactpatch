@@ -4632,6 +4632,49 @@ It shows only that the tool works, which is what it was run to establish.
 ---
 
 
+### F115 · Raising the closed-loop brake cap moved every Episode 13 number — and removed a published claim that was reading signal out of noise. · 2026-08-03
+
+**Source:** `[MEASURED]` — `experiments/ep13/run.py` re-run at
+`driver.BRAKE_MAX = 0.985 g` (13,137 N), against the committed 0.899 g
+(12,000 N) result. POWER-REVIEW Phase 0 item 3.
+
+**Why it moved anything.** Episode 13 *bisects* `grip_use` to the cornering
+limit, and the old cap binds at `grip_use ≥ 0.899`. The experiment therefore
+spent its entire measurement in the regime where the cap — not the tyre, not
+the design — set the braking demand.
+
+| | before (0.899 g) | after (0.985 g) |
+|---|---|---|
+| TV4 vs open, cornering limit | **+5.18%** | **+4.64%** |
+| rear-axle TV vs open | +3.11% | +3.61% |
+| 30% less driver preview | −0.34% | **0.00%** |
+| 30% more driver preview | +11.55% | **+13.18%** |
+
+**The direction was not predictable in advance** (the F96→F97/F98 pattern):
+more braking authority *lowered* the nominal TV gain, because the passive car
+benefits from it too, while *widening* the spread across driver preview.
+
+**The finding that matters is a retraction.** The article previously reported
+the ±3% track-width check as +5.36% / +5.18% / +5.00% and concluded "the
+magnitude moves with the arm, as it must." Re-measured it is
+**+4.82% / +4.64% / +4.82% — not monotonic in track width at all.**
+
+The spread across ±3% is now **0.01 percentage points against a bisection
+resolution worth ~0.27**. The earlier ordering was three numbers spanning
+0.36 pp, every pair within about one resolution step, that happened to fall
+in the expected sequence. The moment-arm physics is real and the magnitude
+surely does scale with it — **this experiment cannot resolve it**, and it was
+quoted as though it had.
+
+**CLAUDE.md's track-width rule is satisfied, and this is what satisfying it
+looks like:** "re-run every TV magnitude claim at ±3% track and confirm the
+*conclusion* holds." It does — TV is worth +4.6% to +4.8% across the whole
+plausible range. The conclusion survives; an incidental observation attached
+to it did not, and that distinction is the rule's entire point.
+
+---
+
+
 # Decisions
 
 ### D1 · The project drives an offset-free tire. · 2026-07-25

@@ -184,7 +184,7 @@ worth X" would be a claim about two things at once.
 
 All `[MEASURED]`, one closed-loop driver, `long_exit`, tire offsets removed.
 
-**It works.** The controlled car survives **5.2% more cornering demand** than the
+**It works.** The controlled car survives **4.6% more cornering demand** than the
 passive one, and the direct evidence that both layers are doing their jobs is
 better than the lap time: the allocator delivers the moment the PID asks for to
 within 60 N·m of a 996 N·m peak, and RMS yaw-rate error through the corner falls
@@ -290,14 +290,22 @@ it by 30% in each direction, change nothing else, and:
 
 | driver preview | passive limit | controlled limit | gain |
 |---|---|---|---|
-| 30% less | 1.057 | 1.054 | **−0.34%** |
-| nominal | 1.041 | 1.095 | **+5.18%** |
-| 30% more | 0.996 | 1.111 | **+11.55%** |
+| 30% less | 1.054 | 1.054 | **0.00%** |
+| nominal | 1.045 | 1.093 | **+4.64%** |
+| 30% more | 0.982 | 1.111 | **+13.18%** |
 
 All `[MEASURED]`; the preview time itself is `[ASSUMED]`. A single assumed number **in the driver** — not in the car, not in the controller —
-moves the headline from "nothing measurable" to "+11.6%". (The −0.34% is 0.0036 in
-`grip_use` against a bisection resolution of 0.002, so read it as a wash rather than a
-reversal. A wash is still not +5%.)
+moves the headline from "nothing at all" to "+13.2%". At 30% less preview the two
+limits are now *identical* — not a near-wash, an exact one.
+
+> **Corrected 2026-08-03.** This table previously read −0.34% / **+5.18%** /
+> +11.55%. POWER-REVIEW Phase 0 found the closed-loop brake cap was 12,000 N =
+> 0.899 g on a 1,360 kg car, below the ~0.985 g the tyre delivers — and since
+> this experiment *bisects* `grip_use` to the limit, it spent its whole
+> measurement in the regime where the cap, not the tyre, set the braking
+> demand. Raising it to 0.985 g moved every row. **The direction was not
+> predictable in advance**: more braking authority lowered the nominal gain
+> (the passive car benefits too) while widening the preview spread.
 
 The mechanism is not mysterious. A shorter preview makes the driver steer later and
 harder, which suits the passive car and hands the yaw controller a reference signal
@@ -381,14 +389,29 @@ direction is the same one every driver of a welded car reports.
 **Fidelity: rung 2** (CLAUDE.md rule 15). Four independently commanded wheel forces
 is a four-motor electric car, not RV-1's rear-drive combustion driveline. The
 rear-axle version is the one RV-1 could actually have, and it is worth about 60% as
-much: +3.07% of cornering limit against +5.18%. Underneath both is a double-track model with no roll camber, no roll steer and
+much: +3.61% of cornering limit against +4.64%. Underneath both is a double-track model with no roll camber, no roll steer and
 no compliance steer — the terms that make up about three quarters of a real car's
 understeer. **We reproduce roughly 5% of a real car's understeer gradient**, so a
 percentage here is a trend, not a specification.
 
-**Track width is `[LIKELY]`, and it is the moment arm.** Every yaw number scales
-directly with it. At −3% the gain is +5.36% and at +3% it is +5.00%, against +5.18%
-nominal: the magnitude moves with the arm, as it must, and the conclusion does not.
+**Track width is `[LIKELY]`, and it is the moment arm.** At −3% the gain is
++4.82% and at +3% it is +4.82%, against +4.64% nominal. The conclusion is
+robust — torque vectoring is worth +4.6% to +4.8% of cornering limit across
+the whole plausible range of a number we only know to `[LIKELY]`, which is
+what this check exists to establish.
+
+> **Corrected 2026-08-03, and the correction removes a claim rather than
+> just a number.** This previously read +5.36% / +5.18% / +5.00% and
+> concluded "the magnitude moves with the arm, as it must." After the
+> brake-cap fix the three values are +4.82% / +4.64% / +4.82% — **not
+> monotonic in track width at all.** The spread across ±3% is now 0.01
+> percentage points against a bisection resolution worth ~0.27, so the
+> earlier monotonic ordering was reading signal out of noise: three numbers
+> spanning 0.36 pp, all within one resolution step of each other, that
+> happened to fall in the expected order. The moment-arm relationship is
+> real physics and the magnitude surely does scale with it — but **this
+> experiment cannot resolve it**, and should not have been quoted as though
+> it had.
 
 **The driver is a tracker, not a racing driver**, and its preview time changes the
 answer by more than the controller is worth. See the section above; that is the

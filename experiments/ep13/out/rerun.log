@@ -1,0 +1,117 @@
+Episode 13 — How engineers built a car that steers with its wheels
+  reference model built from the car: K = 0.204 deg/g [MEASURED], grip ceiling 0.951 g [MEASURED]
+  lap: long exit, 393 m   skidpad: 1.5 laps of a 40 m circle
+
+  Lap sweep (long exit) — aggression until it fails
+    open diff        limit gu=1.045  best 14.468 s @ gu=1.0375  corner 5.463 s  peak 0.961 g  worst slip  8.87 deg
+    LSD              limit gu=0.971  best 14.697 s @ gu=0.9625  corner 5.623 s  peak 0.905 g  worst slip  8.10 deg
+    allocator only   limit gu=1.066  best 14.482 s @ gu=1.0500  corner 5.499 s  peak 0.974 g  worst slip 11.21 deg
+    TV (4 wheels)    limit gu=1.093  best 14.419 s @ gu=1.0625  corner 5.446 s  peak 0.967 g  worst slip 10.07 deg
+    TV (rear axle)   limit gu=1.082  best 14.511 s @ gu=1.0250  corner 5.503 s  peak 0.953 g  worst slip  8.65 deg
+
+    TV vs open: lap +0.34%, corner section +0.31%, cornering limit +4.64%
+    of that limit gain, the allocator alone accounts for 44%
+
+  Skidpad — sustained lateral acceleration, same driver
+    open diff        limit gu=1.025  sustained 0.941 g
+    LSD              limit gu=0.971  sustained 0.894 g
+    allocator only   limit gu=1.014  sustained 0.931 g
+    TV (4 wheels)    limit gu=1.037  sustained 0.951 g
+    TV (rear axle)   limit gu=1.036  sustained 0.950 g
+
+    TV vs open on the skidpad: +1.06% lateral acceleration (published ceiling ~9%)
+
+  Yaw-rate tracking through the corner (gu=1.045): open 0.1654 rad/s RMS, TV 0.0246 rad/s RMS
+    peak moment demanded 915 N.m, largest shortfall in delivering it 124.4 N.m
+
+  Reference model: what happens if you ask for a pointier car
+    target K = +0.204 deg/g: limit gu=1.093, best lap 14.436 s
+    target K = +0.100 deg/g: limit gu=1.095, best lap 14.433 s
+    target K = +0.000 deg/g: limit gu=1.097, best lap 14.429 s
+    target K = -0.150 deg/g: limit gu=1.099, best lap 14.402 s
+
+  Sensitivities — the conclusion has to survive all of these
+    track width x0.97 (CLAUDE.md)          open 1.043  alloc 1.064  TV 1.093  +4.82%  allocator  43%
+    track width x1.03 (CLAUDE.md)          open 1.045  alloc 1.068  TV 1.095  +4.82%  allocator  46%
+    driver looks 30% less far ahead        open 1.054  alloc 1.007  TV 1.054  +0.00%  allocator nan%
+    driver looks 30% further ahead         open 0.982  alloc 1.072  TV 1.111  +13.18%  allocator  69%
+    allocator prefers the moment (s_mz=4)  open 1.045  alloc 1.064  TV 1.093  +4.64%  allocator  41%
+    allocator prefers the force (s_mz=0.25) open 1.045  alloc 1.064  TV 1.088  +4.13%  allocator  46%
+
+  Steering disturbance, 40 seeds (steer_noise=0.01, attentive driver, F96)
+    open diff         40/40 valid  lap 14.555 +/- 0.002 s
+    LSD                0/40 valid  lap nan +/- nan s
+    allocator only    40/40 valid  lap 14.567 +/- 0.001 s
+    TV (4 wheels)     40/40 valid  lap 14.542 +/- 0.001 s
+    TV (rear axle)    40/40 valid  lap 14.554 +/- 0.003 s
+
+  Steering disturbance, 40 seeds (steer_noise=0.03, distracted driver, F96)
+    open diff         40/40 valid  lap 14.556 +/- 0.006 s
+    LSD                0/40 valid  lap nan +/- nan s
+    allocator only    40/40 valid  lap 14.567 +/- 0.003 s
+    TV (4 wheels)     40/40 valid  lap 14.542 +/- 0.002 s
+    TV (rear axle)    40/40 valid  lap 14.553 +/- 0.008 s
+
+
+[1mD-ep13 — How engineers built a car that steers with its wheels[0m
+[2mTwo layers: a reference model and a PID decide how much the car should rotate, a QP
+allocator decides which wheels pay for it. The checks ask whether each layer does its
+job, whether the tires were saturated enough for any of it to matter, and whether the
+result survives the numbers it was built on.[0m
+
+  Does the controller reach the wheels at all?           1/2   [31m1 FAILED[0m
+  Were the tires saturated enough for it to matter?      2/2   [32mok[0m
+  What is it worth?                                      3/3   [32mok[0m
+  Is it the yaw control, or just better bookkeeping?     1/1   [32mok[0m
+  Does the conclusion survive the numbers it rests on?   2/3   [31m1 FAILED[0m
+  Does it help a driver who is not perfect?              1/1   [32mok[0m
+
+[1m  What this found[0m
+  · The two-layer controller works as advertised: the allocator delivers the demanded
+    yaw moment to within 124.43 N.m, and yaw-rate tracking error through the corner
+    falls 85%.
+  · It is worth +4.6% of cornering limit, +0.31% of the corner section and +0.34% of the
+    whole lap — the last number is small because 260 of the lap's 393 m are a power-
+    limited straight where a yaw controller has nothing to do.
+  · On the skidpad, which is what the ~9% published figure measured, it is worth +1.06%
+    of sustained lateral acceleration.
+  · About 44% of the gain is the allocator alone, with its yaw demand forced to zero.
+    Most of what a torque-vectoring system buys on this lap is not torque vectoring.
+  · The number depends on the driver as much as on the car: across a +/-30% change in
+    how far ahead the SAME driver looks, the gain runs from +0.00% to +13.18%. A
+    controller is tuned against a driver whether or not anyone says so.
+  · The passive limited-slip differential is the slowest configuration tested (14.697 s
+    against the open differential's 14.468 s), which is Episode 12's push-wide appearing
+    in a lap time.
+
+  [[31mFAIL[0m] the_allocator_delivers_the_moment_it_is_asked_for
+         across the whole lap the largest gap between the moment the PID asked for and
+         the moment the four wheels produced is 124.4 N.m, against a peak demand of 915
+         N.m — 13.6% at the worst instant of the lap and near zero for the rest of it.
+         The lower layer is almost never the limitation: the tires have longitudinal
+         capacity to spare nearly every time they are asked, and what shortfall there is
+         comes from the allocation being computed once per control interval on the
+         previous instant's loads, which is what a real ECU has to do.
+
+  [[31mFAIL[0m] the_conclusion_survives_the_driver_being_tuned_differently
+         **This check is expected to fail, and the failure is the finding.** The
+         driver's preview time is [ASSUMED], and it is exactly the unstated protocol
+         choice rule 9 was written about. Nominal gain +4.64%. At 30% LESS preview it is
+         +0.00% — the passive car improves to 1.054 and the controlled one falls to
+         1.054, a difference of 0.0000 in grip_use against a bisection resolution of
+         0.002, so it is barely more than nothing rather than a reversal. At 30% MORE
+         preview the gain is +13.18%. **The measured value of the controller therefore
+         varies by more than the controller is worth, depending on how the driver it is
+         helping was tuned** — and the threshold is not being loosened to hide that
+         (F69).
+
+[31mD-ep13 FAILED[0m — 2 of 12 checks failed.
+[2mGate 1 failure: stop downstream work. See docs/result-evaluation-guide.md Part C.[0m
+
+  write-up /Users/mwburke/projects/contact-patch/.claude/worktrees/continue-previous-work-085da1/diagnostics/out/D-ep13.md
+  701 s
+  experiments/ep13/out/01-two-layers.svg
+  experiments/ep13/out/02-which-wheels-pay.svg
+  experiments/ep13/out/03-the-limit.svg
+  experiments/ep13/out/04-yaw-tracking.svg
+  experiments/ep13/out/05-what-it-is-worth.svg

@@ -1,0 +1,59 @@
+{
+  "n_train_tracks": 64,
+  "n_heldout": 8,
+  "total_steps": 60000000,
+  "wall_s": 2358.6644728183746,
+  "mean_corner_time_fraction": 0.7469146630086136,
+  "explained_variance_tail": 0.6472465555982332,
+  "env": {
+    "max_steps": 30000,
+    "progress_scale": 1.0,
+    "off_track_penalty": 5.0,
+    "stall_penalty": 2.0,
+    "envelope_penalty": 0.25,
+    "cross_track_penalty": 0.2,
+    "edge_penalty": 0.15,
+    "speed_scaled_penalties": true,
+    "penalty_speed_ref": 25.0,
+    "spawn_speed_from_curvature": true,
+    "speed_cap": null
+  },
+  "gradient_steps": 72960,
+  "results": {
+    "gen10119": {
+      "headline": "NOT QUOTABLE (rule 4): 1/12 sections outside the 12 deg tyre fit, worst 12.0 deg, occupancy 0.0001. Distance (3159.2 m, 100.0%) measures how freely it was allowed to slide.",
+      "lap_frac": 1.000080627852271,
+      "finish": 1.0,
+      "valid": false,
+      "slip": 12.032422245006064
+    },
+    "gen10121": {
+      "headline": "3188.9 m (100.0% of lap), finished 100%, off-track 0%, worst slip 11.4 deg, 0/12 outside the fit -- rule 4 valid.",
+      "lap_frac": 1.000073562638842,
+      "finish": 1.0,
+      "valid": true,
+      "slip": 11.444837773249876
+    },
+    "gen10122": {
+      "headline": "NOT QUOTABLE (rule 4): 12/12 sections outside the 12 deg tyre fit, worst 12.8 deg, occupancy 0.0124. Distance (3150.4 m, 100.0%) measures how freely it was allowed to slide.",
+      "lap_frac": 1.00007181998401,
+      "finish": 1.0,
+      "valid": false,
+      "slip": 12.843958820174223
+    },
+    "gen10123": {
+      "headline": "3146.8 m (100.0% of lap), finished 100%, off-track 0%, worst slip 11.4 deg, 0/12 outside the fit -- rule 4 valid.",
+      "lap_frac": 1.0000719949481203,
+      "finish": 1.0,
+      "valid": true,
+      "slip": 11.43388936656861
+    },
+    "Spa": {
+      "headline": "NOT QUOTABLE (rule 4): 24/24 sections outside the 12 deg tyre fit, worst 85.8 deg, occupancy 0.0255. Distance (3696.3 m, 52.8%) measures how freely it was allowed to slide.",
+      "lap_frac": 0.5280830258883132,
+      "finish": 0.041666666666666664,
+      "valid": false,
+      "slip": 85.8331338853245
+    }
+  }
+}

@@ -107,14 +107,59 @@ def track_stats(track: SampledTrack, n: int = 3000) -> dict:
     dt = ds / v_lim
     corner = kappa > 1.0 / CORNER_RADIUS_M
     r_min = 1.0 / max(kappa.max(), 1e-9)
+    # Longest stretch where the geometry allows a genuinely high speed --
+    # the quantity the first generator silently destroyed.
+    fast = v_lim > 30.0
+    edges = np.diff(np.r_[0, fast.astype(int), 0])
+    runs = np.diff(np.flatnonzero(edges))[::2]
+    longest_fast = float(runs.max() * ds) if len(runs) else 0.0
     return {
         "length_m": float(track.length),
+        "longest_fast_m": longest_fast,
         "min_radius_m": float(r_min),
         "corner_time_fraction": float(dt[corner].sum() / dt.sum()),
         "frac_below_50m": float(np.mean(kappa > 1.0 / 50.0)),
         "sign_changes": int(np.sum(np.sign(np.asarray(track.curvature(s)))[1:]
                                    != np.sign(np.asarray(track.curvature(s)))[:-1])),
     }
+
+
+def self_intersections(track, n: int = 900) -> int:
+    """Count crossings of the centreline with itself.
+
+    A generated loop that crosses itself is not a circuit — the car would
+    meet the same tarmac twice at different headings, and every curvilinear
+    quantity (`n`, `xi`, half-width) becomes ambiguous there. **No generator
+    here guaranteed this; it happened to hold at the parameters in use.**
+    That is luck, not a property, and it fails as soon as jitter or amplitude
+    rises — so it is checked rather than assumed.
+
+    Vectorised segment-segment intersection: O(n^2) but on ~900 points it is
+    milliseconds, and it runs once per candidate track, not per step.
+    """
+    _, x, y, _ = track.centreline(n)
+    P = np.stack([x, y], axis=1)
+    A = P
+    B = np.roll(P, -1, axis=0)
+    d = B - A
+    # Pairwise: does segment i cross segment j?
+    ax, ay = A[:, 0][:, None], A[:, 1][:, None]
+    dx, dy = d[:, 0][:, None], d[:, 1][:, None]
+    cx, cy = A[:, 0][None, :], A[:, 1][None, :]
+    ex, ey = d[:, 0][None, :], d[:, 1][None, :]
+    den = dx * ey - dy * ex
+    ok = np.abs(den) > 1e-12
+    den = np.where(ok, den, 1.0)
+    t1 = ((cx - ax) * ey - (cy - ay) * ex) / den
+    t2 = ((cx - ax) * dy - (cy - ay) * dx) / den
+    hit = ok & (t1 > 1e-9) & (t1 < 1 - 1e-9) & (t2 > 1e-9) & (t2 < 1 - 1e-9)
+    # Ignore self and immediate neighbours, which share endpoints by
+    # construction and would otherwise register as crossings.
+    idx = np.arange(n)
+    sep = np.abs(idx[:, None] - idx[None, :])
+    sep = np.minimum(sep, n - sep)
+    hit &= sep > 1
+    return int(hit.sum() // 2)
 
 
 def generate_set(n_tracks: int, seed0: int = 0, *, min_radius_m: float = 8.0,
@@ -140,11 +185,149 @@ def generate_set(n_tracks: int, seed0: int = 0, *, min_radius_m: float = 8.0,
         st = track_stats(t)
         if (st["min_radius_m"] >= min_radius_m
                 and st["min_radius_m"] <= max_min_radius_m
-                and st["corner_time_fraction"] >= min_corner_fraction):
+                and st["corner_time_fraction"] >= min_corner_fraction
+                and self_intersections(t) == 0):
             out.append(t)
     if len(out) < n_tracks:
         raise RuntimeError(
             f"only {len(out)}/{n_tracks} circuits passed the filter in "
             f"{tries} attempts — loosen it rather than silently training on "
             f"a biased subset")
+    return out
+
+
+def generate_track_with_straights(
+        seed: int, *, n_corners: int = 22, base_radius: float = 600.0,
+        jitter: float = 0.30, corner_radius_m: tuple = (12.0, 70.0),
+        half_width: float = 5.0, smoothing: float = 8.0,
+        cluster_frac: float = 0.80, long_gap: float = 6.0,
+        name: str | None = None) -> SampledTrack:
+    """Closed circuit built from **straights joined by circular fillets**.
+
+    **Why this exists and the harmonic generator was not enough.** A radial
+    perturbation in polar coordinates cannot produce a straight: blending the
+    radius toward a constant gives a circular ARC, not a line. Measured, the
+    harmonic generator's longest stretch allowing >30 m/s was 115-139 m
+    regardless of parameters, against **1,501 m on Spa** — and a policy
+    trained on it reached only ~19 m/s, had never seen a 40 m/s corner entry,
+    and spun at **85.8 deg** the first time it met one on a real circuit.
+
+    Straights are not wasted training time. They are what generates the
+    high-speed states that make braking necessary, and a circuit without them
+    does not contain the problem we are trying to teach.
+
+    Here the geometry is explicit: vertices on a jittered circle, joined by
+    straight lines, with each vertex rounded by an arc of a drawn radius. That
+    gives **direct control of both** the straight length and the corner radius,
+    which the harmonic form never had.
+    """
+    rng = np.random.default_rng(seed)
+    # Vertices are CLUSTERED, not uniform. Uniform spacing gives either
+    # corner density or straights but never both: measured, uniform vertices
+    # produced 18-26% cornering with 710-1056 m straights, against the
+    # harmonic generator's 72.8% cornering with 124 m straights. Neither is
+    # the target.
+    #
+    # Real circuits are corner COMPLEXES separated by straights, so the gaps
+    # between vertices are drawn bimodally: a short gap continues a complex,
+    # a long one opens a straight.
+    gaps = np.where(rng.random(n_corners) < cluster_frac, 1.0, long_gap)
+    gaps *= rng.uniform(0.75, 1.25, n_corners)
+    ang = np.cumsum(gaps) / gaps.sum() * 2.0 * np.pi
+    rad = base_radius * (1.0 + rng.uniform(-jitter, jitter, n_corners))
+    V = np.stack([rad * np.cos(ang), rad * np.sin(ang)], axis=1)
+
+    # Pass 1: solve every fillet first. The straights are then drawn from one
+    # fillet's EXIT to the next fillet's ENTRY -- the first version ran them
+    # to the next vertex instead, which left gaps and fed splprep a
+    # discontinuous path.
+    fil = []
+    for i in range(n_corners):
+        A, B, C = V[i - 1], V[i], V[(i + 1) % n_corners]
+        u, v = A - B, C - B
+        lu, lv = np.linalg.norm(u), np.linalg.norm(v)
+        if lu < 1e-6 or lv < 1e-6:
+            continue
+        u, v = u / lu, v / lv
+        half = np.arccos(float(np.clip(u @ v, -1.0, 1.0))) / 2.0
+        if half < 0.10 or half > np.pi / 2 - 0.03:
+            continue
+        R = float(rng.uniform(*corner_radius_m))
+        t = min(R / np.tan(half), 0.45 * lu, 0.45 * lv)
+        R = t * np.tan(half)
+        bis = u + v
+        nb = np.linalg.norm(bis)
+        if nb < 1e-9 or R < 1.0:
+            continue
+        centre = B + (bis / nb) * (R / np.sin(half))
+        P0, P1 = B + u * t, B + v * t
+        a0 = float(np.arctan2(*(P0 - centre)[::-1]))
+        a1 = float(np.arctan2(*(P1 - centre)[::-1]))
+        d = (a1 - a0 + np.pi) % (2 * np.pi) - np.pi
+        fil.append((P0, P1, centre, R, a0, d))
+    if len(fil) < 3:
+        raise RuntimeError(f"seed {seed}: only {len(fil)} usable corners")
+
+    # Pass 2: arc, then straight to the NEXT fillet's entry point.
+    pts = []
+    for k, (P0, P1, centre, R, a0, d) in enumerate(fil):
+        arc = a0 + d * np.linspace(0.0, 1.0, max(int(abs(d) * R / 2.5), 8))
+        pts.append(np.stack([centre[0] + R * np.cos(arc),
+                             centre[1] + R * np.sin(arc)], axis=1))
+        nxt = fil[(k + 1) % len(fil)][0]          # next fillet's entry
+        seg = float(np.linalg.norm(nxt - P1))
+        if seg > 2.0:
+            m = max(int(seg / 10.0), 2)
+            # Exclude both endpoints: they are the arc points already emitted.
+            frac = np.linspace(0.0, 1.0, m + 2)[1:-1]
+            pts.append(P1[None, :] + (nxt - P1)[None, :] * frac[:, None])
+    P = np.concatenate(pts, axis=0)
+    # splprep rejects duplicated consecutive points.
+    keep = np.r_[True, np.linalg.norm(np.diff(P, axis=0), axis=1) > 1e-6]
+    P = P[keep]
+    return SampledTrack(
+        name or f"str{seed:04d}", P[:, 0], P[:, 1], half_width=half_width,
+        closed=True, smoothing=smoothing, n_resample=2500,
+        description=f"Generated from straights + fillets (seed {seed}, "
+                    f"{n_corners} corners, radii {corner_radius_m[0]:.0f}-"
+                    f"{corner_radius_m[1]:.0f} m). Corner-dense WITH real "
+                    f"straights; not a model of any circuit.")
+
+
+def generate_mixed_set(n_tracks: int, seed0: int = 0, *,
+                       straight_share: float = 0.5,
+                       min_radius_m: float = 9.0) -> list:
+    """A training set drawn from BOTH generators.
+
+    Measured, neither alone covers the task:
+
+    | generator | cornering time | longest >30 m/s stretch |
+    |---|---|---|
+    | harmonic | **72.8%** | 124 m |
+    | straights + fillets | 44.4% | **634 m** |
+    | real Spa | 40.7% | 1,501 m |
+
+    Training on the harmonic set alone produced a policy that completed 100%
+    of laps on held-out generated circuits and then **spun at 85.8 deg on
+    real Spa** — it had reached only ~19 m/s and had never experienced a
+    40 m/s corner entry, because those circuits contain no straight long
+    enough to build one.
+
+    Mixing them is cheaper than compromising: corner-dense circuits teach
+    cornering density, straight-bearing ones supply the high-speed states
+    that make braking necessary. ``straight_share`` sets the split.
+    """
+    n_str = int(round(n_tracks * straight_share))
+    out, seed = [], seed0
+    while len(out) < n_str:
+        seed += 1
+        try:
+            t = generate_track_with_straights(seed)
+        except RuntimeError:
+            continue
+        if (track_stats(t)["min_radius_m"] >= min_radius_m
+                and self_intersections(t) == 0):
+            out.append(t)
+    out += generate_set(n_tracks - n_str, seed0=seed0 + 500_000,
+                        min_radius_m=min_radius_m)
     return out

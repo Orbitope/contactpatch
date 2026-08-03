@@ -50,3 +50,22 @@ def test_generation_is_deterministic():
     s = np.linspace(0.0, min(a.length, b.length), 500, endpoint=False)
     assert np.allclose(a.curvature(s), b.curvature(s))
     assert not np.allclose(a.curvature(s), generate_track(43).curvature(s))
+
+
+def test_self_intersection_detector_catches_a_figure_of_eight():
+    """A guard that never fires is not a guard. A figure-of-eight is the
+    canonical self-intersecting loop, so the detector must find its crossing."""
+    from physics.track import SampledTrack
+    from physics.track_gen import self_intersections
+    t = np.linspace(0.0, 2.0 * np.pi, 600, endpoint=False)
+    # Lemniscate: crosses itself exactly once, at the origin.
+    x, y = 300.0 * np.cos(t), 300.0 * np.sin(t) * np.cos(t)
+    fig8 = SampledTrack("fig8", x, y, half_width=5.0, closed=True,
+                        smoothing=5.0, n_resample=900)
+    assert self_intersections(fig8) >= 1, "detector missed a figure-of-eight"
+
+
+def test_generated_tracks_do_not_self_intersect():
+    from physics.track_gen import self_intersections
+    for t in generate_set(5, seed0=40000):
+        assert self_intersections(t) == 0, f"{t.name} crosses itself"

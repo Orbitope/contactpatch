@@ -54,9 +54,15 @@ from experiments.tracks_pilot import policy_eval as PE
 ROOT = Path(__file__).resolve().parent.parent.parent
 OUT = ROOT / "experiments" / "tracks_pilot" / "out"
 
-N_TRACKS = 64
+#: **1,000, not 64.** Cobbe/Procgen close the generalisation gap only past
+#: ~10,000 training levels and show substantial overfitting below 4,000; the
+#: first six multi-track runs used 64, which was an arbitrary default never
+#: revisited. Circuits are drawn fresh per episode already (the bank redraws
+#: `track_id` on every reset) -- what was missing was the SIZE of the pool.
+#: 1,000 costs 36 s to generate and ~130 MB banked without geometry.
+N_TRACKS = 1000
 N_HELDOUT = 8
-TOTAL_STEPS = 60_000_000
+TOTAL_STEPS = 120_000_000   # Czechmanowski's budget
 N_ENVS, ROLLOUT = 256, 1024
 
 #: Reward, at the magnitudes the survey supports rather than the ones this
@@ -114,8 +120,8 @@ def main(n_tracks: int = N_TRACKS, total_steps: int = TOTAL_STEPS):
     # different problem.
     tracks = generate_mixed_set(n_tracks + N_HELDOUT, seed0=10_000)
     train_tracks, heldout = tracks[:n_tracks], tracks[n_tracks:]
-    bank = TrackBank(train_tracks)
-    st = [track_stats(t) for t in train_tracks]
+    bank = TrackBank(train_tracks, store_geometry=False)
+    st = [track_stats(t) for t in train_tracks[:64]]   # sample; 1000 is slow
     cf = np.mean([x["corner_time_fraction"] for x in st])
     lf = np.mean([x["longest_fast_m"] for x in st])
     print(f"  {bank}")

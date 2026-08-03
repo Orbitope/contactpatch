@@ -59,7 +59,16 @@ class TrackBank:
     __slots__ = ("names", "lengths", "n_grid", "_kappa", "_halfwidth", "n",
                  "_x", "_y", "_head")
 
-    def __init__(self, tracks: list[Track], n_grid: int = 16000):
+    def __init__(self, tracks: list[Track], n_grid: int = 16000,
+                 store_geometry: bool = True):
+        """``store_geometry=False`` drops the Cartesian centreline tables.
+
+        Batched TRAINING never reads x/y/heading -- only curvature and
+        half-width. Those three channels are 60% of the bank's memory and are
+        needed solely by the single-instance reference env (its TrackLocator)
+        and by figures. Dropping them takes a 10,000-circuit bank from 3.2 GB
+        to 1.3 GB, which is the difference between feasible and not.
+        """
         if not tracks:
             raise ValueError("TrackBank needs at least one track")
         self.n = len(tracks)
@@ -72,17 +81,22 @@ class TrackBank:
         # TrackLocator from `centreline()`, and without it a bank circuit
         # cannot be driven by the reference implementation -- which would
         # leave the batched multi-track path with no differential oracle.
-        self._x = np.zeros((self.n, self.n_grid), dtype=np.float32)
-        self._y = np.zeros((self.n, self.n_grid), dtype=np.float32)
-        self._head = np.zeros((self.n, self.n_grid), dtype=np.float32)
+        z = (np.zeros((self.n, self.n_grid), dtype=np.float32)
+             if store_geometry else None)
+        self._x = z
+        self._y = (np.zeros((self.n, self.n_grid), dtype=np.float32)
+                   if store_geometry else None)
+        self._head = (np.zeros((self.n, self.n_grid), dtype=np.float32)
+                      if store_geometry else None)
         for i, t in enumerate(tracks):
             s = np.linspace(0.0, float(t.length), self.n_grid, endpoint=False)
             self._kappa[i] = np.asarray(t.curvature(s), dtype=float)
             hw = t.half_width_at(s)
             self._halfwidth[i] = (np.asarray(hw, dtype=float)
                                   if np.ndim(hw) else np.full(self.n_grid, float(hw)))
-            _, cx, cy, ch = t.centreline(self.n_grid)
-            self._x[i], self._y[i], self._head[i] = cx, cy, ch
+            if store_geometry:
+                _, cx, cy, ch = t.centreline(self.n_grid)
+                self._x[i], self._y[i], self._head[i] = cx, cy, ch
 
     # -- lookup ----------------------------------------------------------
 
@@ -111,6 +125,11 @@ class TrackBank:
         return self.lengths[track_id]
 
     def centreline_of(self, idx: int, n: int):
+        if self._x is None:
+            raise RuntimeError(
+                "this TrackBank was built with store_geometry=False, so it "
+                "has no Cartesian centreline. Build the eval bank with "
+                "store_geometry=True, or keep eval circuits as SampledTrack.")
         """``(s, x, y, heading)`` for one circuit, resampled to ``n`` points.
 
         Heading is interpolated on its unwrapped form: a naive interpolation
@@ -132,9 +151,12 @@ class TrackBank:
         return self.n
 
     def __repr__(self) -> str:
+        tot = sum(a.nbytes for a in (self._kappa, self._halfwidth,
+                                     self._x, self._y, self._head)
+                  if a is not None)
         return (f"TrackBank({self.n} circuits, {self.n_grid} grid points, "
                 f"{self.lengths.min():.0f}-{self.lengths.max():.0f} m, "
-                f"{self._kappa.nbytes / 1e6:.0f} MB)")
+                f"{tot / 1e6:.0f} MB)")
 
 
 class BankTrackView:

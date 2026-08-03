@@ -339,7 +339,8 @@ def generate_track_with_straights(
 
 def generate_mixed_set(n_tracks: int, seed0: int = 0, *,
                        straight_share: float = 0.5,
-                       min_radius_m: float = 9.0) -> list:
+                       min_radius_m: float = 9.0,
+                       families: tuple = ("fillets", "arcade")) -> list:
     """A training set drawn from BOTH generators.
 
     Measured, neither alone covers the task:
@@ -359,20 +360,35 @@ def generate_mixed_set(n_tracks: int, seed0: int = 0, *,
     Mixing them is cheaper than compromising: corner-dense circuits teach
     cornering density, straight-bearing ones supply the high-speed states
     that make braking necessary. ``straight_share`` sets the split.
+
+    **Default families are fillets + arcade.** The harmonic family is a
+    perturbed circle -- star-shaped, so it can never double back, and
+    visibly rounder than any real circuit. Fillets give genuine straights;
+    arcade (CarRacing-v0's bounded-turn-rate pursuit) gives continuous flow
+    and the highest cornering fraction of the four at 40.2%. Those two carry
+    the useful structure between them.
     """
-    n_str = int(round(n_tracks * straight_share))
+    n_a = int(round(n_tracks * straight_share))
     out, seed = [], seed0
-    while len(out) < n_str:
-        seed += 1
-        try:
-            t = generate_track_with_straights(seed)
-        except RuntimeError:
-            continue
-        if (track_stats(t)["min_radius_m"] >= min_radius_m
-                and self_intersections(t) == 0):
-            out.append(t)
-    out += generate_set(n_tracks - n_str, seed0=seed0 + 500_000,
-                        min_radius_m=min_radius_m)
+
+    if "fillets" in families:
+        while len(out) < n_a:
+            seed += 1
+            try:
+                t = generate_track_with_straights(seed)
+            except RuntimeError:
+                continue
+            if (track_stats(t)["min_radius_m"] >= min_radius_m
+                    and self_intersections(t) == 0):
+                out.append(t)
+
+    rest = n_tracks - len(out)
+    if "arcade" in families:
+        out += generate_arcade_set(rest, seed0=seed0 + 500_000,
+                                   min_radius_m=min_radius_m)
+    elif "harmonic" in families:
+        out += generate_set(rest, seed0=seed0 + 500_000,
+                            min_radius_m=min_radius_m)
     return out
 
 

@@ -1,0 +1,45 @@
+Multi-track training — 1000 generated circuits, 120,000,000 steps
+  TrackBank(1000 circuits, 16000 grid points, 2981-9444 m, 128 MB)
+  cornering time 34.1% (real: 40.7%)  longest straight 1979 m (real Spa: 1501 m)
+  held out: 8 generated circuits + real Spa
+
+  457 updates x 10 epochs x 32 minibatches = 146,240 gradient steps (was 18,280 at the old settings)
+
+  upd    0 steps=    262,144 v= 13.5 slip=  6.2 off=1.00 EV=+0.000 eval=     9.8
+  upd    8 steps=  2,359,296 v= 11.2 slip=  5.6 off=0.04 EV=+0.811 eval=   659.5
+  upd   16 steps=  4,456,448 v= 15.1 slip= 18.7 off=1.00 EV=+0.024 eval=   653.5
+  upd   24 steps=  6,553,600 v= 18.0 slip= 20.8 off=1.00 EV=+0.853 eval=   655.3
+  upd   32 steps=  8,650,752 v= 20.3 slip= 18.8 off=1.00 EV=+0.526 eval=   654.7
+  upd   40 steps= 10,747,904 v= 21.9 slip= 18.4 off=1.00 EV=+0.077 eval=   654.6
+  upd   48 steps= 12,845,056 v= 23.2 slip= 19.1 off=1.00 EV=+0.897 eval=   654.4
+  upd   56 steps= 14,942,208 v= 24.3 slip= 16.9 off=1.00 EV=+0.875 eval=   655.7
+  upd   64 steps= 17,039,360 v= 25.1 slip= 18.4 off=1.00 EV=+0.247 eval=   654.0
+  upd   72 steps= 19,136,512 v= 25.8 slip= 16.1 off=1.00 EV=+0.888 eval=   653.2
+  upd   80 steps= 21,233,664 v= 26.3 slip= 15.1 off=1.00 EV=+0.867 eval=   654.5
+  upd   88 steps= 23,330,816 v= 26.8 slip= 14.9 off=1.00 EV=+0.135 eval=   654.5
+  upd   96 steps= 25,427,968 v= 27.2 slip= 16.6 off=1.00 EV=+0.912 eval=   654.5
+  upd  104 steps= 27,525,120 v= 27.6 slip= 16.3 off=1.00 EV=+0.874 eval=   653.7
+  upd  112 steps= 29,622,272 v= 27.9 slip= 16.4 off=1.00 EV=+0.708 eval=   655.3
+  upd  120 steps= 31,719,424 v= 28.2 slip= 17.2 off=1.00 EV=+0.912 eval=   654.5
+  upd  128 steps= 33,816,576 v= 28.5 slip= 16.7 off=1.00 EV=+0.918 eval=   655.5
+  upd  136 steps= 35,913,728 v= 28.7 slip= 17.1 off=1.00 EV=+0.916 eval=   654.2
+  upd  144 steps= 38,010,880 v= 28.9 slip= 17.2 off=1.00 EV=+0.909 eval=   654.4
+  upd  152 steps= 40,108,032 v= 29.1 slip= 18.5 off=1.00 EV=+0.913 eval=   656.7
+  upd  160 steps= 42,205,184 v= 29.2 slip= 17.3 off=1.00 EV=+0.924 eval=   653.4
+  upd  168 steps= 44,302,336 v= 29.4 slip= 16.7 off=1.00 EV=+0.922 eval=   653.9
+  upd  176 steps= 46,399,488 v= 29.5 slip= 15.2 off=1.00 EV=+0.918 eval=   656.0
+  upd  184 steps= 48,496,640 v= 29.7 slip= 16.3 off=1.00 EV=+0.918 eval=   656.8
+  upd  192 steps= 50,593,792 v= 29.8 slip= 15.9 off=1.00 EV=+0.920 eval=   655.5
+  upd  200 steps= 52,690,944 v= 29.9 slip= 16.9 off=1.00 EV=+0.920 eval=   656.0
+  upd  208 steps= 54,788,096 v= 30.0 slip= 16.6 off=1.00 EV=+0.920 eval=   653.6
+  upd  216 steps= 56,885,248 v= 30.1 slip= 16.1 off=1.00 EV=+0.921 eval=   655.6
+  upd  224 steps= 58,982,400 v= 30.2 slip= 15.6 off=1.00 EV=+0.924 eval=   652.8
+  upd  232 steps= 61,079,552 v= 30.3 slip= 16.9 off=1.00 EV=+0.925 eval=   656.0
+  upd  240 steps= 63,176,704 v= 30.4 slip= 16.1 off=1.00 EV=+0.923 eval=   655.8
+  upd  248 steps= 65,273,856 v= 30.4 slip= 16.3 off=1.00 EV=+0.918 eval=   657.2
+  upd  256 steps= 67,371,008 v= 30.5 slip= 17.4 off=1.00 EV=+0.163 eval=   655.2
+  upd  264 steps= 69,468,160 v= 30.6 slip= 17.0 off=1.00 EV=+0.586 eval=   657.9
+  upd  272 steps= 71,565,312 v= 30.7 slip= 16.5 off=1.00 EV=+0.923 eval=   658.0
+  upd  280 steps= 73,662,464 v= 30.7 slip= 16.3 off=1.00 EV=+0.925 eval=   654.5
+  upd  288 steps= 75,759,616 v= 30.8 slip= 15.9 off=1.00 EV=+0.926 eval=   658.4
+  upd  296 steps= 77,856,768 v= 30.8 slip= 15.7 off=1.00 EV=+0.927 eval=   656.4

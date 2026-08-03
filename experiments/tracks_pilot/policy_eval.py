@@ -123,7 +123,11 @@ def evaluate(model, track, speed_cap=None, n_sections=N_SECTIONS,
     """Drop the DEPLOYED (greedy/mean-action) policy at ``n_sections`` evenly
     spaced points and roll each to termination.
 
-    ``model`` may be an ``ActorCritic`` or a path to a state dict.
+    ``model`` may be an ``ActorCritic``, a ``SquashedGaussianActor`` (SAC),
+    or a path to an ``ActorCritic`` state dict. **One evaluator for both
+    algorithms** -- D16 exists because a second, per-run harness is how the
+    F110 `finished` bug survived twenty runs, and "the other algorithm needs
+    its own" is exactly the reasoning that would reintroduce it.
     ``speed_cap`` MUST be the cap the checkpoint was selected under -- passing
     the curriculum's final cap instead is the F109 reporting bug.
     """
@@ -134,11 +138,19 @@ def evaluate(model, track, speed_cap=None, n_sections=N_SECTIONS,
     cfg = EnvConfig(**base)
 
     probe = DrivingEnv(cfg)
-    if not isinstance(model, ActorCritic):
-        m = ActorCritic(probe.obs_dim, probe.act_dim, 64, (-2.5, -1.0))
-        m.load_state_dict(torch.load(model))
-        model = m
-    policy = greedy_policy(model)
+    from physics.sac import SquashedGaussianActor
+    if isinstance(model, SquashedGaussianActor):
+        def policy(o):
+            with torch.no_grad():
+                a, _ = model(torch.as_tensor(o, dtype=torch.float32),
+                             deterministic=True, with_logp=False)
+            return a.numpy()
+    else:
+        if not isinstance(model, ActorCritic):
+            m = ActorCritic(probe.obs_dim, probe.act_dim, 64, (-2.5, -1.0))
+            m.load_state_dict(torch.load(model))
+            model = m
+        policy = greedy_policy(model)
 
     rows, lat, lat80, mono, spd, spd_max = [], [], [], True, [], 0.0
     for s0 in np.linspace(0.0, track.length, n_sections, endpoint=False):

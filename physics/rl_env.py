@@ -306,6 +306,21 @@ class EnvConfig:
     #: ``(v / v_ref)``, so at ``v_ref`` it equals its nominal weight and the
     #: existing coefficients keep their meaning.
     penalty_speed_ref: float = 25.0
+    #: Exponent on the slip-envelope penalty. ``1.0`` (linear in the excess
+    #: over the bound) reproduces every existing episode.
+    #:
+    #: **GT Sophy's tyre-slip term is QUARTIC in slip angle**:
+    #: ``R_ts = -sum_i min(|slip ratio_i|, 1) * |slip angle_i|^4``. Copying
+    #: its WEIGHT (0.25) without its EXPONENT is what broke the multi-track
+    #: run: at 27 deg of slip a quartic penalty is ~25x its value at the
+    #: bound, while a linear one is 1.25x. The policy learned to stay on
+    #: track *by sliding*, at 27.4 deg from the first quarter of training,
+    #: and never stopped -- sliding was simply cheaper than not sliding.
+    #:
+    #: A quartic penalty is near-zero through the normal operating range and
+    #: only bites in a genuine slide, which is exactly the shape wanted: it
+    #: does not tax a policy for using the tyre, only for leaving the fit.
+    envelope_exponent: float = 1.0
     #: Cost per step for operating outside the slip envelope, scaled by how far
     #: outside. **0.0 reproduces Episode 9 exactly**, where the envelope is
     #: instrumented and deliberately unenforced.
@@ -768,8 +783,9 @@ class DrivingEnv:
             worst = math.degrees(max(abs(v) for v in sl.values()))
             excess = max(0.0, worst - math.degrees(ENVELOPE_SLIP_MAX))
             if excess > 0.0:
-                reward -= pscale * self.cfg.envelope_penalty * excess / math.degrees(
-                    ENVELOPE_SLIP_MAX)
+                rel = excess / math.degrees(ENVELOPE_SLIP_MAX)
+                reward -= (pscale * self.cfg.envelope_penalty
+                          * rel ** self.cfg.envelope_exponent)
         if self.cfg.workload_penalty > 0.0:
             # Mean squared friction-ellipse utilisation over the four wheels.
             # Computed from the SAME per-wheel forces _record logs, so the

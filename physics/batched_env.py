@@ -490,8 +490,9 @@ class BatchedDrivingEnv:
         if self.cfg.envelope_penalty > 0.0:
             excess = np.maximum(
                 0.0, worst_deg - math.degrees(ENVELOPE_SLIP_MAX))
-            reward = reward - (pscale * self.cfg.envelope_penalty * excess
-                               / math.degrees(ENVELOPE_SLIP_MAX))
+            rel = excess / math.degrees(ENVELOPE_SLIP_MAX)
+            reward = reward - (pscale * self.cfg.envelope_penalty
+                               * rel ** self.cfg.envelope_exponent)
         if self.cfg.workload_penalty > 0.0:
             # Mean squared friction-ellipse utilisation, from the FIRST RK4
             # stage's wheel forces — which is what ``_last_wheels`` holds in

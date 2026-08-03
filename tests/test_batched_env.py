@@ -484,3 +484,21 @@ def test_speed_scaled_penalties_match_the_reference():
         if d_a or d_b:
             break
     assert seen, "speed scaling never changed the reward -- vacuous"
+
+
+def test_envelope_exponent_matches_the_reference_and_bites_superlinearly():
+    """GT Sophy's tyre-slip penalty is QUARTIC in slip angle. Copying its
+    weight without its exponent made sliding cheaper than not sliding: the
+    multi-track policy sat at 27.4 deg from the first quarter of training."""
+    div = _reward_divergence(steps=350, policy=_flat_out,
+                             envelope_penalty=0.25, envelope_exponent=4.0)
+    assert div < 1e-5
+    # The whole point is the SHAPE: doubling the excess must cost far more
+    # than twice as much.
+    import math
+    from physics.rl_env import ENVELOPE_SLIP_MAX
+    bound = math.degrees(ENVELOPE_SLIP_MAX)
+    lin = lambda x: (x / bound) ** 1.0
+    quad = lambda x: (x / bound) ** 4.0
+    assert quad(2 * bound) / quad(bound) == pytest.approx(16.0)
+    assert lin(2 * bound) / lin(bound) == pytest.approx(2.0)

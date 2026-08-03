@@ -66,7 +66,13 @@ ENV = dict(
     progress_scale=1.0,
     off_track_penalty=5.0,
     stall_penalty=2.0,
-    envelope_penalty=0.25,
+    envelope_penalty=3.0,
+    #: QUARTIC, like Sophy's tyre-slip term. Copying its weight (0.25) at a
+    #: LINEAR exponent made sliding cheaper than not sliding: the policy sat
+    #: at 27.4 deg of slip from the first quarter of training and learned to
+    #: stay on track by drifting. A quartic penalty is near-zero through the
+    #: normal operating range and ~25x at 27 deg.
+    envelope_exponent=4.0,
     cross_track_penalty=0.2,
     edge_penalty=0.15,
     speed_scaled_penalties=True,

@@ -62,7 +62,7 @@ N_ENVS, ROLLOUT = 256, 1024
 #: Reward, at the magnitudes the survey supports rather than the ones this
 #: project tuned its way to. See the table in the module docstring.
 ENV = dict(
-    max_steps=30_000,
+    max_steps=45_000,   # laps are ~10 km at the Spa-matched scale
     progress_scale=1.0,
     off_track_penalty=5.0,
     stall_penalty=2.0,
@@ -104,7 +104,7 @@ def main(n_tracks: int = N_TRACKS, total_steps: int = TOTAL_STEPS):
     # mixed set is 31.5%. Harmonic also produced the best Spa transfer of any
     # run (52.8%). Moving to the mixed set traded that away while fixing a
     # different problem.
-    tracks = generate_set(n_tracks + N_HELDOUT, seed0=10_000)
+    tracks = generate_mixed_set(n_tracks + N_HELDOUT, seed0=10_000)
     train_tracks, heldout = tracks[:n_tracks], tracks[n_tracks:]
     bank = TrackBank(train_tracks)
     st = [track_stats(t) for t in train_tracks]

@@ -38,12 +38,24 @@ from physics.track import SampledTrack
 CORNER_RADIUS_M = 200.0
 
 
-def generate_track(seed: int, *, base_radius: float = 320.0,
+def generate_track(seed: int, *, base_radius: float = 1200.0,
                    n_lobes: int = 8, amplitude: float = 0.20,
                    n_harmonics: int = 3, half_width: float = 5.0,
                    n_points: int = 1200, smoothing: float = 20.0,
                    name: str | None = None) -> SampledTrack:
     """One closed circuit.
+
+    **`base_radius` is set by the achievable-SPEED distribution, not by
+    curvature statistics.** This is the correction that mattered most. At
+    base_radius=320 the forward-backward speed profile gives a median
+    achievable speed of **20.6 m/s against real Spa's 37.2** — so a policy
+    trained there spent **78.7% of its time on Spa above the 95th percentile
+    of any speed it had ever seen**, and Spa's MEDIAN speed exceeded the
+    generated circuits' MAXIMUM. That is a pure out-of-distribution failure
+    and no reward term touches it. Four attempts at fixing Spa transfer by
+    adjusting curvature statistics and reward shape all failed, because the
+    quantity that sets the policy's state distribution is speed, and speed
+    depends on circuit SCALE as much as on local geometry.
 
     **Defaults are measured, not guessed.** A sweep over lobes x amplitude
     (see the table in TRACKS.md) found 8 lobes / 0.20 amplitude /
@@ -170,8 +182,15 @@ def self_intersections(track, n: int = 900) -> int:
 
 
 def generate_set(n_tracks: int, seed0: int = 0, *, min_radius_m: float = 8.0,
-                 max_min_radius_m: float = 60.0,
-                 min_corner_fraction: float = 0.55,
+                 max_min_radius_m: float = 90.0,
+                 #: Real Spa is 35.2% cornering time. The old 0.55 was set
+                 #: when circuits were 3.2 km at base_radius=320 and
+                 #: necessarily twisty; at the Spa-matched scale
+                 #: (base_radius 1200, ~12 km laps) it is unachievable and
+                 #: rejected every candidate. Scaling a circuit up trades
+                 #: corner density for speed, and speed is the axis that
+                 #: actually set the policy's state distribution.
+                 min_corner_fraction: float = 0.28,
                  **kwargs) -> list[SampledTrack]:
     """``n_tracks`` circuits passing the acceptance filter.
 
@@ -204,8 +223,8 @@ def generate_set(n_tracks: int, seed0: int = 0, *, min_radius_m: float = 8.0,
 
 
 def generate_track_with_straights(
-        seed: int, *, n_corners: int = 22, base_radius: float = 600.0,
-        jitter: float = 0.30, corner_radius_m: tuple = (15.0, 200.0),
+        seed: int, *, n_corners: int = 22, base_radius: float = 1100.0,
+        jitter: float = 0.30, corner_radius_m: tuple = (12.0, 250.0),
         half_width: float = 5.0, smoothing: float = 8.0,
         cluster_frac: float = 0.80, long_gap: float = 6.0,
         name: str | None = None) -> SampledTrack:

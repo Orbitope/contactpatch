@@ -2,15 +2,15 @@
   "n_train_tracks": 64,
   "n_heldout": 8,
   "total_steps": 60000000,
-  "wall_s": 1489.5084512233734,
-  "mean_corner_time_fraction": 0.6041130857928899,
-  "explained_variance_tail": 0.6206301923431798,
+  "wall_s": 1541.1733441352844,
+  "mean_corner_time_fraction": 0.7469146630086136,
+  "explained_variance_tail": 0.6345700526151885,
   "env": {
     "max_steps": 30000,
     "progress_scale": 1.0,
     "off_track_penalty": 5.0,
     "stall_penalty": 2.0,
-    "envelope_penalty": 3.0,
+    "envelope_penalty": 1.0,
     "envelope_exponent": 4.0,
     "cross_track_penalty": 0.2,
     "edge_penalty": 0.15,
@@ -21,40 +21,40 @@
   },
   "gradient_steps": 72960,
   "results": {
-    "gen510092": {
-      "headline": "3163.1 m (100.0% of lap), finished 100%, off-track 0%, worst slip 8.9 deg, 0/12 outside the fit -- rule 4 valid.",
-      "lap_frac": 1.000066111663946,
+    "gen10119": {
+      "headline": "NOT QUOTABLE (rule 4): 8/12 sections outside the 12 deg tyre fit, worst 12.7 deg, occupancy 0.0074. Distance (2129.2 m, 67.4%) measures how freely it was allowed to slide.",
+      "lap_frac": 0.6740219790898931,
+      "finish": 0.6666666666666666,
+      "valid": false,
+      "slip": 12.7052780880276
+    },
+    "gen10121": {
+      "headline": "3188.8 m (100.0% of lap), finished 100%, off-track 0%, worst slip 10.6 deg, 0/12 outside the fit -- rule 4 valid.",
+      "lap_frac": 1.0000526834763908,
       "finish": 1.0,
       "valid": true,
-      "slip": 8.937201540137009
+      "slip": 10.557077014130444
     },
-    "gen510093": {
-      "headline": "2367.0 m (75.3% of lap), finished 75%, off-track 25%, worst slip 9.0 deg, 0/12 outside the fit -- rule 4 valid.",
-      "lap_frac": 0.7530144730453938,
-      "finish": 0.75,
-      "valid": true,
-      "slip": 8.97005028505165
-    },
-    "gen510097": {
-      "headline": "1112.2 m (35.3% of lap), finished 0%, off-track 100%, worst slip 11.1 deg, 0/12 outside the fit -- rule 4 valid.",
-      "lap_frac": 0.35327337634352846,
-      "finish": 0.0,
-      "valid": true,
-      "slip": 11.136092276324712
-    },
-    "gen510099": {
-      "headline": "NOT QUOTABLE (rule 4): 12/12 sections outside the 12 deg tyre fit, worst 75.4 deg, occupancy 0.1211. Distance (348.4 m, 10.9%) measures how freely it was allowed to slide.",
-      "lap_frac": 0.10874434577107386,
-      "finish": 0.0,
+    "gen10122": {
+      "headline": "NOT QUOTABLE (rule 4): 12/12 sections outside the 12 deg tyre fit, worst 13.6 deg, occupancy 0.0288. Distance (3150.4 m, 100.0%) measures how freely it was allowed to slide.",
+      "lap_frac": 1.0000778963333914,
+      "finish": 1.0,
       "valid": false,
-      "slip": 75.41178181136505
+      "slip": 13.637848113275032
+    },
+    "gen10123": {
+      "headline": "3146.8 m (100.0% of lap), finished 100%, off-track 0%, worst slip 11.5 deg, 0/12 outside the fit -- rule 4 valid.",
+      "lap_frac": 1.0000580573793354,
+      "finish": 1.0,
+      "valid": true,
+      "slip": 11.512681844461358
     },
     "Spa": {
-      "headline": "NOT QUOTABLE (rule 4): 15/24 sections outside the 12 deg tyre fit, worst 28.6 deg, occupancy 0.0185. Distance (719.7 m, 10.3%) measures how freely it was allowed to slide.",
-      "lap_frac": 0.10281944069635508,
+      "headline": "NOT QUOTABLE (rule 4): 18/24 sections outside the 12 deg tyre fit, worst 78.1 deg, occupancy 0.0278. Distance (977.3 m, 14.0%) measures how freely it was allowed to slide.",
+      "lap_frac": 0.13962402836651716,
       "finish": 0.0,
       "valid": false,
-      "slip": 28.619958249416364
+      "slip": 78.14549755120827
     }
   }
 }

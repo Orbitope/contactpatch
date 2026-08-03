@@ -73,6 +73,22 @@ class SACConfig:
     gamma: float = 0.98
     tau: float = 0.005
     alpha: float = 0.01
+    #: Learn the entropy temperature instead of fixing it, targeting
+    #: ``target_entropy`` (default ``-act_dim``, the SAC standard).
+    #:
+    #: **Fixing alpha=0.01 failed and the reason is a transplant error.**
+    #: Fuchs and GT Sophy both use 0.01, but Fuchs states it as "reward scale
+    #: (1/alpha) = 100" -- their rewards are multiplied by 100. Ours are raw
+    #: progress in metres, so copying the number without the scale left the
+    #: effective temperature ~100x too low. Measured: entropy fell to -11.5
+    #: against a -2 target for a 2-D action, i.e. the policy collapsed to
+    #: near-deterministic within minutes -- the exact failure SAC was adopted
+    #: to escape.
+    #:
+    #: Auto-tuning removes the guess: alpha is whatever holds entropy at the
+    #: target, whatever the reward scale happens to be.
+    auto_alpha: bool = True
+    target_entropy: float | None = None
     lr: float = 3e-4
     hidden: int = 256
     n_step: int = 5
@@ -248,6 +264,10 @@ def train(make_batched_env, cfg: SACConfig | None = None, on_update=None,
 
     opt_a = torch.optim.Adam(actor.parameters(), lr=cfg.lr)
     opt_c = torch.optim.Adam(critic.parameters(), lr=cfg.lr)
+    target_ent = (float(cfg.target_entropy) if cfg.target_entropy is not None
+                  else -float(act_dim))
+    log_alpha = torch.tensor(float(np.log(cfg.alpha)), requires_grad=True)
+    opt_alpha = torch.optim.Adam([log_alpha], lr=cfg.lr)
     buf = Replay(cfg.replay_size, obs_dim, act_dim)
     nstep = _NStep(cfg.n_envs, cfg.n_step, cfg.gamma)
     eval_env = make_eval_env() if make_eval_env is not None else None
@@ -303,12 +323,14 @@ def train(make_batched_env, cfg: SACConfig | None = None, on_update=None,
         q_loss = pi_loss = ent = 0.0
         for _ in range(n_grad):
             bo, ba, br, bno, bd = buf.sample(cfg.batch_size, rng)
+            alpha = (log_alpha.exp().detach() if cfg.auto_alpha
+                     else torch.tensor(cfg.alpha))
             with torch.no_grad():
                 na, nlogp = actor(bno)
                 tq1, tq2 = target(bno, na)
                 # gamma^n, because the stored reward is an n-step return.
                 y = br + (cfg.gamma ** cfg.n_step) * (1.0 - bd) * (
-                    torch.min(tq1, tq2) - cfg.alpha * nlogp)
+                    torch.min(tq1, tq2) - alpha * nlogp)
             q1, q2 = critic(bo, ba)
             lq = F.mse_loss(q1, y) + F.mse_loss(q2, y)
             opt_c.zero_grad(set_to_none=True)
@@ -320,13 +342,21 @@ def train(make_batched_env, cfg: SACConfig | None = None, on_update=None,
                 p.requires_grad_(False)
             pa, plogp = actor(bo)
             pq1, pq2 = critic(bo, pa)
-            lpi = (cfg.alpha * plogp - torch.min(pq1, pq2)).mean()
+            lpi = (alpha * plogp - torch.min(pq1, pq2)).mean()
             opt_a.zero_grad(set_to_none=True)
             lpi.backward()
             nn.utils.clip_grad_norm_(actor.parameters(), cfg.max_grad_norm)
             opt_a.step()
             for p in critic.parameters():
                 p.requires_grad_(True)
+
+            if cfg.auto_alpha:
+                # Raise alpha while entropy is below target, lower it above.
+                la = -(log_alpha.exp()
+                       * (plogp.detach() + target_ent)).mean()
+                opt_alpha.zero_grad(set_to_none=True)
+                la.backward()
+                opt_alpha.step()
 
             with torch.no_grad():
                 for p, tp in zip(critic.parameters(), target.parameters()):
@@ -343,6 +373,8 @@ def train(make_batched_env, cfg: SACConfig | None = None, on_update=None,
             "update": upd, "steps": steps, "wall_s": time.time() - t0,
             "q_loss": q_loss / n_grad, "policy_loss": pi_loss / n_grad,
             "entropy": ent / n_grad, "replay": len(buf),
+            "alpha": float(log_alpha.exp().detach()),
+            "target_entropy": target_ent,
             "return_mean": tail(fin_ret), "off_track_rate": tail(fin_off),
             "worst_slip_mean_deg": tail(fin_slip),
         }

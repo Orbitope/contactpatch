@@ -42,7 +42,13 @@ ROOT = Path(__file__).resolve().parent.parent.parent
 OUT = ROOT / "experiments" / "tracks_pilot" / "out"
 
 N_TRACKS, N_HELDOUT = 1000, 8
-TOTAL_STEPS = 30_000_000
+#: 8M, not 30M. SAC is sample-efficient but compute-heavy per env step: at
+#: batch 1024 and 32 gradient steps per vector-step it ran at 598 env steps/s
+#: against PPO's 28,000, which put the original 30M budget at 14 HOURS.
+#: Cheaper per step (batch 512, half the gradient steps) and fewer of them --
+#: off-policy learns from each transition many times, so env steps are not
+#: the resource that matters here.
+TOTAL_STEPS = 8_000_000
 #: Fewer than PPO's 256: off-policy reuses every transition many times from
 #: replay, so throughput matters less than update count. 64 envs at
 #: updates_per_step=0.5 gives ~32 gradient steps per environment step
@@ -62,12 +68,14 @@ def main(n_tracks: int = N_TRACKS, total_steps: int = TOTAL_STEPS):
          f"longest straight {np.mean([x['longest_fast_m'] for x in st]):.0f} m")
 
     cfg = SACConfig(total_steps=total_steps, n_envs=N_ENVS, gamma=0.98,
-                    alpha=0.01, tau=0.005, n_step=5, batch_size=1024,
+                    alpha=0.01, tau=0.005, n_step=5, batch_size=512,
                     replay_size=1_000_000, hidden=256, lr=3e-4,
-                    updates_per_step=0.5, warmup_steps=200_000, seed=0,
+                    updates_per_step=0.25, warmup_steps=100_000, seed=0,
+                    auto_alpha=True,
                     eval_every=40, eval_episodes=4)
-    print(f"  SAC: gamma {cfg.gamma}, alpha {cfg.alpha}, {cfg.n_step}-step, "
-         f"{cfg.hidden}x2 hidden, replay {cfg.replay_size:,}\n")
+    print(f"  SAC: gamma {cfg.gamma}, alpha AUTO (target entropy "
+         f"{-2.0:.0f}), {cfg.n_step}-step, {cfg.hidden}x2 hidden, "
+         f"batch {cfg.batch_size}, replay {cfg.replay_size:,}\n")
 
     def make_batched(n):
         return BatchedDrivingEnv(_cfg(train_tracks[0]), n=n, seed=0, bank=bank)
@@ -83,7 +91,8 @@ def main(n_tracks: int = N_TRACKS, total_steps: int = TOTAL_STEPS):
                  f"buf={rec['replay']:>9,} ret={rec['return_mean']:8.1f} "
                  f"off={rec['off_track_rate']:.2f} "
                  f"slip={rec['worst_slip_mean_deg']:5.1f} "
-                 f"ent={rec['entropy']:+.2f}{ev}", flush=True)
+                 f"ent={rec['entropy']:+.2f} a={rec['alpha']:.3f}{ev}",
+                 flush=True)
 
     t0 = time.time()
     res = train(make_batched_env=make_batched, cfg=cfg, on_update=on_update,

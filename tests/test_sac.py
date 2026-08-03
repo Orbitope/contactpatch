@@ -124,3 +124,23 @@ def test_policy_eval_accepts_a_sac_actor():
     assert 0.0 <= r.finish_rate <= 1.0
     assert np.isfinite(r.distance_mean)
     assert isinstance(r.headline(), str)
+
+
+def test_auto_alpha_drives_entropy_toward_the_target():
+    """Fixing alpha=0.01 -- transplanted from Fuchs without their 100x reward
+    scale -- collapsed entropy to -11.5 against a -2 target within minutes.
+    Auto-tuning must actually move alpha in response."""
+    from physics.rl_env import EnvConfig
+    from physics.batched_env import BatchedDrivingEnv
+    from physics.track import long_exit
+    cfg = SACConfig(total_steps=8 * 600, n_envs=8, warmup_steps=8 * 40,
+                    batch_size=64, replay_size=20_000, hidden=32,
+                    updates_per_step=0.2, eval_every=10_000,
+                    auto_alpha=True, alpha=0.01)
+    res = train(make_batched_env=lambda n: BatchedDrivingEnv(
+        EnvConfig(track=long_exit(), max_steps=200), n=n, seed=0), cfg=cfg)
+    h = res["history"]
+    assert h[-1]["target_entropy"] == pytest.approx(-2.0)
+    # Entropy starts far below target, so alpha must RISE to push it back.
+    assert h[-1]["alpha"] > h[0]["alpha"], (
+        f"alpha did not respond: {h[0]['alpha']:.4f} -> {h[-1]['alpha']:.4f}")

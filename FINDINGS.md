@@ -4474,6 +4474,67 @@ guessing (D15).
 ---
 
 
+### F112 · Multi-track training on generated circuits reaches 100% lap completion on unseen circuits and drives at the tyre's peak — but transfers to a real circuit only where the training geometry contained the same regime. · 2026-08-02
+
+**Source:** `[MEASURED]` — `experiments/tracks_pilot/multitrack.py`, 64
+procedurally generated circuits (`physics/track_gen.py`), 60M steps, 39.3 min,
+228 updates, EV tail +0.647. Reward at the magnitudes the F105 survey
+supports: `envelope_penalty` 0.25, `cross_track_penalty` 0.2, penalties
+**speed-scaled**, no speed cap. `minibatches` 4 → 32, `gae_lambda` 0.95 →
+0.98. Scored by `policy_eval.py` (D16) on circuits absent from training.
+
+| evaluation circuit | distance | finished | worst slip | rule 4 |
+|---|---|---|---|---|
+| held-out `gen10121` | **100.0% of lap** | **100%** | 11.4° | **valid** |
+| held-out `gen10123` | **100.0%** | **100%** | 11.4° | **valid** |
+| held-out `gen10119` | 100.0% | — | 12.0° | 1/12 over |
+| held-out `gen10122` | 100.0% | — | 12.8° | 12/12 over |
+| **real Spa** (never seen) | **52.8%** | 0% | **85.8°** | badly invalid |
+
+**Three results that hold.** Zero-shot completion of **entire laps on
+circuits never trained on** — against 40.7% on a circuit the previous
+best policy *had* trained on. Mean speed **18.8 m/s against 13.1** (+43%).
+And slip at **11.4°, sitting on the tyre's peak-force angle of 10.3°**: the
+first policy in this project that works the tyres rather than cruising
+(F111's predecessor used 50.6% of the cornering limit at 0.3° mean slip).
+
+**Rule 4 is marginally breached on two of four** (12.0° and 12.8° against the
+12° bound, occupancy ≤ 0.0124). `envelope_penalty = 0.25` is GT Sophy's
+tyre-slip weight and is slightly too weak here. That is a coefficient, not a
+structure.
+
+**The Spa failure is the finding, and the cause is the generator.** The
+policy spins at 85.8°. Measured: the generated circuits' longest stretch
+allowing >30 m/s is **115–139 m; Spa's is 1,501 m**. The policy reached
+~19 m/s and had **never experienced a 40 m/s corner entry** in training, so
+it arrives at Spa's fast corners in a state it has literally never seen.
+
+**The generator was optimised on the wrong quantity, by me.** The
+justification for generating at all was that 59.3% of real driving time is
+spent on straights "where nothing is learned" — so the generator maximised
+corner density (72.8% vs 40.7%) and eliminated straights entirely. That
+reading was wrong: **straights are not wasted training time, they are what
+produces the high-speed states that make braking necessary.** A circuit
+without them does not contain the problem being taught.
+
+**What this does not show:** whether a mixed training set fixes it. A
+generator with both regimes now exists (`generate_mixed_set`: 57.9%
+cornering, straights 97–963 m, bracketing Spa on both axes) and is being
+tested. One seed throughout — nothing here is a trend until three (rule 5).
+
+**Methodology caveat, recorded rather than implied:** the generator designs
+are this project's own, not from the literature. Procedural track generation
+was never surveyed before building it — D15's lesson was applied to reward
+design and then not to this. Measured against the 24 real circuits, the
+straights-and-fillets construction is close on every axis (p99 curvature
+0.0534 vs 0.0573; curvature rate 5.6e-3 vs 4.8e-3; median corner length 43 m
+vs 49 m; clothoid-like fraction 43.5% vs 40.2%), and the harmonic one is
+deliberately harder (p90 curvature 2.4× real, 35 corners per lap vs 20). A
+survey is outstanding.
+
+---
+
+
 # Decisions
 
 ### D1 · The project drives an offset-free tire. · 2026-07-25

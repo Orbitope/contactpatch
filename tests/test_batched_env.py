@@ -533,3 +533,27 @@ def test_action_repeat_matches_the_reference_and_actually_holds_the_action():
         assert ref.steps == pytest.approx(n_dec * rep, abs=rep), (
             f"repeat={rep}: {n_dec} decisions produced {ref.steps} physics "
             f"steps -- the action is not being held")
+
+
+def test_drive_max_override_matches_the_reference_and_actually_scales():
+    """POWER-REVIEW Phase 3: the RL env had no power axis -- drive force was a
+    module constant, so Episodes 9-11 could only be measured at 1x while
+    phase1/phase2 swept 1x/1.5x/2x. Like BRAKE_MAX this scales the ACTION, so
+    it must agree across implementations exactly."""
+    div = _reward_divergence(steps=300, policy=_flat_out, drive_max=9000.0,
+                             envelope_penalty=0.0)
+    assert div < 1e-5
+    # ...and 2x power must actually go faster on the same flat-out policy.
+    tops = {}
+    for dm in (4500.0, 9000.0):
+        env = DrivingEnv(EnvConfig(drive_max=dm, envelope_penalty=0.0))
+        o = env.reset(0)
+        top = 0.0
+        for _ in range(300):
+            o, _, d, i = env.step(_flat_out(o)[0])
+            top = max(top, i["speed"])
+            if d:
+                break
+        tops[dm] = top
+    assert tops[9000.0] > tops[4500.0] + 1.0, (
+        f"2x drive_max did not raise top speed: {tops}")

@@ -341,6 +341,20 @@ class EnvConfig:
     #: avoids a step transient the Pacejka model will respond to; worth
     #: trying if ZOH shows steering artefacts.
     action_repeat: int = 1
+    #: Drive-force ceiling, N. ``None`` uses the module ``DRIVE_MAX`` and
+    #: reproduces every existing episode bit-for-bit.
+    #:
+    #: **POWER-REVIEW Phase 3 needs this.** The review answers every design
+    #: question as a curve over power (D17), and `phase1_sweep`/`phase2_sweep`
+    #: get there with `Limits(drive_max=DRIVE_MAX_1X_N * mult)`. The RL
+    #: environment had no equivalent -- power was a module constant, so
+    #: Episodes 9-11 could only ever be measured at 1x.
+    #:
+    #: NOTE this scales the ACTION, exactly as `BRAKE_MAX` does: a policy
+    #: trained at one `drive_max` and evaluated at another is being asked for
+    #: forces it never learned to command. Retrain per power level; do not
+    #: transplant checkpoints across them.
+    drive_max: float | None = None
     #: Cost per step for operating outside the slip envelope, scaled by how far
     #: outside. **0.0 reproduces Episode 9 exactly**, where the envelope is
     #: instrumented and deliberately unenforced.
@@ -736,7 +750,8 @@ class DrivingEnv:
             # to reconcile against). Passed as 0.0 rather than reusing a
             # wheel-fraction slot, so nothing here can be mistaken for meaning
             # something it does not.
-            drive_force=(drive_action * DRIVE_MAX if drive_action >= 0
+            drive_force=(drive_action * (self.cfg.drive_max or DRIVE_MAX)
+                        if drive_action >= 0
                         else drive_action * BRAKE_MAX),
         )
         _, info = self.backend.step(act, self.cfg.dt)

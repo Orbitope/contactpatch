@@ -432,7 +432,8 @@ class BatchedDrivingEnv:
                 v_now = np.hypot(self.v_x, self.v_y)
                 drive = np.where(v_now >= self.cfg.speed_cap,
                                  np.minimum(drive, 0.0), drive)
-            demand = np.where(drive >= 0, drive * DRIVE_MAX, drive * BRAKE_MAX)
+            dmax = self.cfg.drive_max or DRIVE_MAX
+            demand = np.where(drive >= 0, drive * dmax, drive * BRAKE_MAX)
 
         dt = self.cfg.dt
         st = (self.v_x, self.v_y, self.yaw_rate, self.steer,

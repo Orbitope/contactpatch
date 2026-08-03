@@ -67,12 +67,19 @@ def generate_track(seed: int, *, base_radius: float = 320.0,
     # and the loop closes exactly.
     r = np.ones_like(theta)
     for h in range(1, n_harmonics + 1):
-        # 1/h^2, NOT 1/h. Curvature of a radial perturbation scales roughly
-        # with amplitude x frequency^2, so a 1/h envelope leaves every
-        # harmonic contributing EQUALLY to curvature and the highest one
-        # dominates. Measured with 1/h: minimum radius 0.4-1.3 m (the car
-        # needs >= 8 m) and 52-84 curvature sign changes against a real
-        # circuit's ~20 -- sharp noise, not corners.
+        # 1/h^2, NOT 1/h. To first order in the perturbation,
+        # kappa(theta) ~ (1/R)(1 + sum_h a_h (h^2 n^2 - 1) cos(...)), so with
+        # amp = A/h^p the per-harmonic CURVATURE contribution scales as
+        # h^(2-p). Therefore:
+        #   1/h  -> h^1: the highest harmonic DOMINATES (measured 12.6 /
+        #                25.5 / 38.3), giving 0.4-1.3 m minimum radii where
+        #                the car needs >= 8 m, and 52-84 curvature sign
+        #                changes against a real circuit's ~20 -- sharp noise
+        #                rather than corners.
+        #   1/h^2 -> h^0: every harmonic contributes EQUALLY (12.6 / 12.8 /
+        #                12.8). This is the one we want, and it is what an
+        #                earlier version of this comment wrongly attributed
+        #                to 1/h.
         amp = amplitude / (h * h)
         phase = rng.uniform(0.0, 2.0 * np.pi)
         r += amp * np.sin(n_lobes * h * theta + phase)
@@ -198,7 +205,7 @@ def generate_set(n_tracks: int, seed0: int = 0, *, min_radius_m: float = 8.0,
 
 def generate_track_with_straights(
         seed: int, *, n_corners: int = 22, base_radius: float = 600.0,
-        jitter: float = 0.30, corner_radius_m: tuple = (12.0, 70.0),
+        jitter: float = 0.30, corner_radius_m: tuple = (15.0, 200.0),
         half_width: float = 5.0, smoothing: float = 8.0,
         cluster_frac: float = 0.80, long_gap: float = 6.0,
         name: str | None = None) -> SampledTrack:
@@ -220,6 +227,15 @@ def generate_track_with_straights(
     straight lines, with each vertex rounded by an arc of a drawn radius. That
     gives **direct control of both** the straight length and the corner radius,
     which the harmonic form never had.
+
+    **`corner_radius_m` upper bound is load-bearing and was wrong.** At
+    (12, 70) the fastest corner this generator can construct is
+    `sqrt(9.5 x 70) = 25.8 m/s`, so it produced circuits where only 18.5% of
+    corner arclength was takeable above 30 m/s against **36.4% on real
+    circuits** — i.e. adding straights to fix a high-speed gap made the gap
+    WORSE, because the car brakes all the way down again for every corner.
+    At (15, 200) it is 33.7%, matching real. The harmonic generator was
+    already at 36.7% on this axis and never had the problem.
     """
     rng = np.random.default_rng(seed)
     # Vertices are CLUSTERED, not uniform. Uniform spacing gives either

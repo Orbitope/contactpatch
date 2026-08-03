@@ -4535,6 +4535,66 @@ survey is outstanding.
 ---
 
 
+### F113 · Zero-shot transfer from generated circuits to a real one is unsolved here after six attempts, and the field does not do it either. Negative result. · 2026-08-03
+
+**Source:** `[MEASURED]` — six `experiments/tracks_pilot/multitrack.py` runs,
+60M steps each, ~4 h compute total, all scored by `policy_eval.py` on real
+Spa with the policy never having seen it.
+
+| # | change from the previous run | Spa distance | Spa worst slip |
+|---|---|---|---|
+| 1 | harmonic circuits, `envelope_penalty` 0.25 linear | **52.8%** | 85.8° |
+| 2 | + mixed generator (straights added) | 27.3% | 93.4° |
+| 3 | + fast-corner band fixed, quartic penalty 3.0 | 10.3% | 28.6° |
+| 4 | harmonic only, quartic 1.0 | 14.0% | 78.1° |
+| 5 | + circuit scale matched to Spa's speed distribution | 13.7% | 22.2° |
+| 6 | + 10 Hz control rate (was 50) | 14.7% | 27.5° |
+
+**Nothing beat the first attempt.** Each change was justified by a measured
+mechanism — a fast-corner gap, a linear-vs-quartic penalty shape, an
+out-of-distribution speed histogram, a control rate every published system
+sets differently — and each was individually defensible. The compound result
+is that **six plausible fixes produced no improvement**, which is itself the
+finding: the failure is not any of the things tested.
+
+**What DOES work, and is not in question:**
+
+* **F110** — a single-circuit policy completes 100% of Spa, rule-4 valid,
+  48/48 probes, at 13 m/s.
+* **F112** — a multi-circuit policy completes **100% of laps on generated
+  circuits it has never seen**, rule-4 valid on 2 of 4, at 18.8 m/s and 11.4°
+  slip (the tyre's peak-force angle is 10.3°).
+
+So the policy generalises **within** the generated distribution and fails to
+cross to a real circuit. That is a distribution-shift result, not a
+competence one.
+
+**The field agrees, and this is the part worth carrying into Episode 19.**
+GT Sophy — the strongest racing agent published — **is a specialist**: a
+version was trained per car–track combination, and Sony still require
+explicit training for each new circuit. Its "mixed-scenario training" varies
+opponents and start positions, not tracks. TC-Driver's zero-shot claim holds
+on one of three unseen circuits, is marginal on the second and **fails on the
+third at 94% crashes**. Learn-to-Race's RL baseline drops 31.1% → 11.8% seen
+to unseen. Cobbe/Procgen close the generalisation gap only past ~10,000
+training levels; we used 64.
+
+**Recommended change of approach, on that evidence:** stop treating
+cross-circuit zero-shot as the target. Train specialists, as the field does,
+and report the generalisation gap as a measured phenomenon rather than a
+problem to be engineered away. That is what SEASON5 Ep 19 asks for, and it is
+a more honest episode than a transfer result nobody else achieves either.
+
+**What this does NOT show:** that transfer is impossible. Untested here are
+budget (60M against Czechmanowski's 120M), training-circuit count (64 against
+Procgen's 10,000), fresh-sampling every episode rather than a fixed bank
+(unanimous in the general-RL literature and not done here), and an off-policy
+algorithm (every headline racing system uses one; Fuchs names PPO's
+state-independent exploration as the reason it underperforms).
+
+---
+
+
 # Decisions
 
 ### D1 · The project drives an offset-free tire. · 2026-07-25

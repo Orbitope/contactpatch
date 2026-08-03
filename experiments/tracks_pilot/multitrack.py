@@ -47,7 +47,7 @@ from physics.batched_env import BatchedDrivingEnv
 from physics.ppo import PPOConfig, train
 from physics.rl_env import DrivingEnv, EnvConfig
 from physics.track_bank import TrackBank, BankTrackView
-from physics.track_gen import generate_mixed_set, track_stats
+from physics.track_gen import generate_mixed_set, generate_set, track_stats
 from physics.tracks_data import load_real_track
 from experiments.tracks_pilot import policy_eval as PE
 
@@ -66,7 +66,7 @@ ENV = dict(
     progress_scale=1.0,
     off_track_penalty=5.0,
     stall_penalty=2.0,
-    envelope_penalty=3.0,
+    envelope_penalty=1.0,
     #: QUARTIC, like Sophy's tyre-slip term. Copying its weight (0.25) at a
     #: LINEAR exponent made sliding cheaper than not sliding: the policy sat
     #: at 27.4 deg of slip from the first quarter of training and learned to
@@ -98,7 +98,13 @@ def main(n_tracks: int = N_TRACKS, total_steps: int = TOTAL_STEPS):
     # of held-out generated laps, and then spun at 85.8 deg on real Spa --
     # it had never seen a straight long enough to reach 40 m/s, so it had
     # never experienced a high-speed corner entry (F113).
-    tracks = generate_mixed_set(n_tracks + N_HELDOUT, seed0=10_000)
+    # HARMONIC only. Measured on the fast-corner band -- the axis the survey
+    # identified as the real defect -- harmonic circuits match real ones
+    # (36.7% vs 36.4% of corner arclength takeable above 30 m/s) while the
+    # mixed set is 31.5%. Harmonic also produced the best Spa transfer of any
+    # run (52.8%). Moving to the mixed set traded that away while fixing a
+    # different problem.
+    tracks = generate_set(n_tracks + N_HELDOUT, seed0=10_000)
     train_tracks, heldout = tracks[:n_tracks], tracks[n_tracks:]
     bank = TrackBank(train_tracks)
     st = [track_stats(t) for t in train_tracks]

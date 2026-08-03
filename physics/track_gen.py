@@ -723,16 +723,29 @@ def generate_track_arcade(
 
 
 def generate_arcade_set(n_tracks: int, seed0: int = 0, *,
-                        min_corner_fraction: float = 0.0, **kwargs) -> list:
+                        min_radius_m: float = 9.0,
+                        min_corner_fraction: float = 0.30,
+                        **kwargs) -> list:
+    """``n_tracks`` arcade circuits that the car can actually drive.
+
+    **The minimum-radius filter is not optional here.** The pursuit bound is
+    a bound on the MARCHING path, not on the fitted spline: at a 30 m bound
+    the delivered minimum radius ranges 1.3-16.5 m across seeds, because the
+    spline tightens corners at checkpoint hand-over. An unfiltered set
+    returned 3 drivable circuits out of 8 and the other 5 had corners the car
+    physically cannot take.
+    """
     out, seed, tries = [], seed0, 0
-    while len(out) < n_tracks and tries < n_tracks * 80:
+    while len(out) < n_tracks and tries < n_tracks * 200:
         tries += 1
         seed += 1
         try:
             t = generate_track_arcade(seed, **kwargs)
         except RuntimeError:
             continue
-        if track_stats(t)["corner_time_fraction"] >= min_corner_fraction:
+        st = track_stats(t)
+        if (st["min_radius_m"] >= min_radius_m
+                and st["corner_time_fraction"] >= min_corner_fraction):
             out.append(t)
     if len(out) < n_tracks:
         raise RuntimeError(f"only {len(out)}/{n_tracks} in {tries} attempts")

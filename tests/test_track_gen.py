@@ -30,11 +30,18 @@ def test_minimum_radius_is_drivable():
             f"{t.name} has a {st['min_radius_m']:.1f} m corner -- undrivable")
 
 
-def test_tracks_are_corner_dense_which_is_the_whole_point():
-    """Real circuits average 40.7% cornering time. If generated ones do not
-    clearly beat that, this module has no reason to exist."""
+def test_tracks_are_corner_dense():
+    """**The threshold moved deliberately and the reason matters.** It was
+    0.55, set when circuits were 3.2 km at base_radius=320 and necessarily
+    twisty. Those circuits then failed to transfer to a real one, because
+    their median achievable speed was 20.6 m/s against Spa's 37.2 -- scale,
+    not curvature, set the policy's state distribution (F113).
+
+    Scaling up to match Spa's speed necessarily trades corner density for
+    speed. Real Spa is 35.2% cornering TIME, so demanding 55% at that scale
+    is incoherent; the filter now asks 0.28 and delivers ~35%."""
     fracs = [track_stats(t)["corner_time_fraction"] for t in generate_set(6, seed0=200)]
-    assert np.mean(fracs) > 0.55, f"mean corner time only {np.mean(fracs):.1%}"
+    assert np.mean(fracs) > 0.28, f"mean corner time only {np.mean(fracs):.1%}"
 
 
 def test_the_filter_actually_rejects_things():
@@ -89,8 +96,12 @@ def test_arcade_circuits_are_corner_dense_and_drivable():
     """The point of the arcade family: flowing curves, few straights. Real
     circuits average 40.7% cornering TIME; these should be at least that."""
     from physics.track_gen import generate_arcade_set
-    ts = [t for t in generate_arcade_set(8, seed0=0)
-          if track_stats(t)["min_radius_m"] >= 9.0]
-    assert len(ts) >= 5, f"only {len(ts)}/8 arcade circuits were drivable"
+    ts = generate_arcade_set(8, seed0=0)
+    assert len(ts) == 8
+    # The SET function must guarantee drivability -- an earlier version did
+    # not filter on radius at all and returned circuits with 1.3 m corners.
+    for t in ts:
+        assert track_stats(t)["min_radius_m"] >= 9.0, (
+            f"{t.name} has a {track_stats(t)['min_radius_m']:.1f} m corner")
     cf = np.mean([track_stats(t)["corner_time_fraction"] for t in ts])
     assert cf > 0.30, f"arcade cornering only {cf:.1%}"

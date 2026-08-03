@@ -1,0 +1,4 @@
+POWER-REVIEW Phase 3 — Season 3 RL at 2x power
+  drive_max 4500 -> 9000 N
+  5,000,000 steps, design conditioned on front_mass_fraction (0.4, 0.65)
+

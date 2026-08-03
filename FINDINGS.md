@@ -4491,6 +4491,21 @@ supports: `envelope_penalty` 0.25, `cross_track_penalty` 0.2, penalties
 | held-out `gen10122` | 100.0% | — | 12.8° | 12/12 over |
 | **real Spa** (never seen) | **52.8%** | 0% | **85.8°** | badly invalid |
 
+> **PROVENANCE CAVEAT, added 2026-08-03.** The artefacts for this run were
+> **not committed** — `multitrack_summary.json`, the policy and the sections
+> file were deleted by a `rm -f multitrack_*` after a smoke test and the names
+> were then reused by later runs. 159 comparable artefacts from other runs in
+> this directory *are* committed, so this is my error, not policy. The numbers
+> below survive only in this entry.
+>
+> Reproducing it requires checking out commit `840b0f6` and re-running:
+> `track_gen.py` and the reward have both changed since (`envelope_exponent`,
+> the arcade family, the scale correction). The track set is recoverable
+> exactly — `generate_set(72, seed0=10_000)` at that commit gives training
+> `gen10002`…`gen10118` and held-out `gen10119, gen10121, gen10122, gen10123,
+> gen10130, gen10131, gen10144, gen10148`, verified against the four circuit
+> names reported below.
+
 **Three results that hold.** Zero-shot completion of **entire laps on
 circuits never trained on** — against 40.7% on a circuit the previous
 best policy *had* trained on. Mean speed **18.8 m/s against 13.1** (+43%).

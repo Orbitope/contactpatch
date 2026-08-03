@@ -180,10 +180,15 @@ def main(n_tracks: int = N_TRACKS, total_steps: int = TOTAL_STEPS):
                    "slip": r_spa.worst_slip_deg}
     print(f"\n  [REAL Spa, never trained on] {r_spa.headline()}")
 
-    torch.save(res["model"].state_dict(), OUT / "multitrack_policy.pt")
-    (OUT / "multitrack_history.json").write_text(json.dumps(h, indent=2) + "\n")
-    r_spa.to_json(OUT / "multitrack_spa_eval.json")
-    (OUT / "multitrack_summary.json").write_text(json.dumps({
+    # Tagged by configuration, not a fixed name. Every earlier multi-track
+    # run wrote `multitrack_*` and silently overwrote its predecessor -- which
+    # is how F112's artefacts were lost while 159 others in this directory
+    # survived. Distinct names cost nothing and make the sequence auditable.
+    tag = f"mt{n_tracks}_{total_steps//1_000_000}M"
+    torch.save(res["model"].state_dict(), OUT / f"{tag}_policy.pt")
+    (OUT / f"{tag}_history.json").write_text(json.dumps(h, indent=2) + "\n")
+    r_spa.to_json(OUT / f"{tag}_spa_eval.json")
+    (OUT / f"{tag}_summary.json").write_text(json.dumps({
         "n_train_tracks": n_tracks, "n_heldout": len(heldout),
         "total_steps": total_steps, "wall_s": wall,
         "mean_corner_time_fraction": float(cf),

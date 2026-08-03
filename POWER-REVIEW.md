@@ -268,7 +268,7 @@ re-measured (7, 8); single-track spot checks elsewhere.
 
 ## 4. Phases
 
-### Phase 0 — status: items 1–3 done, none of them the way they were planned; item 4 open
+### Phase 0 — status: COMPLETE. Items 1–3 done, none the way they were planned; 4 and 5 closed 2026-08-03.
 
 1. **DONE, but not as scoped.** "Recompute section times from the existing
    `traces.npz`" turned out to be impossible as literally written — Episodes
@@ -313,9 +313,9 @@ re-measured (7, 8); single-track spot checks elsewhere.
    corrected numbers (0.21 s / 0.12 s, doubled) sit under a section still
    headed "it barely changes how fast it is." An editorial call, not a
    measurement — make it deliberately, not by drift.
-5. Write D-A, D-B, D-D into FINDINGS as decisions once ratified (D-C already
-   updated in place above, from what Phase 0 actually found rather than what
-   it assumed).
+5. **DONE.** D-A and D-B are FINDINGS **D17**; D-D is **D18**. (D-C was
+   already updated in place above, from what Phase 0 actually found rather
+   than what it assumed.)
 
 ### Phase 1 — DONE. Both axes grow monotonically with power, on every track,
 under both drive models. See F100.

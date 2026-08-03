@@ -657,3 +657,38 @@ SAC multi-track — 1000 circuits, 8,000,000 steps
   upd 26080 steps=  1,769,088 buf=1,000,000 ret=     8.2 off=0.98 slip= 19.2 ent=-1.57 a=0.000 eval=     5.1
   upd 26120 steps=  1,771,648 buf=1,000,000 ret=     8.3 off=0.98 slip= 19.7 ent=-1.08 a=0.000 eval=     5.8
   upd 26160 steps=  1,774,208 buf=1,000,000 ret=     6.6 off=0.96 slip= 19.9 ent=-1.42 a=0.000 eval=     5.7
+  upd 26200 steps=  1,776,768 buf=1,000,000 ret=     7.2 off=0.96 slip= 19.5 ent=-2.05 a=0.000 eval=     4.5
+  upd 26240 steps=  1,779,328 buf=1,000,000 ret=     8.0 off=0.98 slip= 17.3 ent=-2.18 a=0.000 eval=     4.9
+  upd 26280 steps=  1,781,888 buf=1,000,000 ret=     8.2 off=0.99 slip= 15.5 ent=-1.79 a=0.000 eval=     8.5
+  upd 26320 steps=  1,784,448 buf=1,000,000 ret=     7.9 off=0.99 slip= 17.3 ent=-1.49 a=0.000 eval=     6.1
+  upd 26360 steps=  1,787,008 buf=1,000,000 ret=     9.5 off=0.97 slip= 17.9 ent=-1.90 a=0.000 eval=     5.4
+  upd 26400 steps=  1,789,568 buf=1,000,000 ret=     8.2 off=0.99 slip= 16.5 ent=-2.13 a=0.000 eval=     8.2
+  upd 26440 steps=  1,792,128 buf=1,000,000 ret=     7.8 off=1.00 slip= 15.1 ent=-2.49 a=0.000 eval=     5.6
+  upd 26480 steps=  1,794,688 buf=1,000,000 ret=     5.2 off=0.99 slip= 15.8 ent=-2.43 a=0.000 eval=     4.0
+  upd 26520 steps=  1,797,248 buf=1,000,000 ret=     4.2 off=1.00 slip= 17.4 ent=-2.27 a=0.000 eval=     9.1
+  upd 26560 steps=  1,799,808 buf=1,000,000 ret=     7.3 off=1.00 slip= 16.5 ent=-1.88 a=0.000 eval=     5.5
+  upd 26600 steps=  1,802,368 buf=1,000,000 ret=     8.4 off=0.99 slip= 17.6 ent=-1.60 a=0.000 eval=     2.5
+  upd 26640 steps=  1,804,928 buf=1,000,000 ret=     6.8 off=1.00 slip= 18.9 ent=-1.97 a=0.000 eval=     8.3
+  upd 26680 steps=  1,807,488 buf=1,000,000 ret=     6.8 off=1.00 slip= 17.7 ent=-2.03 a=0.000 eval=     2.5
+  upd 26720 steps=  1,810,048 buf=1,000,000 ret=     7.5 off=1.00 slip= 16.5 ent=-2.39 a=0.000 eval=     3.7
+  upd 26760 steps=  1,812,608 buf=1,000,000 ret=     8.0 off=1.00 slip= 15.8 ent=-2.36 a=0.000 eval=     3.2
+  upd 26800 steps=  1,815,168 buf=1,000,000 ret=     7.7 off=1.00 slip= 16.0 ent=-2.02 a=0.000 eval=     4.2
+  upd 26840 steps=  1,817,728 buf=1,000,000 ret=     6.9 off=1.00 slip= 15.8 ent=-2.09 a=0.000 eval=     3.6
+  upd 26880 steps=  1,820,288 buf=1,000,000 ret=     7.2 off=0.99 slip= 17.0 ent=-2.18 a=0.000 eval=     3.3
+  upd 26920 steps=  1,822,848 buf=1,000,000 ret=     7.4 off=1.00 slip= 18.0 ent=-1.76 a=0.000 eval=     3.2
+  upd 26960 steps=  1,825,408 buf=1,000,000 ret=     8.0 off=1.00 slip= 17.3 ent=-2.22 a=0.000 eval=     3.5
+  upd 27000 steps=  1,827,968 buf=1,000,000 ret=     8.5 off=1.00 slip= 16.9 ent=-1.57 a=0.000 eval=     3.2
+  upd 27040 steps=  1,830,528 buf=1,000,000 ret=    10.0 off=1.00 slip= 16.8 ent=-1.68 a=0.000 eval=     3.7
+  upd 27080 steps=  1,833,088 buf=1,000,000 ret=     9.4 off=1.00 slip= 16.4 ent=-1.98 a=0.000 eval=     3.6
+  upd 27120 steps=  1,835,648 buf=1,000,000 ret=     8.1 off=1.00 slip= 16.2 ent=-1.99 a=0.000 eval=     3.6
+  upd 27160 steps=  1,838,208 buf=1,000,000 ret=     6.8 off=1.00 slip= 16.2 ent=-1.92 a=0.000 eval=     3.7
+  upd 27200 steps=  1,840,768 buf=1,000,000 ret=     7.3 off=0.98 slip= 16.3 ent=-1.91 a=0.000 eval=     4.0
+  upd 27240 steps=  1,843,328 buf=1,000,000 ret=     8.3 off=0.99 slip= 16.2 ent=-1.91 a=0.000 eval=     4.2
+  upd 27280 steps=  1,845,888 buf=1,000,000 ret=     9.7 off=1.00 slip= 16.8 ent=-2.19 a=0.000 eval=     3.7
+  upd 27320 steps=  1,848,448 buf=1,000,000 ret=    11.3 off=1.00 slip= 15.8 ent=-2.33 a=0.000 eval=     3.3
+  upd 27360 steps=  1,851,008 buf=1,000,000 ret=    11.5 off=1.00 slip= 15.4 ent=-1.98 a=0.000 eval=     3.4
+  upd 27400 steps=  1,853,568 buf=1,000,000 ret=    11.7 off=1.00 slip= 15.4 ent=-2.01 a=0.000 eval=     3.6
+  upd 27440 steps=  1,856,128 buf=1,000,000 ret=    11.8 off=1.00 slip= 15.9 ent=-2.05 a=0.000 eval=     4.2
+  upd 27480 steps=  1,858,688 buf=1,000,000 ret=    12.8 off=0.99 slip= 15.7 ent=-2.26 a=0.000 eval=     4.0
+  upd 27520 steps=  1,861,248 buf=1,000,000 ret=    12.5 off=1.00 slip= 15.7 ent=-2.31 a=0.000 eval=     4.4
+  upd 27560 steps=  1,863,808 buf=1,000,000 ret=    12.5 off=0.99 slip= 15.3 ent=-2.49 a=0.000 eval=     4.5

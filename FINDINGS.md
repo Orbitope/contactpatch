@@ -4947,3 +4947,60 @@ failed; (4) re-score every affected claim. Pass 3 is the one worth
 institutionalising: a test that cannot fail is indistinguishable from a test
 that passes, and rule 11 already says so.
 
+### D17 · Power is a sensitivity AXIS, not a re-baselining — and the series stands on three levels, reported as a curve. · 2026-08-03
+
+**Why.** POWER-REVIEW D-A and D-B, ratified by Phases 1 and 2 and recorded
+here per Phase 0 item 5. They have governed every measurement since F100 and
+were never written into this file.
+
+**D-A — how power is represented.** The `drive_max` force cap is wrong in a
+speed-dependent way (F43's own caveat: a real engine's force falls with
+speed). The obvious fix — adopt `F = min(F_cap, P/v)` and re-baseline
+everything onto it — **was checked before being adopted, and the check
+changed the decision**: at RV-1's own 174 kW that model drops below today's
+4.5 kN cap once the car passes 38.7 m/s, which is 30% of Episode 6's own
+trace. Re-baselining would therefore have silently changed published numbers
+for a reason unrelated to the question being asked. Power is instead a
+**sensitivity axis** run alongside the existing representation.
+
+**D-B — the levels.**
+
+| level | power | role |
+|---|---|---|
+| RV-1 (1×) | 174 kW / 228 hp `[SOURCED]` | the validation anchor; every diagnostic keeps passing here |
+| 1.5× | ~260 kW / ~350 hp | the ordinary sports-car tier, and arguably the most *relevant*: effects that express here matter for cars people drive |
+| RV-1P (2×) | ~350 kW / ~470 hp `[ASSUMED]` | the amplification end, where F43 showed design effects at 4-5× their 1× size |
+
+**Every design question is answered as the curve, with its shape stated.** An
+effect that grows smoothly through 1.5× is a different and more useful claim
+than one that only appears at 2×. Headline at the level where the effect
+expresses, conditional stated in the finding — the F43 structure. "Rear drive
+is faster *at a given power*" was Season 2's most useful sentence; this makes
+that form the default.
+
+---
+
+### D18 · Three synthetic corners, not one — and the third is chosen because it changes character with power. · 2026-08-03
+
+**Why.** POWER-REVIEW D-D, recorded per Phase 0 item 5. One 40 m corner
+cannot support "is it faster" claims: different corner speeds stress
+different budgets, so a single radius silently selects which budget the
+answer is about.
+
+| track | radius | what it stresses |
+|---|---|---|
+| `hairpin` | 15 m | second-gear, traction-dominated exit |
+| `long_exit` | 40 m | the incumbent — continuity with everything published |
+| `fast_sweep` | 90 m | lateral-dominated, near-flat at RV-1 power **and not at RV-1P** |
+
+That last row is the point of the set rather than a side effect: a corner
+whose limiting budget *changes* between the two power levels is itself a
+finding, and one a single-radius track cannot produce.
+
+**Scope, deliberately bounded:** the full {3 tracks × 2 powers} grid runs only
+for episodes being actively re-measured (7 and 8); everywhere else takes
+single-track spot checks. And no TUM import — these are built from the
+existing `Segment` machinery, because real-circuit geometry is `TRACKS.md`'s
+problem and mixing the two would confound a power result with an import
+result.
+

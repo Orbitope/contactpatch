@@ -321,6 +321,26 @@ class EnvConfig:
     #: only bites in a genuine slide, which is exactly the shape wanted: it
     #: does not tax a policy for using the tyre, only for leaving the fit.
     envelope_exponent: float = 1.0
+    #: Physics steps per policy decision. ``1`` reproduces every existing
+    #: episode. ``5`` gives 10 Hz decisions on the 50 Hz integrator.
+    #:
+    #: **Every published full-size-car racing system runs 10-20 Hz and we run
+    #: 50.** GT Sophy swept 5-60 Hz and found "no substantial performance
+    #: gains from acting more frequently than 10 Hz"; Fuchs trains at 10 Hz
+    #: on a 60 Hz simulator; Czechmanowski 20 Hz; TRI 10 Hz on 2 kHz dynamics.
+    #:
+    #: Two mechanisms, both of which bite here. Credit for a braking decision
+    #: must propagate through 5x more bootstrap steps at 50 Hz. And the
+    #: exploration noise is resampled 5x more often -- a Gaussian resampled
+    #: at 50 Hz produces near-zero net displacement over the ~1 s a brake
+    #: application must persist, so the policy cannot SAMPLE a sustained
+    #: brake, which is exactly the behaviour it has never learnt.
+    #:
+    #: Held as a zero-order hold on the action. Sophy's vision agent uses a
+    #: first-order hold (linear interpolation of steering) instead, which
+    #: avoids a step transient the Pacejka model will respond to; worth
+    #: trying if ZOH shows steering artefacts.
+    action_repeat: int = 1
     #: Cost per step for operating outside the slip envelope, scaled by how far
     #: outside. **0.0 reproduces Episode 9 exactly**, where the envelope is
     #: instrumented and deliberately unenforced.
@@ -650,6 +670,23 @@ class DrivingEnv:
         ])
 
     def step(self, action: np.ndarray) -> tuple[np.ndarray, float, bool, dict]:
+        """One POLICY decision. With ``action_repeat > 1`` the action is held
+        across that many physics steps and their rewards summed, so discount
+        and episode length are both in decision units."""
+        if self.cfg.action_repeat > 1:
+            total = 0.0
+            obs = self.observe()
+            done = False
+            info: dict = {}
+            for _ in range(self.cfg.action_repeat):
+                obs, r, done, info = self._step_once(action)
+                total += r
+                if done:
+                    break
+            return obs, total, done, info
+        return self._step_once(action)
+
+    def _step_once(self, action: np.ndarray) -> tuple[np.ndarray, float, bool, dict]:
         """One control interval.
 
         ``action`` is [steer_rate, drive_force] in "none" mode (Episodes 9-11,

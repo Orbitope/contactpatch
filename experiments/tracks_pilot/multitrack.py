@@ -62,7 +62,15 @@ N_ENVS, ROLLOUT = 256, 1024
 #: Reward, at the magnitudes the survey supports rather than the ones this
 #: project tuned its way to. See the table in the module docstring.
 ENV = dict(
-    max_steps=45_000,   # laps are ~10 km at the Spa-matched scale
+    max_steps=9_000,    # DECISIONS, not physics steps: ~10 km laps at 10 Hz
+    #: 10 Hz decisions on the 50 Hz integrator. GT Sophy swept 5-60 Hz and
+    #: found no gain above 10; Fuchs, TRI and the GT7 agent all run 10 Hz,
+    #: Czechmanowski 20. At 50 Hz our exploration noise is resampled 5x more
+    #: often and a Gaussian resampled that fast produces near-zero net
+    #: displacement over the ~1 s a brake application must persist -- so the
+    #: policy could not SAMPLE a sustained brake, which is the behaviour five
+    #: reward and track variations all failed to produce.
+    action_repeat=5,
     progress_scale=1.0,
     off_track_penalty=5.0,
     stall_penalty=2.0,
@@ -116,7 +124,7 @@ def main(n_tracks: int = N_TRACKS, total_steps: int = TOTAL_STEPS):
     print(f"  held out: {len(heldout)} generated circuits + real Spa\n")
 
     cfg = PPOConfig(total_steps=total_steps, n_envs=N_ENVS,
-                    rollout_steps=ROLLOUT, gamma=0.995, gae_lambda=0.98,
+                    rollout_steps=ROLLOUT, gamma=0.975, gae_lambda=0.95,
                     minibatches=32, epochs=10, seed=0, entropy_anneal=True,
                     eval_every=8, eval_episodes=4)
     n_upd = total_steps // (N_ENVS * ROLLOUT)

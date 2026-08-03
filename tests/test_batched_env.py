@@ -502,3 +502,34 @@ def test_envelope_exponent_matches_the_reference_and_bites_superlinearly():
     quad = lambda x: (x / bound) ** 4.0
     assert quad(2 * bound) / quad(bound) == pytest.approx(16.0)
     assert lin(2 * bound) / lin(bound) == pytest.approx(2.0)
+
+
+def test_action_repeat_matches_the_reference_and_actually_holds_the_action():
+    """10 Hz decisions on the 50 Hz integrator. Every published full-size-car
+    racing system runs 10-20 Hz; we ran 50, where exploration noise is
+    resampled 5x more often and a sustained brake is essentially unsamplable.
+
+    This test exists because the first attempt patched the batched env and
+    SILENTLY MISSED the reference (a str.replace that did not match a return
+    annotation) -- the two ran at different rates and only the differential
+    check revealed it."""
+    for rep in (1, 5):
+        cfg = EnvConfig(action_repeat=rep, envelope_penalty=0.0)
+        ref, bat = DrivingEnv(cfg), BatchedDrivingEnv(cfg, n=1, seed=0)
+        ref.reset(0)
+        bat.reset(0)
+        a = np.array([0.1, 0.7])
+        worst, n_dec = 0.0, 0
+        for _ in range(60):
+            _, r_ref, d_ref, _ = ref.step(a)
+            _, r_bat, d_bat, _ = bat.step(a[None, :])
+            worst = max(worst, abs(r_ref - r_bat[0]))
+            n_dec += 1
+            if d_ref or d_bat[0]:
+                break
+        assert worst < 1e-6, f"repeat={rep} diverges by {worst:.2e}"
+        # ...and the repeat must actually advance the physics, not just
+        # rename the call: same physics steps, fewer decisions.
+        assert ref.steps == pytest.approx(n_dec * rep, abs=rep), (
+            f"repeat={rep}: {n_dec} decisions produced {ref.steps} physics "
+            f"steps -- the action is not being held")

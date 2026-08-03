@@ -387,6 +387,35 @@ class BatchedDrivingEnv:
     # -- the loop --------------------------------------------------------
 
     def step(self, actions: np.ndarray):
+        """One policy decision per instance; see EnvConfig.action_repeat.
+
+        Auto-reset makes the repeat subtler than the reference's: an instance
+        that terminates mid-repeat has already been restarted, so continuing
+        to apply the held action would drive its NEXT episode with the
+        previous one's control. Terminated instances are therefore frozen for
+        the remainder of the repeat by zeroing their action, and their
+        terminal info is preserved from the step that ended them."""
+        if self.cfg.action_repeat > 1:
+            total = np.zeros(self.n)
+            any_done = np.zeros(self.n, dtype=bool)
+            keep = {}
+            act = actions.copy()
+            for _ in range(self.cfg.action_repeat):
+                obs, r, done, info = self._step_once(act)
+                total = total + np.where(any_done, 0.0, r)
+                for k, v in info.items():
+                    if k.startswith("episode_"):
+                        keep.setdefault(k, []).append(v)
+                any_done = any_done | done
+                if any_done.all():
+                    break
+                act = np.where(any_done[:, None], 0.0, act)
+            for k, v in keep.items():
+                info[k] = np.concatenate(v) if len(v) else v
+            return obs, total, any_done, info
+        return self._step_once(actions)
+
+    def _step_once(self, actions: np.ndarray):
         a = np.clip(np.asarray(actions, dtype=float), -1.0, 1.0)
         if a.shape != (self.n, self.act_dim):
             raise ValueError(f"expected actions {(self.n, self.act_dim)}, "

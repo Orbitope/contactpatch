@@ -33,6 +33,14 @@ import numpy as np
 
 from physics.track import SampledTrack
 
+#: Every generator tags what it produced. Results are reported per family --
+#: they have genuinely different geometry, and mixing them without a label
+#: makes any "generated circuits do X" claim unreadable.
+STYLE_HARMONIC = "harmonic"        # perturbed circle, star-shaped
+STYLE_FILLETS = "fillets"          # straights + circular fillets, star-shaped
+STYLE_CURVATURE = "curvature"      # curvature-space corner sequence, may fold
+STYLE_ARCADE = "arcade"            # bounded-turn-rate pursuit, game style
+
 #: Radius below which a point counts as "in a corner" for the density
 #: statistics. Matches the threshold used to measure the 59.3% figure above.
 CORNER_RADIUS_M = 200.0
@@ -105,7 +113,7 @@ def generate_track(seed: int, *, base_radius: float = 1200.0,
     return SampledTrack(
         name or f"gen{seed:04d}", x, y, half_width=half_width, closed=True,
         smoothing=smoothing, n_resample=2000,
-        description=f"Procedurally generated (seed {seed}, {n_lobes} lobes, "
+        description=f"[{STYLE_HARMONIC}] Procedurally generated (seed {seed}, {n_lobes} lobes, "
                     f"amplitude {amplitude}, {n_harmonics} harmonics). "
                     f"Deliberately corner-dense; not a model of any real "
                     f"circuit.")
@@ -323,7 +331,7 @@ def generate_track_with_straights(
     return SampledTrack(
         name or f"str{seed:04d}", P[:, 0], P[:, 1], half_width=half_width,
         closed=True, smoothing=smoothing, n_resample=2500,
-        description=f"Generated from straights + fillets (seed {seed}, "
+        description=f"[{STYLE_FILLETS}] Straights + fillets (seed {seed}, "
                     f"{n_corners} corners, radii {corner_radius_m[0]:.0f}-"
                     f"{corner_radius_m[1]:.0f} m). Corner-dense WITH real "
                     f"straights; not a model of any circuit.")
@@ -365,4 +373,367 @@ def generate_mixed_set(n_tracks: int, seed0: int = 0, *,
             out.append(t)
     out += generate_set(n_tracks - n_str, seed0=seed0 + 500_000,
                         min_radius_m=min_radius_m)
+    return out
+
+
+# ---------------------------------------------------------------------------
+# Curvature-space generation
+# ---------------------------------------------------------------------------
+#
+# The two generators above are **star-shaped**: a single-valued radial
+# function r(theta) > 0. That is provably a Jordan curve, which is why neither
+# ever self-intersects -- and it is the same reason neither can produce a
+# hairpin folding back onto a straight, a crossover, or anything like Eau
+# Rouge. Measured: **1 of 25 real circuits is star-shaped** (IMS, an oval);
+# the median real circuit spends 27% of its lap backtracking in polar angle.
+# So that whole family excludes 24 of the 25 circuits we validate against.
+# "Guaranteed simple" and "cannot double back" are the same constraint.
+#
+# Working directly in curvature space removes it. Specify kappa(s), integrate
+# to heading and then to position:
+#
+#     theta(s) = integral_0^s kappa      x(s) = integral_0^s cos(theta)
+#                                        y(s) = integral_0^s sin(theta)
+#
+# Closure needs three things, and the first is free: with
+# kappa = 2*pi/L + (a zero-mean Fourier perturbation), the turning integral is
+# exactly 2*pi by construction, so only x(L) = 0 and y(L) = 0 remain. Two
+# constraints, two free coefficients, Newton.
+#
+# The trade is explicit and is the OPPOSITE of the polar form's: arbitrary
+# shape and exact curvature control, at the cost of losing the simplicity
+# guarantee -- roughly a third of solved curves cross themselves and must be
+# rejected. That is why `self_intersections()` is a real filter here and a
+# no-op for `generate_track`.
+
+
+def _integrate_curvature(kappa: np.ndarray, ds: float):
+    """kappa(s) -> (x, y, heading), by cumulative trapezoid."""
+    theta = np.concatenate([[0.0], np.cumsum(0.5 * (kappa[1:] + kappa[:-1])) * ds])
+    x = np.concatenate([[0.0], np.cumsum(0.5 * (np.cos(theta[1:])
+                                                + np.cos(theta[:-1]))) * ds])
+    y = np.concatenate([[0.0], np.cumsum(0.5 * (np.sin(theta[1:])
+                                                + np.sin(theta[:-1]))) * ds])
+    return x, y, theta
+
+
+def _closure_residual(coef, base, harm, s, ds):
+    """(x(L), y(L)) for a curvature profile with two coefficients varied."""
+    k = base + coef[0] * np.cos(harm * s) + coef[1] * np.sin(harm * s)
+    x, y, _ = _integrate_curvature(k, ds)
+    return np.array([x[-1], y[-1]]), k
+
+
+def generate_track_curvature_space(
+        seed: int, *, length_m: float = 9000.0, n_harmonics: int = 9,
+        target_min_radius_m: float = 18.0, n_points: int = 3000,
+        half_width: float = 5.0, smoothing: float = 12.0,
+        max_newton: int = 40, name: str | None = None) -> SampledTrack:
+    """A closed circuit specified by its curvature profile.
+
+    ``target_min_radius_m`` sets the perturbation scale, and doing it this
+    way rather than "relative to the base curvature" is the correction that
+    made this generator work at all. The base is ``2*pi/L`` = 7e-4 for a 9 km
+    lap, while a 15 m corner is ``kappa`` = 0.067 -- a factor of ~100. A
+    perturbation scaled as a small multiple of the base produces a near
+    perfect circle: measured, minimum radius 704 m and **0.0% cornering
+    time**.
+
+    The exact bound ``max|kappa| <= 2*pi/L + sum_h sqrt(a_h^2 + b_h^2)`` is
+    what makes this controllable -- the harmonic amplitudes are set so that
+    sum equals the target curvature, so minimum radius needs no search.
+
+    Raises ``RuntimeError`` if Newton fails to close the loop, or if the
+    solved curve self-intersects. Both are expected outcomes for a fraction
+    of seeds -- the caller retries with another.
+    """
+    rng = np.random.default_rng(seed)
+    L = float(length_m)
+    s = np.linspace(0.0, L, n_points)
+    ds = float(s[1] - s[0])
+    k0 = 2.0 * np.pi / L
+
+    # Zero-mean perturbation => the turning integral stays exactly 2*pi, so
+    # tangent closure never enters the Newton solve.
+    # Budget the total harmonic amplitude against the exact bound above, so
+    # the tightest corner lands near the target instead of being discovered.
+    k_target = 1.0 / float(target_min_radius_m)
+    budget = max(k_target - k0, 1e-6)
+    w = rng.uniform(0.4, 1.0, n_harmonics) / np.arange(2, n_harmonics + 2) ** 0.55
+    w = w / w.sum() * budget
+    base = np.full(n_points, k0)
+    for i, h in enumerate(range(2, n_harmonics + 2)):
+        ph = rng.uniform(0.0, 2.0 * np.pi)
+        base = base + w[i] * np.cos(2.0 * np.pi * h * s / L + ph)
+
+    # Two free coefficients on the first harmonic, solved for position closure.
+    harm = 2.0 * np.pi / L
+    coef = np.zeros(2)
+    res, k = _closure_residual(coef, base, harm, s, ds)
+    for _ in range(max_newton):
+        if np.linalg.norm(res) < 1e-3 * L:
+            break
+        J = np.zeros((2, 2))
+        for j in range(2):
+            d = np.zeros(2)
+            d[j] = 1e-6 * k0
+            rp, _ = _closure_residual(coef + d, base, harm, s, ds)
+            J[:, j] = (rp - res) / d[j]
+        try:
+            step = np.linalg.solve(J, -res)
+        except np.linalg.LinAlgError:
+            raise RuntimeError(f"seed {seed}: singular Jacobian")
+        # Damped: the residual is strongly nonlinear in the coefficients and
+        # a full Newton step routinely overshoots into a wildly different loop.
+        coef = coef + 0.5 * step
+        res, k = _closure_residual(coef, base, harm, s, ds)
+    if np.linalg.norm(res) >= 1e-3 * L:
+        raise RuntimeError(f"seed {seed}: closure failed, "
+                           f"residual {np.linalg.norm(res):.1f} m")
+
+    x, y, _ = _integrate_curvature(k, ds)
+    t = SampledTrack(name or f"cs{seed:04d}", x[:-1], y[:-1],
+                     half_width=half_width, closed=True, smoothing=smoothing,
+                     n_resample=2500,
+                     description=f"Curvature-space generated (seed {seed}, "
+                                 f"L={L:.0f} m, {n_harmonics} harmonics, "
+                                 f"target min r {target_min_radius_m:.0f} m). Not star-shaped: "
+                                 f"may double back, unlike the polar forms.")
+    if self_intersections(t) > 0:
+        raise RuntimeError(f"seed {seed}: self-intersecting")
+    return t
+
+
+def generate_curvature_set(n_tracks: int, seed0: int = 0, *,
+                           min_radius_m: float = 9.0,
+                           max_attempts_per: int = 60, **kwargs) -> list:
+    """``n_tracks`` curvature-space circuits, retrying rejected seeds."""
+    out, seed, tries = [], seed0, 0
+    while len(out) < n_tracks and tries < n_tracks * max_attempts_per:
+        tries += 1
+        seed += 1
+        try:
+            t = generate_track_curvature_space(seed, **kwargs)
+        except RuntimeError:
+            continue
+        if track_stats(t)["min_radius_m"] >= min_radius_m:
+            out.append(t)
+    if len(out) < n_tracks:
+        raise RuntimeError(f"only {len(out)}/{n_tracks} in {tries} attempts")
+    return out
+
+
+def generate_track_corner_sequence(
+        seed: int, *, length_m: float = 7500.0, n_corners: int = 14,
+        min_radius_m: float = 14.0, max_radius_m: float = 220.0,
+        counter_frac: float = 0.30,
+        n_points: int = 3000, half_width: float = 5.0, smoothing: float = 10.0,
+        max_newton: int = 60, name: str | None = None) -> SampledTrack:
+    """Curvature-space, but built as **localised corners joined by straights**.
+
+    The pure-Fourier version of curvature-space generation
+    (`generate_track_curvature_space`) fails for a structural reason worth
+    recording: a Fourier profile puts curvature *everywhere along the lap*,
+    so the curve folds over itself. Measured at a 18 m target minimum radius,
+    **73 of 80 seeds self-intersected**; backing the amplitude off far enough
+    to stop that gives a near-circle (704 m minimum radius, 0.0% cornering).
+    There is no amplitude that gives both.
+
+    Real circuits are not like that. They are **kappa = 0 for most of their
+    length**, with curvature concentrated into short corners -- which is
+    exactly why Spa fits an 11.4 m hairpin into 7 km without crossing itself.
+
+    So: kappa(s) is a sum of raised-cosine bumps at random positions, zero
+    between them. Turning closure (integral kappa ds = 2*pi) is imposed by
+    scaling all the bump amplitudes together, which is exact and needs no
+    solve. Position closure is two constraints, solved by damped Newton on
+    two bump amplitudes.
+    """
+    rng = np.random.default_rng(seed)
+    L = float(length_m)
+    s = np.linspace(0.0, L, n_points)
+    ds = float(s[1] - s[0])
+
+    centres = np.sort(rng.uniform(0.0, L, n_corners))
+    radii = rng.uniform(min_radius_m, max_radius_m, n_corners)
+    # A loop with net turning 2*pi made of same-sign corners is convex and
+    # cannot cross itself; every opposite-sign ("counter") corner is what
+    # buys an interesting shape AND what risks folding. Measured at 50/50
+    # signs, 83% of solved curves self-intersected. `counter_frac` is that
+    # dial, exposed rather than buried at 0.5.
+    signs = np.where(rng.random(n_corners) < counter_frac, -1.0, 1.0)
+    # Corner arc length: enough to turn a plausible angle at that radius.
+    widths = radii * rng.uniform(0.5, 1.6, n_corners)
+
+    def profile(scale, amps):
+        k = np.zeros(n_points)
+        for c, r, sg, w, a in zip(centres, radii, signs, widths, amps):
+            d = np.abs((s - c + L / 2) % L - L / 2)
+            m = d < w
+            # Raised cosine: smooth entry and exit, so curvature RATE stays
+            # bounded -- the property clothoids exist to guarantee.
+            k[m] += sg * a * (1.0 / r) * 0.5 * (1.0 + np.cos(np.pi * d[m] / w))
+        # Exact turning closure by construction.
+        tot = np.trapezoid(k, dx=ds)
+        if abs(tot) < 1e-12:
+            raise RuntimeError(f"seed {seed}: degenerate profile")
+        return k * (2.0 * np.pi / tot) * scale
+
+    # Closure rides on a SMOOTH low-harmonic correction, not on the bump
+    # amplitudes. Solving it with two bump amplitudes was badly conditioned --
+    # a bump barely moves the endpoint without destroying the corner it
+    # belongs to, and it accepted 1 seed in 100 (60 closure failures). A
+    # first-harmonic correction moves the endpoint strongly while leaving
+    # every corner essentially intact, because it is spread over the whole
+    # lap at low amplitude.
+    base_k = profile(1.0, np.ones(n_corners))
+    c1, c2 = np.cos(2.0 * np.pi * s / L), np.sin(2.0 * np.pi * s / L)
+
+    def resid(ab):
+        k = base_k + ab[0] * c1 + ab[1] * c2
+        k = k * (2.0 * np.pi / np.trapezoid(k, dx=ds))   # keep turning exact
+        x, y, _ = _integrate_curvature(k, ds)
+        return np.array([x[-1], y[-1]]), k
+
+    ab = np.zeros(2)
+    r0, k = resid(ab)
+    scale = 2.0 * np.pi / L
+    for _ in range(max_newton):
+        if np.linalg.norm(r0) < 2e-3 * L:
+            break
+        J = np.zeros((2, 2))
+        for j in range(2):
+            d = ab.copy()
+            d[j] += 1e-3 * scale
+            rp, _ = resid(d)
+            J[:, j] = (rp - r0) / (1e-3 * scale)
+        try:
+            step = np.linalg.solve(J, -r0)
+        except np.linalg.LinAlgError:
+            raise RuntimeError(f"seed {seed}: singular Jacobian")
+        ab = ab + 0.6 * step
+        r0, k = resid(ab)
+    if np.linalg.norm(r0) >= 2e-3 * L:
+        raise RuntimeError(f"seed {seed}: closure residual "
+                           f"{np.linalg.norm(r0):.0f} m")
+
+    x, y, _ = _integrate_curvature(k, ds)
+    t = SampledTrack(name or f"cq{seed:04d}", x[:-1], y[:-1],
+                     half_width=half_width, closed=True, smoothing=smoothing,
+                     n_resample=2500,
+                     description=f"[{STYLE_CURVATURE}] Corner-sequence (seed "
+                                 f"{seed}, {n_corners} corners, radii "
+                                 f"{min_radius_m:.0f}-{max_radius_m:.0f} m). "
+                                 f"Not star-shaped: may double back.")
+    if self_intersections(t) > 0:
+        raise RuntimeError(f"seed {seed}: self-intersecting")
+    return t
+
+
+
+
+def generate_track_arcade(
+        seed: int, *, n_checkpoints: int = 18, base_radius: float = 500.0,
+        radius_jitter: float = 0.45, step_m: float = 6.0,
+        min_radius_m: float = 30.0, half_width: float = 5.0,
+        smoothing: float = 25.0, max_steps: int = 20000,
+        name: str | None = None) -> SampledTrack:
+    """**Arcade style** — flowing arcs, few long straights. Not realistic, and
+    deliberately so.
+
+    This is OpenAI Gym `CarRacing-v0`'s construction, scaled to a full-size
+    car. A point marches forward at a fixed `step_m` while its heading turns
+    toward the current checkpoint **by at most a bounded rate**; when it gets
+    close, it targets the next one. The turn-rate bound is what produces
+    continuously flowing curves rather than corner-straight-corner, and it
+    sets the minimum radius exactly:
+
+        min_radius = step_m / max_turn_per_step
+
+    CarRacing uses 3.5 units per step and 0.31 rad, giving 11.29 m against a
+    6.67 m half-width. Here the bound is derived from `min_radius_m` instead,
+    so the geometry is drivable by *our* car rather than by a magic constant.
+
+    **`min_radius_m` is the pursuit's bound, not the delivered radius.** The
+    spline fit tightens corners past it: asking for 15 m delivers 6-7 m. The
+    default asks for 30 and delivers ~17. Measured, not assumed -- and a
+    reason to check `track_stats` rather than trust the parameter.
+
+    Defaults chosen by sweep: 18 checkpoints on a 500 m base gives **40.4%
+    cornering time against real Spa's 35.2%**, minimum radius 17.3 m, on a
+    4.6 km lap. Median achievable speed is 28 m/s against Spa's 37 -- lower
+    because the style is twistier, which is the point of it, not a defect.
+
+    **Known property, not a defect:** curvature is piecewise-constant with
+    step discontinuities at checkpoint hand-over, so there are no clothoid
+    transitions. Spline smoothing rounds them. Tagged `STYLE_ARCADE` so a
+    result on these is never quietly reported as a result on realistic
+    geometry.
+    """
+    rng = np.random.default_rng(seed)
+    turn_max = step_m / float(min_radius_m)
+
+    ang = np.sort(rng.uniform(0.0, 2.0 * np.pi, n_checkpoints))
+    rad = base_radius * (1.0 + rng.uniform(-radius_jitter, radius_jitter,
+                                           n_checkpoints))
+    cps = np.stack([rad * np.cos(ang), rad * np.sin(ang)], axis=1)
+
+    p = cps[0].copy()
+    heading = float(np.arctan2(*(cps[1] - cps[0])[::-1]))
+    pts = [p.copy()]
+    target = 1
+    laps = 0
+    for _ in range(max_steps):
+        tgt = cps[target % n_checkpoints]
+        want = float(np.arctan2(*(tgt - p)[::-1]))
+        d = (want - heading + np.pi) % (2.0 * np.pi) - np.pi
+        heading += float(np.clip(d, -turn_max, turn_max))
+        p = p + step_m * np.array([np.cos(heading), np.sin(heading)])
+        pts.append(p.copy())
+        if np.linalg.norm(tgt - p) < step_m * 4.0:
+            target += 1
+            if target > n_checkpoints:
+                laps = 1
+                break
+    if not laps:
+        raise RuntimeError(f"seed {seed}: pursuit never closed the loop")
+
+    P = np.array(pts)
+    # The pursuit ends near the start but not on it; drop the tail so the
+    # spline's periodic fit is not asked to bridge a visible gap.
+    gap = np.linalg.norm(P[-1] - P[0])
+    if gap > step_m * 8.0:
+        raise RuntimeError(f"seed {seed}: closure gap {gap:.0f} m")
+    keep = np.r_[True, np.linalg.norm(np.diff(P, axis=0), axis=1) > 1e-6]
+    P = P[keep]
+    t = SampledTrack(name or f"ar{seed:04d}", P[:, 0], P[:, 1],
+                     half_width=half_width, closed=True, smoothing=smoothing,
+                     n_resample=2500,
+                     description=f"[{STYLE_ARCADE}] Bounded-turn-rate pursuit "
+                                 f"(seed {seed}, {n_checkpoints} checkpoints, "
+                                 f"step {step_m:.0f} m, min radius "
+                                 f"{min_radius_m:.0f} m). CarRacing-v0's "
+                                 f"construction scaled to a full-size car. "
+                                 f"Flowing arcs, few long straights; NOT a "
+                                 f"model of a real circuit.")
+    t.style = STYLE_ARCADE
+    if self_intersections(t) > 0:
+        raise RuntimeError(f"seed {seed}: self-intersecting")
+    return t
+
+
+def generate_arcade_set(n_tracks: int, seed0: int = 0, *,
+                        min_corner_fraction: float = 0.0, **kwargs) -> list:
+    out, seed, tries = [], seed0, 0
+    while len(out) < n_tracks and tries < n_tracks * 80:
+        tries += 1
+        seed += 1
+        try:
+            t = generate_track_arcade(seed, **kwargs)
+        except RuntimeError:
+            continue
+        if track_stats(t)["corner_time_fraction"] >= min_corner_fraction:
+            out.append(t)
+    if len(out) < n_tracks:
+        raise RuntimeError(f"only {len(out)}/{n_tracks} in {tries} attempts")
     return out

@@ -69,3 +69,28 @@ def test_generated_tracks_do_not_self_intersect():
     from physics.track_gen import self_intersections
     for t in generate_set(5, seed0=40000):
         assert self_intersections(t) == 0, f"{t.name} crosses itself"
+
+
+def test_every_generator_tags_its_style():
+    """Four generator families with genuinely different geometry. A result on
+    arcade circuits must never be reportable as a result on realistic ones,
+    so the family travels with the track."""
+    from physics.track_gen import (generate_track_with_straights,
+                                   generate_track_arcade, STYLE_HARMONIC,
+                                   STYLE_FILLETS, STYLE_ARCADE)
+    for make, style in ((lambda: generate_track(1), STYLE_HARMONIC),
+                        (lambda: generate_track_with_straights(1), STYLE_FILLETS),
+                        (lambda: generate_track_arcade(1), STYLE_ARCADE)):
+        t = make()
+        assert style in t.description, f"{t.name} not tagged {style}"
+
+
+def test_arcade_circuits_are_corner_dense_and_drivable():
+    """The point of the arcade family: flowing curves, few straights. Real
+    circuits average 40.7% cornering TIME; these should be at least that."""
+    from physics.track_gen import generate_arcade_set
+    ts = [t for t in generate_arcade_set(8, seed0=0)
+          if track_stats(t)["min_radius_m"] >= 9.0]
+    assert len(ts) >= 5, f"only {len(ts)}/8 arcade circuits were drivable"
+    cf = np.mean([track_stats(t)["corner_time_fraction"] for t in ts])
+    assert cf > 0.30, f"arcade cornering only {cf:.1%}"

@@ -117,10 +117,25 @@ def test_distance_never_exceeds_one_lap_per_probe():
         assert r["distance_travelled"] <= spa.length + 1.0
 
 
-def _stub_model():
+def _stub_model(seed: int = 0):
     """An untrained net. The evaluator's CONTRACT is what is under test here,
-    not any policy's competence."""
+    not any policy's competence.
+
+    **Seeded.** This was previously unseeded, so its weights came from
+    whatever torch global state the preceding tests happened to leave --
+    making every test that used it order-dependent.
+    `test_termination_reasons_account_for_every_probe` failed exactly once in
+    a full-suite run and could not be reproduced afterwards: 0/60 seeded
+    evaluations and 0/300 random episodes show a probe ending for more than
+    one reason, and three subsequent full runs passed.
+
+    So there is no evidence of a real double-termination, but an intermittent
+    test is worthless either way -- it cannot distinguish a regression from
+    noise. Seeding makes any future failure here mean something.
+    """
+    import torch
     from physics.ppo import ActorCritic
+    torch.manual_seed(seed)
     probe = DrivingEnv(EnvConfig(track=long_exit()))
     return ActorCritic(probe.obs_dim, probe.act_dim, 64, (-2.5, -1.0))
 

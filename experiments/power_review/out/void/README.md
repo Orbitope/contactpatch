@@ -19,3 +19,16 @@ now pins it, and was verified to fail against the broken code before being
 trusted.
 
 **Do not cite any number in these files.**
+
+## Second void run — `phase3_VOID2_run.log`
+
+Trained correctly (EV +0.791, passed D6) but its fragility table is not
+usable, for the reasons in FINDINGS F117: the two "successful" designs ran at
+12.1–16.7° of slip, outside the 12° tyre fit, and 0.61's 75% failure rate was
+a steering bug — all 48 failures at s = 74–76 m (sd 0.5 m) at 1.6° slip, off
+the road on the entry straight with the tyres idle.
+
+Superseded by the `phase3_1x_*` / `phase3_2x_*` pair, which add
+`cross_track_penalty` (the measured cause) and raise `envelope_penalty` to
+F107's value, and which run **both** power levels under that same reward so
+the comparison is power rather than power-plus-reward.

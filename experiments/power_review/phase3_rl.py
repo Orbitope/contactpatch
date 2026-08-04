@@ -53,11 +53,26 @@ OUT = ROOT / "experiments" / "power_review" / "out"
 #: Matches Episode 10 exactly, so the only difference is power.
 DESIGN_KEYS = ("front_mass_fraction",)
 DESIGN_RANGES = {"front_mass_fraction": (0.40, 0.65)}
-ENVELOPE_PENALTY = 0.5
+#: **Raised from Episode 10's 0.5, and a cross-track term added.** The first
+#: Phase 3 run produced a fragility table that was not quotable: 0.47 and 0.54
+#: "succeeded" at 12.1-16.7 deg of slip, outside the 12 deg tyre fit, and
+#: 0.61's 75% failure rate turned out to be a steering bug — all 48 failures
+#: at s = 74-76 m (sd 0.5 m) at 1.6 deg slip, i.e. off the road on the ENTRY
+#: STRAIGHT with the tyres idle (F117).
+#:
+#: 6.0 is F107's measured value, the weakest that put every section inside the
+#: fit. 2.0 is F110's, the term that took a policy from 40.7% to 100% lap
+#: completion and the most universal term in the racing-RL literature (F105).
+ENVELOPE_PENALTY = 6.0
+CROSS_TRACK_PENALTY = 2.0
 SEED = 0
 
 #: 2x only — see the module docstring. `phase1_sweep` uses the same
 #: `DRIVE_MAX * mult` construction.
+#: Set per run: this now sweeps BOTH levels, because the reward above differs
+#: from Episode 10's and F98's published 1x numbers were measured under the
+#: old one. Comparing the new 2x against the old 1x would confound power with
+#: reward — precisely the confound the whole review exists to avoid.
 POWER_MULT = 2.0
 
 #: **The unbatched path, and POWER-REVIEW's plan for this was wrong.** The
@@ -89,6 +104,7 @@ GRIP_SPREAD = 0.20
 def _cfg(**over):
     base = dict(design_keys=DESIGN_KEYS, design_ranges=DESIGN_RANGES,
                 envelope_penalty=ENVELOPE_PENALTY,
+                cross_track_penalty=CROSS_TRACK_PENALTY,
                 drive_max=DRIVE_MAX * POWER_MULT)
     base.update(over)
     return EnvConfig(**base)
@@ -111,7 +127,9 @@ def _rollout(env, pol, seed):
     }
 
 
-def main() -> int:
+def main(power_mult: float = POWER_MULT) -> int:
+    global POWER_MULT
+    POWER_MULT = power_mult
     quick = "--quick" in sys.argv
     steps = 200_000 if quick else TOTAL_STEPS
     n_roll = 6 if quick else N_ROLLOUTS
@@ -170,9 +188,10 @@ def main() -> int:
             print(f"  {ff:>8.2f} {cond:>12} {fails:>4}/{len(runs):<3} "
                  f"{100*fails/len(runs):>6.1f}% {slip:>10.1f}° {occ:>10.4f}")
 
-    torch.save(res["model"].state_dict(), OUT / "phase3_policy_2x.pt")
-    (OUT / "phase3_history.json").write_text(json.dumps(h, indent=2) + "\n")
-    (OUT / "phase3_results.json").write_text(json.dumps({
+    tag = f"phase3_{POWER_MULT:g}x"
+    torch.save(res["model"].state_dict(), OUT / f"{tag}_policy.pt")
+    (OUT / f"{tag}_history.json").write_text(json.dumps(h, indent=2) + "\n")
+    (OUT / f"{tag}_results.json").write_text(json.dumps({
         "power_mult": POWER_MULT, "drive_max_n": DRIVE_MAX * POWER_MULT,
         "total_steps": steps, "n_envs": N_ENVS, "wall_s": wall,
         "explained_variance_tail": ev, "passes_d6_ev_gate": bool(ev > 0.3),
@@ -181,9 +200,14 @@ def main() -> int:
                 "out/results.json (F98). Rank ordering only across power "
                 "levels -- rule 6.",
     }, indent=2) + "\n")
-    print(f"\n  wrote {OUT.relative_to(ROOT)}/phase3_*")
+    print(f"\n  wrote {OUT.relative_to(ROOT)}/{tag}_*")
     return 0
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    # Both power levels under the SAME reward, so the comparison is power.
+    mults = [float(a) for a in sys.argv[1:] if not a.startswith("--")] or [1.0, 2.0]
+    for mult in mults:
+        print("=" * 70)
+        main(mult)
+    raise SystemExit(0)

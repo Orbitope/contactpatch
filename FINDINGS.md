@@ -4768,8 +4768,25 @@ each side succeeding, is not a fragility ordering. It is far more consistent
 with one design-conditioned policy having learned 0.61 badly than with any
 property of the car at that mass fraction.
 
-**Supporting evidence for the policy-artefact reading:** training was visibly
-unstable over the last fifth — `return_mean` went 393 → 18.0 → 257.9 → 102.1
+**CONFIRMED as a policy artefact, by direct measurement rather than
+inference.** All 48 failures at 0.61 occur at **s = 74-76 m, standard
+deviation 0.5 m** — the same point every time — at **1.6° of slip**. The
+corner runs roughly 100-290 m, so the car is leaving the road **on the entry
+straight, before the corner, with the tyres doing almost nothing.**
+
+That is not a limit-handling property of a 61%-front car. It is F108's
+failure mode exactly: a policy that cannot hold a line drifting off a
+straight at ~1.5° slip, because nothing in the reward pulls it back to the
+centreline. **Episode 10's environment has no `cross_track_penalty`** — the
+term F110 showed takes a policy from 40.7% to 100% lap completion, and the
+single most universal term in the racing-RL literature (F105).
+
+**This is why the ≥3 seeds F117 originally called for were not run:** the
+diagnosis is conclusive without them, and it would have cost ~3.5 hours to
+confirm something a 60-rollout probe settled in two minutes. Seeds establish
+whether an effect is real; they cannot tell you an effect is a steering bug.
+
+**Supporting evidence:** training was visibly unstable over the last fifth — `return_mean` went 393 → 18.0 → 257.9 → 102.1
 → 273.0 across updates 1000–1200 with `off_track_rate` spiking to 0.50. The
 checkpoint is a sample from an oscillating policy, not a converged one, which
 is F114's PPO decay pattern in a different experiment.
@@ -4782,10 +4799,12 @@ single non-monotonic spike is precisely the shape seed variance produces),
 and an `envelope_penalty` strong enough that 0.47 and 0.54 stay inside the
 tyre fit so their success rates mean something.
 
-**Recorded rather than retried immediately** because the honest cost is
-another ~70 min per seed, and because reporting an inversion off one unstable
-seed with two rule-4-invalid rows is exactly what this project's gates exist
-to prevent.
+**Next step, now evidence-led rather than brute force:** re-run Phase 3 with
+`cross_track_penalty` added, which addresses the measured cause, and with a
+stronger `envelope_penalty` so 0.47 and 0.54 stay inside the tyre fit. Both
+changes make the 2× environment differ from Episode 10's 1× one, so the 1×
+baseline must be re-run under the same reward before any 1×-vs-2× comparison
+is drawn — otherwise the comparison confounds power with reward.
 
 ---
 

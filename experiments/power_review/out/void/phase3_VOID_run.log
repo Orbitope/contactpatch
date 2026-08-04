@@ -1,0 +1,18 @@
+POWER-REVIEW Phase 3 — Season 3 RL at 2x power
+  drive_max 4500 -> 9000 N
+  5,000,000 steps, design conditioned on front_mass_fraction (0.4, 0.65)
+
+  trained: 1220 updates, 112.6 min, EV tail +0.097
+  *** EV +0.097 FAILS D6's gate (>0.3). Everything below is measured on a policy whose critic did not learn.
+
+    design    condition     fail    rate  worst slip  occupancy
+      0.47    attentive   60/60   100.0%       46.3°     0.0117
+      0.47   distracted   60/60   100.0%       43.9°     0.0211
+      0.54    attentive   60/60   100.0%       12.2°     0.0000
+      0.54   distracted   60/60   100.0%       23.9°     0.0094
+      0.61    attentive   60/60   100.0%        7.8°     0.0000
+      0.61   distracted   60/60   100.0%       17.1°     0.0038
+      0.65    attentive   60/60   100.0%        6.4°     0.0000
+      0.65   distracted   60/60   100.0%        8.2°     0.0000
+
+  wrote experiments/power_review/out/phase3_*

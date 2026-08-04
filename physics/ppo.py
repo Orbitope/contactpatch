@@ -350,6 +350,8 @@ def train(make_env=None, cfg: PPOConfig | None = None, on_update=None,
                     o, r, done, info = e.step(a_np[i])
                     buf_rew[t, i] = r
                     buf_done[t, i] = float(done)
+                    if "speed" in info:
+                        step_speeds.append(float(info["speed"]))
                     if done:
                         h = e.history()
                         finished_returns.append(float(np.sum(h["reward"])))
@@ -358,8 +360,12 @@ def train(make_env=None, cfg: PPOConfig | None = None, on_update=None,
                             float(getattr(e, "_dist_since_reset", np.nan)))
                         finished_slip.append(float(np.max(h["alpha_max_deg"])))
                         finished_offtrack.append(float(bool(info["off_track"])))
-                    if "speed" in info:
-                        step_speeds.append(float(info["speed"]))
+                        # MUST stay under `if done`. Adding the speed logging
+                        # above once left this line indented under
+                        # `if "speed" in info`, which is true on EVERY step --
+                        # so the env reset every step, every episode was one
+                        # step long, `done` never fired, and a 112-minute
+                        # POWER-REVIEW Phase 3 run trained on nothing.
                         o = e.reset(int(rng.integers(1 << 30)))
                     obs[i] = o
 

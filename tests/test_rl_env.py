@@ -528,3 +528,27 @@ def test_a_fresh_design_resample_rebuilds_the_allocator_too():
         seen.add(round(env._tv_adapter.allocator.params.front_mass_fraction, 6))
         assert env._tv_adapter.allocator.params is env.backend.params
     assert len(seen) > 1, "design never varied across resets"
+
+
+def test_ppo_scalar_path_lets_episodes_run_to_termination():
+    """Episodes must actually END during training, not be reset every step.
+
+    A `speed_mean` logging line once captured the `e.reset(...)` call under
+    `if "speed" in info` -- true on every step -- so every episode was one
+    step long, `done` never fired, `episodes_finished` stayed 0 for all 1,220
+    updates, and a 112-minute run trained on nothing. Nothing else caught it:
+    the loss curves looked ordinary and only `episodes_finished == 0` gave it
+    away.
+    """
+    from physics.ppo import PPOConfig, train
+    from physics.track import long_exit
+    cfg = PPOConfig(total_steps=8 * 512 * 3, n_envs=8, rollout_steps=512,
+                    epochs=1, minibatches=2)
+    res = train(make_env=lambda i: DrivingEnv(
+        EnvConfig(track=long_exit(), max_steps=2000)), cfg=cfg)
+    h = res["history"]
+    assert h[-1]["episodes_finished"] > 0, (
+        "no episode terminated in 3 rollouts -- the env is being reset before "
+        "it can finish")
+    assert np.isfinite(h[-1]["return_mean"]), "return_mean is NaN"
+    assert np.isfinite(h[-1]["off_track_rate"]), "off_track_rate is NaN"

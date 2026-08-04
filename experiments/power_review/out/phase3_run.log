@@ -1,0 +1,22 @@
+======================================================================
+POWER-REVIEW Phase 3 — Season 3 RL at 1x power
+  drive_max 4500 -> 4500 N
+  5,000,000 steps, design conditioned on front_mass_fraction (0.4, 0.65)
+
+    upd    0 steps=     4,096 EV=-0.001 ret=   -14.7 off=1.00
+    upd   25 steps=   106,496 EV=+0.687 ret=   -20.3 off=1.00
+    upd   50 steps=   208,896 EV=+0.715 ret=   -11.7 off=1.00
+    upd   75 steps=   311,296 EV=+0.966 ret=    -7.0 off=1.00
+    upd  100 steps=   413,696 EV=+0.950 ret=    27.6 off=1.00
+    upd  125 steps=   516,096 EV=+0.312 ret=   285.8 off=0.32
+    upd  150 steps=   618,496 EV=+0.724 ret=   152.0 off=0.68
+    upd  175 steps=   720,896 EV=+0.164 ret=   224.3 off=0.24
+    upd  200 steps=   823,296 EV=+0.865 ret=   243.9 off=0.36
+    upd  225 steps=   925,696 EV=+0.901 ret=    38.3 off=0.96
+    upd  250 steps= 1,028,096 EV=+0.972 ret=    17.0 off=1.00
+    upd  275 steps= 1,130,496 EV=+0.990 ret=    68.6 off=1.00
+    upd  300 steps= 1,232,896 EV=+0.812 ret=    96.2 off=0.96
+    upd  325 steps= 1,335,296 EV=+0.850 ret=   250.6 off=0.44
+    upd  350 steps= 1,437,696 EV=+0.963 ret=   156.0 off=0.72
+    upd  375 steps= 1,540,096 EV=+0.693 ret=   119.3 off=0.78
+    upd  400 steps= 1,642,496 EV=+0.966 ret=   137.6 off=0.74

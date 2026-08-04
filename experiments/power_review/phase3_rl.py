@@ -188,7 +188,13 @@ def main(power_mult: float = POWER_MULT) -> int:
             print(f"  {ff:>8.2f} {cond:>12} {fails:>4}/{len(runs):<3} "
                  f"{100*fails/len(runs):>6.1f}% {slip:>10.1f}° {occ:>10.4f}")
 
-    tag = f"phase3_{POWER_MULT:g}x"
+    # `_quick` in the name, always. A 200k-step smoke run once wrote
+    # `phase3_1x_results.json` and sat there looking exactly like a result --
+    # 3 minutes of wall time and 6 rollouts per cell, indistinguishable from
+    # the real thing at a glance. A cleanup `rm` that should have removed it
+    # silently did nothing (zsh aborts the whole command when any glob in it
+    # matches nothing), so it survived to be read as Phase 3's 1x answer.
+    tag = f"phase3_{POWER_MULT:g}x" + ("_quick" if quick else "")
     torch.save(res["model"].state_dict(), OUT / f"{tag}_policy.pt")
     (OUT / f"{tag}_history.json").write_text(json.dumps(h, indent=2) + "\n")
     (OUT / f"{tag}_results.json").write_text(json.dumps({

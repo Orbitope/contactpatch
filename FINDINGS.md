@@ -4690,6 +4690,49 @@ to it did not, and that distinction is the rule's entire point.
 ---
 
 
+### F116 · O9 closed — the RL reward is now pinned to a hand-derived identity, and every Season 5 RL result so far was quoted with that gate open. · 2026-08-03
+
+**Source:** `[MEASURED]` — `tests/test_scripted_policy.py`, 6 tests.
+
+**The gate, and that it was missed.** O9 has sat in the open-questions
+register since Season 3 blocking "any further RL result", HANDOFF calls it
+"the oldest outstanding correctness item", and SEASON5 §4 makes it explicit
+for Episode 19: *"O9's scripted-policy test and D6 pass on the new env before
+any result is quoted."* **F110 through F114 were all quoted with it open.**
+Nothing in them is known to be wrong — but they were produced against a
+reward specification that had never been checked, which is precisely the
+condition O9 exists to forbid.
+
+**The identity, derived by hand rather than read off the implementation.**
+With every penalty disabled:
+
+    reward_t = ds_t · dt · progress_scale,   ds_t = s_dot_t
+    => sum_t reward_t = progress_scale · (s_final − s_initial)
+
+The summed return **is** the arc length advanced along the track. Measured:
+49.197346 against 49.197346, difference 0.0e+00.
+
+**Why the existing tests could not have caught this.** Everything in
+`test_batched_env.py` checks that the two implementations *agree*; everything
+in `test_rl_env.py` checks that a component *behaves*. Neither checks that
+the reward means what the specification says. **Two implementations can agree
+perfectly on the wrong quantity** — which is exactly how F95's flat reward
+direction survived to publication, the failure O9 was raised to prevent.
+
+**What the six tests pin:** the identity itself; exact linearity in
+`progress_scale` (2.000000×); the same identity on a closed *generated*
+circuit, which exercises wrapping and varying half-width; the same identity
+in the batched env, so both implementations satisfy the spec rather than
+merely each other; a stationary policy earning nothing, so a reward that pays
+for existing fails; and every penalty verified to *subtract*, so a sign error
+turning a penalty into a bonus fails.
+
+**Verified to fail against a broken reward** before being trusted: halving
+the progress term breaks 3 of the 6.
+
+---
+
+
 # Decisions
 
 ### D1 · The project drives an offset-free tire. · 2026-07-25
@@ -4900,7 +4943,7 @@ is updated to show Ep 16 as on hold rather than next.
 | ~~O6-old~~ | ~~How much of the understeer gap (F11) does the double-track model close? F18 predicts the size of the effect; Ep 5 measures it. The single most important open question in Season 1. | Ep 5 |
 | O7 | ~~Does terminal oversteer survive lateral load transfer?~~ **CLOSED by F17** — it was a protocol artefact, not a model property. |  |
 | ~~O10~~ | ~~Episodes 11 and 13 have not been re-measured at a realistic steering-noise level~~ **CLOSED by F97/F98.** Episode 13's 78%->100% result is retracted (F97); Episode 11's fastest-is-most-fragile ordering survives (F98), though its recovery-mechanism percentage table does not (small-n). | |
-| O9 | The RL environment has **no scripted-policy sanity check** — a trivial policy with a hand-derived expected return, which is the cheapest reward-specification test there is. Its absence is how F95's flat reward direction survived to publication. | Any further RL result |
+| ~~O9~~ **CLOSED 2026-08-03** | The RL environment had **no scripted-policy sanity check**. Closed by `tests/test_scripted_policy.py`: with every penalty off, summed reward is *exactly* the arc length advanced — a hand-derived identity, not a number read off the code — plus exact linearity in `progress_scale`, the same identity on a closed generated circuit and in the batched env, a stationary policy earning nothing, and every penalty verified to subtract rather than add. Three of the six fail against a deliberately broken reward. | — (was: any further RL result) |
 | O5 | Pin real citations for two bands in the reality-check figure: slip angle at peak (6-12°) and road-sports-car skidpad grip (0.85-1.05 g). Both are general knowledge today, marked as such on the figure. | Publishing any comparison against them |
 | O6 | Pin a real citation for the **~9% FSAE skidpad torque-vectoring ceiling** and for the claim that the best lap times allow deviations from neutral yaw-rate tracking. Both come from `docs/content-series-plan.md`, which states them without references; both are marked `[SOURCED — citation outstanding]` in Episode 13's figures and text. | Episode 14 leaning on either |
 

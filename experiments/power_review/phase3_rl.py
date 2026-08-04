@@ -67,10 +67,15 @@ POWER_MULT = 2.0
 #: it shares one car across all instances, so per-instance design conditioning
 #: is exactly the thing it does not do.
 #:
-#: That turns out not to matter. The single-instance env runs ~3,500 steps/s
-#: with no torque vectoring, so Episode 10's own 5M-step budget is ~25 minutes,
-#: not an overnight job. The batched env was never needed here; the review
-#: assumed a capability rather than checking for one.
+#: That turns out not to matter, though the sizing did: **measured** at
+#: ~844 steps/s (design-conditioned) and ~854 (plain), so Episode 10's 5M-step
+#: budget is ~99 minutes, not the ~25 an earlier note here claimed from
+#: `batched_env`'s quoted 3,492 steps/s. Two corrections worth keeping: that
+#: docstring figure does not describe this configuration, and **design
+#: conditioning is NOT the cost** — conditioned and plain run at the same
+#: rate, so an earlier guess that per-episode backend rebuilds were the
+#: slowdown was simply wrong. Still an afternoon rather than a week, which is
+#: all the review needed; the batched env was never required here.
 TOTAL_STEPS = 5_000_000
 N_ENVS, ROLLOUT = 8, 512
 
@@ -119,8 +124,18 @@ def main() -> int:
 
     cfg = PPOConfig(total_steps=steps, n_envs=N_ENVS, rollout_steps=ROLLOUT,
                     epochs=10, seed=SEED)
+    def _progress(rec):
+        # Omitted on the first run, which left 99 minutes with no way to see
+        # EV climbing or catch a dead critic before the end.
+        if rec["update"] % 25 == 0:
+            print(f"    upd {rec['update']:4d} steps={rec['steps']:>10,} "
+                 f"EV={rec['explained_variance']:+.3f} "
+                 f"ret={rec['return_mean']:8.1f} "
+                 f"off={rec['off_track_rate']:.2f}", flush=True)
+
     t0 = time.time()
-    res = train(make_env=lambda i: DrivingEnv(_cfg(), seed=SEED + i), cfg=cfg)
+    res = train(make_env=lambda i: DrivingEnv(_cfg(), seed=SEED + i), cfg=cfg,
+                on_update=_progress)
     wall = time.time() - t0
     h = res["history"]
     ev = float(np.median([r["explained_variance"]

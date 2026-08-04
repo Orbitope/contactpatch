@@ -452,7 +452,18 @@ sensitivity check (F84) is re-run at 2× — if the preview dependence grows
 with power, Episode 15's protocol must fix the driver before it compares
 anything.
 
-### Phase 3 — Season 3 RL (Episodes 9–11) — conditional, cheapest last
+### Phase 3 — Season 3 RL (Episodes 9–11) — RUN 2026-08-03, **INCONCLUSIVE**. See F117.
+
+The 2× retrain trains cleanly (EV +0.791, passes D6) but its fragility table
+is not quotable: the two designs that succeed do so at 12.1–16.7° of slip,
+outside the tyre fit, and the failure pattern (0% / 0% / 75% / 0%) is a single
+non-monotonic spike while slip itself falls monotonically. That is a policy
+artefact shape, not a physical ordering. F98 neither gains nor keeps a power
+conditional on this evidence. Needs ≥3 seeds and a stronger envelope penalty.
+
+The plan below is left unedited as the original statement of intent — note
+that its "retrain with the batched env" premise was wrong: `BatchedDrivingEnv`
+rejects `design_keys` outright.
 
 No retraining until Phases 0–2 land. Then:
 - Ep 9: re-caveat only (training-pathology story is power-independent).

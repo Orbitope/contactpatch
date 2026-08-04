@@ -4733,6 +4733,63 @@ the progress term breaks 3 of the 6.
 ---
 
 
+### F117 · POWER-REVIEW Phase 3: the 2× fragility result does not reproduce F98's structure, and is not quotable. Inconclusive, with the reason. · 2026-08-03
+
+**Source:** `[MEASURED]` — `experiments/power_review/phase3_rl.py`, 5M steps,
+70.4 min, design-conditioned policy retrained at `drive_max` 9,000 N (2×),
+EV tail **+0.791** (passes D6's gate), 4 designs × 2 driver conditions ×
+60 deployed rollouts. One seed.
+
+| design | attentive | distracted | worst slip | rule 4 |
+|---|---|---|---|---|
+| 0.47 front | 0/60 · 0% | 0/60 · 0% | 15.6–16.7° | **over bound** |
+| 0.54 | 0/60 · 0% | 0/60 · 0% | 12.1–12.3° | **over bound** |
+| 0.61 | **48/60 · 80%** | **43/60 · 71.7%** | 8.0–8.1° | valid |
+| 0.65 | 0/60 · 0% | 0/60 · 0% | 1.9–2.3° | valid |
+
+**F98 at 1×:** 0.47 is the only design that ever fails (10/108, 9.3%);
+0.54/0.61/0.65 are all 0/119.
+
+**The pre-registered question was whether the gap widens with power.** It
+appears to invert — 0.47 stops failing, 0.61 starts. **That reading is not
+supported, for two independent reasons, and neither is a close call.**
+
+**1. The designs that "succeed" do so outside the tyre model.** 0.47 runs at
+15.6–16.7° of slip and 0.54 at 12.1–12.3°, against the 12° bound. Their 0%
+failure rate is not a result under rule 4 — it measures how freely the policy
+was allowed to slide, which is F106 exactly. The only rule-4-valid rows are
+0.61 and 0.65.
+
+**2. The failure pattern is not physical.** Slip falls monotonically with
+front mass fraction — 16.7 → 12.3 → 8.1 → 2.3° — which is what a
+weight-distribution sweep should do. Failure rate does not: **0% → 0% → 75% →
+0%.** A single spike surrounded by zeros, with the *lower*-slip neighbour on
+each side succeeding, is not a fragility ordering. It is far more consistent
+with one design-conditioned policy having learned 0.61 badly than with any
+property of the car at that mass fraction.
+
+**Supporting evidence for the policy-artefact reading:** training was visibly
+unstable over the last fifth — `return_mean` went 393 → 18.0 → 257.9 → 102.1
+→ 273.0 across updates 1000–1200 with `off_track_rate` spiking to 0.50. The
+checkpoint is a sample from an oscillating policy, not a converged one, which
+is F114's PPO decay pattern in a different experiment.
+
+**Status: Phase 3 is INCONCLUSIVE, not complete.** F98 does not gain a power
+conditional on this evidence, and it does not keep one either — the
+experiment cannot currently distinguish "fragility inverts with power" from
+"this policy is bad at 0.61". What it would take: **≥3 seeds** (rule 5, and a
+single non-monotonic spike is precisely the shape seed variance produces),
+and an `envelope_penalty` strong enough that 0.47 and 0.54 stay inside the
+tyre fit so their success rates mean something.
+
+**Recorded rather than retried immediately** because the honest cost is
+another ~70 min per seed, and because reporting an inversion off one unstable
+seed with two rule-4-invalid rows is exactly what this project's gates exist
+to prevent.
+
+---
+
+
 # Decisions
 
 ### D1 · The project drives an offset-free tire. · 2026-07-25

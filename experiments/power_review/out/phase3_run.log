@@ -30,3 +30,37 @@ POWER-REVIEW Phase 3 — Season 3 RL at 2x power
     upd  625 steps= 2,564,096 EV=+0.257 ret=   392.8 off=0.00
     upd  650 steps= 2,666,496 EV=+0.760 ret=   362.0 off=0.08
     upd  675 steps= 2,768,896 EV=+0.253 ret=   393.0 off=0.00
+    upd  700 steps= 2,871,296 EV=+0.974 ret=   392.7 off=0.00
+    upd  725 steps= 2,973,696 EV=+0.359 ret=   379.1 off=0.04
+    upd  750 steps= 3,076,096 EV=+0.648 ret=   390.9 off=0.00
+    upd  775 steps= 3,178,496 EV=+0.537 ret=   352.9 off=0.10
+    upd  800 steps= 3,280,896 EV=+0.203 ret=   341.9 off=0.14
+    upd  825 steps= 3,383,296 EV=+0.501 ret=   393.0 off=0.00
+    upd  850 steps= 3,485,696 EV=+0.456 ret=   392.1 off=0.00
+    upd  875 steps= 3,588,096 EV=+0.260 ret=   351.2 off=0.12
+    upd  900 steps= 3,690,496 EV=+0.474 ret=   354.9 off=0.12
+    upd  925 steps= 3,792,896 EV=+0.490 ret=   380.3 off=0.04
+    upd  950 steps= 3,895,296 EV=+0.793 ret=   392.6 off=0.00
+    upd  975 steps= 3,997,696 EV=+0.392 ret=   379.8 off=0.00
+    upd 1000 steps= 4,100,096 EV=+0.269 ret=   393.0 off=0.00
+    upd 1025 steps= 4,202,496 EV=+0.057 ret=   386.3 off=0.00
+    upd 1050 steps= 4,304,896 EV=+0.841 ret=   206.8 off=0.00
+    upd 1075 steps= 4,407,296 EV=+0.662 ret=    18.0 off=0.20
+    upd 1100 steps= 4,509,696 EV=+0.658 ret=   257.9 off=0.14
+    upd 1125 steps= 4,612,096 EV=+0.652 ret=   311.3 off=0.16
+    upd 1150 steps= 4,714,496 EV=+0.798 ret=   102.1 off=0.50
+    upd 1175 steps= 4,816,896 EV=+0.837 ret=   266.2 off=0.02
+    upd 1200 steps= 4,919,296 EV=+0.895 ret=   273.0 off=0.06
+  trained: 1220 updates, 70.4 min, EV tail +0.791
+
+    design    condition     fail    rate  worst slip  occupancy
+      0.47    attentive    0/60     0.0%       15.6°     0.0014
+      0.47   distracted    0/60     0.0%       16.7°     0.0017
+      0.54    attentive    0/60     0.0%       12.1°     0.0001
+      0.54   distracted    0/60     0.0%       12.3°     0.0001
+      0.61    attentive   48/60    80.0%        8.0°     0.0000
+      0.61   distracted   43/60    71.7%        8.1°     0.0000
+      0.65    attentive    0/60     0.0%        1.9°     0.0000
+      0.65   distracted    0/60     0.0%        2.3°     0.0000
+
+  wrote experiments/power_review/out/phase3_*

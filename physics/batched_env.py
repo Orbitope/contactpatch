@@ -128,6 +128,21 @@ class BatchedDrivingEnv:
             front, self._ref.brake_bias, 1.0 - self._ref.brake_bias) / 2.0
         self._fz_cap = 5.0 * self.tire.envelope.declared_fz_max
 
+        self._speed_ref = None
+        if cfg.speed_ref_penalty > 0.0:
+            if bank is not None:
+                raise NotImplementedError(
+                    "speed_ref_penalty with a TrackBank needs a per-track "
+                    "reference profile, which the bank does not carry yet. "
+                    "Raising rather than silently applying one track's plan "
+                    "to every circuit -- that would be a wrong reference, not "
+                    "a missing feature.")
+            from physics.driver import SpeedProfile
+            self._speed_ref = SpeedProfile(
+                cfg.track, a_lat=cfg.speed_ref_a_lat,
+                a_brake=BRAKE_MAX / self._ref.params.mass,
+                a_drive=(cfg.drive_max or DRIVE_MAX) / self._ref.params.mass,
+                v_max=60.0, wrap=bool(getattr(cfg.track, "closed", False)))
         self.obs_dim = len(self.observe_one_probe())
         self.act_dim = {"none": 2, "end_to_end": 5}[cfg.tv_mode]
         self._alloc()
@@ -501,6 +516,15 @@ class BatchedDrivingEnv:
         reward = reward - np.where(off, self.cfg.off_track_penalty, 0.0)
         if self.cfg.stall_penalty > 0.0:
             reward = reward - np.where(stalled, self.cfg.stall_penalty, 0.0)
+        if self.cfg.speed_ref_penalty > 0.0:
+            # Same reference as the single-instance env, evaluated for the
+            # whole batch. One shared track here (the bank path does not
+            # support this yet and raises below).
+            v_ref = np.interp(self.s % self.cfg.track.length,
+                              self._speed_ref.s, self._speed_ref.v)
+            reward = reward - (self.cfg.speed_ref_penalty * dt
+                               * np.maximum(0.0, speed - v_ref))
+
         pscale = 1.0
         if self.cfg.speed_scaled_penalties:
             pscale = speed / max(self.cfg.penalty_speed_ref, 1e-9)

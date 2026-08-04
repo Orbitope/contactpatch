@@ -355,6 +355,42 @@ class EnvConfig:
     #: forces it never learned to command. Retrain per power level; do not
     #: transplant checkpoints across them.
     drive_max: float | None = None
+    #: Per-step cost for carrying MORE speed than the corner ahead allows.
+    #: ``0.0`` reproduces every existing episode.
+    #:
+    #: **This is the one thing the literature is unambiguous about that this
+    #: project had never tried.** On the F1TENTH benchmark, trajectory-aided
+    #: learning reaches ~90% lap completion where cross-track+heading reaches
+    #: ~70% and a pure progress reward ~50% — ours is the 50% one (F105).
+    #: Toromanoff's CARLA ablation is sharper still: with a CONSTANT desired
+    #: speed the agent ran 70% of red lights; with a situation-dependent one,
+    #: 98-99% success, same network.
+    #:
+    #: Every braking failure measured here has the same signature — the car is
+    #: never out of grip when it fails. F108: arrives 9 m/s over the corner
+    #: limit at 4.2° slip. F117: off the road on a straight at 1.6°. F111:
+    #: raise the cap and it arrives faster and crashes. It is not a grip
+    #: problem, it is a speed-choice problem, and nothing in the reward has
+    #: ever told the policy what speed it should be carrying.
+    #:
+    #: **One-sided, deliberately.** Only excess over the reference is charged.
+    #: Being too slow is already paid for in lost progress, and a two-sided
+    #: term would fight the progress reward directly rather than shaping it.
+    #: TRI's `R_slip = q2 * v * alpha_excess` has the same shape: charge for
+    #: the excess, not for the operating point.
+    #:
+    #: The reference is this project's own `driver.SpeedProfile` — cornering
+    #: limit, backward pass to brake for what is coming, forward pass for
+    #: power. The same object that laps Spa cleanly, and TAL's `v_classic`.
+    #:
+    #: **What it costs, stated plainly:** it hands the policy the classical
+    #: controller's answer, so the claim shifts from "it discovered braking"
+    #: to "it learned to match a reference". That is a real change to what
+    #: Season 3 can say, and any result using it must say so.
+    speed_ref_penalty: float = 0.0
+    #: Lateral budget the reference plan is built for, m/s^2. 0.97 g is the
+    #: tyre's measured peak (POWER-REVIEW Phase 0 item 3).
+    speed_ref_a_lat: float = 0.97 * 9.80665
     #: Cost per step for operating outside the slip envelope, scaled by how far
     #: outside. **0.0 reproduces Episode 9 exactly**, where the envelope is
     #: instrumented and deliberately unenforced.
@@ -573,6 +609,24 @@ class DrivingEnv:
     @property
     def _preview(self) -> tuple[float, ...]:
         return self.cfg.preview_distances or PREVIEW_DISTANCES
+
+    def _speed_reference(self):
+        """The plan the classical driver would follow, built once and cached.
+
+        Uses the car's OWN capability rather than arbitrary numbers: the
+        tyre's measured lateral peak, and the brake/drive caps this
+        configuration actually has.
+        """
+        if getattr(self, "_speed_ref_cache", None) is None:
+            from physics.driver import SpeedProfile
+            m = self.backend.params.mass
+            self._speed_ref_cache = SpeedProfile(
+                self.cfg.track, a_lat=self.cfg.speed_ref_a_lat,
+                a_brake=BRAKE_MAX / m,
+                a_drive=(self.cfg.drive_max or DRIVE_MAX) / m,
+                v_max=60.0,
+                wrap=bool(getattr(self.cfg.track, "closed", False)))
+        return self._speed_ref_cache
 
     def _curvature_ahead(self) -> np.ndarray:
         # A closed track's curvature already wraps s % length internally
@@ -808,6 +862,11 @@ class DrivingEnv:
             reward -= self.cfg.off_track_penalty
         if stalled and self.cfg.stall_penalty > 0.0:
             reward -= self.cfg.stall_penalty
+        if self.cfg.speed_ref_penalty > 0.0:
+            v_ref = self._speed_reference().target(self.s)
+            excess = max(0.0, speed - v_ref)
+            reward -= self.cfg.speed_ref_penalty * self.cfg.dt * excess
+
         # One factor, computed once, applied to every dense penalty below.
         pscale = 1.0
         if self.cfg.speed_scaled_penalties:

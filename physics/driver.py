@@ -120,6 +120,12 @@ class SpeedProfile:
     a_drive: float        # m/s^2, acceleration the plan asks for
     v_max: float = 32.0   # m/s — the entry speed Seasons 1-2 solve from
     n_points: int = 2000
+    #: Run the braking/power passes around the seam for a closed circuit.
+    #: ``False`` reproduces every existing episode exactly — `long_exit` and
+    #: the other synthetic tracks are open, where wrapping would be wrong.
+    #: On a closed circuit the un-wrapped version leaves the plan at s=0
+    #: ignorant of the corner just before the start line.
+    wrap: bool = False
 
     def __post_init__(self):
         self.s = np.linspace(0.0, self.track.length, self.n_points)
@@ -129,10 +135,17 @@ class SpeedProfile:
             v = np.where(k > 1e-9, np.sqrt(self.a_lat / np.maximum(k, 1e-9)),
                          self.v_max)
         v = np.minimum(v, self.v_max)
-        for i in range(len(v) - 2, -1, -1):        # brake into what is coming
-            v[i] = min(v[i], math.sqrt(v[i + 1] ** 2 + 2.0 * self.a_brake * ds))
-        for i in range(1, len(v)):                 # and only accelerate as hard
-            v[i] = min(v[i], math.sqrt(v[i - 1] ** 2 + 2.0 * self.a_drive * ds))
+        # Two sweeps when wrapping: the first carries the constraint around
+        # the seam, the second lets it propagate all the way back.
+        for _ in range(2 if self.wrap else 1):
+            for i in range(len(v) - 2, -1, -1):    # brake into what is coming
+                v[i] = min(v[i], math.sqrt(v[i + 1] ** 2 + 2.0 * self.a_brake * ds))
+            if self.wrap:
+                v[-1] = min(v[-1], math.sqrt(v[0] ** 2 + 2.0 * self.a_brake * ds))
+            for i in range(1, len(v)):             # and only accelerate as hard
+                v[i] = min(v[i], math.sqrt(v[i - 1] ** 2 + 2.0 * self.a_drive * ds))
+            if self.wrap:
+                v[0] = min(v[0], math.sqrt(v[-1] ** 2 + 2.0 * self.a_drive * ds))
         self.v = v
 
     def target(self, s: float) -> float:

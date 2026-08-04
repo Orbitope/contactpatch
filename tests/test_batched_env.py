@@ -33,7 +33,7 @@ import pytest
 
 from physics.batched_env import BatchedDrivingEnv
 from physics.rl_env import DrivingEnv, EnvConfig
-from physics.track import CORNER_ARC as ARC, ENTRY_STRAIGHT as ENTRY
+from physics.track import CORNER_ARC as ARC, ENTRY_STRAIGHT as ENTRY, long_exit
 
 
 def _tracker(obs: np.ndarray) -> np.ndarray:
@@ -557,3 +557,58 @@ def test_drive_max_override_matches_the_reference_and_actually_scales():
         tops[dm] = top
     assert tops[9000.0] > tops[4500.0] + 1.0, (
         f"2x drive_max did not raise top speed: {tops}")
+
+
+def test_speed_ref_penalty_matches_the_reference_and_only_charges_excess():
+    """The braking term (F105/F108/F117): charge for carrying more speed than
+    the corner ahead allows. One-sided by design -- being slow is already paid
+    for in lost progress, and a two-sided term would fight the progress reward
+    rather than shape it."""
+    div = _reward_divergence(steps=300, policy=_flat_out,
+                             speed_ref_penalty=5.0, envelope_penalty=0.0)
+    assert div < 1e-5
+
+    base = dict(track=long_exit(), max_steps=400, envelope_penalty=0.0,
+                off_track_penalty=0.0, stall_penalty=0.0, edge_penalty=0.0,
+                cross_track_penalty=0.0)
+    # Flat out exceeds the plan, so it must cost.
+    fast_off = DrivingEnv(EnvConfig(speed_ref_penalty=0.0, **base))
+    fast_on = DrivingEnv(EnvConfig(speed_ref_penalty=5.0, **base))
+    tot = {}
+    for key, env in (("off", fast_off), ("on", fast_on)):
+        o = env.reset(0)
+        t = 0.0
+        for _ in range(200):
+            o, r, d, _ = env.step(np.array([0.0, 1.0]))
+            t += r
+            if d:
+                break
+        tot[key] = t
+    assert tot["on"] < tot["off"] - 1.0, (
+        f"flat-out was not charged: {tot['off']:.2f} -> {tot['on']:.2f}")
+
+    # ...and a policy that stays UNDER the reference must pay nothing.
+    slow_off = DrivingEnv(EnvConfig(speed_ref_penalty=0.0, **base))
+    slow_on = DrivingEnv(EnvConfig(speed_ref_penalty=5.0, **base))
+    tot2 = {}
+    for key, env in (("off", slow_off), ("on", slow_on)):
+        o = env.reset(0)
+        t = 0.0
+        for _ in range(200):
+            o, r, d, i = env.step(np.array([0.0, -0.15]))
+            t += r
+            if d:
+                break
+        tot2[key] = t
+    assert tot2["on"] == pytest.approx(tot2["off"], abs=1e-9), (
+        "a policy under the reference speed was charged -- the term is not "
+        "one-sided")
+
+
+def test_speed_ref_with_a_bank_raises_rather_than_using_the_wrong_plan():
+    from physics.track_bank import TrackBank
+    from physics.track_gen import generate_arcade_set
+    bank = TrackBank(generate_arcade_set(2, seed0=0), store_geometry=False)
+    with pytest.raises(NotImplementedError, match="per-track reference"):
+        BatchedDrivingEnv(EnvConfig(track=long_exit(), speed_ref_penalty=1.0),
+                          n=2, seed=0, bank=bank)

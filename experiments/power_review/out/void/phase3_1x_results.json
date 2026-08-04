@@ -1,0 +1,93 @@
+{
+  "power_mult": 1.0,
+  "drive_max_n": 4500.0,
+  "total_steps": 5000000,
+  "n_envs": 8,
+  "wall_s": 6186.518184185028,
+  "explained_variance_tail": 0.4431771857753441,
+  "passes_d6_ev_gate": true,
+  "n_rollouts_per_cell": 60,
+  "cells": {
+    "0.47/attentive": {
+      "design": 0.47,
+      "condition": "attentive",
+      "n": 60,
+      "failures": 8,
+      "failure_rate": 0.13333333333333333,
+      "worst_slip_deg": 35.5289301218287,
+      "envelope_occupancy": 0.040741128164114675,
+      "mean_distance": 357.2210187909502
+    },
+    "0.47/distracted": {
+      "design": 0.47,
+      "condition": "distracted",
+      "n": 60,
+      "failures": 8,
+      "failure_rate": 0.13333333333333333,
+      "worst_slip_deg": 35.36082598469668,
+      "envelope_occupancy": 0.04175164225999198,
+      "mean_distance": 357.2030681647486
+    },
+    "0.54/attentive": {
+      "design": 0.54,
+      "condition": "attentive",
+      "n": 60,
+      "failures": 9,
+      "failure_rate": 0.15,
+      "worst_slip_deg": 39.288368622010374,
+      "envelope_occupancy": 0.05503062954383897,
+      "mean_distance": 352.7576415644166
+    },
+    "0.54/distracted": {
+      "design": 0.54,
+      "condition": "distracted",
+      "n": 60,
+      "failures": 9,
+      "failure_rate": 0.15,
+      "worst_slip_deg": 39.12509643055489,
+      "envelope_occupancy": 0.05467865571112619,
+      "mean_distance": 352.7601061568399
+    },
+    "0.61/attentive": {
+      "design": 0.61,
+      "condition": "attentive",
+      "n": 60,
+      "failures": 8,
+      "failure_rate": 0.13333333333333333,
+      "worst_slip_deg": 41.82669330487642,
+      "envelope_occupancy": 0.057848076511926465,
+      "mean_distance": 357.3749089458704
+    },
+    "0.61/distracted": {
+      "design": 0.61,
+      "condition": "distracted",
+      "n": 60,
+      "failures": 8,
+      "failure_rate": 0.13333333333333333,
+      "worst_slip_deg": 42.08755782200965,
+      "envelope_occupancy": 0.05733200851333605,
+      "mean_distance": 357.378024465007
+    },
+    "0.65/attentive": {
+      "design": 0.65,
+      "condition": "attentive",
+      "n": 60,
+      "failures": 6,
+      "failure_rate": 0.1,
+      "worst_slip_deg": 42.94031766737089,
+      "envelope_occupancy": 0.05251980332584146,
+      "mean_distance": 366.26490786877014
+    },
+    "0.65/distracted": {
+      "design": 0.65,
+      "condition": "distracted",
+      "n": 60,
+      "failures": 6,
+      "failure_rate": 0.1,
+      "worst_slip_deg": 42.56230039103311,
+      "envelope_occupancy": 0.05210171568241582,
+      "mean_distance": 366.2483028724165
+    }
+  },
+  "note": "POWER-REVIEW Phase 3. 1x comparison is experiments/ep11/out/results.json (F98). Rank ordering only across power levels -- rule 6."
+}

@@ -63,8 +63,28 @@ DESIGN_RANGES = {"front_mass_fraction": (0.40, 0.65)}
 #: 6.0 is F107's measured value, the weakest that put every section inside the
 #: fit. 2.0 is F110's, the term that took a policy from 40.7% to 100% lap
 #: completion and the most universal term in the racing-RL literature (F105).
-ENVELOPE_PENALTY = 6.0
-CROSS_TRACK_PENALTY = 2.0
+#: **Back to Episode 10's own values, and both "improvements" reverted.**
+#:
+#: `cross_track_penalty` was added to fix F117's 0.61 steering spike. That
+#: spike does not exist in Ep10's original policy -- measured, 0/30 failures
+#: at 0.61 with 5.7 deg median slip -- so it was a property of one bad
+#: training run, not of the environment, and the term was a fix for nothing.
+#:
+#: Worse, it actively harms this task. Evaluated in an IDENTICAL clean env,
+#: the cross-track-trained policy slides 9.6-10.5 deg where Ep10's original
+#: slides 5.7-6.0: **70% more, same track, no noise.** Forced toward the
+#: centreline the policy cannot use the racing line, so its effective corner
+#: radius is the track's own -- tighter -- and it corners harder to hold the
+#: line. Evans saw the same thing ("network planners avoid the edges of the
+#: track, which causes them to take turns more sharply"); this measures it.
+#:
+#: The lesson generalises: a cross-track term rescues a policy that CANNOT
+#: hold a line (F110, on Spa) and penalises one that can.
+#:
+#: envelope_penalty likewise returns to 0.5. At 6.0 the run produced 35-43
+#: deg peaks at 4-5.8% occupancy -- worse than the 0.5 it replaced.
+ENVELOPE_PENALTY = 0.5
+CROSS_TRACK_PENALTY = 0.0
 SEED = 0
 
 #: 2x only — see the module docstring. `phase1_sweep` uses the same
@@ -95,7 +115,12 @@ TOTAL_STEPS = 5_000_000
 N_ENVS, ROLLOUT = 8, 512
 
 #: F98's designs and conditions, unchanged so the comparison is like-for-like.
-EVAL_FRACTIONS = (0.47, 0.54, 0.61, 0.65)
+#: **0.40 included, and its absence invalidated the first two attempts.**
+#: Episode 11's 1x fragility lives almost entirely at 0.40 front -- 90-100%
+#: failure -- with 0.47 at ~13% and everything else 0%. Sweeping
+#: (0.47, 0.54, 0.61, 0.65) omitted the design carrying the effect, so there
+#: was nothing for a power conditional to be measured ON.
+EVAL_FRACTIONS = (0.40, 0.47, 0.54, 0.61, 0.65)
 N_ROLLOUTS = 60
 STEER_NOISE_ATTENTIVE, STEER_NOISE_DISTRACTED = 0.01, 0.03
 GRIP_SPREAD = 0.20

@@ -220,6 +220,32 @@ def main(power_mult: float = POWER_MULT) -> int:
     # silently did nothing (zsh aborts the whole command when any glob in it
     # matches nothing), so it survived to be read as Phase 3's 1x answer.
     tag = f"phase3_{POWER_MULT:g}x" + ("_quick" if quick else "")
+    # --- baseline reproduction gate ------------------------------------
+    # At 1x this MUST reproduce Episode 11's committed structure or the
+    # 1x-vs-2x comparison means nothing, whatever the 2x numbers say. Ep10's
+    # own policy, measured: 0.40 ~90%, 0.47 ~13%, 0.54/0.61/0.65 all 0%.
+    # Two earlier attempts produced tables that looked interpretable and were
+    # not, because nothing checked them against the baseline they claimed to
+    # extend.
+    if abs(POWER_MULT - 1.0) < 1e-9:
+        exp = {0.40: (0.70, 1.00), 0.47: (0.02, 0.35),
+               0.54: (0.0, 0.10), 0.61: (0.0, 0.10), 0.65: (0.0, 0.10)}
+        bad = []
+        for v in rows.values():
+            if v["condition"] != "attentive":
+                continue
+            lo, hi = exp.get(round(v["design"], 2), (0.0, 1.0))
+            if not (lo <= v["failure_rate"] <= hi):
+                bad.append(f"{v['design']:.2f}: {v['failure_rate']:.0%} "
+                          f"outside the expected {lo:.0%}-{hi:.0%}")
+        if bad:
+            print("\n  *** 1x DOES NOT REPRODUCE Episode 11's structure:")
+            for b in bad:
+                print(f"        {b}")
+            print("      The 2x comparison rests on this. Treat both as void.")
+        else:
+            print("\n  1x reproduces Episode 11's committed fragility structure.")
+
     torch.save(res["model"].state_dict(), OUT / f"{tag}_policy.pt")
     (OUT / f"{tag}_history.json").write_text(json.dumps(h, indent=2) + "\n")
     (OUT / f"{tag}_results.json").write_text(json.dumps({

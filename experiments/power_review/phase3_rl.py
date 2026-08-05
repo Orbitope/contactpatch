@@ -243,6 +243,17 @@ def main(power_mult: float = POWER_MULT) -> int:
     # matches nothing), so it survived to be read as Phase 3's 1x answer.
     tag = f"phase3_{POWER_MULT:g}x" + ("_quick" if quick else "")
     # --- baseline reproduction gate ------------------------------------
+    # NOTE ON WHAT THIS DOES AND DOES NOT CHECK. It compares the retrained
+    # policy's FRAGILITY STRUCTURE against Episode 10's, measured by scoring
+    # Ep10's committed policy under CURRENT code (2026-08-04, 30 rollouts per
+    # design, F118). It deliberately does not compare training histories:
+    # Ep10's `history.json` is not reproducible under current code and should
+    # not be expected to be. F110 changed termination from absolute `s` to
+    # distance travelled, so with `start_jitter_m=10.0` an episode now runs a
+    # full 393 m instead of `393 - s0`. Training is otherwise bit-reproducible
+    # at a fixed seed (verified: two identical 120k runs agree to every
+    # decimal), so a history divergence means the ENVIRONMENT changed, which
+    # it did, on purpose.
     # At 1x this MUST reproduce Episode 11's committed structure or the
     # 1x-vs-2x comparison means nothing, whatever the 2x numbers say. Ep10's
     # own policy, measured: 0.40 ~90%, 0.47 ~13%, 0.54/0.61/0.65 all 0%.

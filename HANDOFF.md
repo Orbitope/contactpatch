@@ -1906,10 +1906,34 @@ held-out group and still fits the compute below.
 **Compute:** roughly 3 h for stages 1-2, 3-4 h for stage 4, at the ~28k
 steps/s these runs measure.
 
-**Outstanding and unglamorous:** rules 1 and 13 are still unmet for this
-entire thread — there is no pictorial figure of any of it. `spa_track.svg`
-plus the ct2 lap trace, coloured by speed, is the obvious first one and
-should land before the generalist, not after.
+**Rules 1 and 13 — DONE (2026-08-04).** `spa_lap_figure.py` builds three:
+the lap on Spa's outline coloured by speed, the same lap coloured by tyre
+utilisation, and a three-panel technical profile (speed, slip, utilisation)
+with the 12° fit boundary drawn on it. Parameterised SVG builders in
+`viz/lap_figures.py`, so any policy on any circuit is one call.
+
+**And the figures changed the plan (F120).** The solved Spa lap runs at mean
+tyre utilisation **0.090**, mean lateral acceleration 0.08 g, and spends
+**0.7% of its length above 0.9 utilisation**. It is pinned against the 13 m/s
+speed cap, not against the tyres. So:
+
+- Spa is a solved **control** problem and a valid rule-4 lap. It is **not a
+  limit-driving baseline**, and a torque-vectoring delta measured against it
+  would be measured on a car barely using its grip. TV reallocates grip
+  between wheels; there is nothing to reallocate at 9% utilisation.
+- Every stage from here reports utilisation next to lap fraction.
+  `policy_eval` now carries `utilisation_mean` / `frac_at_limit`, so this
+  cannot quietly drop out of a result again.
+- Getting a policy to the limit is a **separate, unfinished problem** from
+  getting one round a circuit. Season 5 currently has a recipe for the second
+  and not the first, and the TV episodes need the first.
+
+**Stage 1 is written and ready to launch** —
+`experiments/tracks_pilot/stage1_transfer.py`, four cells (Monza and
+MexicoCity x `cross_track_penalty` 2.0 and 0.0), ~3 h. It derives `CAP_START`
+per circuit rather than inheriting Spa's 9.0 m/s, which is above what either
+new circuit's tightest corner allows (Monza 8.85, MexicoCity 8.34 m/s) and
+would have produced a false "the recipe does not transfer".
 
 ### Superseded — Episode 13 planning notes
 

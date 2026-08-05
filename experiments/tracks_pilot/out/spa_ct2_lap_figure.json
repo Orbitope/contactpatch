@@ -1,0 +1,21 @@
+{
+  "policy": "curr_ct2_policy.pt",
+  "eval_speed_cap": 13.0,
+  "cross_track_penalty": 2.0,
+  "distance_m": 6999.342623003843,
+  "fraction_of_lap": 0.9999796234320991,
+  "off_track": false,
+  "worst_slip_deg": 9.690093499131176,
+  "inside_tyre_fit": true,
+  "speed_min": 12.249212669692438,
+  "speed_max": 14.998822504766236,
+  "speed_mean": 13.074324357801173,
+  "speed_p1": 12.992341177404848,
+  "speed_p99": 14.677314986819786,
+  "a_y_max_g": 0.9714015960945274,
+  "a_y_mean_g": 0.08167019062959326,
+  "utilisation_max": 0.9999182745645835,
+  "utilisation_mean": 0.08959994239687229,
+  "fraction_of_lap_above_0p9_utilisation": 0.00718219708246502,
+  "fraction_of_lap_above_0p5_utilisation": 0.02705418279249777
+}

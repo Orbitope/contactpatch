@@ -4928,6 +4928,58 @@ and `::test_sampled_track_heading_is_continuous_like_the_analytic_track`.
 
 ---
 
+### F120 · The solved Spa lap is a clean lap, not a limit lap — 0.7% of it is at the friction limit · 2026-08-04
+
+Drawing the Spa specialist (`curr_ct2`) for the first time — rules 1 and 13,
+outstanding for this whole thread — produced the figures and also the number
+that should govern how the result is used.
+
+[MEASURED, `experiments/tracks_pilot/spa_lap_figure.py`, deployed mean-action
+policy, `speed_cap` 13.0 m/s (the cap the checkpoint was selected under, F109)]
+
+| | |
+|---|---|
+| lap completed | **6,999.3 m — 100%**, 0% off-track |
+| worst-wheel slip | 9.69°, inside the 12° fit — rule 4 valid |
+| max lateral acceleration | 0.97 g |
+| **mean** lateral acceleration | **0.08 g** |
+| lap above 0.9 tyre utilisation | **0.7%** |
+| lap above 0.5 tyre utilisation | 2.7% |
+| speed, p1-p99 | 13.0-14.7 m/s (cap 13.0) |
+
+**The policy is pinned against the speed cap, not against the tyres.** Mean
+speed is 13.03 m/s against a 13.0 cap; mean tyre utilisation is 0.090. It
+touches the friction limit in a handful of corners and coasts at a twelfth of
+it everywhere else.
+
+**Why this matters more than the figure.** Season 5's destination is torque
+vectoring, and TV only does anything to a car that is *using its tyres* —
+reallocating grip between wheels is meaningless when 97% of the lap uses 9%
+of it. The user identified this before the measurement existed: *"the speed
+cap is working but it is not going to learn anything we want it to since it
+won't be at the limit... otherwise TV isn't helpful."* That is now a number:
+**0.7%.**
+
+**What Spa is and is not.** It IS a solved control problem and a valid rule-4
+lap — the recipe completes a real circuit cleanly and repeatably, which no
+earlier attempt did (F110). It is NOT a limit-driving baseline, and any TV
+delta measured against it would be measured on a car that is barely working
+its tyres. Season 5 stage 1 should carry this: a specialist that completes a
+circuit under a cap has cleared the *first* gate, not the one TV needs.
+
+**Method note.** The first version of the lateral-acceleration number was
+1.52 g, computed as `v^2 * kappa` from the **centreline** curvature. The car
+drives its own line, so that is not its lateral acceleration -- and 1.52 g
+is above what the tyres can deliver, which is what flagged it. The logged
+`a_y` and `utilisation_max` arrays give 0.97 g. CLAUDE.md rule 7 says metrics
+come from the logged arrays; this is why.
+
+**Source:** `experiments/tracks_pilot/spa_lap_figure.py`,
+`out/spa_ct2_lap.svg`, `out/spa_ct2_lap_utilisation.svg`,
+`out/spa_ct2_profile.svg`, `out/spa_ct2_lap_figure.json`.
+
+---
+
 
 # Decisions
 

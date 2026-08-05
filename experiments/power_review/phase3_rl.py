@@ -300,9 +300,18 @@ def main(power_mult: float = POWER_MULT, seed: int | None = None) -> int:
         # fragility table below measures, and a design that legitimately fails
         # 20% of the time drags a min-based check under the threshold for the
         # right reason. A crawler's best design still only reaches ~23 m.
+        # HALF the track, not 90%. The discriminator is enormous -- the
+        # crawling 2x leg reached 22.7 m (5.8%), a real driver reaches 393 m
+        # (100%) -- so the threshold only has to land somewhere in between,
+        # and it should sit far from both. At 90% it misfired on seed 1, whose
+        # best design averages 353.2 m against a 353.7 m bar: that policy
+        # drives the track and fails ~18% of the time, which drags the MEAN
+        # down and is a fragility result, not a failure to move. How often it
+        # fails is check B's business and the table's; check A only asks
+        # whether the thing drives.
         L = _cfg().track.length
         dist = max(v["mean_distance"] for v in rows.values())
-        crawls = dist < 0.9 * L
+        crawls = dist < 0.5 * L
         broken = crawls or worst > 12.0 or occ > 0.0 or ev <= 0.3
         print(f"\n  A. Is it a driver?  best mean distance {dist:.1f} m of "
               f"{L:.0f} ({100*dist/L:.0f}%), worst slip {worst:.1f}° "

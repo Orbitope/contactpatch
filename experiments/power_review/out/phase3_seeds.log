@@ -1,0 +1,85 @@
+======================================================================
+POWER-REVIEW Phase 3 — Season 3 RL at 1x power
+  drive_max 4500 -> 4500 N
+  5,000,000 steps, design conditioned on front_mass_fraction (0.4, 0.65)
+
+    upd    0 steps=     4,096 EV=+0.004 ret=   -14.4 off=1.00
+    upd   25 steps=   106,496 EV=+0.490 ret=   -15.7 off=0.90
+    upd   50 steps=   208,896 EV=+0.685 ret=   -19.6 off=0.88
+    upd   75 steps=   311,296 EV=+0.669 ret=    -7.4 off=0.70
+    upd  100 steps=   413,696 EV=+0.718 ret=    21.1 off=0.28
+    upd  125 steps=   516,096 EV=+0.982 ret=    39.4 off=0.00
+    upd  150 steps=   618,496 EV=+0.911 ret=    38.7 off=0.10
+    upd  175 steps=   720,896 EV=+0.953 ret=    32.7 off=0.34
+    upd  200 steps=   823,296 EV=+0.964 ret=    38.7 off=0.34
+    upd  225 steps=   925,696 EV=+0.931 ret=    42.6 off=0.32
+    upd  250 steps= 1,028,096 EV=+0.563 ret=   104.0 off=0.62
+    upd  275 steps= 1,130,496 EV=+0.663 ret=   229.3 off=0.56
+    upd  300 steps= 1,232,896 EV=+0.475 ret=   361.9 off=0.10
+    upd  325 steps= 1,335,296 EV=+0.881 ret=   379.5 off=0.04
+    upd  350 steps= 1,437,696 EV=+0.903 ret=   358.0 off=0.10
+    upd  375 steps= 1,540,096 EV=+0.974 ret=   393.1 off=0.00
+    upd  400 steps= 1,642,496 EV=+0.624 ret=   379.1 off=0.04
+    upd  425 steps= 1,744,896 EV=+0.826 ret=   327.2 off=0.20
+    upd  450 steps= 1,847,296 EV=+0.079 ret=   393.0 off=0.00
+    upd  475 steps= 1,949,696 EV=+0.375 ret=   393.0 off=0.00
+    upd  500 steps= 2,052,096 EV=+0.571 ret=   386.6 off=0.02
+    upd  525 steps= 2,154,496 EV=+0.321 ret=   393.0 off=0.00
+    upd  550 steps= 2,256,896 EV=+0.468 ret=   393.0 off=0.00
+    upd  575 steps= 2,359,296 EV=+0.837 ret=   270.2 off=0.38
+    upd  600 steps= 2,461,696 EV=+0.621 ret=   393.0 off=0.00
+    upd  625 steps= 2,564,096 EV=+0.350 ret=   393.0 off=0.00
+    upd  650 steps= 2,666,496 EV=+0.371 ret=   374.0 off=0.06
+    upd  675 steps= 2,768,896 EV=+0.517 ret=   278.7 off=0.34
+    upd  700 steps= 2,871,296 EV=+0.352 ret=   393.0 off=0.00
+    upd  725 steps= 2,973,696 EV=+0.557 ret=   385.0 off=0.02
+    upd  750 steps= 3,076,096 EV=+0.888 ret=   175.9 off=0.66
+    upd  775 steps= 3,178,496 EV=+0.451 ret=   393.0 off=0.00
+    upd  800 steps= 3,280,896 EV=+0.747 ret=   393.0 off=0.00
+    upd  825 steps= 3,383,296 EV=+0.477 ret=   334.9 off=0.18
+    upd  850 steps= 3,485,696 EV=+0.452 ret=   378.5 off=0.04
+    upd  875 steps= 3,588,096 EV=+0.563 ret=   392.9 off=0.00
+    upd  900 steps= 3,690,496 EV=+0.610 ret=   393.0 off=0.00
+    upd  925 steps= 3,792,896 EV=+0.686 ret=   385.7 off=0.02
+    upd  950 steps= 3,895,296 EV=+0.440 ret=   314.2 off=0.22
+    upd  975 steps= 3,997,696 EV=+0.793 ret=   221.9 off=0.60
+    upd 1000 steps= 4,100,096 EV=+0.582 ret=   278.8 off=0.36
+    upd 1025 steps= 4,202,496 EV=+0.673 ret=   393.0 off=0.00
+    upd 1050 steps= 4,304,896 EV=+0.636 ret=   393.0 off=0.00
+    upd 1075 steps= 4,407,296 EV=+0.631 ret=   393.0 off=0.00
+    upd 1100 steps= 4,509,696 EV=+0.664 ret=   373.6 off=0.06
+    upd 1125 steps= 4,612,096 EV=+0.553 ret=   385.9 off=0.02
+    upd 1150 steps= 4,714,496 EV=+0.818 ret=   385.8 off=0.02
+    upd 1175 steps= 4,816,896 EV=+0.607 ret=   372.6 off=0.06
+    upd 1200 steps= 4,919,296 EV=+0.591 ret=   391.9 off=0.00
+  trained: 1220 updates, 101.5 min, EV tail +0.614
+
+    design    condition     fail    rate  worst slip  occupancy
+      0.40    attentive    9/60    15.0%       21.7°     0.0272
+      0.40   distracted   10/60    16.7%       26.0°     0.0275
+      0.47    attentive    9/60    15.0%       20.3°     0.0209
+      0.47   distracted    9/60    15.0%       20.5°     0.0218
+      0.54    attentive   11/60    18.3%       24.7°     0.0303
+      0.54   distracted   10/60    16.7%       24.6°     0.0289
+      0.61    attentive   11/60    18.3%       27.5°     0.0368
+      0.61   distracted   14/60    23.3%       27.3°     0.0401
+      0.65    attentive   11/60    18.3%       28.0°     0.0433
+      0.65   distracted   14/60    23.3%       28.0°     0.0466
+
+  A. Is it a driver?  best mean distance 353.2 m of 393 (90%), worst slip 28.0° (limit 12), occupancy 0.0466, EV tail +0.614
+       *** IT DOES NOT DRIVE. Every failure rate below is an artefact of not moving.
+       -> NO — nothing here is usable
+  B. Reproduces Episode 10?  NO:
+        0.40: 15% outside the expected 70%-100%
+        0.54: 18% outside the expected 0%-10%
+        0.61: 18% outside the expected 0%-10%
+        0.65: 18% outside the expected 0%-10%
+      Both A and B failed. The run is void.
+
+  wrote experiments/power_review/out/phase3_1x_s1_*
+======================================================================
+POWER-REVIEW Phase 3 — Season 3 RL at 1x power
+  drive_max 4500 -> 4500 N
+  5,000,000 steps, design conditioned on front_mass_fraction (0.4, 0.65)
+
+    upd    0 steps=     4,096 EV=-0.003 ret=    -9.5 off=1.00

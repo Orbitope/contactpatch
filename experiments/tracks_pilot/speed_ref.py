@@ -51,7 +51,7 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from physics.ppo import PPOConfig, train
+from physics.ppo import PPOConfig, train, ActorCritic
 from physics.rl_env import DrivingEnv, EnvConfig
 from physics.tracks_data import load_real_track
 from physics.driver import SpeedProfile, BRAKE_MAX, DRIVE_MAX
@@ -146,19 +146,22 @@ def _env_kwargs(weight: float, a_lat: float, cross_track: float = 0.0) -> dict:
 
 
 def _run(weight: float, steps: int, seed: int = None,
-         cross_track: float = 0.0) -> dict:
+         cross_track: float = 0.0, init_state_dict=None,
+         a_lat_start: float = None, tag_suffix: str = "") -> dict:
     seed = V2.SEED if seed is None else seed
     tag = (f"speedref_w{weight:g}_ct{cross_track:g}"
-           + (f"_s{seed}" if seed != V2.SEED else ""))
+           + (f"_s{seed}" if seed != V2.SEED else "") + tag_suffix)
     trk = load_real_track(TRACK)
     print(f"\n{'='*72}\n  {TRACK}, speed_ref_penalty={weight:g}, "
           f"cross_track_penalty={cross_track:g}, {steps:,} steps\n{'='*72}")
-    print(f"  plan starts at a_lat {A_LAT_START/schema.G:.2f} g, "
+    a_lat0 = A_LAT_START if a_lat_start is None else a_lat_start
+    print(f"  plan starts at a_lat {a_lat0/schema.G:.2f} g"
+          f"{' (warm-started)' if init_state_dict is not None else ''}, "
           f"raises by {A_LAT_STEP/schema.G:.2f} g toward "
           f"{A_LAT_MAX/schema.G:.2f} g while off<{RAISE_OFF_BELOW} "
           f"and slip<{RAISE_SLIP_BELOW_DEG}°")
 
-    state = {"a_lat": A_LAT_START, "clean": 0, "raises": 0, "log": []}
+    state = {"a_lat": a_lat0, "clean": 0, "raises": 0, "log": []}
     #: Live handles. Both envs build the speed plan ONCE and cache it, so the
     #: curriculum has to reach the objects, not the dict that made them --
     #: `make_batched` is called once at startup and never again. Assigning
@@ -190,6 +193,22 @@ def _run(weight: float, steps: int, seed: int = None,
         return e
 
     def on_update(rec):
+        # Reverted to the SAMPLED (training-rollout) signal for the raise
+        # gate. A `physics.ppo._evaluate_deployed` metric was tried here and
+        # is real and useful (kept, see ppo.py) -- but `make_eval`'s env is
+        # deliberately PINNED at A_LAT_MAX (so checkpoint SELECTION does not
+        # drift as the curriculum climbs, decided earlier this session), so
+        # it always scores the deployed policy against the FINAL, hardest
+        # target regardless of what stage training has reached. Early in a
+        # run that reads as "always terrible" and the curriculum never
+        # raises at all -- worse than the original gate, which this measured:
+        # 0 raises in 12 updates, 24/24 sections outside the tyre fit. The
+        # selection-time and curriculum-time questions are genuinely
+        # different ("is it ready for the final target" vs "is it coping
+        # with what it is training against right now") and need separate
+        # eval passes, which is more machinery than this run should carry
+        # untested. The sampled signal is noisier but at least answers the
+        # right question at the right timescale.
         off = rec.get("off_track_rate", 1.0)
         slip = rec.get("worst_slip_mean_deg", 99.0)
         if off < RAISE_OFF_BELOW and slip < RAISE_SLIP_BELOW_DEG:
@@ -235,7 +254,7 @@ def _run(weight: float, steps: int, seed: int = None,
                     entropy_anneal=True)
     t0 = time.time()
     res = train(make_batched_env=make_batched, cfg=cfg, on_update=on_update,
-                make_eval_env=make_eval)
+                make_eval_env=make_eval, init_state_dict=init_state_dict)
     wall = time.time() - t0
 
     # Scored through the one committed evaluator (D16). `res["model"]` holds
@@ -291,6 +310,37 @@ def _run(weight: float, steps: int, seed: int = None,
         "lap_time_projected_s": lap_s, "completed_a_lap": finished_lap,
         "target_s": TARGET_S,
     }
+
+
+def push_further(weight: float = 3.0, steps: int = STEPS,
+                 cross_track: float = 0.0, from_policy: str = "speedref_w3_ct0",
+                 a_lat_start: float = None) -> dict:
+    """Warm-start from an already-good checkpoint and keep training, rather
+    than re-learning from scratch.
+
+    F127: cell 1 (w=3, ct=0) reached 96% finish, 5.1 deg worst slip, 3.4x the
+    baseline's tyre utilisation -- and its `a_lat` curriculum stalled at
+    0.69 g, three raises in, well short of `A_LAT_MAX` (0.97 g). Restarting
+    from scratch would spend a large fraction of a fresh 40M-step budget
+    re-covering that ground; warm-starting from the finished weights and
+    resuming the curriculum where it left off puts the ENTIRE new budget
+    toward pushing past it instead.
+
+    ``a_lat_start`` defaults to 0.69 g -- the exact value `speedref_w3_ct0`'s
+    curriculum stalled at (`out/speedref_w3_ct0_history.json`, three raises,
+    last at update 115 of 152), read from the run rather than assumed.
+    """
+    src = OUT / f"{from_policy}_policy.pt"
+    trk = load_real_track(TRACK)
+    probe = DrivingEnv(EnvConfig(track=trk, start_jitter_m=0.0,
+                                 **_env_kwargs(weight, A_LAT_START, cross_track)))
+    m = ActorCritic(probe.obs_dim, probe.act_dim, 64, (-2.5, -1.0))
+    m.load_state_dict(torch.load(src))
+    print(f"\n  warm-starting from {src.relative_to(OUT.parent.parent.parent)}")
+    a_lat0 = (0.69 * schema.G) if a_lat_start is None else a_lat_start
+    return _run(weight, steps, seed=None, cross_track=cross_track,
+               init_state_dict=m.state_dict(), a_lat_start=a_lat0,
+               tag_suffix="_push")
 
 
 def limit_ceiling(track, a_lat=A_LAT_MAX) -> float:

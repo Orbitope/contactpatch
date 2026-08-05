@@ -213,7 +213,7 @@ def _evaluate_deployed(model, env, episodes: int, seed0: int) -> dict:
     training RNG nor torch's, so turning evaluation on cannot change the
     trajectory of the run it is watching.
     """
-    rets, dists, fins = [], [], []
+    rets, dists, fins, slips, offs = [], [], [], [], []
     for k in range(episodes):
         o = env.reset(seed0 + k)
         done, total, info = False, 0.0, {}
@@ -228,9 +228,24 @@ def _evaluate_deployed(model, env, episodes: int, seed0: int) -> dict:
         # the start-relative figure itself.
         dists.append(float(getattr(env, "_dist_since_reset", float("nan"))))
         fins.append(float(bool(info.get("finished", False))))
+        offs.append(float(bool(info.get("off_track", False))))
+        # DEPLOYED slip, not the sampled/exploring policy's. A curriculum
+        # gate reading `worst_slip_mean_deg` from the training rollout below
+        # is reading the wrong signal: PPO's rollout collection samples from
+        # the policy's distribution (`model.act`, with exploration noise),
+        # and near a tyre limit that noise measurably inflates slip. Measured
+        # on one run: sampled 15-17 deg where the deployed (mean-action)
+        # policy at the identical checkpoint was 5.1 deg -- a curriculum gated
+        # on the sampled number stalls on noise, not on what the policy it is
+        # actually about to ship can do.
+        h = env.history()
+        slips.append(float(np.max(h["alpha_max_deg"])) if len(h.get("alpha_max_deg", []))
+                     else float("nan"))
     return {"eval_return": float(np.mean(rets)),
             "eval_distance": float(np.mean(dists)),
-            "eval_finish_rate": float(np.mean(fins))}
+            "eval_finish_rate": float(np.mean(fins)),
+            "eval_off_track_rate": float(np.mean(offs)),
+            "eval_worst_slip_deg": float(np.nanmax(slips)) if slips else float("nan")}
 
 
 def train(make_env=None, cfg: PPOConfig | None = None, on_update=None,

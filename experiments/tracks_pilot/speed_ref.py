@@ -128,9 +128,17 @@ def _run(weight: float, steps: int) -> dict:
         return e
 
     def make_eval():
+        # FIXED at the final plan, and never raised with the curriculum. The
+        # selection criterion has to be stationary or "best checkpoint" partly
+        # means "checkpoint judged at the most generous curriculum stage": the
+        # penalty is excess over the plan, so a faster plan charges less, and
+        # a late checkpoint would score better for that reason alone. Judging
+        # every checkpoint against the plan we ultimately want makes early
+        # ones score badly, which is correct -- they are worse at the task the
+        # run exists to solve.
         e = DrivingEnv(EnvConfig(
             track=trk, start_jitter_m=0.0,
-            **_env_kwargs(weight, state["a_lat"])))
+            **_env_kwargs(weight, A_LAT_MAX)))
         envs["eval"] = e
         return e
 
@@ -148,9 +156,10 @@ def _run(weight: float, steps: int) -> dict:
             # would otherwise keep scoring against the old plan -- which is
             # how a checkpoint gets selected under one plan and reported
             # under another (F109, in its speed-cap form).
-            for e in (envs.get("batched"), envs.get("eval")):
-                if e is not None:
-                    e.set_speed_ref_a_lat(state["a_lat"])
+            # Training env only. The eval env's plan stays fixed -- see
+            # `make_eval`.
+            if envs.get("batched") is not None:
+                envs["batched"].set_speed_ref_a_lat(state["a_lat"])
             state["clean"] = 0
             state["raises"] += 1
             state["log"].append({"update": rec["update"],
@@ -173,11 +182,18 @@ def _run(weight: float, steps: int) -> dict:
                 make_eval_env=make_eval)
     wall = time.time() - t0
 
-    # Scored through the one committed evaluator (D16), at the plan the
-    # checkpoint was actually selected under -- the F109 discipline, which
-    # applies to `a_lat` here exactly as it applied to `speed_cap` there.
+    # Scored through the one committed evaluator (D16). `res["model"]` holds
+    # the SELECTED checkpoint, not the final weights.
+    #
+    # `a_lat` does not affect these numbers and that is worth stating, because
+    # the F109 reflex says "score at the value the checkpoint was selected
+    # under". Here the plan enters the REWARD only -- `observe()` carries
+    # speed, offset, heading error, yaw rate, sideslip, steer, curvature
+    # preview and design, and no reference speed -- so distance, slip and
+    # utilisation are identical at any `a_lat`. F109's real content, that a
+    # selection criterion must not drift, is handled in `make_eval`.
     r = PE.evaluate(res["model"], trk, n_sections=N_SECTIONS,
-                    env_kwargs=_env_kwargs(weight, state["a_lat"]))
+                    env_kwargs=_env_kwargs(weight, A_LAT_MAX))
     print(f"\n  [D16] {r.headline()}")
     print(f"    utilisation mean {r.utilisation_mean:.3f} "
           f"(capped baseline 0.090), at-limit {100*r.frac_at_limit:.1f}% "

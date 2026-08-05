@@ -113,7 +113,25 @@ CROSS_TRACKS = (0.0, 2.0)
 
 
 def _env_kwargs(weight: float, a_lat: float, cross_track: float = 0.0) -> dict:
-    kw = dict(V2.V2_ENV)
+    # **The researched reward, not `spa_ppo_v2.V2_ENV`.** V2_ENV predates the
+    # RL survey (F105/F112) and differs on seven fields, three of which work
+    # directly against this experiment:
+    #
+    #   `action_repeat` 1 (50 Hz) vs 5 (10 Hz) -- a Gaussian resampled at
+    #     50 Hz produces near-zero net displacement over the ~1 s a brake
+    #     application must persist, so the policy cannot SAMPLE a sustained
+    #     brake. Teaching a car to brake for a corner is the entire point here.
+    #   `speed_scaled_penalties` absent vs True -- a fixed-magnitude penalty is
+    #     minimised by driving slowly. No published limit-driving agent uses
+    #     one; Sophy scales by speed squared, Fuchs by kinetic energy, TRI by
+    #     speed.
+    #   `edge_penalty` fixed vs speed-scaled -- a fixed cost near the edge is a
+    #     fixed cost at the apex, which is where a fast line belongs.
+    #
+    # Building a limit-seeking experiment on the pre-survey reward was the
+    # error; `multitrack.ENV` is where the survey's conclusions actually live.
+    from experiments.tracks_pilot import multitrack as MT
+    kw = dict(MT.ENV)
     kw.update(
         cross_track_penalty=cross_track,
         speed_cap=None,              # THE point: no scalar limiter
@@ -198,8 +216,12 @@ def _run(weight: float, steps: int, seed: int = None,
                   f"a_lat={state['a_lat']/schema.G:.2f}g "
                   f"EV={rec['explained_variance']:+.3f}", flush=True)
 
+    # The survey's PPO settings too: 32 minibatches (Sophy 1,024, Fuchs
+    # 4,096, TRI 256 -- ours was 4) and gae_lambda 0.98, whose n-step
+    # equivalent Sophy's ablation shows flat over 5-9 and cliffing at 1.
     cfg = PPOConfig(total_steps=steps, n_envs=V2.N_ENVS,
-                    rollout_steps=V2.ROLLOUT_STEPS, gamma=V2.GAMMA,
+                    rollout_steps=V2.ROLLOUT_STEPS, gamma=0.975,
+                    gae_lambda=0.98, minibatches=32,
                     seed=seed, eval_every=8, eval_episodes=V2.EVAL_EPISODES,
                     entropy_anneal=True)
     t0 = time.time()

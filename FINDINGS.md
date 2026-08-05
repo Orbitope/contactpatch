@@ -5126,6 +5126,63 @@ README there.
 
 ---
 
+### F123 · A retrained 1x policy is clean, quotable, and fragile at the OPPOSITE end from Episode 10 · 2026-08-05
+
+Phase 3 attempt 5, the first run whose configuration was verified against
+Episode 10 field by field (F122). [MEASURED,
+`experiments/power_review/out/phase3_1x_results.json`, 5,000,000 steps,
+60 rollouts per cell, attentive condition]
+
+| design | attempt 5 | Ep10's committed policy |
+|---|---|---|
+| 0.40 (rear-biased) | **0/60**, 4.7° | ~90% fail, 7.1° |
+| 0.47 | 0/60, 5.7° | ~13% fail, 5.5° |
+| 0.54 | 0/60, 6.4° | 0%, 5.5° |
+| 0.61 | 0/60, 6.8° | 0%, 5.7° |
+| 0.65 (front-biased) | **20.0% fail**, 9.6° | 0%, 5.5° |
+
+**The run is not broken, and that distinction is the point.** EV tail +0.720
+(D6 gate is 0.3), worst slip 10.0° against the 12° fit, envelope occupancy
+**exactly 0.0000** in every cell. Attempt 4, which the same gate also
+rejected, was at 169.1° — spinning. One rejection means "this policy is not
+a driver"; the other means "this policy is a driver that behaves differently
+from Episode 10's". The gate as written cannot tell them apart, which is a
+defect in the gate, not a reason to accept the result.
+
+**The fragility inverted.** Episode 10's policy fails on the rear-biased car
+and copes with the front-biased one; this policy does the reverse. It is not
+a weaker version of F98's pattern — it is the other end of the range.
+
+**Leading hypothesis, unproven: the environment changed underneath it.** F110
+moved termination from absolute `s` to distance travelled, so with 10 m of
+start jitter an episode now runs a full 393 m rather than `393 - s0`. Episode
+10's policy was trained under the old rule; this is a fresh train under the
+corrected one. Evaluation is not the difference — both policies are scored by
+the same code, and Ep10's still shows its 90% failure at 0.40 when scored
+today (F118). The difference is in what training produced.
+
+**What this does NOT license.** One seed. Rule 5 wants three before any of
+this is a trend, and F117 already recorded that a single non-monotonic spike
+is precisely the shape seed variance produces — the 20% at 0.65 is exactly
+that shape. **No claim is made here that F98's fragility is an artefact of the
+old environment.** That is a hypothesis with one seed behind it and a
+plausible alternative (seed variance) that has not been excluded.
+
+**What it does license.** The 1x and 2x legs are trained under identical
+configurations, so the power comparison Phase 3 exists to make is unaffected
+by this question. What is affected is any attempt to tie either leg back to
+F98's published 1x numbers.
+
+**Next:** finish the 2x leg, then >=3 seeds at 1x. If no seed reproduces the
+0.40 fragility, the environment hypothesis gets real support; if the seeds
+disagree with each other, the answer is seed variance and F98's single-seed
+structure needs revisiting too.
+
+**Source:** `experiments/power_review/phase3_rl.py`,
+`out/phase3_1x_results.json`; Episode 10 reference measured in F118.
+
+---
+
 
 # Decisions
 

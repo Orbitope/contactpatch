@@ -29,3 +29,53 @@ POWER-REVIEW Phase 3 — Season 3 RL at 1x power
     upd  575 steps= 2,359,296 EV=+0.748 ret=   187.5 off=0.54
     upd  600 steps= 2,461,696 EV=+0.946 ret=   162.6 off=0.66
     upd  625 steps= 2,564,096 EV=+0.971 ret=   205.2 off=0.56
+    upd  650 steps= 2,666,496 EV=+0.852 ret=   201.6 off=0.54
+    upd  675 steps= 2,768,896 EV=+0.828 ret=   337.4 off=0.06
+    upd  700 steps= 2,871,296 EV=+0.818 ret=   380.1 off=0.02
+    upd  725 steps= 2,973,696 EV=+0.941 ret=   353.7 off=0.00
+    upd  750 steps= 3,076,096 EV=+0.573 ret=   313.4 off=0.24
+    upd  775 steps= 3,178,496 EV=+0.150 ret=   368.5 off=0.06
+    upd  800 steps= 3,280,896 EV=+0.605 ret=   392.4 off=0.00
+    upd  825 steps= 3,383,296 EV=+0.535 ret=   393.0 off=0.00
+    upd  850 steps= 3,485,696 EV=+0.287 ret=   370.7 off=0.06
+    upd  875 steps= 3,588,096 EV=+0.311 ret=   355.5 off=0.10
+    upd  900 steps= 3,690,496 EV=+0.167 ret=   366.8 off=0.08
+    upd  925 steps= 3,792,896 EV=+0.890 ret=   220.3 off=0.52
+    upd  950 steps= 3,895,296 EV=+0.478 ret=   296.4 off=0.26
+    upd  975 steps= 3,997,696 EV=+0.515 ret=   328.9 off=0.18
+    upd 1000 steps= 4,100,096 EV=+0.304 ret=   366.9 off=0.06
+    upd 1025 steps= 4,202,496 EV=+0.878 ret=   233.7 off=0.42
+    upd 1050 steps= 4,304,896 EV=+0.543 ret=   339.9 off=0.14
+    upd 1075 steps= 4,407,296 EV=+0.777 ret=   357.1 off=0.10
+    upd 1100 steps= 4,509,696 EV=+0.780 ret=   386.9 off=0.00
+    upd 1125 steps= 4,612,096 EV=+0.515 ret=   345.2 off=0.14
+    upd 1150 steps= 4,714,496 EV=+0.799 ret=   383.9 off=0.02
+    upd 1175 steps= 4,816,896 EV=+0.778 ret=   388.9 off=0.00
+    upd 1200 steps= 4,919,296 EV=+0.828 ret=   389.6 off=0.00
+  trained: 1220 updates, 99.9 min, EV tail +0.720
+
+    design    condition     fail    rate  worst slip  occupancy
+      0.40    attentive    0/60     0.0%        4.7°     0.0000
+      0.40   distracted    0/60     0.0%        5.4°     0.0000
+      0.47    attentive    0/60     0.0%        5.7°     0.0000
+      0.47   distracted    0/60     0.0%        6.6°     0.0000
+      0.54    attentive    0/60     0.0%        6.4°     0.0000
+      0.54   distracted    0/60     0.0%        7.0°     0.0000
+      0.61    attentive    0/60     0.0%        6.8°     0.0000
+      0.61   distracted    0/60     0.0%        7.2°     0.0000
+      0.65    attentive   12/60    20.0%        9.6°     0.0000
+      0.65   distracted   13/60    21.7%       10.0°     0.0000
+
+  *** 1x DOES NOT REPRODUCE Episode 11's structure:
+        0.40: 0% outside the expected 70%-100%
+        0.47: 0% outside the expected 2%-35%
+        0.65: 20% outside the expected 0%-10%
+      The 2x comparison rests on this. Treat both as void.
+
+  wrote experiments/power_review/out/phase3_1x_*
+======================================================================
+POWER-REVIEW Phase 3 — Season 3 RL at 2x power
+  drive_max 4500 -> 9000 N
+  5,000,000 steps, design conditioned on front_mass_fraction (0.4, 0.65)
+
+    upd    0 steps=     4,096 EV=-0.003 ret=    -7.9 off=1.00

@@ -79,3 +79,4 @@ POWER-REVIEW Phase 3 — Season 3 RL at 2x power
   5,000,000 steps, design conditioned on front_mass_fraction (0.4, 0.65)
 
     upd    0 steps=     4,096 EV=-0.003 ret=    -7.9 off=1.00
+    upd   25 steps=   106,496 EV=+0.602 ret=   -14.5 off=1.00

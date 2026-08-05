@@ -3,74 +3,10 @@ POWER-REVIEW Phase 3 — Season 3 RL at 1x power
   drive_max 4500 -> 4500 N
   5,000,000 steps, design conditioned on front_mass_fraction (0.4, 0.65)
 
-    upd    0 steps=     4,096 EV=-0.001 ret=   -14.7 off=1.00
-    upd   25 steps=   106,496 EV=+0.687 ret=   -20.3 off=1.00
-    upd   50 steps=   208,896 EV=+0.715 ret=   -11.7 off=1.00
-    upd   75 steps=   311,296 EV=+0.966 ret=    -7.0 off=1.00
-    upd  100 steps=   413,696 EV=+0.950 ret=    27.6 off=1.00
-    upd  125 steps=   516,096 EV=+0.312 ret=   285.8 off=0.32
-    upd  150 steps=   618,496 EV=+0.724 ret=   152.0 off=0.68
-    upd  175 steps=   720,896 EV=+0.164 ret=   224.3 off=0.24
-    upd  200 steps=   823,296 EV=+0.865 ret=   243.9 off=0.36
-    upd  225 steps=   925,696 EV=+0.901 ret=    38.3 off=0.96
-    upd  250 steps= 1,028,096 EV=+0.972 ret=    17.0 off=1.00
-    upd  275 steps= 1,130,496 EV=+0.990 ret=    68.6 off=1.00
-    upd  300 steps= 1,232,896 EV=+0.812 ret=    96.2 off=0.96
-    upd  325 steps= 1,335,296 EV=+0.850 ret=   250.6 off=0.44
-    upd  350 steps= 1,437,696 EV=+0.963 ret=   156.0 off=0.72
-    upd  375 steps= 1,540,096 EV=+0.693 ret=   119.3 off=0.78
-    upd  400 steps= 1,642,496 EV=+0.966 ret=   137.6 off=0.74
-    upd  425 steps= 1,744,896 EV=+0.972 ret=   135.4 off=0.70
-    upd  450 steps= 1,847,296 EV=+0.959 ret=   145.8 off=0.70
-    upd  475 steps= 1,949,696 EV=+0.933 ret=   167.2 off=0.66
-    upd  500 steps= 2,052,096 EV=+0.992 ret=   129.8 off=0.80
-    upd  525 steps= 2,154,496 EV=+0.985 ret=    72.0 off=0.98
-    upd  550 steps= 2,256,896 EV=+0.985 ret=    89.9 off=0.92
-    upd  575 steps= 2,359,296 EV=+0.980 ret=   157.3 off=0.72
-    upd  600 steps= 2,461,696 EV=+0.980 ret=   252.6 off=0.42
-    upd  625 steps= 2,564,096 EV=+0.885 ret=   341.7 off=0.14
-    upd  650 steps= 2,666,496 EV=+0.952 ret=   304.3 off=0.26
-    upd  675 steps= 2,768,896 EV=+0.733 ret=   208.6 off=0.56
-    upd  700 steps= 2,871,296 EV=+0.948 ret=   219.0 off=0.52
-    upd  725 steps= 2,973,696 EV=+0.878 ret=   297.4 off=0.28
-    upd  750 steps= 3,076,096 EV=+0.979 ret=   344.8 off=0.12
-    upd  775 steps= 3,178,496 EV=+0.994 ret=   366.6 off=0.04
-    upd  800 steps= 3,280,896 EV=+0.996 ret=   371.7 off=0.02
-    upd  825 steps= 3,383,296 EV=+0.973 ret=   375.1 off=0.00
-    upd  850 steps= 3,485,696 EV=+0.991 ret=   373.8 off=0.00
-    upd  875 steps= 3,588,096 EV=+0.949 ret=   370.4 off=0.00
-    upd  900 steps= 3,690,496 EV=+0.910 ret=   197.1 off=0.00
-    upd  925 steps= 3,792,896 EV=+0.602 ret=   315.7 off=0.00
-    upd  950 steps= 3,895,296 EV=+0.784 ret=   340.3 off=0.00
-    upd  975 steps= 3,997,696 EV=+0.501 ret=   380.4 off=0.00
-    upd 1000 steps= 4,100,096 EV=+0.411 ret=   381.6 off=0.00
-    upd 1025 steps= 4,202,496 EV=+0.477 ret=   383.1 off=0.00
-    upd 1050 steps= 4,304,896 EV=+0.508 ret=   383.1 off=0.00
-    upd 1075 steps= 4,407,296 EV=+0.272 ret=   383.3 off=0.00
-    upd 1100 steps= 4,509,696 EV=+0.461 ret=   387.5 off=0.00
-    upd 1125 steps= 4,612,096 EV=+0.527 ret=   386.7 off=0.00
-    upd 1150 steps= 4,714,496 EV=+0.533 ret=   386.9 off=0.00
-    upd 1175 steps= 4,816,896 EV=+0.360 ret=   377.7 off=0.00
-    upd 1200 steps= 4,919,296 EV=+0.460 ret=   383.7 off=0.00
-  trained: 1220 updates, 103.1 min, EV tail +0.443
-
-    design    condition     fail    rate  worst slip  occupancy
-      0.47    attentive    8/60    13.3%       35.5°     0.0407
-      0.47   distracted    8/60    13.3%       35.4°     0.0418
-      0.54    attentive    9/60    15.0%       39.3°     0.0550
-      0.54   distracted    9/60    15.0%       39.1°     0.0547
-      0.61    attentive    8/60    13.3%       41.8°     0.0578
-      0.61   distracted    8/60    13.3%       42.1°     0.0573
-      0.65    attentive    6/60    10.0%       42.9°     0.0525
-      0.65   distracted    6/60    10.0%       42.6°     0.0521
-
-  wrote experiments/power_review/out/phase3_1x_*
-======================================================================
-POWER-REVIEW Phase 3 — Season 3 RL at 2x power
-  drive_max 4500 -> 9000 N
-  5,000,000 steps, design conditioned on front_mass_fraction (0.4, 0.65)
-
-    upd    0 steps=     4,096 EV=-0.001 ret=   -11.8 off=1.00
-    upd   25 steps=   106,496 EV=+0.717 ret=   -12.7 off=1.00
-    upd   50 steps=   208,896 EV=+0.944 ret=    -3.8 off=1.00
-    upd   75 steps=   311,296 EV=+0.991 ret=    46.7 off=0.36
+    upd    0 steps=     4,096 EV=-0.001 ret=   -13.3 off=1.00
+    upd   25 steps=   106,496 EV=+0.679 ret=     5.1 off=0.74
+    upd   50 steps=   208,896 EV=+0.876 ret=    -4.8 off=1.00
+    upd   75 steps=   311,296 EV=+0.866 ret=     0.1 off=1.00
+    upd  100 steps=   413,696 EV=+0.978 ret=    17.9 off=1.00
+    upd  125 steps=   516,096 EV=+0.994 ret=    31.7 off=0.98
+    upd  150 steps=   618,496 EV=+0.929 ret=   117.3 off=0.82

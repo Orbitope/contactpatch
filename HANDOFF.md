@@ -1875,16 +1875,29 @@ held-out group and still fits the compute below.
 
 **Staging, in order. Each stage gates the next.**
 
-1. **Confirm the recipe transfers** — Monza and MexicoCity specialists, one
-   seed, 40M each (~1.5 h). If `cross_track_penalty=2.0` does not also solve
-   a fast and a tight circuit, it is a Spa constant, not a finding, and the
-   sweep has to be redone per band before anything else proceeds.
+1. **Confirm the recipe transfers** — Monza and MexicoCity specialists,
+   one seed, 40M each, **at `cross_track_penalty` 2.0 AND 0.0** — four runs,
+   ~3 h. If 2.0 does not also solve a fast and a tight circuit, it is a Spa
+   constant, not a finding, and the sweep has to be redone per band before
+   anything else proceeds.
+
+   **The control arm is not optional (F118).** The term was measured making
+   cornering worse on a policy that could already hold a line — 9.6-10.5°
+   slip against 5.7-6.0° — so it is remedial, not universal, and Spa needed
+   it only because F110's policy could not hold a line. Run single-armed,
+   this stage records that slowdown as *the circuit being hard* and concludes
+   the opposite of the truth. Doubling stage 1 is the cheapest place in the
+   whole season to buy that distinction.
 2. **Seeds on Spa** — 2 more, rule 5 wants ≥3 before any of this is quotable
    as a trend (~1.5 h). F110 is currently one seed.
-3. **Multi-track infrastructure** — `BatchedDrivingEnv` holds one track, so
-   this needs a wrapper allocating the 256 envs across the 17 training
-   circuits (e.g. 16 envs each) and concatenating. Differential-tested
-   against the single-track path before use.
+3. **Multi-track infrastructure** — **BUILT (2026-08-03).**
+   `physics/track_bank.py` pre-samples every circuit onto an arc-length grid,
+   so the lookup is an array gather rather than N spline evaluations. Each of
+   the 256 instances drives its own circuit, redrawn on reset. Measured at
+   **1.7 us/step against 79.9 us for the single shared spline** — multi-track
+   is cheaper than single-track, not dearer. Interpolation error is 2.0% at
+   16,000 grid points, two orders below `DEFAULT_SMOOTHING`'s own effect on
+   Spa's minimum radius. The wrapper described here was never needed.
 4. **Generalist** — 200-300M steps over the 17, then scored by `policy_eval`
    on all 7 held-out circuits.
 5. **The gap** — generalist vs specialist on Spa / Monza / MexicoCity, plus

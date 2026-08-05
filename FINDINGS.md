@@ -4806,6 +4806,72 @@ changes make the 2× environment differ from Episode 10's 1× one, so the 1×
 baseline must be re-run under the same reward before any 1×-vs-2× comparison
 is drawn — otherwise the comparison confounds power with reward.
 
+> **SUPERSEDED by F118 (2026-08-04).** This prescription was carried out and
+> is wrong on both counts: the environment without the term does not produce
+> the failure, and adding the term made cornering measurably worse. The last
+> sentence — re-run the 1× baseline under the same reward — survives and is
+> the only part that did.
+
+---
+
+### F118 · A cross-track penalty rescues a policy that cannot hold a line, and penalises one that can · 2026-08-04
+
+F117 diagnosed Phase 3's 0.61 failure spike as a steering artefact caused by
+Episode 10's environment having no `cross_track_penalty`, and prescribed
+re-running Phase 3 with the term added. **Both halves are wrong, and the check
+that settles it is the one F117 never ran: score Episode 10's own committed
+policy.**
+
+**1. The environment without the term does not produce the failure.** Ep10's
+committed policy, scored by `policy_eval` in a clean env, 30 rollouts per
+design: **0/30 failures at 0.61, median worst slip 5.7°.** [MEASURED] The
+spike does not exist in the policy that environment actually produced, so
+"no cross-track term ⇒ cannot hold a line" is falsified directly. The spike
+belongs to the Phase 3 retrain, not to the missing term.
+
+**2. Adding the term made cornering worse.** Identical track, identical
+evaluator, no steering noise:
+
+| policy | median worst slip |
+|---|---|
+| Ep10 committed (`cross_track_penalty=0`) | **5.7–6.0°** |
+| Phase 3 retrain (`cross_track_penalty=2.0`) | 9.6–10.5° |
+
+70% more slip, in the direction that spends tyre for nothing. [MEASURED]
+
+**The generalisable form, and why both F110 and this are true.** F110 stands
+— the term took Spa from 40.7% to 100% lap completion. It is remedial, not
+universal: it **rescues a policy that cannot hold a line and penalises one
+that can**, because it pulls toward the centreline in exactly the corners
+where the fast line is not the centre. A policy that already holds a line
+pays the pull as a permanent tax on cornering.
+
+F105 called it "the single most universal term in the racing-RL literature."
+That reading was too strong, and the counter-example was in the same survey:
+**GT Sophy uses no cross-track term at all.** A term the fastest published
+agent omits is not universal.
+
+**Method note — what made this findable.** Nothing in the Phase 3 output
+distinguished a good run from a bad one; both produced tables that read as
+results. The disproof came from scoring an *externally committed* artefact
+(Ep10's policy) in the same harness — rule 11 — rather than from inspecting
+the new run's own numbers. Two Phase 3 attempts were voided before that check
+was run, one of which also omitted design 0.40 from `EVAL_FRACTIONS`
+entirely, so it could not have reproduced the baseline it claimed to extend.
+
+**Consequence for Season 5 staging.** Stage 1 asks whether
+`cross_track_penalty=2.0` "is a Spa constant, not a finding" by training
+Monza and MexicoCity specialists with it. On this evidence the answer is
+likely *Spa constant*, and the stage as written cannot detect that — it has
+no control arm. **Stage 1 must run each circuit at both 2.0 and 0.0.** Spa
+needed the term because F110's policy could not hold a line; a circuit whose
+policy can will be slower with it, and a single-arm test would record that
+slowdown as the circuit being hard.
+
+**Source:** `experiments/power_review/phase3_rl.py`,
+`experiments/tracks_pilot/policy_eval.py`; void artefacts and their README in
+`experiments/power_review/out/void/`.
+
 ---
 
 

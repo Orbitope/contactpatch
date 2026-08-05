@@ -5070,6 +5070,62 @@ convergence rule's ban on quoting times from runs that did not happen).
 
 ---
 
+### F122 · A reproduction gate caught a wrong baseline before its numbers were read · 2026-08-04
+
+POWER-REVIEW Phase 3 has now been attempted five times. Attempts 1-3 were
+voided by hand, after the fact, each for a different reason. Attempt 4 was
+voided **by the run itself**, and the difference is worth recording because
+the gate cost about twenty lines.
+
+**What the gate does.** After the 1x leg it compares the retrained policy's
+failure rate at each design against Episode 10's own committed policy, scored
+under current code: 0.40 ~90%, 0.47 ~13%, 0.54/0.61/0.65 all 0% (F118). If
+the run does not reproduce that, it prints so and declares both legs void,
+because a 1x-vs-2x comparison whose 1x arm is not the baseline says nothing
+whatever the 2x arm shows.
+
+**What it caught.** [MEASURED, `ATTEMPT4_phase3_1x_results.json`]
+
+| design | attempt 4 | Episode 10 |
+|---|---|---|
+| 0.40 | **0/60 failures**, worst slip **169.1°** | ~90% failures, 7.1° |
+| 0.47 | 0/60, 19.3° | ~13%, 5.5° |
+| 0.54 / 0.61 / 0.65 | 0/60, 17-20° | 0%, 5.5-5.7° |
+
+A car at 169° of slip is spinning. Every row sat outside the 12° fit, so the
+table was unquotable under rule 4 regardless of what it appeared to show —
+and what it appeared to show was a clean, monotone, entirely publishable
+"no fragility at any design".
+
+**Cause: `start_jitter_m`.** Episode 10 trains with 10.0 m; Phase 3's `_cfg()`
+never set it, so every episode began at the same point and a degenerate
+spinning solution survived — it only ever had to work from one start.
+
+**How it was found is the transferable part.** Reward, design range, PPO
+budget and seed had all been checked by reading the two files side by side,
+three separate times, and that method missed it three times. A programmatic
+field-by-field diff of the two `EnvConfig` objects found it in one pass and
+also proved the only other difference was inert (`drive_max=None` versus an
+explicit `4500.0`, where both uses are `cfg.drive_max or DRIVE_MAX`).
+**"I matched the reward" is not "I matched the configuration", and only a
+mechanical diff establishes the second.**
+
+**A corollary about what may be compared.** Attempt 5 reproduces Episode 10's
+update-0 statistics to every decimal and then diverges. That is correct and
+expected: PPO here is bit-reproducible at a fixed seed (verified with two
+identical 120k-step runs), so a divergence means the environment changed —
+and it did, under F110, which moved termination from absolute `s` to distance
+travelled, so with 10 m of jitter an episode now runs a full 393 m instead of
+`393 - s0`. **Episode 10's committed training history is therefore not
+reproducible under current code, by design, and the gate deliberately
+compares the final policy's fragility structure instead.**
+
+**Source:** `experiments/power_review/phase3_rl.py` (the gate and
+`START_JITTER_M`); `experiments/power_review/out/void/ATTEMPT4_*` and the
+README there.
+
+---
+
 
 # Decisions
 

@@ -250,10 +250,23 @@ def _run(weight: float, steps: int, seed: int = None,
     # selection criterion must not drift, is handled in `make_eval`.
     r = PE.evaluate(res["model"], trk, n_sections=N_SECTIONS,
                     env_kwargs=_env_kwargs(weight, A_LAT_MAX, cross_track))
+    # A LAP TIME REQUIRES A LAP. `length / speed_mean` on a policy that
+    # covered two-thirds of the circuit is a projection, and it reads as a
+    # result: cell 1 printed "268.2 s vs target 347.6 s (-23%)" for a policy
+    # whose finish rate was ZERO. Same family as F109 and F120 -- a number
+    # that looks like an achievement because the qualifier sits in a different
+    # column. Quoted only when the policy actually finishes.
+    finished_lap = r.finish_rate >= 0.95 and r.fraction_of_lap >= 0.99
     lap_s = (trk.length / r.speed_mean) if r.speed_mean > 0 else float("nan")
     print(f"\n  [D16] {r.headline()}")
-    print(f"    lap {lap_s:.1f} s vs target {TARGET_S:.1f} s "
-          f"({100*(lap_s/TARGET_S - 1):+.0f}%), capped baseline 537.8 s")
+    if finished_lap:
+        print(f"    lap {lap_s:.1f} s vs target {TARGET_S:.1f} s "
+              f"({100*(lap_s/TARGET_S - 1):+.0f}%), capped baseline 537.8 s")
+    else:
+        print(f"    NO LAP TIME — finished {100*r.finish_rate:.0f}% of runs, "
+              f"covered {100*r.fraction_of_lap:.1f}% of the lap. "
+              f"(mean speed {r.speed_mean:.1f} m/s would project "
+              f"{lap_s:.0f} s IF it completed one, which it does not.)")
     print(f"    utilisation mean {r.utilisation_mean:.3f} "
           f"(baseline 0.090), at-limit {100*r.frac_at_limit:.1f}% "
           f"(baseline 0.7%)")
@@ -274,7 +287,9 @@ def _run(weight: float, steps: int, seed: int = None,
         "utilisation_mean": r.utilisation_mean,
         "frac_at_limit": r.frac_at_limit,
         "speed_mean": r.speed_mean, "speed_max": r.speed_max,
-        "lap_time_s": lap_s, "target_s": TARGET_S,
+        "lap_time_s": lap_s if finished_lap else None,
+        "lap_time_projected_s": lap_s, "completed_a_lap": finished_lap,
+        "target_s": TARGET_S,
     }
 
 

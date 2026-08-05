@@ -299,6 +299,16 @@ class BatchedDrivingEnv:
                            np.maximum(v_corner, self.cfg.min_speed + 1.0))
         else:
             v0 = np.full(self.n, self.cfg.entry_speed, dtype=float)
+        if self.cfg.spawn_speed_frac is not None:
+            # Drawn for the WHOLE batch then masked, like every other draw
+            # here, so the result cannot depend on how many instances happened
+            # to reset together. See EnvConfig.spawn_speed_frac (RL_PLAN
+            # Phase 2): with a scalar cap, speed had the smallest SD of any
+            # observation channel, so the policy never saw the axis it needs
+            # to learn a (speed, curvature) -> deceleration map.
+            lo, hi = self.cfg.spawn_speed_frac
+            v0 = np.maximum(v0 * self.rng.uniform(lo, hi, size=self.n),
+                            self.cfg.min_speed + 1.0)
         self.v_x = np.where(m, v0, self.v_x)
         self.v_y = np.where(m, 0.0, self.v_y)
         self.yaw_rate = np.where(m, 0.0, self.yaw_rate)

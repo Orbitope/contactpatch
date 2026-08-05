@@ -137,6 +137,10 @@ def _env_kwargs(weight: float, a_lat: float, cross_track: float = 0.0) -> dict:
         speed_cap=None,              # THE point: no scalar limiter
         speed_ref_penalty=weight,
         speed_ref_a_lat=a_lat,
+        # RL_PLAN Phase 2: the policy must SEE varied speed to learn a
+        # (speed, curvature) -> deceleration map. Measured 12.9x the spawn
+        # speed SD, against the plan's >=5x gate.
+        spawn_speed_frac=(0.3, 1.0),
     )
     return kw
 
@@ -219,8 +223,13 @@ def _run(weight: float, steps: int, seed: int = None,
     # The survey's PPO settings too: 32 minibatches (Sophy 1,024, Fuchs
     # 4,096, TRI 256 -- ours was 4) and gae_lambda 0.98, whose n-step
     # equivalent Sophy's ablation shows flat over 5-9 and cliffing at 1.
+    # gamma 0.99 at 10 Hz = a 10 s horizon, matching the published range
+    # (Sophy 9.6 s, TRI 10 s). RL_PLAN Phase 3 is explicit that the rate
+    # change and the gamma change are ONE edit, because the horizon is what is
+    # being held fixed -- 0.975 at 10 Hz is 4 s, shorter than anything
+    # published and too short to pay for braking before a corner.
     cfg = PPOConfig(total_steps=steps, n_envs=V2.N_ENVS,
-                    rollout_steps=V2.ROLLOUT_STEPS, gamma=0.975,
+                    rollout_steps=V2.ROLLOUT_STEPS, gamma=0.99,
                     gae_lambda=0.98, minibatches=32,
                     seed=seed, eval_every=8, eval_episodes=V2.EVAL_EPISODES,
                     entropy_anneal=True)
@@ -241,9 +250,12 @@ def _run(weight: float, steps: int, seed: int = None,
     # selection criterion must not drift, is handled in `make_eval`.
     r = PE.evaluate(res["model"], trk, n_sections=N_SECTIONS,
                     env_kwargs=_env_kwargs(weight, A_LAT_MAX, cross_track))
+    lap_s = (trk.length / r.speed_mean) if r.speed_mean > 0 else float("nan")
     print(f"\n  [D16] {r.headline()}")
+    print(f"    lap {lap_s:.1f} s vs target {TARGET_S:.1f} s "
+          f"({100*(lap_s/TARGET_S - 1):+.0f}%), capped baseline 537.8 s")
     print(f"    utilisation mean {r.utilisation_mean:.3f} "
-          f"(capped baseline 0.090), at-limit {100*r.frac_at_limit:.1f}% "
+          f"(baseline 0.090), at-limit {100*r.frac_at_limit:.1f}% "
           f"(baseline 0.7%)")
 
     torch.save(res["model"].state_dict(), OUT / f"{tag}_policy.pt")
@@ -262,6 +274,7 @@ def _run(weight: float, steps: int, seed: int = None,
         "utilisation_mean": r.utilisation_mean,
         "frac_at_limit": r.frac_at_limit,
         "speed_mean": r.speed_mean, "speed_max": r.speed_max,
+        "lap_time_s": lap_s, "target_s": TARGET_S,
     }
 
 
@@ -314,7 +327,19 @@ def limit_ceiling(track, a_lat=A_LAT_MAX) -> float:
 #: lap. [MEASURED] F120, `curr_ct2_policy.pt` re-scored through `policy_eval`.
 BASELINE = {"fraction_of_lap": 1.000, "worst_slip_deg": 10.4,
             "utilisation_mean": 0.090, "frac_at_limit": 0.007,
-            "speed_mean": 13.03, "valid": True}
+            "speed_mean": 13.03, "valid": True, "lap_time_s": 537.8}
+
+#: [MEASURED] F125, `phase0_target.py`. The classical driver's fastest lap
+#: that is BOTH complete and inside the tyre fit, with margin: v_max 21,
+#: grip_use 0.60, worst slip 8.0 deg. The fastest valid lap is 330.8 s but
+#: sits 0.4 deg from the rule-4 bound, so this is the quotable one (rule 12).
+#:
+#: Our own code, driving with a global speed plan the policy never receives --
+#: an upper reference and an honest denominator, NOT an external validation
+#: (rule 2). It replaces the `frac_at_limit` ceiling as the headline gate:
+#: that ceiling was derived from the plan's own geometry, so scoring the plan
+#: against it was circular.
+TARGET_S = 347.6
 
 
 def main(steps: int = STEPS, seeds: tuple[int, ...] = None, weights=None,

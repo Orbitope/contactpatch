@@ -259,6 +259,20 @@ class EnvConfig:
     #: car's own ~9.5 m/s² limit, so the spawn is inside the envelope rather
     #: than exactly on it.
     spawn_lat_budget: float = 7.6
+    #: Sample the spawn speed uniformly in this fraction-of-corner-limit range
+    #: instead of always spawning at the limit. ``None`` reproduces every
+    #: existing episode exactly.
+    #:
+    #: RL_PLAN Phase 2, and the defect it fixes is ours rather than borrowed:
+    #: with a scalar cap, speed has the SMALLEST standard deviation of any
+    #: observation channel (0.0057), because the cap pins it. **The policy
+    #: never experiences varied speed, so it cannot learn a
+    #: (speed, curvature) -> deceleration map** -- the mapping has no training
+    #: signal along its most important axis. Fuchs states the same reason for
+    #: doing it: initialising "equally distributed over the racing track with
+    #: an initial speed" lets agents "faster approach the maximal feasible
+    #: segment speeds". GT Sophy randomises start speed too.
+    spawn_speed_frac: tuple[float, float] | None = None
     #: Distances ahead, in metres, at which curvature is sampled into the
     #: observation. ``None`` uses the module default ``PREVIEW_DISTANCES``,
     #: reproducing every existing episode exactly.
@@ -675,8 +689,12 @@ class DrivingEnv:
             return self.cfg.entry_speed
         kappa = abs(float(self.cfg.track.curvature(self.s)))
         v_corner = math.sqrt(self.cfg.spawn_lat_budget / max(kappa, 1e-9))
-        return float(min(self.cfg.entry_speed,
-                        max(v_corner, self.cfg.min_speed + 1.0)))
+        v = min(self.cfg.entry_speed, max(v_corner, self.cfg.min_speed + 1.0))
+        if self.cfg.spawn_speed_frac is not None:
+            lo, hi = self.cfg.spawn_speed_frac
+            v = v * float(self.rng.uniform(lo, hi))
+            v = max(v, self.cfg.min_speed + 1.0)
+        return float(v)
 
     # -- the loop ---------------------------------------------------------
     def _tire_for(self, grip: float):

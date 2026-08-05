@@ -111,15 +111,27 @@ def _run(weight: float, steps: int) -> dict:
           f"and slip<{RAISE_SLIP_BELOW_DEG}°")
 
     state = {"a_lat": A_LAT_START, "clean": 0, "raises": 0, "log": []}
+    #: Live handles. Both envs build the speed plan ONCE and cache it, so the
+    #: curriculum has to reach the objects, not the dict that made them --
+    #: `make_batched` is called once at startup and never again. Assigning
+    #: `state["a_lat"]` alone would leave the whole run training at 0.45 g
+    #: while faithfully logging a rising number. `spa_curriculum` hit the
+    #: matching version of this with the scalar cap; pinned by
+    #: tests/test_speed_ref_curriculum.py.
+    envs = {}
 
     def make_batched(n):
-        return V2.make_batched_env(
+        e = V2.make_batched_env(
             n, env_over={"track": trk, **_env_kwargs(weight, state["a_lat"])})
+        envs["batched"] = e
+        return e
 
     def make_eval():
-        return DrivingEnv(EnvConfig(
+        e = DrivingEnv(EnvConfig(
             track=trk, start_jitter_m=0.0,
             **_env_kwargs(weight, state["a_lat"])))
+        envs["eval"] = e
+        return e
 
     def on_update(rec):
         off = rec.get("off_track_rate", 1.0)
@@ -131,6 +143,13 @@ def _run(weight: float, steps: int) -> dict:
         if (state["clean"] >= RAISE_PATIENCE
                 and state["a_lat"] < A_LAT_MAX - 1e-9):
             state["a_lat"] = min(state["a_lat"] + A_LAT_STEP, A_LAT_MAX)
+            # Mutate BOTH live envs. The eval env is a separate object and
+            # would otherwise keep scoring against the old plan -- which is
+            # how a checkpoint gets selected under one plan and reported
+            # under another (F109, in its speed-cap form).
+            for e in (envs.get("batched"), envs.get("eval")):
+                if e is not None:
+                    e.set_speed_ref_a_lat(state["a_lat"])
             state["clean"] = 0
             state["raises"] += 1
             state["log"].append({"update": rec["update"],

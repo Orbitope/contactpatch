@@ -149,6 +149,35 @@ class BatchedDrivingEnv:
 
     # -- geometry, routed through the bank when there is one ---------------
 
+
+    def set_speed_ref_a_lat(self, a_lat: float) -> None:
+        """Rebuild the speed plan at a new lateral budget, mid-training.
+
+        A curriculum on the PLAN is the natural analogue of the curriculum on
+        the scalar cap, and it has the same trap: the plan is built once and
+        cached, so assigning `cfg.speed_ref_a_lat` alone changes nothing and
+        the curriculum silently does not happen. `spa_curriculum` hit the
+        matching version of this and had to mutate both live envs to raise the
+        cap -- including the eval env, which is a separate object and would
+        otherwise keep scoring at the old value.
+
+        Named method rather than two lines at each call site, so the plan is
+        constructed in exactly one place and cannot drift from the one built
+        at startup.
+        """
+        if self._speed_ref is None:
+            raise RuntimeError(
+                "this env was built with speed_ref_penalty=0, so it has no "
+                "plan to rebuild -- raising rather than silently creating one "
+                "the reward does not read.")
+        from physics.driver import SpeedProfile
+        self.cfg.speed_ref_a_lat = float(a_lat)
+        self._speed_ref = SpeedProfile(
+            self.cfg.track, a_lat=self.cfg.speed_ref_a_lat,
+            a_brake=BRAKE_MAX / self._ref.params.mass,
+            a_drive=(self.cfg.drive_max or DRIVE_MAX) / self._ref.params.mass,
+            v_max=60.0, wrap=bool(getattr(self.cfg.track, "closed", False)))
+
     def _kappa_at(self, s_arr: np.ndarray) -> np.ndarray:
         if self.bank is None:
             return np.asarray(self.cfg.track.curvature(s_arr))

@@ -628,6 +628,24 @@ class DrivingEnv:
                 wrap=bool(getattr(self.cfg.track, "closed", False)))
         return self._speed_ref_cache
 
+    def set_speed_ref_a_lat(self, a_lat: float) -> None:
+        """Rebuild the speed plan at a new lateral budget, mid-training.
+
+        A curriculum on the PLAN is the natural analogue of the curriculum on
+        the scalar cap, and it has the same trap: the plan is built once and
+        cached, so assigning `cfg.speed_ref_a_lat` alone changes nothing and
+        the curriculum silently does not happen. `spa_curriculum` hit the
+        matching version of this and had to mutate both live envs to raise the
+        cap -- including the eval env, which is a separate object and would
+        otherwise keep scoring at the old value.
+
+        Named method rather than two lines at each call site, so the plan is
+        constructed in exactly one place and cannot drift from the one built
+        at startup.
+        """
+        self.cfg.speed_ref_a_lat = float(a_lat)
+        self._speed_ref_cache = None      # rebuilt on next `_speed_reference()`
+
     def _curvature_ahead(self) -> np.ndarray:
         # A closed track's curvature already wraps s % length internally
         # (SampledTrack._u_of_s) -- clamping to `length` here would flatten

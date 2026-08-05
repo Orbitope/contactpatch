@@ -5178,8 +5178,75 @@ F98's published 1x numbers.
 disagree with each other, the answer is seed variance and F98's single-seed
 structure needs revisiting too.
 
+> **RESOLVED by F124 (2026-08-05): seed variance.** The seeds disagree about
+> the *direction* of the effect, and seed 2 reproduces Episode 10's shape
+> under the same corrected environment, so the F110 hypothesis is not needed.
+> The 2x leg never produced a usable comparison -- it stopped driving.
+
 **Source:** `experiments/power_review/phase3_rl.py`,
 `out/phase3_1x_results.json`; Episode 10 reference measured in F118.
+
+---
+
+### F124 · The design-fragility structure is a property of the SEED, not the car — and Phase 3 cannot detect a power effect · 2026-08-05
+
+Three seeds at 1x power, identical configuration, 5,000,000 steps each,
+60 rollouts per cell. [MEASURED, `phase3_1x_results.json`,
+`phase3_1x_s1_results.json`, `phase3_1x_s2_results.json`]
+
+| design | seed 0 | seed 1 | seed 2 | mean | SD |
+|---|---|---|---|---|---|
+| 0.40 | 0.0% | 15.0% | **58.3%** | 24.4% | **30.3 pp** |
+| 0.47 | 0.0% | 15.0% | 38.3% | 17.8% | 19.3 pp |
+| 0.54 | 0.0% | 18.3% | 18.3% | 12.2% | 10.6 pp |
+| 0.61 | 0.0% | 18.3% | 10.0% | 9.4% | 9.2 pp |
+| 0.65 | **20.0%** | 18.3% | 6.7% | 15.0% | 7.3 pp |
+| worst slip | **10.0°** | 28.0° | 38.1° | | |
+| rule 4 | **VALID** | void | void | | |
+
+**Three seeds, three different shapes.** Seed 0 rises with front bias, seed 1
+is flat, seed 2 falls steeply. They are not noisy versions of one curve --
+they disagree about the direction. Seed 2's shape is Episode 10's, so F98's
+published structure is reproducible by *some* seeds; it is one draw from a
+wide distribution rather than a wrong number.
+
+**Phase 3 cannot answer its question at this seed count.** Rule 5 requires a
+trend to exceed 2x the seed standard deviation. At design 0.40 that SD is
+**30.3 pp**, so nothing below **61 pp** is detectable, and the experiment
+exists to measure whether doubling power shifts these rates at all. Cost to
+fix it, [DERIVED] from the measured SD by `n = (2*SD/effect)^2`:
+
+| effect to resolve | seeds per power level | wall clock, both levels |
+|---|---|---|
+| 20 pp | 9 | 31 h |
+| 10 pp | 37 | 124 h |
+| 5 pp | 147 | 495 h |
+
+and **only 1 of 3 runs was rule-4 valid**, so usable yield is about a third of
+that. This is not "run it once more"; it is underpowered by an order of
+magnitude.
+
+**Two of three policies are unquotable, which is its own result.** Seed 0
+drives the lap at 10.0° with envelope occupancy exactly 0.0000. Seeds 1 and 2
+slide at 28.0° and 38.1° with occupancy ~0.04. The training procedure
+produces a rule-4-valid driver roughly a third of the time, and nothing in
+the training signal distinguishes the cases -- all three passed D6's EV gate
+(+0.720, +0.614, +0.400).
+
+**Resolves F123.** That entry offered two explanations for the seed-0
+inversion -- the F110 environment change, or seed variance -- and declined to
+choose on one seed. It is **seed variance**. The environment hypothesis is
+not needed and is not supported: seed 2 reproduces Episode 10's direction
+under exactly the same corrected environment.
+
+**What this costs F98.** F98's fragility structure is one seed of this
+procedure. It is not retracted -- seed 2 shows the shape is reachable -- but
+any statement of the form "the car is fragile at design X" inherits a 30 pp
+seed standard deviation and cannot presently be made. This needs recording
+wherever F98 is relied on.
+
+**Source:** `experiments/power_review/phase3_rl.py`; the three results files
+above; seed spread computed in this session.
 
 ---
 

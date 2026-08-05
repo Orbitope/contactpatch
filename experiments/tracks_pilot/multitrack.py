@@ -68,7 +68,23 @@ N_ENVS, ROLLOUT = 256, 1024
 #: Reward, at the magnitudes the survey supports rather than the ones this
 #: project tuned its way to. See the table in the module docstring.
 ENV = dict(
-    max_steps=9_000,    # DECISIONS, not physics steps: ~10 km laps at 10 Hz
+    # PHYSICS steps, not decisions -- `rl_env.DrivingEnv.steps` increments once
+    # per `_step_once` call, and `action_repeat` calls it `action_repeat`
+    # times per policy decision (confirmed: `lap_time_s = env.steps * dt`, and
+    # the history-length invariants in test_rl_env.py both require this). A
+    # comment here previously read "DECISIONS, not physics steps: ~10 km laps
+    # at 10 Hz" -- the opposite of what the code does, and wrong by exactly
+    # `action_repeat`.
+    #
+    # 45,000 physics steps x dt(0.02s) = 900 s of budget, covering a full lap
+    # up to ~40 m/s mean speed on Spa's 6,999 m (target lap 347.6 s, F125) and
+    # every circuit generate_mixed_set produces (median 6,448 m, max 9,283 m
+    # measured over 20 draws) with margin for an exploring policy that is
+    # slower than optimal. The PREVIOUS value, 9,000, was 1/5 of this and
+    # budgeted only 180 s -- 3,600-4,700 m depending on speed. Measured
+    # directly: every `speed_ref` probe timed out at ~4,700-4,950 m regardless
+    # of start point or policy, which is this bug, not a training failure.
+    max_steps=45_000,
     #: 10 Hz decisions on the 50 Hz integrator. GT Sophy swept 5-60 Hz and
     #: found no gain above 10; Fuchs, TRI and the GT7 agent all run 10 Hz,
     #: Czechmanowski 20. At 50 Hz our exploration noise is resampled 5x more

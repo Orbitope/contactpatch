@@ -5300,6 +5300,68 @@ geometry and is a weaker gate than this.
 
 ---
 
+### F126 · `max_steps=9000` was five times too short — episodes could not finish a lap, ever · 2026-08-05
+
+`DrivingEnv.steps` increments once per `_step_once` call, and `action_repeat`
+calls `_step_once` `action_repeat` times per policy decision. `max_steps` is
+compared against `self.steps` directly, so it is in PHYSICS-step units. A
+comment on `multitrack.ENV` read *"DECISIONS, not physics steps: ~10 km laps
+at 10 Hz"* -- the opposite of the actual semantics.
+
+**Effect, measured.** At `action_repeat=5`, `max_steps=9000` gave **180 s of
+episode budget** (`9000 * dt=0.02`). Six probes of a `speed_ref` checkpoint,
+started at six different points on Spa, ALL timed out at 4,700-4,950 m
+regardless of start point or which of two policies was driving:
+
+| start | stopped at | travelled |
+|---|---|---|
+| 0 m | 4,886 m | 4,886 m |
+| 1,167 m | 6,090 m | 4,923 m |
+| 2,333 m | 7,019 m | 4,686 m |
+| 3,500 m | 8,423 m | 4,923 m |
+| 4,666 m | 9,660 m | 4,993 m |
+| 5,833 m | 10,683 m | 4,850 m |
+
+Constant travelled distance regardless of start point is the signature of a
+budget limit, not a driving failure -- a bad corner would show up at a
+consistent absolute position, not a consistent distance from wherever the
+episode began. Every stop was `timeout`, never `off_track`.
+
+**Cost.** Two `speed_ref` cells (40M steps each, ~80 min) trained and
+evaluated against a target the episode literally could not reach: 180 s of
+budget against a 347.6 s target lap (F125). Re-scoring the SAME saved
+checkpoint at the corrected budget: **finish rate 0% -> 100%**, same weights,
+same seed, same everything else. [MEASURED,
+`out/void/MAXSTEPS_speedref_w3_ct0_policy.pt`]
+
+**Scope beyond this run.** The median of 20 circuits from
+`generate_mixed_set` is 6,448 m; the old budget covered at most ~4,700 m even
+at high sustained speed. The 120M-step multi-track training run this project
+has already completed used this same `max_steps=9_000` on generated circuits
+whose median length it could not cover. This is a plausible contributing
+factor to F113 (zero-shot generated-to-real transfer unsolved) and is flagged
+here rather than re-investigated now -- a training run believed complete may
+have been budget-truncated on most of its own training circuits.
+
+**Fix.** `max_steps: 9_000 -> 45_000` in `multitrack.ENV`, which every
+`speed_ref` cell inherits via `_env_kwargs`. 900 s of budget, 2.6x the target
+lap time, and covers `generate_mixed_set`'s longest measured circuit (9,283 m)
+at any speed above 10 m/s.
+
+**Why this was not caught by review.** Both killed cells passed every other
+check -- rule 4 valid, EV climbing, speed rising -- and printed output that
+read as a training result (F121's 99.6%-cap-bound diagnosis was itself once
+mistaken for the finding; this looked like a repeat of it). The number that
+gave it away was structural, not statistical: constant TRAVELLED distance
+across different START points. Rule 11 -- a check the code was not written
+around.
+
+**Source:** `physics/rl_env.py:874,891` (`self.steps`, `timeout`);
+`experiments/tracks_pilot/multitrack.py` (`ENV["max_steps"]`);
+`out/void/MAXSTEPS_*`.
+
+---
+
 
 # Decisions
 

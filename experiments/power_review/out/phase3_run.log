@@ -80,3 +80,4 @@ POWER-REVIEW Phase 3 — Season 3 RL at 2x power
 
     upd    0 steps=     4,096 EV=-0.003 ret=    -7.9 off=1.00
     upd   25 steps=   106,496 EV=+0.602 ret=   -14.5 off=1.00
+    upd   50 steps=   208,896 EV=+0.930 ret=    13.7 off=1.00

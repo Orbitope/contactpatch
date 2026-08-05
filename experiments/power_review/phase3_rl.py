@@ -174,9 +174,16 @@ def _rollout(env, pol, seed):
     }
 
 
-def main(power_mult: float = POWER_MULT) -> int:
-    global POWER_MULT
+def main(power_mult: float = POWER_MULT, seed: int | None = None) -> int:
+    global POWER_MULT, SEED
     POWER_MULT = power_mult
+    # Rule 5 wants >=3 seeds and F123 makes that the blocking question:
+    # one seed cannot distinguish 'the corrected environment trains a
+    # robust policy' from 'this seed happened to'. Settable here so the
+    # seeds do not need a file edit between runs, which is when
+    # transcription errors get made.
+    if seed is not None:
+        SEED = int(seed)
     quick = "--quick" in sys.argv
     steps = 200_000 if quick else TOTAL_STEPS
     n_roll = 6 if quick else N_ROLLOUTS
@@ -241,7 +248,9 @@ def main(power_mult: float = POWER_MULT) -> int:
     # the real thing at a glance. A cleanup `rm` that should have removed it
     # silently did nothing (zsh aborts the whole command when any glob in it
     # matches nothing), so it survived to be read as Phase 3's 1x answer.
-    tag = f"phase3_{POWER_MULT:g}x" + ("_quick" if quick else "")
+    tag = (f"phase3_{POWER_MULT:g}x"
+           + (f"_s{SEED}" if SEED != 0 else "")     # seed 0 keeps the original name
+           + ("_quick" if quick else ""))
     # --- baseline reproduction gate ------------------------------------
     # NOTE ON WHAT THIS DOES AND DOES NOT CHECK. It compares the retrained
     # policy's FRAGILITY STRUCTURE against Episode 10's, measured by scoring
@@ -312,7 +321,7 @@ def main(power_mult: float = POWER_MULT) -> int:
     (OUT / f"{tag}_history.json").write_text(json.dumps(h, indent=2) + "\n")
     (OUT / f"{tag}_results.json").write_text(json.dumps({
         "power_mult": POWER_MULT, "drive_max_n": DRIVE_MAX * POWER_MULT,
-        "total_steps": steps, "n_envs": N_ENVS, "wall_s": wall,
+        "total_steps": steps, "n_envs": N_ENVS, "seed": SEED, "wall_s": wall,
         "explained_variance_tail": ev, "passes_d6_ev_gate": bool(ev > 0.3),
         "n_rollouts_per_cell": n_roll, "cells": rows,
         "note": "POWER-REVIEW Phase 3. 1x comparison is experiments/ep11/"
@@ -326,7 +335,12 @@ def main(power_mult: float = POWER_MULT) -> int:
 if __name__ == "__main__":
     # Both power levels under the SAME reward, so the comparison is power.
     mults = [float(a) for a in sys.argv[1:] if not a.startswith("--")] or [1.0, 2.0]
-    for mult in mults:
-        print("=" * 70)
-        main(mult)
+    seeds = None
+    for a in sys.argv[1:]:
+        if a.startswith("--seeds="):
+            seeds = [int(x) for x in a.split("=", 1)[1].split(",")]
+    for sd in (seeds or [None]):
+        for mult in mults:
+            print("=" * 70)
+            main(mult, seed=sd)
     raise SystemExit(0)

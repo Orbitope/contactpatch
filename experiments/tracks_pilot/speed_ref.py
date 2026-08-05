@@ -101,8 +101,9 @@ def _env_kwargs(weight: float, a_lat: float) -> dict:
     return kw
 
 
-def _run(weight: float, steps: int) -> dict:
-    tag = f"speedref_w{weight:g}"
+def _run(weight: float, steps: int, seed: int = None) -> dict:
+    seed = V2.SEED if seed is None else seed
+    tag = f"speedref_w{weight:g}" + (f"_s{seed}" if seed != V2.SEED else "")
     trk = load_real_track(TRACK)
     print(f"\n{'='*72}\n  {TRACK}, speed_ref_penalty={weight:g}, {steps:,} steps"
           f"\n{'='*72}")
@@ -175,7 +176,7 @@ def _run(weight: float, steps: int) -> dict:
 
     cfg = PPOConfig(total_steps=steps, n_envs=V2.N_ENVS,
                     rollout_steps=V2.ROLLOUT_STEPS, gamma=V2.GAMMA,
-                    seed=V2.SEED, eval_every=8, eval_episodes=V2.EVAL_EPISODES,
+                    seed=seed, eval_every=8, eval_episodes=V2.EVAL_EPISODES,
                     entropy_anneal=True)
     t0 = time.time()
     res = train(make_batched_env=make_batched, cfg=cfg, on_update=on_update,
@@ -203,7 +204,7 @@ def _run(weight: float, steps: int) -> dict:
     (OUT / f"{tag}_history.json").write_text(
         json.dumps(res["history"], indent=2) + "\n")
     return {
-        "weight": weight, "steps": steps, "wall_s": wall,
+        "weight": weight, "seed": seed, "steps": steps, "wall_s": wall,
         "a_lat_final_g": state["a_lat"] / schema.G,
         "a_lat_raises": state["raises"], "a_lat_log": state["log"],
         "headline": r.headline(), "valid": r.valid,
@@ -269,9 +270,15 @@ BASELINE = {"fraction_of_lap": 1.000, "worst_slip_deg": 10.4,
             "speed_mean": 13.03, "valid": True}
 
 
-def main(steps: int = STEPS):
+def main(steps: int = STEPS, seeds: tuple[int, ...] = None, weights=None):
+    """``seeds`` runs every weight at each seed. One seed answers "does this
+    work at all", which is what the sweep is for; rule 5 wants >=3 before any
+    of it is a trend, and those belong on the weight that survives -- e.g.
+    `main(seeds=(0, 1, 2), weights=(3.0,))`."""
     OUT.mkdir(parents=True, exist_ok=True)
-    rows = [_run(w, steps) for w in WEIGHTS]
+    weights = WEIGHTS if weights is None else weights
+    rows = ([_run(w, steps) for w in weights] if not seeds
+            else [_run(w, steps, sd) for w in weights for sd in seeds])
 
     print(f"\n\n{'='*88}\n  SPEED REFERENCE vs THE SCALAR CAP — Spa\n{'='*88}")
     print(f"  {'run':<16}{'lap':>8}{'slip':>7}{'over12':>8}{'v_mean':>8}"
@@ -281,7 +288,8 @@ def main(steps: int = STEPS):
           f"{BASELINE['speed_mean']:>8.1f}{BASELINE['utilisation_mean']:>8.3f}"
           f"{100*BASELINE['frac_at_limit']:>8.1f}%  True")
     for c in rows:
-        print(f"  {'w=' + format(c['weight'], 'g'):<16}"
+        lbl = "w=" + format(c["weight"], "g") + (f" s{c['seed']}" if seeds else "")
+        print(f"  {lbl:<16}"
               f"{100*c['fraction_of_lap']:>7.1f}%{c['worst_slip_deg']:>7.1f}"
               f"{c['sections_over_bound']:>8}{c['speed_mean']:>8.1f}"
               f"{c['utilisation_mean']:>8.3f}{100*c['frac_at_limit']:>8.1f}%"
@@ -314,10 +322,20 @@ def main(steps: int = STEPS):
     (OUT / "speedref_results.json").write_text(json.dumps(
         {"track": TRACK, "steps": steps, "baseline": BASELINE,
          "limit_ceiling": ceiling,
-         "weights": list(WEIGHTS), "runs": rows}, indent=2) + "\n")
+         "weights": list(weights), "seeds": list(seeds or [V2.SEED]),
+         "runs": rows}, indent=2) + "\n")
     print(f"\n  wrote speedref_results.json")
 
 
 if __name__ == "__main__":
     import sys
-    main(int(sys.argv[1]) if len(sys.argv) > 1 else STEPS)
+    argv = [a for a in sys.argv[1:] if not a.startswith("--")]
+    sd = None
+    for a in sys.argv[1:]:
+        if a.startswith("--seeds="):
+            sd = tuple(int(x) for x in a.split("=", 1)[1].split(","))
+    w = None
+    for a in sys.argv[1:]:
+        if a.startswith("--weights="):
+            w = tuple(float(x) for x in a.split("=", 1)[1].split(","))
+    main(int(argv[0]) if argv else STEPS, seeds=sd, weights=w)

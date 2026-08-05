@@ -5250,6 +5250,56 @@ above; seed spread computed in this session.
 
 ---
 
+### F125 · Spa has a target lap time at last: ~347 s. The "solved" RL policy is 48-63% slower · 2026-08-05
+
+RL_PLAN Phase 0, run for the first time. The plan puts it first and states
+why: every phase below it tunes an RL policy toward a number nobody had
+measured, and *"if no `v_max` yields a valid clean lap... every phase below is
+chasing a target that does not exist."*
+
+**A valid clean lap exists.** [MEASURED, `phase0_target.py`, classical driver,
+`SpeedProfile` + `Driver` + `DoubleTrackBackend`, Spa 6,999 m]
+
+| grip_use | v_max | lap time | worst slip | rule 4 |
+|---|---|---|---|---|
+| 0.60 | 20 | 362.1 s | 6.1° | valid |
+| 0.60 | 21 | **347.6 s** | **8.0°** | valid, with margin |
+| 0.60 | 22 | 334.7 s | 10.8° | valid |
+| 0.70 | 22 | **330.8 s** | 11.6° | valid, 0.4° from the bound |
+| 0.70 | 23 | — | 54.7° | spins |
+
+**Quote 347.6 s, not 330.8 s.** The fastest valid lap sits 0.4° from the
+rule-4 boundary, where a small parameter change flips it to unquotable;
+347.6 s at 8.0° has real margin. Rule 12 — report to the precision the inputs
+support.
+
+**The RL policy is 48-63% slower.** `curr_ct2`, the Spa specialist F110 and
+F120 describe as solved, laps in **537.8 s**. Against 347.6 s that is 55%
+slower; against the marginal 330.8 s, 63%. **"Spa is solved" has always meant
+"completes the lap", and this is the first time the project has had a number
+to say how far that is from driving it well.** It is not close.
+
+**Why the existing baseline said no clean lap exists.**
+`classical_baseline_spa.py` sweeps `grip_use` at a **fixed `v_max=45`** and
+spins at every level, covering 12-15% of a lap. That is one point on the wrong
+axis, not evidence of impossibility. The plan named `v_max` as the axis to
+bisect and it had never been bisected. A negative result from a sweep that
+holds the decisive variable fixed is not a negative result.
+
+**What this number is not.** Our own code, driving with a global speed plan
+the RL policy never receives. An upper reference and the honest denominator
+for "how good is this policy" — **not** an external validation (rule 2).
+
+**Consequence.** Season 5's success criterion becomes lap time against 347.6 s
+with rule 4 intact, which is a target from outside the RL loop. The
+`frac_at_limit` ceiling used in `speed_ref` was derived from the plan's own
+geometry and is a weaker gate than this.
+
+**Source:** `experiments/tracks_pilot/phase0_target.py`,
+`out/phase0_target.json`; RL_PLAN Phase 0.
+
+---
+
 
 # Decisions
 

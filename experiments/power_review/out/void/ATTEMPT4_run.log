@@ -51,3 +51,30 @@ POWER-REVIEW Phase 3 — Season 3 RL at 1x power
     upd 1125 steps= 4,612,096 EV=+0.738 ret=   391.9 off=0.00
     upd 1150 steps= 4,714,496 EV=+0.513 ret=   391.8 off=0.00
     upd 1175 steps= 4,816,896 EV=+0.661 ret=   392.5 off=0.00
+    upd 1200 steps= 4,919,296 EV=+0.492 ret=   391.6 off=0.00
+  trained: 1220 updates, 100.7 min, EV tail +0.493
+
+    design    condition     fail    rate  worst slip  occupancy
+      0.40    attentive    0/60     0.0%      169.1°     0.0662
+      0.40   distracted    0/60     0.0%       76.8°     0.0651
+      0.47    attentive    0/60     0.0%       19.3°     0.0287
+      0.47   distracted    0/60     0.0%       19.5°     0.0290
+      0.54    attentive    0/60     0.0%       17.4°     0.0063
+      0.54   distracted    0/60     0.0%       16.4°     0.0064
+      0.61    attentive    0/60     0.0%       19.0°     0.0083
+      0.61   distracted    0/60     0.0%       17.9°     0.0086
+      0.65    attentive    0/60     0.0%       19.6°     0.0098
+      0.65   distracted    0/60     0.0%       18.6°     0.0105
+
+  *** 1x DOES NOT REPRODUCE Episode 11's structure:
+        0.40: 0% outside the expected 70%-100%
+        0.47: 0% outside the expected 2%-35%
+      The 2x comparison rests on this. Treat both as void.
+
+  wrote experiments/power_review/out/phase3_1x_*
+======================================================================
+POWER-REVIEW Phase 3 — Season 3 RL at 2x power
+  drive_max 4500 -> 9000 N
+  5,000,000 steps, design conditioned on front_mass_fraction (0.4, 0.65)
+
+    upd    0 steps=     4,096 EV=-0.001 ret=   -10.3 off=1.00

@@ -48,3 +48,27 @@ found only by comparing against Episode 10's own committed policy:
    the original policy at all.
 
 Superseded by a run using Episode 10's own reward and the full design set.
+
+## ATTEMPT4_* — the 1x leg that trained without start jitter (2026-08-04)
+
+Voided by the baseline gate, automatically, which is the first time that has
+happened rather than being discovered afterwards.
+
+**Symptom.** 0/60 failures at every design, where Episode 10's own policy
+fails ~90% at 0.40 — and worst slip of **169.1°** at 0.40 against Episode
+10's 7.1°. A car at 169° of slip is spinning, not driving. Every row was
+outside the 12° fit, so the whole table was unquotable under rule 4 in any
+case.
+
+**Cause.** `_cfg()` did not set `start_jitter_m`; Episode 10 trains with
+10.0 m. A field-by-field diff of the two `EnvConfig`s found it — reward,
+design range, PPO budget and seed all matched, and only this and `drive_max`
+(`None`, which resolves to the same 4500 N) differed. Without jitter every
+episode starts at the same point, so a degenerate spinning solution survives:
+it only ever has to work from one start.
+
+**Why it matters beyond this run.** Three previous attempts were voided for
+reasons found by hand, after the fact. This one was caught by the run itself,
+before any of its numbers were interpreted. The gate is cheap and it works;
+the lesson is that "I matched the reward" is not the same as "I matched the
+configuration", and only a mechanical diff establishes the second.

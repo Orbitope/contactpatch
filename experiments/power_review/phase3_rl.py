@@ -135,10 +135,23 @@ STEER_NOISE_ATTENTIVE, STEER_NOISE_DISTRACTED = 0.01, 0.03
 GRIP_SPREAD = 0.20
 
 
+#: **Episode 10 trains with 10 m of start jitter and this file did not.**
+#: Attempt 4 matched Episode 10 on reward, design range, PPO budget and seed,
+#: differed ONLY here, and produced a policy at 169 deg of slip with 0/60
+#: failures at every design -- against Episode 10's 5.5-7.1 deg and its 90%
+#: failure at 0.40. Without jitter every episode starts at the same point, so
+#: the policy sees one trajectory distribution and a degenerate spinning
+#: solution survives, because it only ever has to work from that one start.
+#: A full field-by-field diff of the two EnvConfigs is how this was found;
+#: reading the two files side by side had already missed it three times.
+START_JITTER_M = 10.0
+
+
 def _cfg(**over):
     base = dict(design_keys=DESIGN_KEYS, design_ranges=DESIGN_RANGES,
                 envelope_penalty=ENVELOPE_PENALTY,
                 cross_track_penalty=CROSS_TRACK_PENALTY,
+                start_jitter_m=START_JITTER_M,
                 drive_max=DRIVE_MAX * POWER_MULT)
     base.update(over)
     return EnvConfig(**base)

@@ -75,6 +75,18 @@ class EvalResult:
     speed_max: float
 
     sections: list[dict] = field(default_factory=list)
+    #: How hard the TYRES are worked, as opposed to how much of the ROAD is
+    #: used -- `lateral_use_*` above is track-width occupancy and says nothing
+    #: about grip. F120: the solved Spa lap runs at mean utilisation 0.090 and
+    #: spends 0.7% of its length above 0.9, so it completes the circuit without
+    #: ever really leaning on the tyres. Torque vectoring reallocates grip
+    #: between wheels and can do nothing for a car that is not using it, which
+    #: makes this the field that says whether a policy is a usable TV baseline.
+    #: Defaults keep every existing caller and stored result valid.
+    utilisation_mean: float = 0.0
+    utilisation_max: float = 0.0
+    frac_at_limit: float = 0.0
+
 
     @property
     def valid(self) -> bool:
@@ -153,6 +165,7 @@ def evaluate(model, track, speed_cap=None, n_sections=N_SECTIONS,
         policy = greedy_policy(model)
 
     rows, lat, lat80, mono, spd, spd_max = [], [], [], True, [], 0.0
+    util, at_lim, util_max = [], [], 0.0
     for s0 in np.linspace(0.0, track.length, n_sections, endpoint=False):
         env = DrivingEnv(cfg)
         env.reset(0)
@@ -184,6 +197,12 @@ def evaluate(model, track, speed_cap=None, n_sections=N_SECTIONS,
             "speed_mean": float(v.mean()),
             "steps": int(env.steps),
         })
+        u = np.asarray(h["utilisation_max"])
+        util.append(float(u.mean()))
+        util_max = max(util_max, float(u.max()))
+        at_lim.append(float(np.mean(u > 0.9)))
+        rows[-1]["utilisation_mean"] = float(u.mean())
+        rows[-1]["frac_at_limit"] = float(np.mean(u > 0.9))
         lat.append(use.mean())
         lat80.append(float(np.mean(use > 0.8)))
         mono = mono and bool(np.all(np.diff(s_arr) >= -1e-9))
@@ -210,4 +229,6 @@ def evaluate(model, track, speed_cap=None, n_sections=N_SECTIONS,
         lateral_use_mean=float(np.mean(lat)),
         lateral_frac_beyond_80pct=float(np.mean(lat80)),
         s_monotonic=mono, speed_mean=float(np.mean(spd)), speed_max=spd_max,
+        utilisation_mean=float(np.mean(util)), utilisation_max=util_max,
+        frac_at_limit=float(np.mean(at_lim)),
         sections=rows)

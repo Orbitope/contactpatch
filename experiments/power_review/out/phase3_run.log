@@ -30,3 +30,6 @@ POWER-REVIEW Phase 3 — Season 3 RL at 1x power
     upd  600 steps= 2,461,696 EV=+0.929 ret=   384.8 off=0.02
     upd  625 steps= 2,564,096 EV=+0.865 ret=   345.4 off=0.12
     upd  650 steps= 2,666,496 EV=+0.575 ret=   386.4 off=0.02
+    upd  675 steps= 2,768,896 EV=+0.691 ret=   393.0 off=0.00
+    upd  700 steps= 2,871,296 EV=+0.405 ret=   392.9 off=0.00
+    upd  725 steps= 2,973,696 EV=+0.889 ret=   393.0 off=0.00

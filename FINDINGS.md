@@ -4980,6 +4980,70 @@ come from the logged arrays; this is why.
 
 ---
 
+### F121 · A scalar speed cap is the wrong instrument: it binds 99.6% of the lap and is still too fast in the corners · 2026-08-04
+
+F120 established that the solved Spa policy spends 0.7% of the lap at the
+friction limit. This is why, and it is not a tuning problem.
+
+**What is holding the policy back, measured point by point** [MEASURED,
+`curr_ct2_policy.pt`, deployed policy, one lap, `speed_cap` 13.0 m/s]:
+
+| the car is sitting on... | share of the lap |
+|---|---|
+| the **speed cap** | **99.6%** |
+| the tyres | 0.7% |
+| neither | 0.4% |
+
+The curriculum did not stop early. It stopped *correctly*: `CAP_SLIP_HEADROOM_DEG`
+freezes the cap once worst-wheel slip approaches 10°, and slip reaches 9.69°
+in the tightest corner. So the cap froze at the value where **one corner** is
+at the tyre limit, which leaves the other 99% of the circuit driving at a
+speed set by that corner.
+
+**The instrument is wrong, not its setting.** A single scalar cannot express
+"fast here, slow there", and Spa needs a factor of four between the two. A
+curvature-aware reference — `driver.SpeedProfile`, which already exists —
+gives, against the flat 13.0 m/s cap:
+
+| | |
+|---|---|
+| reference speed | 10.4 min, 40.0 mean, 60.0 max m/s |
+| **above** the cap over | **99.3% of the lap** |
+| **below** the cap over | **0.7%** — the corners |
+| median headroom the flat cap discards | 26.6 m/s |
+
+The flat cap is **simultaneously too slow almost everywhere and too fast
+exactly where it matters**. The 99.3/0.7 split is the same 0.7% as the
+at-the-limit measurement, from the opposite direction: the only places the
+cap is not the binding constraint are the places it is already too permissive.
+
+**Not sensitive to the assumption.** The reference's absolute speeds depend on
+`v_max`, which is a choice. The conclusion does not: at `v_max` of 20, 25, 30,
+45 and 60 m/s the split is 99.3% / 0.7% in every case. A finding that flipped
+on `v_max` would not be a finding (rule 11 in the form CLAUDE.md's track-width
+note uses).
+
+**Consequence for Season 5.** Getting a policy *to the limit* is a different
+problem from getting one *round a circuit*, and only the second is solved. The
+fix is already built and has never been trained with: `speed_ref_penalty` and
+`speed_ref_a_lat` on `EnvConfig`, backed by `SpeedProfile`, reward the policy
+for tracking a curvature-aware target instead of obeying a flat limiter. That
+is the next experiment, and it is the one the torque-vectoring episodes depend
+on — TV reallocates grip between wheels and has nothing to reallocate while
+mean utilisation is 0.090.
+
+**Caveat on the lap time.** Integrating `ds/v` over the reference gives 197 s
+against the driven 535 s. That is [DERIVED] from the plan, **not a simulated
+lap** — it assumes the car achieves `a_lat` everywhere and ignores the tyre
+model's actual envelope. It is quoted as an indication of the size of the gap,
+not as a lap time, and no lap time may be quoted from it (rule 6, and the
+convergence rule's ban on quoting times from runs that did not happen).
+
+**Source:** `experiments/tracks_pilot/spa_lap_figure.py` for the driven lap;
+`physics/driver.SpeedProfile`; `physics/rl_env.EnvConfig.speed_ref_penalty`.
+
+---
+
 
 # Decisions
 

@@ -4874,6 +4874,60 @@ slowdown as the circuit being hard.
 
 ---
 
+### F119 · `SampledTrack` drew offset lines on the wrong side of the road · 2026-08-04
+
+`SampledTrack.centreline` returned heading from `np.arctan2`, which is
+**wrapped** to +/-pi. `SampledTrack.to_xy` then interpolated that array with
+`np.interp`. A query landing between two samples that straddle the branch cut
+got a heading swung through ~2pi, so the offset point was placed using a
+heading wrong by up to pi.
+
+**Measured on Spa** [MEASURED, `physics/track.py`, `load_real_track("Spa")`]:
+
+| | |
+|---|---|
+| branch-cut crossings per lap | 5 |
+| max placement error at 5 m offset | **10.0 m — exactly 2x the offset** |
+| fraction of the lap wrong by >0.1 m | 0.25% |
+
+2x the offset is the diagnostic signature: the point is mirrored to the
+**far side of the track**. This is F36's failure mode in a different
+function — a wrong frame conversion that renders a completely believable
+picture of a car that was never there.
+
+**Scope.** `Track` (the analytic corners: `short_exit`, `long_exite`,
+`hairpin`, `fast_sweep`) is unaffected — it accumulates heading from
+curvature and is continuous by construction, so every Season 1-4 figure built
+on those is fine. Only `SampledTrack` — the **real circuits** — was wrong,
+which is precisely what Season 5 is about. `TrackBank` already unwrapped, for
+this exact reason; `SampledTrack` was simply missed when that lesson was
+applied.
+
+**Fix.** `heading = np.unwrap(np.arctan2(dy, dx))`, making `SampledTrack`
+match `Track`'s contract. Safe by construction: `sin`/`cos` of the unwrapped
+heading equal those of the wrapped one at every sample point, so nothing that
+consumes heading pointwise changes value. Only interpolation between samples
+changes — which is the defect.
+
+**The test nearly became decoration, which is the more useful lesson.** The
+first version asserted no step exceeds 10x the sample spacing and **passed
+against the broken code by 0.02x** (9.92x measured). The branch-cut error is
+spread across one sample interval rather than concentrated in one step, so a
+threshold hunting for a big jump never sees it. The published threshold is 3x,
+measured from both sides: legitimate geometry reaches 1.42x -- which is just
+`1 + n*kappa` at Spa's 11.4 m minimum radius, the outside of a corner being
+genuinely longer -- and the bug reaches 9.92x.
+
+CLAUDE.md rule 11 says to ask what it would take to fail a check. Running the
+test against the reverted code is that question made mechanical, and it is
+the only reason this was caught.
+
+**Source:** `physics/track.py:SampledTrack.centreline`;
+`tests/test_sampled_track.py::test_offset_line_is_continuous_across_the_heading_branch_cut`
+and `::test_sampled_track_heading_is_continuous_like_the_analytic_track`.
+
+---
+
 
 # Decisions
 

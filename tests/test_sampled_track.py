@@ -181,3 +181,54 @@ def test_half_width_at_wraps_at_the_seam_on_a_closed_track():
     just_before_end = track.half_width_at(np.array([track.length - 1e-3]))[0]
     just_after_start = track.half_width_at(np.array([1e-3]))[0]
     assert just_before_end == pytest.approx(just_after_start, abs=0.05)
+
+
+def test_offset_line_is_continuous_across_the_heading_branch_cut():
+    """A constant-offset line is a smooth curve; it may not teleport.
+
+    Deliberately a property the code was not written around (CLAUDE.md rule
+    11) rather than a restatement of the formula: sample the offset line
+    finely and require every step to be of order the sample spacing. Before
+    `SampledTrack.centreline` unwrapped its heading this failed on Spa by
+    10.0 m at a 5 m offset -- exactly 2x, the point mirrored to the far side
+    of the track -- because `to_xy` interpolated `arctan2` output across the
+    +pi/-pi cut. A wrong heading here draws a believable figure of a car on
+    the wrong side of the road, which is why this is pinned and not merely
+    fixed.
+
+    **The 3x threshold is measured, not guessed.** Legitimate geometry
+    reaches 1.42x the spacing, which is just `1 + n*kappa` at Spa's 11.4 m
+    minimum radius -- the outside of a corner really is longer. The branch-cut
+    bug reaches 9.92x. A first version of this test used 10x and PASSED
+    against the broken code by a margin of 0.02x: the error is spread across
+    one sample interval rather than concentrated in a single step, so it never
+    produced the huge jump a loose threshold looks for.
+    """
+    import numpy as np
+    from physics.tracks_data import load_real_track
+
+    track = load_real_track("Spa")
+    s = np.linspace(0.0, track.length, 40_000, endpoint=False)
+    ds = float(s[1] - s[0])
+    for n_off in (0.0, 5.0, -5.0):
+        x, y = track.to_xy(s, np.full_like(s, n_off))
+        step = np.hypot(np.diff(x), np.diff(y))
+        assert step.max() < 3.0 * ds, (
+            f"offset line jumps {step.max():.2f} m at n={n_off} m "
+            f"(sample spacing {ds:.3f} m) -- heading branch cut")
+
+
+def test_sampled_track_heading_is_continuous_like_the_analytic_track():
+    """The two `Track` implementations must agree on the heading contract.
+
+    `Track.centreline` accumulates heading from curvature and is continuous;
+    `SampledTrack` read it from the spline with `arctan2` and was not. Two
+    implementations of one interface disagreeing about a frame convention is
+    the F36/F81 family, so the contract gets a test rather than a comment.
+    """
+    import numpy as np
+    from physics.tracks_data import load_real_track
+
+    _, _, _, h = load_real_track("Spa").centreline(2000)
+    assert np.abs(np.diff(h)).max() < np.pi, (
+        "heading has a >pi jump: it is wrapped, not continuous")

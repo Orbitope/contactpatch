@@ -352,7 +352,21 @@ class SampledTrack:
         u = self._u_of_s(s)
         x, y = splev(u, self._tck)
         dx, dy = splev(u, self._tck, der=1)
-        heading = np.arctan2(dy, dx)
+        # UNWRAPPED, matching `Track.centreline`, which accumulates heading
+        # from curvature and is continuous by construction. `arctan2` alone
+        # is not: Spa crosses the +pi/-pi branch cut 5 times, and `to_xy`
+        # interpolates this array with `np.interp`, so a query landing between
+        # two samples that straddle a cut got a heading swung through ~2pi.
+        # Measured before the fix: a point at 5 m offset placed 10.0 m away --
+        # exactly 2x the offset, i.e. on the OPPOSITE SIDE of the road, over
+        # 0.25% of the lap. That is F36's failure mode exactly, and it renders
+        # as a plausible picture of a car that was never there.
+        #
+        # Safe by construction: sin/cos of the unwrapped heading equal those
+        # of the wrapped one at every sample point, so nothing that consumes
+        # heading pointwise changes. Only interpolation between samples does,
+        # which is the bug. `TrackBank` already unwraps for this reason.
+        heading = np.unwrap(np.arctan2(dy, dx))
         return s, np.asarray(x), np.asarray(y), heading
 
     def to_xy(self, s, n):

@@ -125,8 +125,13 @@ def make_eval_env(env_over=None):
 
 
 def evaluate_per_section(model, n_sections=N_SECTIONS, env_over=None):
-    spa = load_real_track("Spa")
-    starts = np.linspace(0.0, spa.length, n_sections, endpoint=False)
+    # Sections span the track being DRIVEN, not Spa. This file is named for
+    # Spa and hardcoded it here, which is invisible while Spa is the only
+    # circuit and wrong the moment it is not: Season 5 stage 1 drives Monza
+    # (5,789 m) and MexicoCity (4,296 m), where starts laid out over Spa's
+    # 6,999 m fall beyond the end of the lap.
+    trk = (env_over or {}).get("track") or load_real_track("Spa")
+    starts = np.linspace(0.0, trk.length, n_sections, endpoint=False)
     policy = greedy_policy(model)
     rows = []
     for s0 in starts:

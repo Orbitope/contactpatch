@@ -73,7 +73,12 @@ N_SECTIONS = 24
 #: than assuming the scale is right, because a term that is too weak is
 #: ignored and one that is too strong reproduces the cap's timidity by a
 #: different route.
-WEIGHTS = (1.0, 3.0, 10.0)
+#: `w=1` was dropped after measurement, not on the sizing argument alone:
+#: progress pays `v*dt` and exceeding the plan by `e` costs `w*e*dt`, so
+#: only `w>1` makes overspeed net-negative -- and a launched w=1 run sat
+#: at 100% off-track with 17.7 deg of slip by 13M steps, the curriculum
+#: frozen at its 0.45 g start because the raise gate needs off<0.15.
+WEIGHTS = (3.0, 10.0)
 
 #: The reference's lateral budget. 0.97 g is the tyre's measured peak, so a
 #: plan built at that value asks for the limit in every corner from the first
@@ -90,10 +95,27 @@ RAISE_SLIP_BELOW_DEG = 9.0
 RAISE_PATIENCE = 3
 
 
-def _env_kwargs(weight: float, a_lat: float) -> dict:
+#: **A centreline term fights the racing line, and that is the whole problem
+#: here.** The fast way through a corner is out-in-out: the car belongs at the
+#: outside on entry, at the INSIDE EDGE at the apex, and back out on exit.
+#: `cross_track_penalty` pays the policy to sit in the middle, so it is a tax
+#: on exactly the manoeuvre this run exists to produce. F118 measured the cost
+#: on a policy that could already hold a line -- 5.7-6.0 deg of slip became
+#: 9.6-10.5 -- without having the mechanism; this is the mechanism.
+#:
+#: It is swept rather than simply removed, because F110 is also true: the term
+#: took Spa from 40.7% to 100% lap completion when the policy could NOT hold a
+#: line. The hypothesis this arm tests is that the speed plan now supplies
+#: what the centreline term was crudely standing in for -- a curvature-aware
+#: target tells the policy to slow for a corner, so it no longer needs to be
+#: pinned to the middle of the road to survive one.
+CROSS_TRACKS = (0.0, 2.0)
+
+
+def _env_kwargs(weight: float, a_lat: float, cross_track: float = 0.0) -> dict:
     kw = dict(V2.V2_ENV)
     kw.update(
-        cross_track_penalty=2.0,     # the ct2 recipe, held fixed
+        cross_track_penalty=cross_track,
         speed_cap=None,              # THE point: no scalar limiter
         speed_ref_penalty=weight,
         speed_ref_a_lat=a_lat,
@@ -101,12 +123,14 @@ def _env_kwargs(weight: float, a_lat: float) -> dict:
     return kw
 
 
-def _run(weight: float, steps: int, seed: int = None) -> dict:
+def _run(weight: float, steps: int, seed: int = None,
+         cross_track: float = 0.0) -> dict:
     seed = V2.SEED if seed is None else seed
-    tag = f"speedref_w{weight:g}" + (f"_s{seed}" if seed != V2.SEED else "")
+    tag = (f"speedref_w{weight:g}_ct{cross_track:g}"
+           + (f"_s{seed}" if seed != V2.SEED else ""))
     trk = load_real_track(TRACK)
-    print(f"\n{'='*72}\n  {TRACK}, speed_ref_penalty={weight:g}, {steps:,} steps"
-          f"\n{'='*72}")
+    print(f"\n{'='*72}\n  {TRACK}, speed_ref_penalty={weight:g}, "
+          f"cross_track_penalty={cross_track:g}, {steps:,} steps\n{'='*72}")
     print(f"  plan starts at a_lat {A_LAT_START/schema.G:.2f} g, "
           f"raises by {A_LAT_STEP/schema.G:.2f} g toward "
           f"{A_LAT_MAX/schema.G:.2f} g while off<{RAISE_OFF_BELOW} "
@@ -124,7 +148,7 @@ def _run(weight: float, steps: int, seed: int = None) -> dict:
 
     def make_batched(n):
         e = V2.make_batched_env(
-            n, env_over={"track": trk, **_env_kwargs(weight, state["a_lat"])})
+            n, env_over={"track": trk, **_env_kwargs(weight, state['a_lat'], cross_track)})
         envs["batched"] = e
         return e
 
@@ -139,7 +163,7 @@ def _run(weight: float, steps: int, seed: int = None) -> dict:
         # run exists to solve.
         e = DrivingEnv(EnvConfig(
             track=trk, start_jitter_m=0.0,
-            **_env_kwargs(weight, A_LAT_MAX)))
+            **_env_kwargs(weight, A_LAT_MAX, cross_track)))
         envs["eval"] = e
         return e
 
@@ -194,7 +218,7 @@ def _run(weight: float, steps: int, seed: int = None) -> dict:
     # utilisation are identical at any `a_lat`. F109's real content, that a
     # selection criterion must not drift, is handled in `make_eval`.
     r = PE.evaluate(res["model"], trk, n_sections=N_SECTIONS,
-                    env_kwargs=_env_kwargs(weight, A_LAT_MAX))
+                    env_kwargs=_env_kwargs(weight, A_LAT_MAX, cross_track))
     print(f"\n  [D16] {r.headline()}")
     print(f"    utilisation mean {r.utilisation_mean:.3f} "
           f"(capped baseline 0.090), at-limit {100*r.frac_at_limit:.1f}% "
@@ -204,7 +228,8 @@ def _run(weight: float, steps: int, seed: int = None) -> dict:
     (OUT / f"{tag}_history.json").write_text(
         json.dumps(res["history"], indent=2) + "\n")
     return {
-        "weight": weight, "seed": seed, "steps": steps, "wall_s": wall,
+        "weight": weight, "cross_track_penalty": cross_track,
+        "seed": seed, "steps": steps, "wall_s": wall,
         "a_lat_final_g": state["a_lat"] / schema.G,
         "a_lat_raises": state["raises"], "a_lat_log": state["log"],
         "headline": r.headline(), "valid": r.valid,
@@ -270,26 +295,29 @@ BASELINE = {"fraction_of_lap": 1.000, "worst_slip_deg": 10.4,
             "speed_mean": 13.03, "valid": True}
 
 
-def main(steps: int = STEPS, seeds: tuple[int, ...] = None, weights=None):
+def main(steps: int = STEPS, seeds: tuple[int, ...] = None, weights=None,
+         cross_tracks=None):
     """``seeds`` runs every weight at each seed. One seed answers "does this
     work at all", which is what the sweep is for; rule 5 wants >=3 before any
     of it is a trend, and those belong on the weight that survives -- e.g.
     `main(seeds=(0, 1, 2), weights=(3.0,))`."""
     OUT.mkdir(parents=True, exist_ok=True)
     weights = WEIGHTS if weights is None else weights
-    rows = ([_run(w, steps) for w in weights] if not seeds
-            else [_run(w, steps, sd) for w in weights for sd in seeds])
+    cts = CROSS_TRACKS if cross_tracks is None else cross_tracks
+    rows = [_run(w, steps, sd, ct)
+            for w in weights for ct in cts for sd in (seeds or [V2.SEED])]
 
     print(f"\n\n{'='*88}\n  SPEED REFERENCE vs THE SCALAR CAP — Spa\n{'='*88}")
-    print(f"  {'run':<16}{'lap':>8}{'slip':>7}{'over12':>8}{'v_mean':>8}"
+    print(f"  {'run':<20}{'lap':>8}{'slip':>7}{'over12':>8}{'v_mean':>8}"
           f"{'util':>8}{'@limit':>9}  valid")
     print(f"  {'capped (F120)':<16}{100*BASELINE['fraction_of_lap']:>7.1f}%"
           f"{BASELINE['worst_slip_deg']:>7.1f}{0:>8}"
           f"{BASELINE['speed_mean']:>8.1f}{BASELINE['utilisation_mean']:>8.3f}"
           f"{100*BASELINE['frac_at_limit']:>8.1f}%  True")
     for c in rows:
-        lbl = "w=" + format(c["weight"], "g") + (f" s{c['seed']}" if seeds else "")
-        print(f"  {lbl:<16}"
+        lbl = (f"w={c['weight']:g} ct={c['cross_track_penalty']:g}"
+               + (f" s{c['seed']}" if seeds else ""))
+        print(f"  {lbl:<20}"
               f"{100*c['fraction_of_lap']:>7.1f}%{c['worst_slip_deg']:>7.1f}"
               f"{c['sections_over_bound']:>8}{c['speed_mean']:>8.1f}"
               f"{c['utilisation_mean']:>8.3f}{100*c['frac_at_limit']:>8.1f}%"
@@ -322,7 +350,8 @@ def main(steps: int = STEPS, seeds: tuple[int, ...] = None, weights=None):
     (OUT / "speedref_results.json").write_text(json.dumps(
         {"track": TRACK, "steps": steps, "baseline": BASELINE,
          "limit_ceiling": ceiling,
-         "weights": list(weights), "seeds": list(seeds or [V2.SEED]),
+         "weights": list(weights), "cross_tracks": list(cts),
+         "seeds": list(seeds or [V2.SEED]),
          "runs": rows}, indent=2) + "\n")
     print(f"\n  wrote speedref_results.json")
 
@@ -335,7 +364,10 @@ if __name__ == "__main__":
         if a.startswith("--seeds="):
             sd = tuple(int(x) for x in a.split("=", 1)[1].split(","))
     w = None
+    ct = None
     for a in sys.argv[1:]:
         if a.startswith("--weights="):
             w = tuple(float(x) for x in a.split("=", 1)[1].split(","))
-    main(int(argv[0]) if argv else STEPS, seeds=sd, weights=w)
+        if a.startswith("--cross-tracks="):
+            ct = tuple(float(x) for x in a.split("=", 1)[1].split(","))
+    main(int(argv[0]) if argv else STEPS, seeds=sd, weights=w, cross_tracks=ct)

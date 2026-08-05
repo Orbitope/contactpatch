@@ -286,10 +286,31 @@ def main(power_mult: float = POWER_MULT, seed: int | None = None) -> int:
     if abs(POWER_MULT - 1.0) < 1e-9:
         worst = max(v["worst_slip_deg"] for v in rows.values())
         occ = max(v["envelope_occupancy"] for v in rows.values())
-        broken = worst > 12.0 or occ > 0.0 or ev <= 0.3
-        print(f"\n  A. Is it a driver?  worst slip {worst:.1f}° (limit 12), "
-              f"occupancy {occ:.4f}, EV tail {ev:+.3f}"
-              f"  -> {'NO — nothing here is usable' if broken else 'yes'}")
+        # DISTANCE FIRST. The 2x leg passed every other part of this check
+        # while travelling 20 m of a 393 m track: a car that does not move has
+        # low slip, zero envelope occupancy, and a critic that trivially
+        # predicts a constant return, so "0/60 failures" meant "never got
+        # anywhere". Slip and occupancy are constraints on HOW it drives and
+        # say nothing about WHETHER it does. This is D6's
+        # `the_deployed_policy_completes_the_task`, which this gate should
+        # have carried from the start (F61: Episode 9 was written around an
+        # 88% sampled finish rate whose deployed figure was 0%).
+        # MAX across designs, not min. The question here is whether the
+        # policy can drive AT ALL; whether it drives every design is what the
+        # fragility table below measures, and a design that legitimately fails
+        # 20% of the time drags a min-based check under the threshold for the
+        # right reason. A crawler's best design still only reaches ~23 m.
+        L = _cfg().track.length
+        dist = max(v["mean_distance"] for v in rows.values())
+        crawls = dist < 0.9 * L
+        broken = crawls or worst > 12.0 or occ > 0.0 or ev <= 0.3
+        print(f"\n  A. Is it a driver?  best mean distance {dist:.1f} m of "
+              f"{L:.0f} ({100*dist/L:.0f}%), worst slip {worst:.1f}° "
+              f"(limit 12), occupancy {occ:.4f}, EV tail {ev:+.3f}")
+        if crawls:
+            print(f"       *** IT DOES NOT DRIVE. Every failure rate below is "
+                  f"an artefact of not moving.")
+        print(f"       -> {'NO — nothing here is usable' if broken else 'yes'}")
 
         exp = {0.40: (0.70, 1.00), 0.47: (0.02, 0.35),
                0.54: (0.0, 0.10), 0.61: (0.0, 0.10), 0.65: (0.0, 0.10)}

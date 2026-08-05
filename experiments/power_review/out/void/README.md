@@ -72,3 +72,30 @@ reasons found by hand, after the fact. This one was caught by the run itself,
 before any of its numbers were interpreted. The gate is cheap and it works;
 the lesson is that "I matched the reward" is not the same as "I matched the
 configuration", and only a mechanical diff establishes the second.
+
+## CRAWLER_* — the 2x leg that stopped driving (2026-08-05)
+
+**Symptom.** 0/60 failures at every design, worst slip 0.4-0.8°, envelope
+occupancy 0.0000 — and a **mean distance of ~20 m on a 393 m track.** The
+policy collapsed over the last fifth of training (`return_mean` 393 -> 330 ->
+46.6 -> 30.3 -> 20.7 -> 20.1) into something that barely moves. Its perfect
+failure rate means "never got anywhere", and its low slip means "barely
+turns".
+
+**It passed the gate that had just been written to catch bad runs.** Check A
+asked for slip inside the fit, zero envelope occupancy and a live critic. A
+stationary car satisfies all three trivially: it has no slip, cannot leave the
+envelope, and gives a critic a constant return to predict. Slip and occupancy
+constrain *how* a policy drives and say nothing about *whether* it does.
+
+**Fix.** Check A now requires the best design to cover >=90% of the track.
+This is D6's `the_deployed_policy_completes_the_task`, which the gate should
+have carried from the start — F61 is the same failure in Season 3, where
+Episode 9 was written around an 88% sampled finish rate whose deployed figure
+was 0%.
+
+**Threshold detail worth keeping.** A first version used the *minimum* mean
+distance across designs and rejected the valid 1x leg, whose 0.65 design
+genuinely fails 20% of the time. "Can this policy drive at all" is a question
+about its best design; "does it drive every design" is what the fragility
+table measures. Using the max separates them.

@@ -81,3 +81,64 @@ POWER-REVIEW Phase 3 — Season 3 RL at 2x power
     upd    0 steps=     4,096 EV=-0.003 ret=    -7.9 off=1.00
     upd   25 steps=   106,496 EV=+0.602 ret=   -14.5 off=1.00
     upd   50 steps=   208,896 EV=+0.930 ret=    13.7 off=1.00
+    upd   75 steps=   311,296 EV=+0.812 ret=    91.4 off=0.60
+    upd  100 steps=   413,696 EV=+0.687 ret=   123.9 off=0.66
+    upd  125 steps=   516,096 EV=+0.765 ret=   185.0 off=0.58
+    upd  150 steps=   618,496 EV=+0.989 ret=    68.0 off=0.94
+    upd  175 steps=   720,896 EV=+0.850 ret=   131.4 off=0.78
+    upd  200 steps=   823,296 EV=+0.972 ret=    79.8 off=0.90
+    upd  225 steps=   925,696 EV=+0.977 ret=    66.2 off=0.94
+    upd  250 steps= 1,028,096 EV=+0.998 ret=    51.4 off=1.00
+    upd  275 steps= 1,130,496 EV=+0.940 ret=    55.9 off=1.00
+    upd  300 steps= 1,232,896 EV=+0.927 ret=   116.8 off=0.82
+    upd  325 steps= 1,335,296 EV=+0.925 ret=   179.6 off=0.52
+    upd  350 steps= 1,437,696 EV=+0.968 ret=   168.0 off=0.58
+    upd  375 steps= 1,540,096 EV=+0.962 ret=   209.9 off=0.50
+    upd  400 steps= 1,642,496 EV=+0.837 ret=   287.7 off=0.32
+    upd  425 steps= 1,744,896 EV=+0.859 ret=   391.8 off=0.02
+    upd  450 steps= 1,847,296 EV=+0.886 ret=   344.3 off=0.14
+    upd  475 steps= 1,949,696 EV=+0.795 ret=   361.2 off=0.10
+    upd  500 steps= 2,052,096 EV=+0.105 ret=   373.6 off=0.06
+    upd  525 steps= 2,154,496 EV=+0.518 ret=   346.1 off=0.12
+    upd  550 steps= 2,256,896 EV=+0.448 ret=   306.3 off=0.24
+    upd  575 steps= 2,359,296 EV=+0.577 ret=   379.9 off=0.04
+    upd  600 steps= 2,461,696 EV=+0.766 ret=   357.1 off=0.10
+    upd  625 steps= 2,564,096 EV=+0.351 ret=   391.9 off=0.00
+    upd  650 steps= 2,666,496 EV=+0.571 ret=   386.4 off=0.00
+    upd  675 steps= 2,768,896 EV=+0.178 ret=   392.3 off=0.00
+    upd  700 steps= 2,871,296 EV=+0.630 ret=   377.3 off=0.02
+    upd  725 steps= 2,973,696 EV=+0.497 ret=   393.0 off=0.00
+    upd  750 steps= 3,076,096 EV=+0.444 ret=   379.4 off=0.04
+    upd  775 steps= 3,178,496 EV=+0.517 ret=   386.7 off=0.02
+    upd  800 steps= 3,280,896 EV=+0.432 ret=   385.7 off=0.02
+    upd  825 steps= 3,383,296 EV=+0.208 ret=   341.9 off=0.14
+    upd  850 steps= 3,485,696 EV=+0.533 ret=   393.0 off=0.00
+    upd  875 steps= 3,588,096 EV=+0.382 ret=   393.0 off=0.00
+    upd  900 steps= 3,690,496 EV=+0.227 ret=   393.0 off=0.00
+    upd  925 steps= 3,792,896 EV=+0.587 ret=   393.0 off=0.00
+    upd  950 steps= 3,895,296 EV=+0.235 ret=   393.1 off=0.00
+    upd  975 steps= 3,997,696 EV=+0.190 ret=   273.2 off=0.38
+    upd 1000 steps= 4,100,096 EV=+0.044 ret=   285.6 off=0.30
+    upd 1025 steps= 4,202,496 EV=+0.313 ret=   386.0 off=0.02
+    upd 1050 steps= 4,304,896 EV=+0.785 ret=   393.0 off=0.00
+    upd 1075 steps= 4,407,296 EV=+0.786 ret=   393.0 off=0.00
+    upd 1100 steps= 4,509,696 EV=+0.622 ret=   330.6 off=0.00
+    upd 1125 steps= 4,612,096 EV=+0.837 ret=    46.6 off=0.00
+    upd 1150 steps= 4,714,496 EV=+0.679 ret=    30.3 off=0.00
+    upd 1175 steps= 4,816,896 EV=+0.203 ret=    20.7 off=0.00
+    upd 1200 steps= 4,919,296 EV=+0.422 ret=    20.1 off=0.00
+  trained: 1220 updates, 100.5 min, EV tail +0.572
+
+    design    condition     fail    rate  worst slip  occupancy
+      0.40    attentive    0/60     0.0%        0.4°     0.0000
+      0.40   distracted    0/60     0.0%        0.7°     0.0000
+      0.47    attentive    0/60     0.0%        0.4°     0.0000
+      0.47   distracted    0/60     0.0%        0.7°     0.0000
+      0.54    attentive    0/60     0.0%        0.4°     0.0000
+      0.54   distracted    0/60     0.0%        0.7°     0.0000
+      0.61    attentive    0/60     0.0%        0.4°     0.0000
+      0.61   distracted    0/60     0.0%        0.7°     0.0000
+      0.65    attentive    0/60     0.0%        0.5°     0.0000
+      0.65   distracted    0/60     0.0%        0.8°     0.0000
+
+  wrote experiments/power_review/out/phase3_2x_*

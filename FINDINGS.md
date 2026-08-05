@@ -4872,6 +4872,32 @@ slowdown as the circuit being hard.
 `experiments/tracks_pilot/policy_eval.py`; void artefacts and their README in
 `experiments/power_review/out/void/`.
 
+**Re-verified 2026-08-04 under current code**, 30 rollouts per cell, both
+policies scored in the same env at 1x power:
+
+| design | Ep10 committed (ct=0) | retrain (ct=2.0) |
+|---|---|---|
+| 0.40 | 7.1°, **90% off** | 12.0° |
+| 0.47 | 5.5°, **13% off** | 10.2° |
+| 0.54 | 5.5°, 0% off | 9.3° |
+| 0.61 | 5.7°, 0% off | 9.7° |
+| 0.65 | 5.5°, 0% off | 10.0° |
+
+Both halves hold: the retrain carries 4 more degrees of slip at every design,
+and Ep10's own fragility structure (0.40 ~90%, 0.47 ~13%, the rest 0%) is
+reproduced exactly -- which independently validates the bands hard-coded into
+Phase 3's baseline gate, so that gate is checking against a measurement rather
+than a remembered number.
+
+**The re-verification cost an hour to an error worth recording.** The first
+attempt scored Ep10's policy at **26-28° with 100% off-track**, and the
+temptation was to read that as F118 being wrong. It was the harness:
+`phase3_rl.POWER_MULT` defaulted to **2.0** at module level, so importing the
+module and calling `_cfg()` silently built a double-power car. `main()` sets
+it per leg, so no run was ever affected -- only code that imports it. Now
+defaults to 1.0, the baseline, which is the D-A pattern the rest of the
+project uses: **a default reproduces the control, never the treatment.**
+
 ---
 
 ### F119 · `SampledTrack` drew offset lines on the wrong side of the road · 2026-08-04

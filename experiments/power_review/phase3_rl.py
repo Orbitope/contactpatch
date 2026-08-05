@@ -93,7 +93,16 @@ SEED = 0
 #: from Episode 10's and F98's published 1x numbers were measured under the
 #: old one. Comparing the new 2x against the old 1x would confound power with
 #: reward — precisely the confound the whole review exists to avoid.
-POWER_MULT = 2.0
+#: **Defaults to the BASELINE, not the treatment.** `main()` sets this per
+#: leg, so the runs are unaffected either way -- but the module default is
+#: what any other code gets, and it was 2.0. Importing `phase3_rl` and calling
+#: `_cfg()` to re-score a checkpoint then silently built a DOUBLE-POWER car:
+#: Episode 10's own committed policy measured 26-28 deg of slip and 100%
+#: off-track that way, which reads as "the published policy is terrible"
+#: rather than "you are driving the wrong car". Cost an hour of
+#: re-verification. A default that reproduces the baseline is the D-A pattern
+#: this project uses everywhere else, and 2.0 broke it.
+POWER_MULT = 1.0
 
 #: **The unbatched path, and POWER-REVIEW's plan for this was wrong.** The
 #: review says "retrain the design-conditioned policy with the batched env

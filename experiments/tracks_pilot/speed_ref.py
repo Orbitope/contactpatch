@@ -54,6 +54,7 @@ import torch
 from physics.ppo import PPOConfig, train
 from physics.rl_env import DrivingEnv, EnvConfig
 from physics.tracks_data import load_real_track
+from physics.driver import SpeedProfile, BRAKE_MAX, DRIVE_MAX
 from physics import schema
 from experiments.tracks_pilot import policy_eval as PE
 from experiments.tracks_pilot import spa_ppo_v2 as V2
@@ -200,6 +201,51 @@ def _run(weight: float, steps: int) -> dict:
     }
 
 
+def limit_ceiling(track, a_lat=A_LAT_MAX) -> float:
+    """The most of a lap that tracking the plan can spend at the grip limit.
+
+    Not 100%, and assuming otherwise would make a good result read as a
+    failure. The plan works the tyres in two places:
+
+    - **cornering-limited** stretches, where speed is set by `sqrt(a_lat/k)`;
+    - **braking** zones, where it decelerates at `BRAKE_MAX` = 0.985 g, which
+      is essentially the tyre's own limit.
+
+    Power zones are not: `a_drive` is 0.337 g, well under. Measured per track,
+    because it is a property of the circuit's curvature distribution:
+
+    | | cornering | braking | at the limit |
+    |---|---|---|---|
+    | Spa | 12.1% | 19.1% | **30.2%** |
+    | Monza | 4.7% | 15.4% | 19.4% |
+    | MexicoCity | 6.4% | 18.9% | 24.5% |
+
+    So Spa's target for `frac_at_limit` is ~30%, against the capped
+    baseline's 0.7% (F120).
+
+    **Slightly optimistic, deliberately.** `SpeedProfile`'s three passes do not
+    enforce the friction ellipse, so where braking and cornering overlap the
+    plan asks for more than the tyre can give. It is a ceiling, quoted as one.
+
+    **Why not benchmark against the classical driver instead.** There is no
+    working classical baseline on Spa: `classical_baseline_spa.py` spins or
+    leaves the road at every grip level from 0.30 to 0.85, covering 12-15% of
+    a lap. The plan is usable as a reference target even though the classical
+    *controller* cannot follow it.
+    """
+    s = np.linspace(0.0, track.length, 8000, endpoint=False)
+    ds = float(s[1] - s[0])
+    k = np.abs(np.asarray(track.curvature(s)))
+    a_brake = BRAKE_MAX / schema.RV_1.mass
+    p = SpeedProfile(track, a_lat=a_lat, a_brake=a_brake,
+                     a_drive=DRIVE_MAX / schema.RV_1.mass, v_max=60.0,
+                     wrap=bool(getattr(track, "closed", False)))
+    v = np.array([p.target(float(q)) for q in s])
+    cornering = v >= np.sqrt(a_lat / np.maximum(k, 1e-9)) * 0.995
+    braking = (v * np.gradient(v, ds)) < -0.9 * a_brake
+    return float(np.mean(cornering | braking))
+
+
 #: The capped baseline this run has to beat on utilisation without losing the
 #: lap. [MEASURED] F120, `curr_ct2_policy.pt` re-scored through `policy_eval`.
 BASELINE = {"fraction_of_lap": 1.000, "worst_slip_deg": 10.4,
@@ -225,10 +271,15 @@ def main(steps: int = STEPS):
               f"{c['utilisation_mean']:>8.3f}{100*c['frac_at_limit']:>8.1f}%"
               f"  {c['valid']}")
 
+    ceiling = limit_ceiling(load_real_track(TRACK))
     print(f"\n  Did any run get the car to the limit WITHOUT losing the lap?")
+    print(f"    ceiling: tracking the plan perfectly puts {100*ceiling:.1f}% of "
+          f"Spa at the grip limit — the rest is braking, power or v_max limited.")
+    print(f"    baseline: {100*BASELINE['frac_at_limit']:.1f}%. "
+          f"Calling it a win at half the ceiling ({100*ceiling/2:.1f}%).")
     winners = [c for c in rows if c["valid"]
                and c["fraction_of_lap"] >= 0.95
-               and c["frac_at_limit"] > 3 * BASELINE["frac_at_limit"]]
+               and c["frac_at_limit"] >= 0.5 * ceiling]
     if winners:
         b = max(winners, key=lambda c: c["frac_at_limit"])
         print(f"    YES — w={b['weight']:g}: {100*b['frac_at_limit']:.1f}% of the "
@@ -246,6 +297,7 @@ def main(steps: int = STEPS):
 
     (OUT / "speedref_results.json").write_text(json.dumps(
         {"track": TRACK, "steps": steps, "baseline": BASELINE,
+         "limit_ceiling": ceiling,
          "weights": list(WEIGHTS), "runs": rows}, indent=2) + "\n")
     print(f"\n  wrote speedref_results.json")
 

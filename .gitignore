@@ -21,3 +21,4 @@ physics/tracks_cache/
 # path, so a checkout without them has broken links and unverifiable numbers. They
 # are regenerable — that is what each run.py is for — but the point of committing
 # them is that you can read the series without a solver licence or an hour of CPU.
+experiments/ep10/out/morph_frames/

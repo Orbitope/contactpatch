@@ -5362,6 +5362,52 @@ around.
 
 ---
 
+### F127 · The corrected speed_ref beats the capped baseline on every axis but one, and doesn't finish · 2026-08-05
+
+`speed_ref` cell 1 (w=3, cross_track=0, researched reward, corrected
+max_steps). [MEASURED, `experiments/tracks_pilot/out/speedref_w3_ct0_*`]
+
+| | capped baseline (F120) | speed_ref w=3 ct=0 |
+|---|---|---|
+| finish rate | 100% | 96% |
+| worst slip | 10.4° | **5.1°** |
+| mean utilisation | 0.090 | **0.305** (3.4x) |
+| at the limit (>0.9 util) | 0.7% | 0.2% |
+| mean speed | 13.03 m/s | **24.0 m/s** |
+
+Speed nearly doubled, slip fell, and mean tyre use more than tripled -- but
+finish rate dropped 4 points and `frac_at_limit` is, if anything, slightly
+lower than the baseline despite 3.4x the mean utilisation.
+
+**Not a contradiction, once the reward shape is read correctly.**
+`speed_ref_penalty` is one-sided -- it charges only the EXCESS over the plan
+(EnvConfig.speed_ref_penalty's own docstring). The policy has no term
+rewarding it for approaching 1.0 utilisation; it only has to avoid exceeding
+the plan. So it tracks the plan WITH MARGIN rather than riding the edge,
+which is consistent with lower slip and moderate-but-not-spiking utilisation.
+Working the tyres harder on average without ever maxing them out is exactly
+what a policy charged only for going too fast, never rewarded for using more
+grip, would do.
+
+**The plan itself climbed past F125's classical ceiling.** The `a_lat`
+curriculum raised three times -- 0.45 -> 0.53 -> 0.61 -> 0.69 g -- ending
+ABOVE the classical driver's own usable range (~0.57-0.60 g, F125). That the
+RL policy still finished 96% of runs cleanly at a plan more aggressive than
+the classical controller could hold says the RL policy is not simply copying
+the classical line; it is worth checking whether the 4% who fail are
+concentrated at the highest-a_lat corners.
+
+**Not yet a lap time.** 96%, not 100% -- `speed_ref.py`'s reporting fix from
+earlier this session (a lap time requires a completed lap) correctly withheld
+one rather than projecting `length/speed_mean`, which for the earlier
+(pre-max_steps-fix) cells produced a misleading "268.2 s" for a 0% finish
+rate.
+
+**Source:** `experiments/tracks_pilot/speed_ref.py`,
+`out/speedref_w3_ct0_history.json`.
+
+---
+
 
 # Decisions
 

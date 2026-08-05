@@ -1,0 +1,25 @@
+
+========================================================================
+  Spa, speed_ref_penalty=3, cross_track_penalty=0, 40,000,000 steps
+========================================================================
+  plan starts at a_lat 0.45 g, raises by 0.08 g toward 0.97 g while off<0.15 and slip<9.0°
+  upd    0 steps=    262,144 v=  8.0 slip=  3.3 off=0.68 a_lat=0.45g EV=+0.001
+  upd   25 steps=  6,815,744 v= 14.6 slip= 25.8 off=0.72 a_lat=0.45g EV=+0.078
+  upd   50 steps= 13,369,344 v= 18.4 slip= 24.7 off=0.28 a_lat=0.45g EV=+0.165
+  upd   75 steps= 19,922,944 v= 20.2 slip= 15.7 off=0.04 a_lat=0.45g EV=+0.627
+  upd  100 steps= 26,476,544 v= 21.3 slip=  9.0 off=0.02 a_lat=0.45g EV=+0.623
+    ^ plan raised to 0.53 g at update 109
+    ^ plan raised to 0.61 g at update 112
+    ^ plan raised to 0.69 g at update 115
+  upd  125 steps= 33,030,144 v= 22.0 slip=  9.5 off=0.00 a_lat=0.69g EV=+0.559
+  upd  150 steps= 39,583,744 v= 22.7 slip= 17.6 off=0.04 a_lat=0.69g EV=+0.538
+
+  [D16] 6709.8 m (95.9% of lap), finished 96%, off-track 4%, worst slip 5.1 deg, 0/24 outside the fit -- rule 4 valid.
+    NO LAP TIME — finished 96% of runs, covered 95.9% of the lap. (mean speed 24.0 m/s would project 292 s IF it completed one, which it does not.)
+    utilisation mean 0.305 (baseline 0.090), at-limit 0.2% (baseline 0.7%)
+
+========================================================================
+  Spa, speed_ref_penalty=3, cross_track_penalty=2, 40,000,000 steps
+========================================================================
+  plan starts at a_lat 0.45 g, raises by 0.08 g toward 0.97 g while off<0.15 and slip<9.0°
+  upd    0 steps=    262,144 v=  8.0 slip=  3.3 off=0.68 a_lat=0.45g EV=+0.001

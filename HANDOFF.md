@@ -1928,6 +1928,29 @@ speed cap, not against the tyres. So:
   getting one round a circuit. Season 5 currently has a recipe for the second
   and not the first, and the TV episodes need the first.
 
+**Run order changed: `speed_ref` BEFORE stage 1.** Stage 1 asks whether the
+cap+`ct` recipe transfers to Monza and MexicoCity. F121 says the cap is the
+wrong instrument, so stage 1 as queued would spend 3 h characterising a recipe
+we are about to replace, and its `ct` answer might not survive the change.
+The reward architecture settles first:
+
+1. **`speed_ref.py`** — Spa, `speed_ref_penalty` at w = 1/3/10, no scalar cap,
+   `a_lat` curriculum on the plan (0.45 g -> 0.97 g). ~2.2 h. Gate: utilisation
+   materially above the baseline's 0.090 / 0.7% **with** the lap and the 12°
+   fit both held. Says "learned to match a reference", not "discovered
+   braking", wherever quoted.
+2. **Stage 1** — with whichever reward architecture wins, still four-armed.
+3. **Seeds** (rule 5) on whatever survives. Everything to date is one seed.
+
+**A dependency this creates, flagged now rather than at stage 4.**
+`BatchedDrivingEnv` raises `NotImplementedError` on `speed_ref_penalty`
+together with a `TrackBank`, deliberately — one circuit's plan applied to
+every circuit would be a *wrong* reference, not a missing feature. So **if
+`speed_ref` wins, the multi-track generalist cannot use it until `TrackBank`
+carries a per-circuit plan.** That is a real piece of work (pre-sampling each
+circuit's `SpeedProfile` onto the same arc-length grid the curvature already
+uses) and it sits between stage 1 and stage 4, not after.
+
 **Stage 1 is written and ready to launch** —
 `experiments/tracks_pilot/stage1_transfer.py`, four cells (Monza and
 MexicoCity x `cross_track_penalty` 2.0 and 0.0), ~3 h. It derives `CAP_START`

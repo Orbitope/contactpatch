@@ -192,25 +192,38 @@ def _run(weight: float, steps: int, seed: int = None,
         envs["eval"] = e
         return e
 
+    def make_gate():
+        # The THIRD env, distinct from both `make_batched` (trains, has start
+        # jitter and exploration) and `make_eval` (pinned at A_LAT_MAX for
+        # checkpoint selection). This one answers the curriculum's actual
+        # question -- "is the DEPLOYED policy coping with what it is training
+        # against RIGHT NOW" -- so unlike `make_eval` it tracks `state["a_lat"]`
+        # and gets mutated on every raise, same as the training env. Built on
+        # `physics.ppo.train`'s new `make_gate_env` parameter (F127/F128: the
+        # sampled/exploring policy's slip is not the deployed policy's, and a
+        # gate pinned at the final target reads "always terrible" during early
+        # curriculum stages regardless of real progress -- measured 0 raises
+        # in 12 updates that way).
+        e = DrivingEnv(EnvConfig(
+            track=trk, start_jitter_m=0.0,
+            **_env_kwargs(weight, state["a_lat"], cross_track)))
+        envs["gate"] = e
+        return e
+
     def on_update(rec):
-        # Reverted to the SAMPLED (training-rollout) signal for the raise
-        # gate. A `physics.ppo._evaluate_deployed` metric was tried here and
-        # is real and useful (kept, see ppo.py) -- but `make_eval`'s env is
-        # deliberately PINNED at A_LAT_MAX (so checkpoint SELECTION does not
-        # drift as the curriculum climbs, decided earlier this session), so
-        # it always scores the deployed policy against the FINAL, hardest
-        # target regardless of what stage training has reached. Early in a
-        # run that reads as "always terrible" and the curriculum never
-        # raises at all -- worse than the original gate, which this measured:
-        # 0 raises in 12 updates, 24/24 sections outside the tyre fit. The
-        # selection-time and curriculum-time questions are genuinely
-        # different ("is it ready for the final target" vs "is it coping
-        # with what it is training against right now") and need separate
-        # eval passes, which is more machinery than this run should carry
-        # untested. The sampled signal is noisier but at least answers the
-        # right question at the right timescale.
-        off = rec.get("off_track_rate", 1.0)
-        slip = rec.get("worst_slip_mean_deg", 99.0)
+        # Gate on the DEPLOYED policy's slip AT THE CURRENT PLAN STAGE
+        # (`gate_*`, from `make_gate`'s env), carried forward between evals
+        # rather than falling back to the sampled per-update signal on the
+        # updates an eval did not fire -- that fallback is what silently
+        # reintroduced the sampled-metric miscalibration the first time this
+        # was tried. Before the first gate eval exists (state has no
+        # "last_gate_slip" yet), fall back to the sampled signal so the very
+        # first few updates are not gated on nothing.
+        if np.isfinite(rec.get("gate_worst_slip_deg", float("nan"))):
+            state["last_gate_slip"] = rec["gate_worst_slip_deg"]
+            state["last_gate_off"] = rec["gate_off_track_rate"]
+        off = state.get("last_gate_off", rec.get("off_track_rate", 1.0))
+        slip = state.get("last_gate_slip", rec.get("worst_slip_mean_deg", 99.0))
         if off < RAISE_OFF_BELOW and slip < RAISE_SLIP_BELOW_DEG:
             state["clean"] += 1
         else:
@@ -218,14 +231,11 @@ def _run(weight: float, steps: int, seed: int = None,
         if (state["clean"] >= RAISE_PATIENCE
                 and state["a_lat"] < A_LAT_MAX - 1e-9):
             state["a_lat"] = min(state["a_lat"] + A_LAT_STEP, A_LAT_MAX)
-            # Mutate BOTH live envs. The eval env is a separate object and
-            # would otherwise keep scoring against the old plan -- which is
-            # how a checkpoint gets selected under one plan and reported
-            # under another (F109, in its speed-cap form).
-            # Training env only. The eval env's plan stays fixed -- see
-            # `make_eval`.
-            if envs.get("batched") is not None:
-                envs["batched"].set_speed_ref_a_lat(state["a_lat"])
+            # Mutate the training AND gate envs. The selection eval env
+            # (`envs["eval"]`) stays pinned at A_LAT_MAX -- see `make_eval`.
+            for k in ("batched", "gate"):
+                if envs.get(k) is not None:
+                    envs[k].set_speed_ref_a_lat(state["a_lat"])
             state["clean"] = 0
             state["raises"] += 1
             state["log"].append({"update": rec["update"],
@@ -235,7 +245,9 @@ def _run(weight: float, steps: int, seed: int = None,
         if rec["update"] % 25 == 0:
             print(f"  upd {rec['update']:4d} steps={rec['steps']:>11,} "
                   f"v={rec.get('speed_mean', float('nan')):5.1f} "
-                  f"slip={slip:5.1f} off={off:.2f} "
+                  f"gate_slip={slip:5.1f} "
+                  f"sampled_slip={rec.get('worst_slip_mean_deg', float('nan')):5.1f} "
+                  f"off={off:.2f} "
                   f"a_lat={state['a_lat']/schema.G:.2f}g "
                   f"EV={rec['explained_variance']:+.3f}", flush=True)
 
@@ -254,7 +266,8 @@ def _run(weight: float, steps: int, seed: int = None,
                     entropy_anneal=True)
     t0 = time.time()
     res = train(make_batched_env=make_batched, cfg=cfg, on_update=on_update,
-                make_eval_env=make_eval, init_state_dict=init_state_dict)
+                make_eval_env=make_eval, make_gate_env=make_gate,
+                init_state_dict=init_state_dict)
     wall = time.time() - t0
 
     # Scored through the one committed evaluator (D16). `res["model"]` holds

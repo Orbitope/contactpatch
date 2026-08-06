@@ -205,7 +205,7 @@ def _gae(rewards, values, dones, last_value, gamma, lam):
     return adv, adv + values
 
 
-def _evaluate_deployed(model, env, episodes: int, seed0: int) -> dict:
+def _evaluate_deployed(model, env, episodes: int, seed0: int, prefix: str = "eval") -> dict:
     """Roll the DEPLOYED (mean-action) policy on held-out seeds.
 
     Deliberately uses only ``reset``/``step``, so this stays as
@@ -241,16 +241,16 @@ def _evaluate_deployed(model, env, episodes: int, seed0: int) -> dict:
         h = env.history()
         slips.append(float(np.max(h["alpha_max_deg"])) if len(h.get("alpha_max_deg", []))
                      else float("nan"))
-    return {"eval_return": float(np.mean(rets)),
-            "eval_distance": float(np.mean(dists)),
-            "eval_finish_rate": float(np.mean(fins)),
-            "eval_off_track_rate": float(np.mean(offs)),
-            "eval_worst_slip_deg": float(np.nanmax(slips)) if slips else float("nan")}
+    return {f"{prefix}_return": float(np.mean(rets)),
+            f"{prefix}_distance": float(np.mean(dists)),
+            f"{prefix}_finish_rate": float(np.mean(fins)),
+            f"{prefix}_off_track_rate": float(np.mean(offs)),
+            f"{prefix}_worst_slip_deg": float(np.nanmax(slips)) if slips else float("nan")}
 
 
 def train(make_env=None, cfg: PPOConfig | None = None, on_update=None,
           make_eval_env=None, make_batched_env=None,
-          init_state_dict=None) -> dict:
+          init_state_dict=None, make_gate_env=None) -> dict:
     """Train a policy. ``make_env(i)`` builds environment ``i``.
 
     Returns the trained model plus a per-update history — the raw material D6
@@ -276,6 +276,22 @@ def train(make_env=None, cfg: PPOConfig | None = None, on_update=None,
     distribution the way the weights do), and the learning-rate anneal and
     entropy schedule both restart from update 0 — a warm start changes where
     training begins, not what a training run's own schedule means.
+
+    ``make_gate_env`` (F127/F128): a SECOND, optional deployed-policy eval,
+    separate from ``make_eval_env``. ``eval_env`` exists to pick the best
+    checkpoint and is typically pinned at whatever the run's final target is,
+    so a checkpoint is not favoured just for being judged at an easier stage
+    (F109 in a curriculum's clothing) — but that makes it the WRONG env to ask
+    "is training going well right now", because early in a curriculum it
+    always reads as bad regardless of real progress (measured: 0 raises in 12
+    updates when a curriculum gate was wired to it). ``gate_env`` is for a
+    caller that needs to know how the deployed policy is doing against
+    whatever it is CURRENTLY training against — built once like ``eval_env``,
+    but the caller is expected to mutate it (same pattern the curriculum
+    already uses for the training env) as its own target changes. Runs on the
+    same cadence as the selection eval, merged into ``rec`` under a
+    ``gate_*`` prefix, and never touches checkpoint selection. ``None`` (the
+    default) reproduces every existing call bit-for-bit.
     """
     cfg = cfg or PPOConfig()
     torch.manual_seed(cfg.seed)
@@ -323,6 +339,7 @@ def train(make_env=None, cfg: PPOConfig | None = None, on_update=None,
                 "select the checkpoint on the training distribution (start "
                 "jitter and all), which is not what gets reported.")
         eval_env = make_eval_env()
+    gate_env = make_gate_env() if make_gate_env is not None else None
     best = {"score": -float("inf"), "state": None, "update": -1, "eval": None}
 
     for update in range(n_updates):
@@ -479,6 +496,14 @@ def train(make_env=None, cfg: PPOConfig | None = None, on_update=None,
                 best = {"score": ev["eval_return"],
                         "state": copy.deepcopy(model.state_dict()),
                         "update": update, "eval": ev}
+        # Same cadence, a DIFFERENT question, and never touches `best` --
+        # this is purely informational for a caller's own on_update logic
+        # (a curriculum gate). See `make_gate_env`'s docstring above for why
+        # it exists as a second env rather than reusing `eval_env`.
+        if gate_env is not None and (update % cfg.eval_every == 0
+                                     or update == n_updates - 1):
+            rec.update(_evaluate_deployed(model, gate_env, cfg.eval_episodes,
+                                          cfg.eval_seed0, prefix="gate"))
 
         history.append(rec)
         if on_update is not None:

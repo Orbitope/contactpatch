@@ -5505,6 +5505,53 @@ approach.
 
 ---
 
+### F130 · F127's checkpoint was overwritten by two of my own smoke tests · 2026-08-06
+
+`speedref_w3_ct0_policy.pt` -- the checkpoint F127 measured -- no longer
+exists on disk. Trying to draw its lap for a visual comparison, every one of
+6 seeds left the road within ~400 m, and re-running the D16 evaluator against
+the current file returned **0% finish rate, 24/24 sections outside the tyre
+fit**, nothing like F127's 96%/5.1 deg.
+
+**Cause.** While diagnosing the curriculum-gate problem (F128/F129), two
+throwaway smoke-test calls invoked `speed_ref._run()` DIRECTLY --
+`SR._run(3.0, 70_000, cross_track=0.0)` (1 update) and
+`SR._run(3.0, 262_144 * 12, cross_track=0.0)` (12 updates) -- both with the
+default seed and no `tag_suffix`. `_run()`'s own tag construction,
+`f"speedref_w{weight:g}_ct{cross_track:g}"`, gives **exactly** "speedref_w3_ct0"
+for those arguments -- identical to the real cell-1 run's tag, because both
+smoke tests happened to pass the same `weight`/`cross_track` as the original.
+Each call's unconditional `torch.save`/`.write_text` at the end of `_run()`
+overwrote the real checkpoint with a barely-trained one, twice, silently.
+`push_further()`'s calls were never at risk (`tag_suffix="_push"` always
+differs), which is exactly why this went unnoticed until now.
+
+**The FINDING is not affected.** F127's numbers were read off the run's own
+console output and `policy_eval` at the time and are recorded in FINDINGS.md
+verbatim; nothing about them was re-derived from the now-overwritten file.
+What is lost is the ARTEFACT for drawing a figure or running further checks.
+
+**Recoverable.** Training is deterministic at a fixed seed in this codebase
+(verified earlier this session: two identical 120k-step runs agreed to every
+decimal), and nothing in `_env_kwargs` or the `PPOConfig` cell 1 used has
+changed since F127 was measured -- `make_gate_env` was added afterward, and
+its own eval pass is documented to consume neither the training nor torch RNG
+(`_evaluate_deployed`'s docstring), so it does not alter the training
+trajectory. Re-running `_run(3.0, 40_000_000, cross_track=0.0)` from scratch
+should reproduce F127 bit-for-bit.
+
+**The lesson is the one this project keeps re-learning.** `multitrack.py`'s
+own comment already warns that fixed output names plus repeated runs is how
+results get silently destroyed. A smoke test that reuses a real result's
+exact tag is the same trap in a new spot -- every throwaway invocation of a
+tagged training function needs its own tag, not just the ones already
+recognised as "real runs."
+
+**Source:** `experiments/tracks_pilot/speed_ref.py:_run`;
+`out/void/OVERWRITTEN_speedref_w3_ct0_*`.
+
+---
+
 
 # Decisions
 

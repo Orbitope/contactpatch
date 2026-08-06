@@ -5454,6 +5454,57 @@ scoped and tested before another multi-hour run depends on it.
 
 ---
 
+### F129 · The gate fix works mechanically; checkpoint selection reverted to before it fired · 2026-08-06
+
+`push_further` v2, with the corrected curriculum gate (`make_gate_env`,
+tracking the training env's current `a_lat` instead of the pinned selection
+target). **The curriculum raised twice** -- 0.69 -> 0.77 g at update 82,
+0.77 -> 0.85 g at update 85 -- the first real progress across three attempts
+(v1 and the pinned-eval rewire both produced 0 raises).
+
+**The delivered checkpoint never trained at the higher plan.**
+[MEASURED, `speedref_w3_ct0_push_history.json`] `best eval_return` peaked at
+**update 80** -- before both raises -- and no later checkpoint ever beat it
+against the selection criterion (`eval_return` scored at the fixed
+`A_LAT_MAX`). `train()`'s selection is correct by its own rule: pick the
+checkpoint that scores best against the stationary target. But it means the
+artefact this run reports is, in substance, the same regime as v1's: trained
+throughout at ~0.69 g.
+
+**Consequence: two consecutive pushes have now underperformed the source
+they started from.**
+
+| | source (F127) | push v1 | push v2 |
+|---|---|---|---|
+| finish rate | 96% | 92% | 92% |
+| worst slip | 5.1° | 9.0° | 9.0° |
+| a_lat at selected checkpoint | (n/a, no plan) | 0.69 g | **0.69 g** |
+| a_lat curriculum reached | (n/a) | 0.69 g (0 raises) | 0.85 g (2 raises) |
+
+v1 and v2's DELIVERED numbers are identical to one decimal place, despite v2's
+training env genuinely reaching a harder plan -- because the checkpoint
+selector never saw a post-raise update that could beat a pre-raise one.
+
+**Why, mechanically.** Harder training is disruptive right when it happens
+(F128's finding, now understood more precisely): the raises land at updates
+82 and 85, and the run had 152 updates total, leaving 67 for the policy to
+recover and exceed its own pre-raise best against a FIXED, harder-than-any-
+training-stage bar. That was not enough.
+
+**Not concluded: whether the approach fails, or whether it just needs more
+post-raise budget.** The mechanism is now verified sound; the open question
+is whether extending the run (or a selection criterion that can see
+post-raise improvement sooner) closes the gap, or whether warm-starting a
+converged policy into harder territory has a cost the source-checkpoint
+comparison will keep finding regardless. Two full-budget runs is enough to
+report honestly and stop spending compute on this avenue without a change in
+approach.
+
+**Source:** `experiments/tracks_pilot/speed_ref.py:push_further`,
+`out/speedref_w3_ct0_push_history.json`; `physics/ppo.py` (`make_gate_env`).
+
+---
+
 
 # Decisions
 

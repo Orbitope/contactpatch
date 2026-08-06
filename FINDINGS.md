@@ -5408,6 +5408,52 @@ rate.
 
 ---
 
+### F128 · Warm-starting reset the optimizer hard enough to lock the curriculum out for the whole run · 2026-08-05
+
+`push_further()`: warm-start from `speedref_w3_ct0` (96% finish, 5.1° worst
+slip, 0.305 mean utilisation), resume the `a_lat` curriculum at 0.69 g
+(where it stalled), full 40M-step budget.
+
+**Result: the plan never moved, and the deployed policy got slightly worse.**
+[MEASURED, `out/speedref_w3_ct0_push_*`]
+
+| | source (w3 ct0) | after 40M more steps, warm-started |
+|---|---|---|
+| finish rate | 96% | **92%** |
+| worst slip | 5.1° | **9.0°** (valid, but at the raise gate's own threshold) |
+| mean utilisation | 0.305 | 0.323 |
+| at the limit | 0.2% | 3.1% |
+| `a_lat` raises | 3 (source run) | **0** |
+
+**Cause, confirmed exactly rather than inferred.** `train()`'s own contract
+(`init_state_dict`'s docstring) warns the optimiser is always fresh on a
+warm start. Checked every one of the 152 updates against the raise gate's
+own criteria (`off_track_rate < 0.15` AND `worst_slip_mean_deg < 9.0`): **0
+of 152 satisfied both simultaneously.** Sampled slip was 6.3° at update 0 and
+19.7° by update 3 -- the fresh Adam moments destabilised the policy almost
+immediately, and it never recovered a 3-update clean streak for the rest of
+the budget, even though `off_track_rate` fell to 0.02-0.08 after update 75
+(the DEPLOYED policy was mostly fine; the SAMPLED one that gates the
+curriculum was not).
+
+**This is the same miscalibration F127 already found, now costing an entire
+run instead of one stall.** The sampled/exploring policy's slip is not the
+deployed policy's slip (F127: 15-17° sampled vs 5.1° deployed on the source
+checkpoint), and a warm start's optimizer reset makes that gap worse, not
+better, right when the curriculum most needs to see through it.
+
+**Not tried: gating on a properly-scoped deployed-metric eval pass**
+(evaluated at the CURRENT `a_lat`, unlike `make_eval`'s env which is
+deliberately pinned at `A_LAT_MAX` for checkpoint selection and was already
+found unusable for this — 0 raises in 12 updates when tried, worse than the
+sampled gate). That is the principled fix and needs its own eval pass,
+scoped and tested before another multi-hour run depends on it.
+
+**Source:** `experiments/tracks_pilot/speed_ref.py:push_further`,
+`out/speedref_w3_ct0_push_history.json`.
+
+---
+
 
 # Decisions
 

@@ -1,0 +1,21 @@
+
+  warm-starting from experiments/tracks_pilot/out/speedref_w3_ct0_policy.pt
+
+========================================================================
+  Spa, speed_ref_penalty=3, cross_track_penalty=0, 40,000,000 steps
+========================================================================
+  plan starts at a_lat 0.69 g (warm-started), raises by 0.08 g toward 0.97 g while off<0.15 and slip<9.0°
+  upd    0 steps=    262,144 v= 12.1 slip=  6.3 off=1.00 a_lat=0.69g EV=+0.029
+  upd   25 steps=  6,815,744 v= 20.0 slip= 19.2 off=1.00 a_lat=0.69g EV=+0.079
+  upd   50 steps= 13,369,344 v= 21.8 slip= 19.8 off=0.56 a_lat=0.69g EV=+0.248
+  upd   75 steps= 19,922,944 v= 22.8 slip= 14.9 off=0.08 a_lat=0.69g EV=+0.266
+  upd  100 steps= 26,476,544 v= 23.5 slip= 11.3 off=0.02 a_lat=0.69g EV=+0.296
+  upd  125 steps= 33,030,144 v= 24.1 slip= 13.2 off=0.02 a_lat=0.69g EV=+0.528
+  upd  150 steps= 39,583,744 v= 24.6 slip= 12.9 off=0.02 a_lat=0.69g EV=+0.543
+
+  [D16] 6420.3 m (91.7% of lap), finished 92%, off-track 0%, worst slip 9.0 deg, 0/24 outside the fit -- rule 4 valid.
+    NO LAP TIME — finished 92% of runs, covered 91.7% of the lap. (mean speed 24.4 m/s would project 287 s IF it completed one, which it does not.)
+    utilisation mean 0.323 (baseline 0.090), at-limit 3.1% (baseline 0.7%)
+
+FINAL: 6420.3 m (91.7% of lap), finished 92%, off-track 0%, worst slip 9.0 deg, 0/24 outside the fit -- rule 4 valid.
+a_lat raises: 0 final a_lat_g: 0.69

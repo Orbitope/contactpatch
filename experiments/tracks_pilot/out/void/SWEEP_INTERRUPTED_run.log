@@ -23,3 +23,5 @@
 ========================================================================
   plan starts at a_lat 0.45 g, raises by 0.08 g toward 0.97 g while off<0.15 and slip<9.0°
   upd    0 steps=    262,144 v=  8.0 slip=  3.3 off=0.68 a_lat=0.45g EV=+0.001
+  upd   25 steps=  6,815,744 v= 14.6 slip= 23.0 off=0.30 a_lat=0.45g EV=+0.011
+  upd   50 steps= 13,369,344 v= 18.1 slip= 16.7 off=0.10 a_lat=0.45g EV=+0.541

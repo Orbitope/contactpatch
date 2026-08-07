@@ -5552,23 +5552,28 @@ recognised as "real runs."
 
 ---
 
-### F131 · The speed_ref recipe does not transfer to Monza or MexicoCity — three different failure modes, none matching Spa · 2026-08-07
+### F131 · speed_ref does not transfer to Monza or MexicoCity — 0 of 4 cells both finish and stay valid · 2026-08-07
 
 Season 5 stage 1, rebuilt on `speed_ref` (F127's recipe: `w=3`, curvature-aware
 plan, no scalar cap). [MEASURED, `stage1_speedref_run.log`,
 `out/stage1_speedref_results.json`]
 
-| cell | distance | valid? | failure mode |
-|---|---|---|---|
-| Monza ct=0 | 51.4% | valid, 9.9° | leaves the road cleanly (low slip, 0% finish) |
-| Monza ct=2 | 52.0% | **invalid**, 14.3° | curriculum burst-raised at update 130-142, no recovery time before the budget ended |
-| MexicoCity ct=0 | **100.0%** | **invalid**, 17.0° | stable drift -- car never leaves the road, never inside the fit |
+| cell | a_lat final | finish | distance | valid? | worst slip |
+|---|---|---|---|---|---|
+| Monza ct=0 | 0.45g (0 raises) | 0% | 51.4% | **valid** | 9.9° |
+| Monza ct=2 | 0.85g (5 raises) | 0% | 52.0% | invalid | 14.3° |
+| MexicoCity ct=0 | 0.45g (0 raises) | 100% | 100.0% | invalid | 17.0° |
+| MexicoCity ct=2 | 0.45g (0 raises) | 100% | 100.0% | invalid | 15.9° |
 
-Three cells, three different ways of not working. None resembles Spa's 96%
-finish / 7° worst slip (F127, re-verified). The fourth cell (MexicoCity
-`ct=2`) is running; recorded now because the pattern across the first three
-is already a real, load-bearing answer to stage 1's question regardless of
-what the fourth shows.
+**All four cells complete.** [MEASURED, `stage1_speedref_results.json`]
+**Zero of four both finish a lap and stay inside the tyre fit.** The one
+rule-4-valid cell (Monza ct=0) never finishes; both cells that finish
+(MexicoCity, either arm) do it by sliding. None resembles Spa's 96% finish /
+7° worst slip (F127, re-verified). Both circuits' cross-track question comes
+back the script's own **INCONCLUSIVE** verdict, because a cell in each pair
+fails rule 4 outright -- there is no clean comparison to draw a "helps" or
+"hurts" reading from here, only the observation (below) that it did not
+rescue either circuit.
 
 **The `a_lat` curriculum stalling is common to both circuits' `ct=0` arms,
 for two different underlying reasons.** Monza ct=0: `gate_off` never fell

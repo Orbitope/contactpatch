@@ -5552,6 +5552,66 @@ recognised as "real runs."
 
 ---
 
+### F131 · The speed_ref recipe does not transfer to Monza or MexicoCity — three different failure modes, none matching Spa · 2026-08-07
+
+Season 5 stage 1, rebuilt on `speed_ref` (F127's recipe: `w=3`, curvature-aware
+plan, no scalar cap). [MEASURED, `stage1_speedref_run.log`,
+`out/stage1_speedref_results.json`]
+
+| cell | distance | valid? | failure mode |
+|---|---|---|---|
+| Monza ct=0 | 51.4% | valid, 9.9° | leaves the road cleanly (low slip, 0% finish) |
+| Monza ct=2 | 52.0% | **invalid**, 14.3° | curriculum burst-raised at update 130-142, no recovery time before the budget ended |
+| MexicoCity ct=0 | **100.0%** | **invalid**, 17.0° | stable drift -- car never leaves the road, never inside the fit |
+
+Three cells, three different ways of not working. None resembles Spa's 96%
+finish / 7° worst slip (F127, re-verified). The fourth cell (MexicoCity
+`ct=2`) is running; recorded now because the pattern across the first three
+is already a real, load-bearing answer to stage 1's question regardless of
+what the fourth shows.
+
+**The `a_lat` curriculum stalling is common to both circuits' `ct=0` arms,
+for two different underlying reasons.** Monza ct=0: `gate_off` never fell
+below the 0.15 raise threshold -- the car keeps leaving the road, so the
+curriculum correctly never asks for more. MexicoCity ct=0: `gate_off` fell to
+0.00 by update 50 (the car IS on the road), but `gate_slip` never fell below
+9° (stayed 14-20° from update 25 on) -- the car found a **stable drift**
+that satisfies "stay on track" without satisfying "stay inside the fit". Both
+are the curriculum gate working correctly; what differs is what the
+policy did with the a_lat=0.45g plan it never got past.
+
+**MexicoCity ct=0 is F62 in its purest form yet measured.** 100% of the lap
+covered, EVERY criterion except rule 4 satisfied, and it is invalid anyway --
+completing a lap by sliding is not completing a lap in the sense this project
+can quote (F62: sliding covers ground *faster*, so an unconstrained-enough
+reward finds it regardless of design intent).
+
+**cross_track_penalty made Monza WORSE, not better -- opposite of the F118
+remedial reading in a new way.** Where F118 found the term a tax on a policy
+that could already hold a line, here it did not rescue Monza ct=0's
+already-valid-but-incomplete result; it turned a valid failure into an
+invalid one. The mechanism looks different too: `ct=2`'s curriculum broke
+through late (5 raises in updates 130-142) and never had budget left to
+stabilise, which reads as an interaction with training dynamics rather than
+a simple "centreline pull helps or hurts the racing line" story.
+
+**What this means for staging.** The plan's own stated gate: *"If
+`cross_track_penalty=2.0` does not also solve a fast and a tight circuit, it
+is a Spa constant, not a finding, and the sweep has to be redone per band
+before anything else proceeds."* On the evidence so far, `speed_ref` itself
+-- not just the cross-track term -- is a Spa constant. Stage 4 (the 17-circuit
+generalist) should not proceed against the current recipe without either (a)
+a per-circuit `a_lat` schedule slower/lower than Spa's, since 40M steps was
+not enough for either new circuit's curriculum to progress past 0.45g cleanly,
+or (b) an explicit anti-slide term stronger than `envelope_penalty=1.0`
+currently provides, since MexicoCity found a slide that satisfies every other
+criterion.
+
+**Source:** `experiments/tracks_pilot/stage1_speedref.py`,
+`out/stage1_speedref_run.log`, `out/stage1_speedref_results.json`.
+
+---
+
 
 # Decisions
 

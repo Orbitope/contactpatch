@@ -5653,6 +5653,57 @@ fixes on Monza, not choosing between them.
 
 ---
 
+### F133 · speed_ref DOES transfer — with a stronger anti-slide term everywhere, and 2x budget on Monza · 2026-08-07
+
+The combined fix (envelope_penalty 1.0->3.0, exponent 4.0->2.0, PLUS doubled
+budget 40M->80M) fully resolves Monza. [MEASURED,
+`out/f131_combined_run.log`, `out/speedref_monza_w3_ct0_v2combined_*`]
+
+| circuit | steps | envelope (penalty/exponent) | finish | worst slip | valid |
+|---|---|---|---|---|---|
+| Spa (F127) | 40M | 1.0 / 4.0 (default) | 96% | ~7° | valid |
+| Monza | **80M** | **3.0 / 2.0** | **100%** | **9.3°** | valid |
+| MexicoCity | 40M | **3.0 / 2.0** | **100%** | 9.8° | valid |
+
+**This resolves F131's open question decisively: `speed_ref` transfers.** Not
+unmodified -- both non-Spa circuits needed the strengthened anti-slide term,
+and Monza additionally needed double the budget -- but with those two,
+well-diagnosed changes (F132), every circuit tried reaches a complete,
+rule-4-valid lap, and the two new circuits actually finish MORE reliably
+than Spa's own committed result (100% vs 96%).
+
+**The curriculum trajectory explains why the combined fix worked where budget
+alone did not.** `v2budget` (80M, default envelope) reached 100% distance but
+plateaued at 12.9 deg, riding the edge for the whole back half of training.
+`v2combined` (80M, strengthened envelope) raised SEVEN times in 18 updates
+(122->140, every ~3 updates) with off-track at 0.00 throughout, reaching
+`A_LAT_MAX` by update 140 of ~304 -- leaving over half the budget purely to
+consolidate at the full target, which no earlier attempt had. The anti-slide
+term did not just cap the worst excess; it changed how FAST and how CLEANLY
+the curriculum could climb, because a policy no longer rewarded for riding
+just past the fit converges on a genuinely different, more conservative-at-
+the-margin driving style sooner.
+
+**What this means for staging.** `envelope_penalty=3.0, envelope_exponent=2.0`
+should be the new default for any circuit beyond Spa, not a per-circuit
+special case -- it helped MexicoCity (which needed no extra budget) exactly
+as much as it helped Monza (which did). Whether MORE circuits need the 2x
+budget Monza needed, or whether Monza was unusually hard (fewest/shortest
+braking zones of the three, per its 1.8% below-15m/s stratification figure),
+is not yet known and is directly relevant to sizing stage 4's 17-circuit
+generalist budget.
+
+**Rule 5 still applies.** Every result in this thread, Spa included, is ONE
+seed. None of this is a trend until seeded -- it is confirmation that a
+recipe CAN reach a valid lap on three circuits, not a claim about how
+reliably it does so.
+
+**Source:** `experiments/tracks_pilot/speed_ref.py`;
+`out/f131_combined_run.log`; `out/speedref_monza_w3_ct0_v2combined_*`,
+`out/speedref_mexicocity_w3_ct0_v2envelope_*`.
+
+---
+
 
 # Decisions
 

@@ -1841,10 +1841,14 @@ starts, at a capped 11 m/s.
 
 ### Season 5 RL plan — track budget and staging (2026-08-01)
 
-**Where we are.** Spa is solved and quotable: 100% of the lap from all 24
-and all 48 probes, 0% off-track, 0 sections outside the tyre fit, 537.8 s
-(13.0 m/s). The recipe is `spa_curriculum.py` with `cross_track_penalty=2.0`
-at 40M steps. `policy_eval.py` (D16) is the only scorer.
+**Where we are (updated 2026-08-07).** `spa_curriculum.py`'s cap+`ct=2.0`
+recipe is superseded — F121 found the flat speed cap pins the car against
+itself for 99.6% of the lap, not against the tyres, so it is not a
+limit-driving baseline. **The current recipe is `speed_ref.py`**: no scalar
+cap, a curvature-aware `a_lat` plan, `envelope_penalty=3.0`/`exponent=2.0`.
+Validated on three circuits (F127/F132/F133): Spa 96% finish, Monza and
+MexicoCity both 100%, all rule-4 valid. `policy_eval.py` (D16) is still the
+only scorer.
 
 **Track budget: 24 of the 25 circuits, split 17 train / 7 held out.**
 
@@ -1932,31 +1936,52 @@ speed cap, not against the tyres. So:
 cap+`ct` recipe transfers to Monza and MexicoCity. F121 says the cap is the
 wrong instrument, so stage 1 as queued would spend 3 h characterising a recipe
 we are about to replace, and its `ct` answer might not survive the change.
-The reward architecture settles first:
+**`speed_ref.py` won on Spa (F127) — w=3, no scalar cap, `a_lat` curriculum
+0.45 g -> 0.97 g, researched reward (`multitrack.ENV`).** 96% finish, ~7°
+worst slip, 3.4x the capped baseline's tyre utilisation.
 
-1. **`speed_ref.py`** — Spa, `speed_ref_penalty` at w = 1/3/10, no scalar cap,
-   `a_lat` curriculum on the plan (0.45 g -> 0.97 g). ~2.2 h. Gate: utilisation
-   materially above the baseline's 0.090 / 0.7% **with** the lap and the 12°
-   fit both held. Says "learned to match a reference", not "discovered
-   braking", wherever quoted.
-2. **Stage 1** — with whichever reward architecture wins, still four-armed.
-3. **Seeds** (rule 5) on whatever survives. Everything to date is one seed.
+**Stage 1 (rebuilt on `speed_ref`, not the old cap+ct recipe) initially
+FAILED — F131.** `stage1_speedref.py`, Monza and MexicoCity x
+`cross_track_penalty` {0.0, 2.0}, w=3, same settings as Spa: 0 of 4 cells both
+finished a lap and stayed inside the tyre fit. Two distinct failure modes —
+Monza left the road cleanly without sliding, MexicoCity found a stable drift
+that satisfied every gate except rule 4 (F62 in its purest form yet
+measured).
 
-**A dependency this creates, flagged now rather than at stage 4.**
-`BatchedDrivingEnv` raises `NotImplementedError` on `speed_ref_penalty`
-together with a `TrackBank`, deliberately — one circuit's plan applied to
-every circuit would be a *wrong* reference, not a missing feature. So **if
-`speed_ref` wins, the multi-track generalist cannot use it until `TrackBank`
-carries a per-circuit plan.** That is a real piece of work (pre-sampling each
-circuit's `SpeedProfile` onto the same arc-length grid the curvature already
-uses) and it sits between stage 1 and stage 4, not after.
+**Diagnosed and fixed — F132/F133. Stage 1 now PASSES.** The two failures had
+different causes and got different, verified fixes rather than one blanket
+rerun:
 
-**Stage 1 is written and ready to launch** —
-`experiments/tracks_pilot/stage1_transfer.py`, four cells (Monza and
-MexicoCity x `cross_track_penalty` 2.0 and 0.0), ~3 h. It derives `CAP_START`
-per circuit rather than inheriting Spa's 9.0 m/s, which is above what either
-new circuit's tightest corner allows (Monza 8.85, MexicoCity 8.34 m/s) and
-would have produced a false "the recipe does not transfer".
+| circuit | fix | result |
+|---|---|---|
+| Spa (F127) | none needed | 96% finish, ~7°, valid |
+| MexicoCity | `envelope_penalty` 1.0->**3.0**, `exponent` 4.0->**2.0** | **100%** finish, 9.8°, valid |
+| Monza | same envelope fix **+ 2x budget** (40M->80M) | **100%** finish, 9.3°, valid |
+
+The default `envelope_penalty`/`exponent` were checked against the actual
+reward math before changing: at the old values the penalty for MexicoCity's
+observed 15-17° slide was 0.004-0.03 against a ~1.5-2.0 per-step progress
+reward — 50-500x too weak to matter. The new values are **the recipe now**,
+not a per-circuit special case; `speed_ref._env_kwargs`/`_run` take them as
+overridable parameters (`None` default reproduces the old Spa-only values
+exactly).
+
+**Open question for stage 4's budget:** does every circuit beyond Spa need
+2x the steps, or was Monza unusually hard (lowest fraction of lap below
+15 m/s of the three — sparse, short braking zones give less training signal
+per lap for exactly the skill needed)? Not yet known.
+
+**Rule 5 still unmet everywhere.** Every result above, Spa included, is ONE
+seed. This confirms the recipe CAN reach a valid lap on three circuits, not
+how reliably it does.
+
+**A dependency for stage 4, unchanged and still open.** `BatchedDrivingEnv`
+raises `NotImplementedError` on `speed_ref_penalty` together with a
+`TrackBank`, deliberately — one circuit's plan applied to every circuit would
+be a *wrong* reference. The 17-circuit generalist cannot use `speed_ref`
+until `TrackBank` carries a per-circuit plan (pre-sampling each circuit's
+`SpeedProfile` onto the arc-length grid the curvature already uses). That
+work sits between stage 1 (now passing) and stage 4, not after.
 
 ### Superseded — Episode 13 planning notes
 

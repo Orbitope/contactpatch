@@ -147,12 +147,28 @@ def _env_kwargs(weight: float, a_lat: float, cross_track: float = 0.0) -> dict:
 
 def _run(weight: float, steps: int, seed: int = None,
          cross_track: float = 0.0, init_state_dict=None,
-         a_lat_start: float = None, tag_suffix: str = "") -> dict:
+         a_lat_start: float = None, tag_suffix: str = "",
+         track_name: str = None) -> dict:
+    # `track_name=None` reproduces every existing call exactly (D-A pattern):
+    # every call site before Season 5 stage 1 assumed Spa, and TRACK is still
+    # the default. A_LAT_START/A_LAT_MAX/A_LAT_STEP need NO per-track
+    # recalibration to extend to a new circuit -- unlike the old scalar
+    # SPEED CAP (m/s, `CAP_START` had to be derived per circuit from its
+    # tightest corner), `a_lat` is a lateral-G TARGET: `v = sqrt(a_lat/kappa)`
+    # scales down with `a_lat` at every curvature, so a conservative starting
+    # g-force is conservative on any circuit, tight or not. Same reasoning
+    # for `spawn_lat_budget` (`_spawn_speed`'s own per-corner ceiling), which
+    # was already track-agnostic.
+    track_name = TRACK if track_name is None else track_name
     seed = V2.SEED if seed is None else seed
-    tag = (f"speedref_w{weight:g}_ct{cross_track:g}"
+    # Spa keeps its ORIGINAL tag exactly -- no track prefix -- so this does
+    # not silently rename the F127/F130 checkpoint or break
+    # `push_further`'s `from_policy` default, which names that exact file.
+    track_tag = "" if track_name == TRACK else f"{track_name.lower()}_"
+    tag = (f"speedref_{track_tag}w{weight:g}_ct{cross_track:g}"
            + (f"_s{seed}" if seed != V2.SEED else "") + tag_suffix)
-    trk = load_real_track(TRACK)
-    print(f"\n{'='*72}\n  {TRACK}, speed_ref_penalty={weight:g}, "
+    trk = load_real_track(track_name)
+    print(f"\n{'='*72}\n  {track_name}, speed_ref_penalty={weight:g}, "
           f"cross_track_penalty={cross_track:g}, {steps:,} steps\n{'='*72}")
     a_lat0 = A_LAT_START if a_lat_start is None else a_lat_start
     print(f"  plan starts at a_lat {a_lat0/schema.G:.2f} g"

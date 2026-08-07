@@ -1,0 +1,23 @@
+
+========================================================================
+  Spa, speed_ref_penalty=3, cross_track_penalty=0, 40,000,000 steps
+========================================================================
+  plan starts at a_lat 0.45 g, raises by 0.08 g toward 0.97 g while off<0.15 and slip<9.0°
+  upd    0 steps=    262,144 v=  8.0 gate_slip=  1.0 sampled_slip=  3.3 off=1.00 a_lat=0.45g EV=+0.001
+  upd   25 steps=  6,815,744 v= 14.6 gate_slip= 30.0 sampled_slip= 25.8 off=1.00 a_lat=0.45g EV=+0.078
+  upd   50 steps= 13,369,344 v= 18.4 gate_slip= 21.9 sampled_slip= 24.7 off=1.00 a_lat=0.45g EV=+0.165
+  upd   75 steps= 19,922,944 v= 20.2 gate_slip= 17.6 sampled_slip= 15.7 off=0.00 a_lat=0.45g EV=+0.627
+    ^ plan raised to 0.53 g at update 98
+  upd  100 steps= 26,476,544 v= 21.3 gate_slip=  7.1 sampled_slip=  8.9 off=0.00 a_lat=0.53g EV=+0.601
+    ^ plan raised to 0.61 g at update 101
+    ^ plan raised to 0.69 g at update 104
+    ^ plan raised to 0.77 g at update 107
+    ^ plan raised to 0.85 g at update 110
+  upd  125 steps= 33,030,144 v= 22.2 gate_slip= 10.0 sampled_slip= 13.5 off=0.00 a_lat=0.85g EV=+0.035
+  upd  150 steps= 39,583,744 v= 23.0 gate_slip= 12.3 sampled_slip= 17.3 off=0.00 a_lat=0.85g EV=+0.476
+
+  [D16] 6709.6 m (95.9% of lap), finished 96%, off-track 4%, worst slip 7.1 deg, 0/24 outside the fit -- rule 4 valid.
+    NO LAP TIME — finished 96% of runs, covered 95.9% of the lap. (mean speed 24.4 m/s would project 287 s IF it completed one, which it does not.)
+    utilisation mean 0.311 (baseline 0.090), at-limit 1.0% (baseline 0.7%)
+
+FINAL: 6709.6 m (95.9% of lap), finished 96%, off-track 4%, worst slip 7.1 deg, 0/24 outside the fit -- rule 4 valid.

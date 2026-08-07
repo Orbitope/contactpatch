@@ -1,0 +1,149 @@
+{
+  "weight": 3.0,
+  "cross_tracks": [
+    0.0,
+    2.0
+  ],
+  "steps": 40000000,
+  "ceilings": {
+    "Monza": 0.193875,
+    "MexicoCity": 0.24525
+  },
+  "cells": [
+    {
+      "weight": 3.0,
+      "cross_track_penalty": 0.0,
+      "seed": 0,
+      "steps": 40000000,
+      "wall_s": 3618.4208109378815,
+      "a_lat_final_g": 0.45,
+      "a_lat_raises": 0,
+      "a_lat_log": [],
+      "headline": "2974.3 m (51.4% of lap), finished 0%, off-track 100%, worst slip 9.9 deg, 0/24 outside the fit -- rule 4 valid.",
+      "valid": true,
+      "fraction_of_lap": 0.513802312811705,
+      "finish_rate": 0.0,
+      "off_track_rate": 1.0,
+      "worst_slip_deg": 9.928280832604122,
+      "sections_over_bound": 0,
+      "utilisation_mean": 0.24139633141781539,
+      "frac_at_limit": 0.012632624087865073,
+      "speed_mean": 26.927692646649323,
+      "speed_max": 31.18391974014517,
+      "lap_time_s": null,
+      "lap_time_projected_s": 214.9779245145155,
+      "completed_a_lap": false,
+      "target_s": 347.6,
+      "track": "Monza"
+    },
+    {
+      "weight": 3.0,
+      "cross_track_penalty": 2.0,
+      "seed": 0,
+      "steps": 40000000,
+      "wall_s": 3866.2227923870087,
+      "a_lat_final_g": 0.8500000000000002,
+      "a_lat_raises": 5,
+      "a_lat_log": [
+        {
+          "update": 130,
+          "a_lat_g": 0.53
+        },
+        {
+          "update": 133,
+          "a_lat_g": 0.6100000000000001
+        },
+        {
+          "update": 136,
+          "a_lat_g": 0.6900000000000002
+        },
+        {
+          "update": 139,
+          "a_lat_g": 0.7700000000000002
+        },
+        {
+          "update": 142,
+          "a_lat_g": 0.8500000000000002
+        }
+      ],
+      "headline": "NOT QUOTABLE (rule 4): 23/24 sections outside the 12 deg tyre fit, worst 14.3 deg, occupancy 0.0040. Distance (3008.8 m, 52.0%) measures how freely it was allowed to slide.",
+      "valid": false,
+      "fraction_of_lap": 0.5197616005898916,
+      "finish_rate": 0.0,
+      "off_track_rate": 1.0,
+      "worst_slip_deg": 14.30644861263445,
+      "sections_over_bound": 23,
+      "utilisation_mean": 0.2568795045198547,
+      "frac_at_limit": 0.025921584622011884,
+      "speed_mean": 24.88477188841087,
+      "speed_max": 30.164649230212625,
+      "lap_time_s": null,
+      "lap_time_projected_s": 232.62658396468535,
+      "completed_a_lap": false,
+      "target_s": 347.6,
+      "track": "Monza"
+    },
+    {
+      "weight": 3.0,
+      "cross_track_penalty": 0.0,
+      "seed": 0,
+      "steps": 40000000,
+      "wall_s": 5165.432032108307,
+      "a_lat_final_g": 0.45,
+      "a_lat_raises": 0,
+      "a_lat_log": [],
+      "headline": "NOT QUOTABLE (rule 4): 23/24 sections outside the 12 deg tyre fit, worst 17.0 deg, occupancy 0.0018. Distance (4296.2 m, 100.0%) measures how freely it was allowed to slide.",
+      "valid": false,
+      "fraction_of_lap": 1.0000519181529945,
+      "finish_rate": 1.0,
+      "off_track_rate": 0.0,
+      "worst_slip_deg": 16.986856836847632,
+      "sections_over_bound": 23,
+      "utilisation_mean": 0.34937167726401896,
+      "frac_at_limit": 0.036600946234666046,
+      "speed_mean": 22.18389258418681,
+      "speed_max": 30.68920321919433,
+      "lap_time_s": 193.65269269176082,
+      "lap_time_projected_s": 193.65269269176082,
+      "completed_a_lap": true,
+      "target_s": 347.6,
+      "track": "MexicoCity"
+    },
+    {
+      "weight": 3.0,
+      "cross_track_penalty": 2.0,
+      "seed": 0,
+      "steps": 40000000,
+      "wall_s": 4718.921167135239,
+      "a_lat_final_g": 0.45,
+      "a_lat_raises": 0,
+      "a_lat_log": [],
+      "headline": "NOT QUOTABLE (rule 4): 23/24 sections outside the 12 deg tyre fit, worst 15.9 deg, occupancy 0.0017. Distance (4296.2 m, 100.0%) measures how freely it was allowed to slide.",
+      "valid": false,
+      "fraction_of_lap": 1.000050320985259,
+      "finish_rate": 1.0,
+      "off_track_rate": 0.0,
+      "worst_slip_deg": 15.942247932353128,
+      "sections_over_bound": 23,
+      "utilisation_mean": 0.2396676715955429,
+      "frac_at_limit": 0.01765798560159323,
+      "speed_mean": 19.070525670933847,
+      "speed_max": 24.221832805182753,
+      "lap_time_s": 225.26754675987885,
+      "lap_time_projected_s": 225.26754675987885,
+      "completed_a_lap": true,
+      "target_s": 347.6,
+      "track": "MexicoCity"
+    }
+  ],
+  "verdicts": [
+    {
+      "track": "Monza",
+      "verdict": "INCONCLUSIVE -- a cell is outside the tyre fit, rule 4"
+    },
+    {
+      "track": "MexicoCity",
+      "verdict": "INCONCLUSIVE -- a cell is outside the tyre fit, rule 4"
+    }
+  ]
+}

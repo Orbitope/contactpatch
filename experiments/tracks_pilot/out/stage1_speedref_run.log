@@ -1,0 +1,95 @@
+
+========================================================================
+  Monza, speed_ref_penalty=3, cross_track_penalty=0, 40,000,000 steps
+========================================================================
+  plan starts at a_lat 0.45 g, raises by 0.08 g toward 0.97 g while off<0.15 and slip<9.0°
+  upd    0 steps=    262,144 v=  8.0 gate_slip=  0.5 sampled_slip=  3.4 off=1.00 a_lat=0.45g EV=+0.000
+  upd   25 steps=  6,815,744 v= 14.3 gate_slip= 19.1 sampled_slip= 20.3 off=1.00 a_lat=0.45g EV=+0.664
+  upd   50 steps= 13,369,344 v= 18.4 gate_slip=  9.3 sampled_slip= 15.1 off=1.00 a_lat=0.45g EV=+0.551
+  upd   75 steps= 19,922,944 v= 20.5 gate_slip=  7.6 sampled_slip= 11.5 off=1.00 a_lat=0.45g EV=+0.082
+  upd  100 steps= 26,476,544 v= 21.8 gate_slip=  4.4 sampled_slip=  7.7 off=1.00 a_lat=0.45g EV=+0.722
+  upd  125 steps= 33,030,144 v= 22.7 gate_slip=  4.1 sampled_slip=  8.2 off=1.00 a_lat=0.45g EV=+0.177
+  upd  150 steps= 39,583,744 v= 23.4 gate_slip=  4.1 sampled_slip= 10.1 off=1.00 a_lat=0.45g EV=+0.736
+
+  [D16] 2974.3 m (51.4% of lap), finished 0%, off-track 100%, worst slip 9.9 deg, 0/24 outside the fit -- rule 4 valid.
+    NO LAP TIME — finished 0% of runs, covered 51.4% of the lap. (mean speed 26.9 m/s would project 215 s IF it completed one, which it does not.)
+    utilisation mean 0.241 (baseline 0.090), at-limit 1.3% (baseline 0.7%)
+
+========================================================================
+  Monza, speed_ref_penalty=3, cross_track_penalty=2, 40,000,000 steps
+========================================================================
+  plan starts at a_lat 0.45 g, raises by 0.08 g toward 0.97 g while off<0.15 and slip<9.0°
+  upd    0 steps=    262,144 v=  8.0 gate_slip=  1.0 sampled_slip=  3.4 off=1.00 a_lat=0.45g EV=+0.000
+  upd   25 steps=  6,815,744 v= 14.6 gate_slip= 15.0 sampled_slip= 20.4 off=1.00 a_lat=0.45g EV=+0.021
+  upd   50 steps= 13,369,344 v= 18.8 gate_slip= 10.1 sampled_slip= 12.3 off=1.00 a_lat=0.45g EV=+0.701
+  upd   75 steps= 19,922,944 v= 20.8 gate_slip=  6.8 sampled_slip=  9.9 off=1.00 a_lat=0.45g EV=+0.715
+  upd  100 steps= 26,476,544 v= 21.9 gate_slip=  7.0 sampled_slip=  8.0 off=1.00 a_lat=0.45g EV=+0.744
+  upd  125 steps= 33,030,144 v= 22.6 gate_slip=  5.2 sampled_slip= 10.9 off=1.00 a_lat=0.45g EV=+0.816
+    ^ plan raised to 0.53 g at update 130
+    ^ plan raised to 0.61 g at update 133
+    ^ plan raised to 0.69 g at update 136
+    ^ plan raised to 0.77 g at update 139
+    ^ plan raised to 0.85 g at update 142
+  upd  150 steps= 39,583,744 v= 23.0 gate_slip= 13.6 sampled_slip= 16.0 off=1.00 a_lat=0.85g EV=+0.829
+
+  [D16] NOT QUOTABLE (rule 4): 23/24 sections outside the 12 deg tyre fit, worst 14.3 deg, occupancy 0.0040. Distance (3008.8 m, 52.0%) measures how freely it was allowed to slide.
+    NO LAP TIME — finished 0% of runs, covered 52.0% of the lap. (mean speed 24.9 m/s would project 233 s IF it completed one, which it does not.)
+    utilisation mean 0.257 (baseline 0.090), at-limit 2.6% (baseline 0.7%)
+
+========================================================================
+  MexicoCity, speed_ref_penalty=3, cross_track_penalty=0, 40,000,000 steps
+========================================================================
+  plan starts at a_lat 0.45 g, raises by 0.08 g toward 0.97 g while off<0.15 and slip<9.0°
+  upd    0 steps=    262,144 v=  8.0 gate_slip=  0.4 sampled_slip=  3.5 off=1.00 a_lat=0.45g EV=-0.000
+  upd   25 steps=  6,815,744 v= 13.2 gate_slip= 20.5 sampled_slip= 19.8 off=1.00 a_lat=0.45g EV=+0.133
+  upd   50 steps= 13,369,344 v= 16.0 gate_slip= 14.2 sampled_slip= 16.4 off=0.00 a_lat=0.45g EV=+0.381
+  upd   75 steps= 19,922,944 v= 17.4 gate_slip= 15.8 sampled_slip= 16.7 off=0.00 a_lat=0.45g EV=+0.674
+  upd  100 steps= 26,476,544 v= 18.4 gate_slip= 17.9 sampled_slip= 16.7 off=0.00 a_lat=0.45g EV=+0.632
+  upd  125 steps= 33,030,144 v= 19.0 gate_slip= 18.7 sampled_slip= 18.6 off=0.00 a_lat=0.45g EV=+0.292
+  upd  150 steps= 39,583,744 v= 19.5 gate_slip= 17.5 sampled_slip= 19.3 off=0.00 a_lat=0.45g EV=+0.713
+
+  [D16] NOT QUOTABLE (rule 4): 23/24 sections outside the 12 deg tyre fit, worst 17.0 deg, occupancy 0.0018. Distance (4296.2 m, 100.0%) measures how freely it was allowed to slide.
+    lap 193.7 s vs target 347.6 s (-44%), capped baseline 537.8 s
+    utilisation mean 0.349 (baseline 0.090), at-limit 3.7% (baseline 0.7%)
+
+========================================================================
+  MexicoCity, speed_ref_penalty=3, cross_track_penalty=2, 40,000,000 steps
+========================================================================
+  plan starts at a_lat 0.45 g, raises by 0.08 g toward 0.97 g while off<0.15 and slip<9.0°
+  upd    0 steps=    262,144 v=  8.0 gate_slip=  1.1 sampled_slip=  3.5 off=1.00 a_lat=0.45g EV=-0.000
+  upd   25 steps=  6,815,744 v= 13.3 gate_slip= 17.0 sampled_slip= 18.5 off=1.00 a_lat=0.45g EV=+0.018
+  upd   50 steps= 13,369,344 v= 15.9 gate_slip= 19.5 sampled_slip= 23.2 off=0.00 a_lat=0.45g EV=+0.000
+  upd   75 steps= 19,922,944 v= 16.4 gate_slip= 20.7 sampled_slip= 43.5 off=0.00 a_lat=0.45g EV=+0.000
+  upd  100 steps= 26,476,544 v= 16.2 gate_slip= 15.9 sampled_slip= 16.5 off=0.00 a_lat=0.45g EV=+0.038
+  upd  125 steps= 33,030,144 v= 16.6 gate_slip= 19.0 sampled_slip= 19.3 off=0.00 a_lat=0.45g EV=+0.061
+  upd  150 steps= 39,583,744 v= 17.3 gate_slip= 18.1 sampled_slip= 18.7 off=0.00 a_lat=0.45g EV=+0.576
+
+  [D16] NOT QUOTABLE (rule 4): 23/24 sections outside the 12 deg tyre fit, worst 15.9 deg, occupancy 0.0017. Distance (4296.2 m, 100.0%) measures how freely it was allowed to slide.
+    lap 225.3 s vs target 347.6 s (-35%), capped baseline 537.8 s
+    utilisation mean 0.240 (baseline 0.090), at-limit 1.8% (baseline 0.7%)
+
+
+========================================================================================
+  STAGE 1 (speed_ref) — does the recipe transfer past Spa?
+========================================================================================
+  circuit          ct     lap  finish   slip   util  @limit  valid
+  Monza             0   51.4%      0%    9.9  0.241    1.3%  True
+  Monza             2   52.0%      0%   14.3  0.257    2.6%  False
+  MexicoCity        0  100.0%    100%   17.0  0.349    3.7%  False
+  MexicoCity        2  100.0%    100%   15.9  0.240    1.8%  False
+
+  Per-track grip-limited ceiling (speed_ref.limit_ceiling):
+    Monza         19.4%
+    MexicoCity    24.5%
+
+  Is cross_track_penalty=2.0 a finding or a Spa constant here?
+    Monza         INCONCLUSIVE -- a cell is outside the tyre fit, rule 4
+    MexicoCity    INCONCLUSIVE -- a cell is outside the tyre fit, rule 4
+
+  Did any cell reach the limit without losing the lap?
+    Monza         ct=0  1.3% at limit vs 9.7% win threshold  
+    Monza         ct=2  2.6% at limit vs 9.7% win threshold  
+    MexicoCity    ct=0  3.7% at limit vs 12.3% win threshold  
+    MexicoCity    ct=2  1.8% at limit vs 12.3% win threshold  
+
+  wrote stage1_speedref_results.json

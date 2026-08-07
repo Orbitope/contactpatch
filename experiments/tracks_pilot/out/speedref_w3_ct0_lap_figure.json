@@ -1,0 +1,18 @@
+{
+  "policy": "speedref_w3_ct0_policy.pt",
+  "seed": 0,
+  "distance_m": 6999.436326418108,
+  "fraction_of_lap": 0.9999930106185762,
+  "off_track": false,
+  "worst_slip_deg": 7.028468088583861,
+  "inside_tyre_fit": true,
+  "speed_min": 7.398654856508141,
+  "speed_max": 31.356437169687556,
+  "speed_mean": 25.169146778627137,
+  "speed_p1": 10.268329854172011,
+  "speed_p99": 31.347621059283455,
+  "a_y_max_g": 0.9549226508752368,
+  "utilisation_mean": 0.32191187693764817,
+  "utilisation_max": 0.9829830887151344,
+  "fraction_of_lap_above_0p9_utilisation": 0.007233273056057866
+}

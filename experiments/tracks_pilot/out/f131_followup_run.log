@@ -1,0 +1,54 @@
+========================================================================================
+  DIAGNOSTIC 1: Monza ct=0 -- same reward, DOUBLE budget (80M vs 40M)
+  Tests: was 40M steps just not enough to complete the lap cleanly?
+========================================================================================
+
+========================================================================
+  Monza, speed_ref_penalty=3, cross_track_penalty=0, 80,000,000 steps
+========================================================================
+  plan starts at a_lat 0.45 g, raises by 0.08 g toward 0.97 g while off<0.15 and slip<9.0°
+  upd    0 steps=    262,144 v=  8.0 gate_slip=  0.5 sampled_slip=  3.4 off=1.00 a_lat=0.45g EV=+0.000
+  upd   25 steps=  6,815,744 v= 14.7 gate_slip= 22.1 sampled_slip= 22.9 off=1.00 a_lat=0.45g EV=+0.027
+  upd   50 steps= 13,369,344 v= 18.3 gate_slip= 13.9 sampled_slip= 15.4 off=1.00 a_lat=0.45g EV=+0.710
+  upd   75 steps= 19,922,944 v= 20.3 gate_slip= 11.3 sampled_slip= 11.2 off=1.00 a_lat=0.45g EV=+0.675
+  upd  100 steps= 26,476,544 v= 21.5 gate_slip= 10.6 sampled_slip= 14.5 off=1.00 a_lat=0.45g EV=+0.747
+  upd  125 steps= 33,030,144 v= 22.3 gate_slip= 15.2 sampled_slip= 14.9 off=0.00 a_lat=0.45g EV=+0.806
+  upd  150 steps= 39,583,744 v= 22.8 gate_slip= 11.0 sampled_slip= 11.1 off=0.00 a_lat=0.45g EV=+0.868
+  upd  175 steps= 46,137,344 v= 23.2 gate_slip= 11.1 sampled_slip= 12.0 off=0.00 a_lat=0.45g EV=+0.594
+  upd  200 steps= 52,690,944 v= 23.5 gate_slip= 11.8 sampled_slip= 12.9 off=0.00 a_lat=0.45g EV=+0.641
+  upd  225 steps= 59,244,544 v= 23.8 gate_slip= 12.7 sampled_slip= 12.7 off=0.00 a_lat=0.45g EV=+0.588
+  upd  250 steps= 65,798,144 v= 24.1 gate_slip= 14.6 sampled_slip= 16.4 off=0.00 a_lat=0.45g EV=+0.636
+  upd  275 steps= 72,351,744 v= 24.3 gate_slip= 15.1 sampled_slip= 16.1 off=0.00 a_lat=0.45g EV=+0.640
+  upd  300 steps= 78,905,344 v= 24.6 gate_slip= 12.4 sampled_slip= 13.7 off=0.00 a_lat=0.45g EV=+0.652
+
+  [D16] NOT QUOTABLE (rule 4): 24/24 sections outside the 12 deg tyre fit, worst 12.9 deg, occupancy 0.0005. Distance (5789.1 m, 100.0%) measures how freely it was allowed to slide.
+    lap 222.0 s vs target 347.6 s (-36%), capped baseline 537.8 s
+    utilisation mean 0.284 (baseline 0.090), at-limit 1.4% (baseline 0.7%)
+
+MONZA v2budget FINAL: NOT QUOTABLE (rule 4): 24/24 sections outside the 12 deg tyre fit, worst 12.9 deg, occupancy 0.0005. Distance (5789.1 m, 100.0%) measures how freely it was allowed to slide.
+
+========================================================================================
+  DIAGNOSTIC 2: MexicoCity ct=0 -- same 40M budget, STRONGER anti-slide
+  (envelope_penalty 1.0->3.0, exponent 4.0->2.0)
+  Tests: does a real deterrent stop the stable-drift exploit?
+========================================================================================
+
+========================================================================
+  MexicoCity, speed_ref_penalty=3, cross_track_penalty=0, 40,000,000 steps
+========================================================================
+  plan starts at a_lat 0.45 g, raises by 0.08 g toward 0.97 g while off<0.15 and slip<9.0°
+  upd    0 steps=    262,144 v=  8.0 gate_slip=  0.4 sampled_slip=  3.5 off=1.00 a_lat=0.45g EV=-0.000
+  upd   25 steps=  6,815,744 v= 13.8 gate_slip= 18.1 sampled_slip= 19.1 off=1.00 a_lat=0.45g EV=+0.323
+  upd   50 steps= 13,369,344 v= 16.6 gate_slip= 13.6 sampled_slip= 17.3 off=0.00 a_lat=0.45g EV=+0.505
+  upd   75 steps= 19,922,944 v= 18.0 gate_slip= 13.4 sampled_slip= 16.0 off=0.00 a_lat=0.45g EV=+0.627
+  upd  100 steps= 26,476,544 v= 18.9 gate_slip= 14.2 sampled_slip= 14.3 off=0.00 a_lat=0.45g EV=+0.696
+  upd  125 steps= 33,030,144 v= 19.5 gate_slip= 12.4 sampled_slip= 12.0 off=0.00 a_lat=0.45g EV=+0.713
+    ^ plan raised to 0.53 g at update 138
+    ^ plan raised to 0.61 g at update 141
+  upd  150 steps= 39,583,744 v= 19.9 gate_slip=  9.7 sampled_slip= 11.6 off=0.00 a_lat=0.61g EV=+0.658
+
+  [D16] 4296.2 m (100.0% of lap), finished 100%, off-track 0%, worst slip 9.8 deg, 0/24 outside the fit -- rule 4 valid.
+    lap 193.5 s vs target 347.6 s (-44%), capped baseline 537.8 s
+    utilisation mean 0.347 (baseline 0.090), at-limit 2.6% (baseline 0.7%)
+
+MEXICOCITY v2envelope FINAL: 4296.2 m (100.0% of lap), finished 100%, off-track 0%, worst slip 9.8 deg, 0/24 outside the fit -- rule 4 valid.

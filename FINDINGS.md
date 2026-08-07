@@ -5617,6 +5617,42 @@ criterion.
 
 ---
 
+### F132 · Two targeted fixes for F131's two failure modes — one fully resolves it, one gets close · 2026-08-07
+
+Diagnosed rather than guessed: Monza's failure (never completes, but valid
+slip) and MexicoCity's (completes by sliding, F62) had different root causes,
+so they got different fixes. [MEASURED, `out/f131_followup_run.log`]
+
+| | F131 original | fix | result |
+|---|---|---|---|
+| Monza ct=0 | 51.4% dist, VALID 9.9°, 0% finish | budget 40M->80M | 100% dist, **12.9°, NOT QUOTABLE** (0.9° over, occupancy 0.0005) |
+| MexicoCity ct=0 | 100% dist, INVALID 17.0° | `envelope_penalty` 1.0->3.0, `exponent` 4.0->2.0 | **100% finish, VALID, 9.8°**, 0/24 outside the fit |
+
+**MexicoCity: full resolution.** Checked the reward math before picking
+numbers (F131 already established the old penalty was 0.004-0.03 at 15-17°
+against ~1.5-2.0 progress reward per step -- 50-500x too weak). At the new
+weight/exponent the deployed slip trended down steadily across training
+(18.1 -> 13.6 -> 13.4 -> 14.2 -> 12.4° at updates 25/50/75/100/125) rather
+than plateauing, and the curriculum raised twice near the end (0.45 -> 0.53
+-> 0.61 g at updates 138/141) without collapsing -- unlike Monza `ct=2`'s
+earlier burst-then-crash. **Better than F127's own Spa result on finish rate**
+(100% vs 96%).
+
+**Monza: the hypothesis held, but only got most of the way.** Doubling the
+budget confirmed budget WAS the bottleneck -- 51.4% to 100% distance -- but
+the `a_lat` curriculum still never raised even once in 80M steps (never held
+gate_slip under 9° for 3 consecutive updates), and the extra training found
+its way to "ride the edge" (12.9°, barely over 12°, tiny 0.0005 occupancy)
+rather than clean driving. This is the SAME shape of problem MexicoCity had,
+just far milder -- which is why the natural next test is combining both
+fixes on Monza, not choosing between them.
+
+**Source:** `experiments/tracks_pilot/speed_ref.py` (`envelope_penalty`/
+`envelope_exponent` overrides added for this); `out/f131_followup_run.log`;
+`out/speedref_monza_w3_ct0_v2budget_*`, `out/speedref_mexicocity_w3_ct0_v2envelope_*`.
+
+---
+
 
 # Decisions
 

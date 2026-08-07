@@ -112,7 +112,8 @@ RAISE_PATIENCE = 3
 CROSS_TRACKS = (0.0, 2.0)
 
 
-def _env_kwargs(weight: float, a_lat: float, cross_track: float = 0.0) -> dict:
+def _env_kwargs(weight: float, a_lat: float, cross_track: float = 0.0,
+                envelope_penalty: float = None, envelope_exponent: float = None) -> dict:
     # **The researched reward, not `spa_ppo_v2.V2_ENV`.** V2_ENV predates the
     # RL survey (F105/F112) and differs on seven fields, three of which work
     # directly against this experiment:
@@ -142,13 +143,26 @@ def _env_kwargs(weight: float, a_lat: float, cross_track: float = 0.0) -> dict:
         # speed SD, against the plan's >=5x gate.
         spawn_speed_frac=(0.3, 1.0),
     )
+    # F131: MexicoCity found a STABLE DRIFT at 15-17 deg that satisfies every
+    # gate except rule 4. Checked the actual math before touching it: the
+    # penalty only fires past the 12 deg fit (`excess = slip - 12`), and at
+    # w=1.0/exponent=4.0 (multitrack.ENV's defaults) that gives 0.004-0.03 at
+    # 15-17 deg against a per-step progress reward of ~1.5-2.0 -- 50-500x too
+    # weak to matter. `None` (the default) keeps `multitrack.ENV`'s values,
+    # so every existing call is unaffected; a caller diagnosing a
+    # sliding-past-the-fit failure overrides explicitly.
+    if envelope_penalty is not None:
+        kw["envelope_penalty"] = envelope_penalty
+    if envelope_exponent is not None:
+        kw["envelope_exponent"] = envelope_exponent
     return kw
 
 
 def _run(weight: float, steps: int, seed: int = None,
          cross_track: float = 0.0, init_state_dict=None,
          a_lat_start: float = None, tag_suffix: str = "",
-         track_name: str = None) -> dict:
+         track_name: str = None, envelope_penalty: float = None,
+         envelope_exponent: float = None) -> dict:
     # `track_name=None` reproduces every existing call exactly (D-A pattern):
     # every call site before Season 5 stage 1 assumed Spa, and TRACK is still
     # the default. A_LAT_START/A_LAT_MAX/A_LAT_STEP need NO per-track
@@ -189,7 +203,8 @@ def _run(weight: float, steps: int, seed: int = None,
 
     def make_batched(n):
         e = V2.make_batched_env(
-            n, env_over={"track": trk, **_env_kwargs(weight, state['a_lat'], cross_track)})
+            n, env_over={"track": trk, **_env_kwargs(
+                weight, state['a_lat'], cross_track, envelope_penalty, envelope_exponent)})
         envs["batched"] = e
         return e
 
@@ -204,7 +219,8 @@ def _run(weight: float, steps: int, seed: int = None,
         # run exists to solve.
         e = DrivingEnv(EnvConfig(
             track=trk, start_jitter_m=0.0,
-            **_env_kwargs(weight, A_LAT_MAX, cross_track)))
+            **_env_kwargs(weight, A_LAT_MAX, cross_track,
+                        envelope_penalty, envelope_exponent)))
         envs["eval"] = e
         return e
 
@@ -222,7 +238,8 @@ def _run(weight: float, steps: int, seed: int = None,
         # in 12 updates that way).
         e = DrivingEnv(EnvConfig(
             track=trk, start_jitter_m=0.0,
-            **_env_kwargs(weight, state["a_lat"], cross_track)))
+            **_env_kwargs(weight, state["a_lat"], cross_track,
+                        envelope_penalty, envelope_exponent)))
         envs["gate"] = e
         return e
 
@@ -297,7 +314,8 @@ def _run(weight: float, steps: int, seed: int = None,
     # utilisation are identical at any `a_lat`. F109's real content, that a
     # selection criterion must not drift, is handled in `make_eval`.
     r = PE.evaluate(res["model"], trk, n_sections=N_SECTIONS,
-                    env_kwargs=_env_kwargs(weight, A_LAT_MAX, cross_track))
+                    env_kwargs=_env_kwargs(weight, A_LAT_MAX, cross_track,
+                                          envelope_penalty, envelope_exponent))
     # A LAP TIME REQUIRES A LAP. `length / speed_mean` on a policy that
     # covered two-thirds of the circuit is a projection, and it reads as a
     # result: cell 1 printed "268.2 s vs target 347.6 s (-23%)" for a policy

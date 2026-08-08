@@ -159,7 +159,15 @@ def evaluate(model, track, speed_cap=None, n_sections=N_SECTIONS,
             return a.numpy()
     else:
         if not isinstance(model, ActorCritic):
-            m = ActorCritic(probe.obs_dim, probe.act_dim, 64, (-2.5, -1.0))
+            # Scalar, not the 2-action `(-2.5, -1.0)` tuple: this is a LOAD
+            # path, `load_state_dict` below overwrites log_std's VALUE
+            # entirely, so only its SHAPE matters here. A fixed 2-tuple
+            # would hard-crash `ActorCritic`'s own shape assert the moment
+            # `act_dim` != 2 -- e.g. any `tv_mode` beyond "none". A scalar
+            # broadcasts to any `act_dim` (`ActorCritic`'s own `np.isscalar`
+            # branch), so this one line works for every action space without
+            # needing to know which one is being loaded.
+            m = ActorCritic(probe.obs_dim, probe.act_dim, 64, -1.5)
             m.load_state_dict(torch.load(model))
             model = m
         policy = greedy_policy(model)

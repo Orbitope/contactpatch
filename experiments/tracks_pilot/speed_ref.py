@@ -112,8 +112,19 @@ RAISE_PATIENCE = 3
 CROSS_TRACKS = (0.0, 2.0)
 
 
+#: Per-action initial exploration noise. `(-2.5, -1.0)` is the established
+#: 2-action default -- steer wants less initial noise than throttle. Adding
+#: TV extends that PATTERN rather than inventing a new one: the new channel(s)
+#: get throttle's own scale (-1.0), stated here as a starting choice rather
+#: than a tuned one -- nothing in this project has tuned exploration noise
+#: for an Mz-demand or per-wheel-force channel yet.
+INIT_LOG_STD = {"none": (-2.5, -1.0), "hybrid": (-2.5, -1.0, -1.0),
+                "end_to_end": (-2.5, -1.0, -1.0, -1.0, -1.0)}
+
+
 def _env_kwargs(weight: float, a_lat: float, cross_track: float = 0.0,
-                envelope_penalty: float = None, envelope_exponent: float = None) -> dict:
+                envelope_penalty: float = None, envelope_exponent: float = None,
+                tv_mode: str = "none") -> dict:
     # **The researched reward, not `spa_ppo_v2.V2_ENV`.** V2_ENV predates the
     # RL survey (F105/F112) and differs on seven fields, three of which work
     # directly against this experiment:
@@ -142,6 +153,7 @@ def _env_kwargs(weight: float, a_lat: float, cross_track: float = 0.0,
         # (speed, curvature) -> deceleration map. Measured 12.9x the spawn
         # speed SD, against the plan's >=5x gate.
         spawn_speed_frac=(0.3, 1.0),
+        tv_mode=tv_mode,
     )
     # F131: MexicoCity found a STABLE DRIFT at 15-17 deg that satisfies every
     # gate except rule 4. Checked the actual math before touching it: the
@@ -162,7 +174,7 @@ def _run(weight: float, steps: int, seed: int = None,
          cross_track: float = 0.0, init_state_dict=None,
          a_lat_start: float = None, tag_suffix: str = "",
          track_name: str = None, envelope_penalty: float = None,
-         envelope_exponent: float = None) -> dict:
+         envelope_exponent: float = None, tv_mode: str = "none") -> dict:
     # `track_name=None` reproduces every existing call exactly (D-A pattern):
     # every call site before Season 5 stage 1 assumed Spa, and TRACK is still
     # the default. A_LAT_START/A_LAT_MAX/A_LAT_STEP need NO per-track
@@ -204,7 +216,8 @@ def _run(weight: float, steps: int, seed: int = None,
     def make_batched(n):
         e = V2.make_batched_env(
             n, env_over={"track": trk, **_env_kwargs(
-                weight, state['a_lat'], cross_track, envelope_penalty, envelope_exponent)})
+                weight, state['a_lat'], cross_track, envelope_penalty,
+                envelope_exponent, tv_mode)})
         envs["batched"] = e
         return e
 
@@ -220,7 +233,7 @@ def _run(weight: float, steps: int, seed: int = None,
         e = DrivingEnv(EnvConfig(
             track=trk, start_jitter_m=0.0,
             **_env_kwargs(weight, A_LAT_MAX, cross_track,
-                        envelope_penalty, envelope_exponent)))
+                        envelope_penalty, envelope_exponent, tv_mode)))
         envs["eval"] = e
         return e
 
@@ -239,7 +252,7 @@ def _run(weight: float, steps: int, seed: int = None,
         e = DrivingEnv(EnvConfig(
             track=trk, start_jitter_m=0.0,
             **_env_kwargs(weight, state["a_lat"], cross_track,
-                        envelope_penalty, envelope_exponent)))
+                        envelope_penalty, envelope_exponent, tv_mode)))
         envs["gate"] = e
         return e
 
@@ -296,7 +309,7 @@ def _run(weight: float, steps: int, seed: int = None,
                     rollout_steps=V2.ROLLOUT_STEPS, gamma=0.99,
                     gae_lambda=0.98, minibatches=32,
                     seed=seed, eval_every=8, eval_episodes=V2.EVAL_EPISODES,
-                    entropy_anneal=True)
+                    entropy_anneal=True, init_log_std=INIT_LOG_STD[tv_mode])
     t0 = time.time()
     res = train(make_batched_env=make_batched, cfg=cfg, on_update=on_update,
                 make_eval_env=make_eval, make_gate_env=make_gate,
@@ -381,7 +394,12 @@ def push_further(weight: float = 3.0, steps: int = STEPS,
     trk = load_real_track(TRACK)
     probe = DrivingEnv(EnvConfig(track=trk, start_jitter_m=0.0,
                                  **_env_kwargs(weight, A_LAT_START, cross_track)))
-    m = ActorCritic(probe.obs_dim, probe.act_dim, 64, (-2.5, -1.0))
+    # Scalar (see policy_eval.py's identical fix): a LOAD path, so only the
+    # SHAPE of log_std matters, not its value -- `load_state_dict` below
+    # overwrites it. `push_further` is tv_mode="none"-only today, so this is
+    # not on this run's critical path, but a fixed 2-tuple would silently
+    # break the next warm-start of a TV checkpoint.
+    m = ActorCritic(probe.obs_dim, probe.act_dim, 64, -1.5)
     m.load_state_dict(torch.load(src))
     print(f"\n  warm-starting from {src.relative_to(OUT.parent.parent.parent)}")
     a_lat0 = (0.69 * schema.G) if a_lat_start is None else a_lat_start

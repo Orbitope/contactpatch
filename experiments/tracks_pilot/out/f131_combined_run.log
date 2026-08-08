@@ -1,0 +1,35 @@
+========================================================================================
+  DIAGNOSTIC 3: Monza ct=0 -- BOTH fixes combined (80M budget + stronger anti-slide)
+  Tests: does the fix that fully resolved MexicoCity also close Monzas last 0.9deg?
+========================================================================================
+
+========================================================================
+  Monza, speed_ref_penalty=3, cross_track_penalty=0, 80,000,000 steps
+========================================================================
+  plan starts at a_lat 0.45 g, raises by 0.08 g toward 0.97 g while off<0.15 and slip<9.0°
+  upd    0 steps=    262,144 v=  8.0 gate_slip=  1.1 sampled_slip=  3.4 off=1.00 a_lat=0.45g EV=+0.000
+  upd   25 steps=  6,815,744 v= 15.0 gate_slip= 16.1 sampled_slip= 18.2 off=1.00 a_lat=0.45g EV=+0.431
+  upd   50 steps= 13,369,344 v= 19.5 gate_slip=  4.9 sampled_slip= 10.2 off=1.00 a_lat=0.45g EV=+0.661
+  upd   75 steps= 19,922,944 v= 21.4 gate_slip= 10.3 sampled_slip=  9.5 off=1.00 a_lat=0.45g EV=+0.739
+  upd  100 steps= 26,476,544 v= 22.5 gate_slip=  5.6 sampled_slip=  9.1 off=1.00 a_lat=0.45g EV=+0.745
+    ^ plan raised to 0.53 g at update 122
+    ^ plan raised to 0.61 g at update 125
+  upd  125 steps= 33,030,144 v= 23.2 gate_slip=  5.0 sampled_slip=  5.4 off=0.00 a_lat=0.61g EV=+0.834
+    ^ plan raised to 0.69 g at update 128
+    ^ plan raised to 0.77 g at update 131
+    ^ plan raised to 0.85 g at update 134
+    ^ plan raised to 0.93 g at update 137
+    ^ plan raised to 0.97 g at update 140
+  upd  150 steps= 39,583,744 v= 23.5 gate_slip=  9.3 sampled_slip= 11.2 off=0.00 a_lat=0.97g EV=+0.529
+  upd  175 steps= 46,137,344 v= 23.9 gate_slip= 11.6 sampled_slip= 12.7 off=0.00 a_lat=0.97g EV=+0.451
+  upd  200 steps= 52,690,944 v= 24.3 gate_slip=  9.6 sampled_slip= 11.3 off=0.00 a_lat=0.97g EV=+0.429
+  upd  225 steps= 59,244,544 v= 24.7 gate_slip=  9.3 sampled_slip= 12.0 off=0.00 a_lat=0.97g EV=+0.453
+  upd  250 steps= 65,798,144 v= 25.1 gate_slip= 11.2 sampled_slip= 12.9 off=0.00 a_lat=0.97g EV=+0.454
+  upd  275 steps= 72,351,744 v= 25.4 gate_slip= 10.9 sampled_slip= 13.3 off=0.00 a_lat=0.97g EV=+0.435
+  upd  300 steps= 78,905,344 v= 25.7 gate_slip= 10.3 sampled_slip= 13.1 off=0.00 a_lat=0.97g EV=+0.455
+
+  [D16] 5789.1 m (100.0% of lap), finished 100%, off-track 0%, worst slip 9.3 deg, 0/24 outside the fit -- rule 4 valid.
+    lap 227.7 s vs target 347.6 s (-35%), capped baseline 537.8 s
+    utilisation mean 0.251 (baseline 0.090), at-limit 1.7% (baseline 0.7%)
+
+MONZA v2combined FINAL: 5789.1 m (100.0% of lap), finished 100%, off-track 0%, worst slip 9.3 deg, 0/24 outside the fit -- rule 4 valid.

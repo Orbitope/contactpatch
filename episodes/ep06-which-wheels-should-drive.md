@@ -4,6 +4,14 @@
 
 ---
 
+> **Joining at Season 2?** Season 1 built everything this season spends: a tire
+> grips by slipping and has one force budget for turning and driving (Episodes
+> 1 and 4), pressing it harder buys less than proportionally more grip (Episode
+> 2), a car is a contest between its axles over which runs out first (Episode
+> 3), and four wheels make weight transfer real (Episode 5). Season 2 points
+> that machinery at the questions people actually argue about — which wheels
+> should drive, where the weight goes, where the engine sits.
+
 ## The question
 
 Front-wheel drive or rear-wheel drive?

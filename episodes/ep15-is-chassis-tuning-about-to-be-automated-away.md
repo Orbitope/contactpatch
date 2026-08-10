@@ -98,6 +98,26 @@ not every front-driven layout necessarily shares it — and it is exactly the ki
 result this project keeps finding once it starts checking things that used to be
 assumed flat.
 
+## What you can now explain
+
+Season 4, and with it the series so far:
+
+- **What a differential actually does.** One rule — torque flows from the
+  faster-turning wheel to the slower — produces both the push-wide and the
+  traction, depending on which wheel is faster. Every passive device is that
+  rule with a coefficient. (Episode 12)
+- **What torque vectoring is: that rule replaced by a decision.** Two layers —
+  how much to rotate, which wheels pay — and roughly half of its benefit on a
+  lap is just metering four wheels separately instead of one axle. (Episode 13)
+- **What a learner does with the same four wheels.** It agrees with the
+  engineers where the tires are working, is several times more aggressive in
+  the transients, and never needed to be told what a yaw moment is.
+  (Episode 14)
+- **When a design choice stops being a design choice.** With the controller
+  on, engine placement stops deciding whether this model holds its line —
+  except where the limit is the tire itself, because a controller cannot
+  reallocate grip that does not exist. (Episode 15)
+
 ## The crack
 
 Every episode in this series so far has been about what a fixed car does, or what a

@@ -197,6 +197,24 @@ building a car out of components and computing it. That is the right way to
 isolate the effect and the wrong way to ask "what would this engine placement
 actually give me?"
 
+## What you can now explain
+
+Season 2's design findings, in the form you would actually say them:
+
+- **Which wheels should drive: whichever end carries the weight.** And the
+  answer flips with power — front drive is fine at hatchback power, and the
+  more power you add, the more rear drive wins. (Episode 6)
+- **Why 50:50 is mostly marketing.** Balance transforms the car's character —
+  a full swing from oversteer to understeer across the sweep — while moving
+  lap time by tenths. You are choosing a personality, not a lap time.
+  (Episode 7)
+- **Why "mid-engine is better" is argued with the wrong number.** The
+  mid-engine car is less rearward than a 911; what separates them is how far
+  the mass sits from the middle, not where the balance lands. (Episode 8)
+- **The season's quiet lesson:** a driver with perfect foresight makes every
+  design question look smaller than it is. Response time is nearly free if
+  you know the future — and no real driver does. (Episode 8)
+
 ## The crack
 
 Everything in Seasons 1 and 2 assumes a driver who knows the future.

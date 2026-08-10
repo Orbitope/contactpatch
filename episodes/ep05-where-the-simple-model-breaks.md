@@ -258,6 +258,27 @@ medium-quality source, and it is the divisor in every transfer calculation here.
 It becomes the moment arm for torque vectoring in Season 4, where every magnitude
 claim gets re-run at ±3%.
 
+## What you can now explain
+
+Season 1 is done. Here is what you can now explain that most drivers cannot:
+
+- **Why a tire has to slide to grip.** Zero slip is zero sideways force; peak
+  grip lives near ten degrees of slip and falls off gently past it. Fast
+  driving is staying near the top of a hill you cannot see. (Episode 1)
+- **Why cornering costs grip even though the car weighs the same.** Pressing a
+  tire harder buys less than proportionally more grip, so any transfer makes
+  the loaded tire gain less than the unloaded one gives up. Half of chassis
+  engineering is managing that one fact. (Episode 2)
+- **What understeer actually is** — the front axle needing more slip than the
+  rear for the same corner. Not a feeling: a measured number, chosen on
+  purpose by whoever built your car. (Episode 3)
+- **Why the racing line is not a shape.** The fast line through a corner
+  depends on what comes after it, and trail braking falls out of the
+  arithmetic without anyone teaching it. (Episode 4)
+- **What an anti-roll bar does and what it cannot do.** It divides load
+  transfer between the axles — it cannot reduce the total, and a car model
+  without width cannot see it at all. (Episode 5)
+
 ## The crack
 
 We now have a car worth driving properly, and Episode 4 already gave us a way to

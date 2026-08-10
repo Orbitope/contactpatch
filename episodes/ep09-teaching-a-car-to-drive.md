@@ -4,6 +4,15 @@
 
 ---
 
+> **Joining at Season 3?** Seasons 1 and 2 built a four-wheel car from a
+> measured tire file and asked design questions with a minimum-time solver — a
+> driver with perfect foresight. Its answers kept coming back suspiciously
+> small: drivetrain, weight distribution and engine placement all worth tenths
+> of a second at most, because a driver that knows the future can simply plan
+> around whatever the car does. This season replaces it with a driver that has
+> to learn — and can therefore be surprised. Episode 5 is the best single
+> catch-up on the car itself.
+
 ## The question
 
 Everything so far has been driven by a solver that sees the whole road. It knows

@@ -4,6 +4,15 @@
 
 ---
 
+> **Joining at Season 4?** The story so far: a tire grips by slipping and has
+> one force budget shared between turning and driving (Episodes 1–4); a
+> four-wheel car spends that budget unevenly, and where its weight sits decides
+> which end runs out first (5–8); a learned driver then showed which design
+> choices a driver that can be surprised actually cares about (9–11). This
+> season is about the machinery between the engine and the road — the
+> differential, and what replaces it when a computer takes over the job. It
+> leans hardest on Episode 6's friction circles.
+
 ## The question
 
 Your car has one. You have never seen it work. It is a lump of gears between the

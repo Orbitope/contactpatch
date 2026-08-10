@@ -253,6 +253,26 @@ general.
 true rate up to about 9%. "No failures" means "no failures in forty laps", which is
 not the same as "cannot fail".
 
+## What you can now explain
+
+Season 3 built a driver. Here is what it taught that no solver could:
+
+- **Why "it finishes 88% of laps" can describe a driver that cannot drive.**
+  The rule you would ship and the noisy version that trained are different
+  drivers, and only the shipped one counts. (Episode 9)
+- **What a learner does with imperfect physics: exploits it.** Give it a tire
+  model that is wrong somewhere and it will find the error and live there —
+  the fix is to fence the model at the edge of what was actually measured.
+  (Episodes 9–10)
+- **Why one policy across many cars is the fair comparison** — retrain per
+  car and you measure the retraining. (Episode 10)
+- **Why the fastest setup is the one that crashes.** Not margin: recovery.
+  Run out of front grip and the car slows itself; run out of rear grip and
+  the slide feeds itself. The quick car's failure diverges, and that is a
+  property of the car, not the disturbance. (Episode 11)
+- **Why fragility needed a learned driver at all** — a driver that cannot be
+  surprised structurally cannot measure it. (Episodes 4, 11)
+
 ## The crack
 
 Season 3 set out to build a driver and ask it a question a solver could not answer.

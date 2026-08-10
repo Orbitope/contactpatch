@@ -103,9 +103,6 @@ All five layouts, every one cleanly solved:
 | Rear engine, RWD | **1.22×** | **356 ms** | 12.08 s |
 | Front engine, RWD | 1.20× | 236 ms | 12.10 s |
 
-*(Re-solved after the yaw-moment correction of FINDINGS F73/F79. Every lap time
-moved by roughly a tenth, and the front-drive car moved most — see below.)*
-
 Quoted to 0.01 s, because these solves cannot resolve better than about 0.02 s
 and printing milliseconds would be inventing precision. **Four of the five layouts
 sit inside 0.04 s of each other.** Their polar moments run from 0.80× to 1.25× and
@@ -116,13 +113,11 @@ barely above the floor, so read it as "almost nothing" rather than as a
 measurement. The mid-engine car is the only one far enough clear to separate at
 all, and it is quickest by 0.03 s over the next.
 
-**The front-drive car is no longer the outlier, and that is a correction.** This
-episode previously reported it at 12.21 s — a clear 0.12 s off the pace — and
-pointed at Episode 6 as the explanation. With the yaw moment corrected it comes in
-at 12.07 s, second quickest, inside the pack. Episode 6's explanation went the same
-way for the same reason: the defect penalised the steered-and-driven axle
-specifically, so it held every front-drive result back. Both episodes were wrong in
-the same direction, from the same line of code.
+**The front-drive car is not the outlier you might expect either.** It comes in at
+12.07 s, second quickest, inside the pack — which sits exactly where Episode 6
+left things, with the two drivetrains within 0.03 s of each other at this car's
+power. Whatever the friction circle charges a front-drive car for steering and
+accelerating at once, it is not big enough to show up in a layout comparison.
 
 Three episodes in a row now: Episode 6 finds the drivetrains within 0.03 s at this
 car's power, Episode 7 finds 0.12–0.21 s across the whole weight-distribution range,
@@ -166,11 +161,11 @@ of polar moment to one part in ten thousand. Inertia is purely a transient effec
 and the understeer gradients in the table above depend only on balance — which is
 why the two cars in the controlled pair share one to the decimal.
 
-**The lap times converged this time**, which they had not on the first two
-attempts. Getting there meant seeding every layout from the front-drive solve —
-which converges in about 13 seconds where the rear-drive ones need five or six
-minutes — plus one retry at double the iteration limit. Seeding from the *easiest*
-member of the family rather than the most typical one is what did it. All five
+**The lap times converged**, and getting there is a matter of ordering. Every
+layout is seeded from the front-drive solve — which converges in about 13 seconds
+where the rear-drive ones need five or six minutes — with one retry at double the
+iteration limit behind it. Seeding from the *easiest* member of the family rather
+than the most typical one is what does it. All five
 solves report clean convergence with zero envelope violations, so nothing above is
 excluded.
 

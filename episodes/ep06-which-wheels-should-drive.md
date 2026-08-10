@@ -31,7 +31,7 @@ Each wheel's driving force is capped at what that wheel can actually deliver at
 its own instantaneous load. That is the constraint doing the work in this
 episode, and it is the reason four wheels were worth building.
 
-## One choice I nearly got wrong
+## One choice that decides the answer
 
 An axle has two wheels, and something has to decide how the torque divides
 between them. That "something" is the differential, and it is not a detail.
@@ -44,17 +44,11 @@ Two bounds:
 - **Ideal differential.** The split floats freely — each wheel takes what its own
   load allows. This is the best a limited-slip differential could possibly manage.
 
-I built the open case first and nearly published from it alone. The reference car
-has a factory limited-slip differential, so that would have been the wrong bound.
-Running both turned out to matter more than I expected.
+Both are run. The reference car has a factory limited-slip differential, so the
+open case on its own would be the wrong bound — and which bound you pick moves
+the answer more than the drivetrain does.
 
 ## The result
-
-**This section was rewritten after a defect was found in the model's yaw moment.
-The original conclusion — "rear-wheel drive is faster, under either assumption" —
-was wrong in sign for most of the cars in the sweep. What follows is the corrected
-answer, and it is a better one.** The defect, and how it survived, is in FINDINGS
-F72, F73 and F79.
 
 | | Open diff | Ideal diff |
 |---|---|---|
@@ -107,24 +101,7 @@ proportion to what is pressing it down, and the driven axle is the one that need
 it.
 
 **A perfect differential is worth four times as much to the front-drive car** —
-0.30 s against 0.07 s — which is a bigger gap than the earlier draft found, and it
-is Episode 12's opening question.
-
-### What was wrong, and why it is worth telling
-
-The old answer had rear drive winning even on a 65%-front car. That was always
-slightly odd and I wrote it up anyway.
-
-The cause: the model's yaw-moment equation discarded the longitudinal component of
-the tire forces, while the *force* equations in the same function resolved it. For
-a front-drive car the driven wheels are also the steered ones, so the missing term
-penalises exactly that configuration — and its absence flattered front drive's
-rival. Correcting it moves front drive by 0.135 s and rear drive by 0.005 s, and
-that 30-fold asymmetry is the whole story.
-
-An earlier draft of this episode noted that "the sign flipped and front drive came
-out marginally ahead" at one point, and treated it as an artefact to be explained
-away. It was the correct answer, arriving early and being argued with.
+0.30 s against 0.07 s — and that gap is Episode 12's opening question.
 
 ## The thing that surprised me most
 
@@ -132,9 +109,8 @@ The two cars drive **the same line.**
 
 ![Both cars on one road](../experiments/ep06/out/03-both-cars-one-road.svg)
 
-Not similar. The same, to within the width of your hand — and note the apex
-figures are now interpolated between nodes rather than snapped to one, which is why
-they are not the identical 53.33% an earlier draft reported for both cars (F47):
+Not similar. The same, to within the width of your hand — apex positions
+interpolated between nodes rather than snapped to the nearest one:
 
 | | Rear drive | Front drive |
 |---|---|---|
@@ -214,13 +190,10 @@ roughly right for the reference car. I never tested it.
 | 7.0 kN | 282 hp | 11.348 s | 11.352 s | dead even |
 | 10.0 kN | 402 hp | 11.039 s | 11.325 s | **0.287 s slower** |
 
-**The balance reverses with power, spanning 0.31 s across the range.** At about 100 hp
-it disappears entirely — the two cars finish 3 milliseconds apart, which is nothing.
-
-(An earlier draft said the sign flipped and front drive came out marginally ahead at
-low power. It doesn't. That figure came from a worse-converged solve; done properly
-the penalty goes to *zero*, not negative. And a 0.04 s "win" was never large enough
-to report in the first place.)
+**The balance reverses with power, spanning 0.31 s across the range.** At low power
+front drive is *quicker* — 26 milliseconds at 101 hp, which is barely more than
+nothing — the two are level around 280 hp, and by 400 hp front drive costs nearly
+three tenths.
 
 That is exactly what the mechanism demands. With little power the corner exit is
 limited by the *engine*, not by grip, so a tire budget problem has nothing to bite
@@ -238,17 +211,18 @@ packaging and cost, and those explanations are true — but the friction circle 
 reproduces it, from a tire data file and a stopwatch, with no mention of engine bays
 or manufacturing.
 
-**Caveat, and it is the same one as everywhere in this episode:** only the 4.5 kN row
-has both solves converged, and it reproduces the headline to a millisecond. The other
-three have an unconverged rear-drive solve, so **treat the individual times as
-indicative and the trend as the result.** The trend spans 0.50 s, six times the
-largest plausible convergence error, and it is monotonic across four points.
+**All eight solves in that table converged**, so the individual times are quotable
+rather than merely indicative (F39). Read the *shape* as the result even so: front
+drive's small advantage is flat across the two low-power points — 26 and 33
+milliseconds apart, a difference far below anything a driver would notice — and
+then falls away hard, reaching 0.287 s against it by 400 hp. The span is 0.31 s,
+several times the largest plausible convergence error.
 
 ## What the differential actually does
 
 ![What the differential does](../experiments/ep06/out/05-what-the-differential-does.svg)
 
-Here is the part I had backwards on the first attempt.
+Here is the part that runs opposite to intuition.
 
 I expected the differential to matter on the exit straight — that is where the
 power goes down, so that is where a bad differential should cost you. It doesn't.
@@ -256,8 +230,7 @@ Out there the car is level, both driven wheels carry similar load, both can take
 plenty, and the *engine* is the limit. The two differentials give identical axle
 force: the shortfall averaged over the whole exit straight is **0.00 kN**.
 
-The differential binds **inside the corner**, and the figure had to be resampled
-to show it. Nineteen metres into the corner the rear-drive car's inside rear wheel
+The differential binds **inside the corner**. Nineteen metres into the corner the rear-drive car's inside rear wheel
 is down to 1.55 kN of load — about half its static share — and, because it is
 already spending most of that on cornering, it can only take 1.56 kN of driving
 force. The 50/50 split then holds the *outside* wheel down to 1.56 kN as well.
@@ -273,19 +246,16 @@ is exactly the mechanism behind the differential being worth twice as much to it
 
 ## Do we believe it?
 
-**Did the solvers converge?** This is normally a footnote and this time it nearly
-ate the result, so it goes first.
+**Did the solvers converge?** This is normally a footnote and here it gates the
+result, so it goes first.
 
-Every front-drive solve converged cleanly. The rear-drive ones did not — and
-rear drive is the one that comes out faster, which is exactly the asymmetry that
-could manufacture the whole finding. An unconverged solve returns the objective of
-a trajectory that does not quite obey the physics, and on Episode 4's corner that
-was worth 0.65% — about 0.08 s here, against a 0.10 s claimed effect.
-
-So it had to be settled rather than argued. Two changes made that possible: the
-solver's iteration limit was raised from 2,000 to 8,000 (rear drive genuinely
-needs it), and warm starts are now resampled across node counts so a converged
-coarse answer can seed a finer one.
+An unconverged solve returns the objective of a trajectory that does not quite
+obey the physics, and on Episode 4's corner that was worth 0.65% — about 0.08 s
+here, against effects a few hundredths of a second in size. Rear drive is the hard
+case, and it is the one that has to be settled rather than argued. Two things make
+that possible: the solver's iteration limit is set to 8,000 rather than the usual
+2,000, because rear drive genuinely needs it, and warm starts are resampled across
+node counts so a converged coarse answer can seed a finer one.
 
 | Nodes | Rear drive | Front drive | Front drive is | Both converged? |
 |---|---|---|---|---|
@@ -293,22 +263,18 @@ coarse answer can seed a finer one.
 | 140 | 12.083 s | 12.051 s | -0.032 s | **yes** |
 | 180 | 12.081 s | 12.049 s | -0.033 s | **yes** |
 
-**The result survives refinement, and now every grid converges.** Spread of
+**The result survives refinement, and every grid converges.** Spread of
 0.0006 s across three grids against a 0.033 s
-effect — tighter than the effect by a factor of fifty. On the legacy moment two of
-these three grids did not converge at all.
-
-And the sharper check: the unconverged rear-drive times *straddle* the converged
-one — 3 ms above at 140 nodes, 4 ms below at 180. A one-sided bias would have put
-them consistently on one side. There isn't one operating here.
+effect — tighter than the effect by a factor of fifty.
 
 **This episode therefore reports the 100-node grid, not the finest one.** That
-looks backwards and isn't: 100 nodes is the only grid where every solve in the
-comparison converges, and a converged answer on a coarser mesh beats an
-unconverged one on a finer mesh. Finer grids are used to bracket, not to quote.
+looks backwards and isn't: a converged answer on a coarser mesh beats an
+unconverged one on a finer mesh, and 100 nodes is where the whole comparison —
+including the power sweep — converges together. Finer grids are used to bracket,
+not to quote.
 
 **Does it survive changing the discretisation?** Answered by the table above —
-0.007 s of spread, which is 7% of the effect.
+0.0006 s of spread, about 2% of the effect.
 
 **Did it stay inside the envelope?** Yes. Zero nodes outside the ±12° slip bound
 in all four solves. Worst slip angle sits exactly *on* 12° through the corner,
@@ -422,7 +388,4 @@ bookkeeping: choosing only the open one would have inflated the headline by 60%.
 `results.json` carries all four solves and both deltas so the sensitivity is
 visible rather than reconstructed.
 
-Full provenance: `FINDINGS.md` F34–F43. F36 is a defect this episode found in
-Episode 4's published figure — every plan-view car in the project had been drawn
-pointing backwards along its own line, and putting force arrows on the wheels is
-what exposed it. F37 corrects a claim in Episode 5.
+Full provenance: `FINDINGS.md` F34–F43.

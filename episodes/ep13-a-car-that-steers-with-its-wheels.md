@@ -298,14 +298,13 @@ All `[MEASURED]`; the preview time itself is `[ASSUMED]`. A single assumed numbe
 moves the headline from "nothing at all" to "+13.2%". At 30% less preview the two
 limits are now *identical* — not a near-wash, an exact one.
 
-> **Corrected 2026-08-03.** This table previously read −0.34% / **+5.18%** /
-> +11.55%. POWER-REVIEW Phase 0 found the closed-loop brake cap was 12,000 N =
-> 0.899 g on a 1,360 kg car, below the ~0.985 g the tyre delivers — and since
-> this experiment *bisects* `grip_use` to the limit, it spent its whole
-> measurement in the regime where the cap, not the tyre, set the braking
-> demand. Raising it to 0.985 g moved every row. **The direction was not
-> predictable in advance**: more braking authority lowered the nominal gain
-> (the passive car benefits too) while widening the preview spread.
+> **The closed-loop brake cap is set at 0.985 g**, the tyre's own demonstrated
+> limit. That matters here specifically because this experiment *bisects*
+> `grip_use` to the cornering limit: a cap below what the tyre delivers would
+> spend the whole measurement in a regime where the cap, not the tyre, sets the
+> braking demand. Braking authority is not a neutral parameter for this table —
+> it moves both the nominal gain (the passive car benefits too) and the spread
+> across preview times.
 
 The mechanism is not mysterious. A shorter preview makes the driver steer later and
 harder, which suits the passive car and hands the yaw controller a reference signal
@@ -318,56 +317,44 @@ whether or not anyone says so.** Any measurement of what such a system is worth 
 a driver model inside it. The check stays failed and the threshold has not been
 moved.
 
-## What it is worth to a driver who makes mistakes — first pass, and it was wrong
+## What it is worth to a driver who makes mistakes
 
-All of the above is a driver who does exactly the same thing every lap. I added
-steering noise at `sigma = 0.15` — Episode 11's convention at the time — and ran 40
-seeded laps of each configuration. The open differential completed 31/40, every TV
-configuration completed 40/40, and I wrote this up as the episode's second result: a
-far larger effect than the half percent TV is worth to a perfect driver, and closer
-to what production stability systems are actually sold on.
+All of the above is a driver who does exactly the same thing every lap. So: add
+steering noise and run 40 seeded laps of each configuration.
 
-**That number is retracted.** `sigma = 0.15` is not a driver's hands. Measured against
-a 13.5:1 steering ratio it is 23 degrees of RMS motion at the steering wheel — a
-continuous quarter-turn saw, not an imperfect driver — and the retraction is
-[F96](../FINDINGS.md) in the project's record. Once it was found, this episode's
-result had to be re-measured rather than merely footnoted, because the 31/40 number
-is exactly the kind of thing F96 was about: a disturbance magnitude nobody checked
-against what a driver actually does.
+**The magnitude has to be calibrated against what a driver's hands actually do**,
+or the answer is about something else. Through a 13.5:1 steering ratio, that means
+`sigma = 0.01` (an attentive driver, 1.6° at the steering wheel) and `sigma = 0.03`
+(a distracted one, 4.7°). For scale, `sigma = 0.15` would be 23 degrees of RMS
+motion at the wheel — a continuous quarter-turn saw, closer to a fault than to a
+mistake.
 
-## What it is worth to a driver who makes mistakes — re-measured
-
-Same 40 seeded laps, same configurations, same aggression — at `sigma = 0.01`
-(an attentive driver, 1.6° at the wheel) and `sigma = 0.03` (a distracted one,
-4.7° at the wheel), both F96's own calibration:
+Same 40 seeded laps, same configurations, same aggression, at both levels:
 
 | | attentive (σ=0.01) | distracted (σ=0.03) |
 |---|---|---|
-| open differential | **40/40** · 14.589 ± 0.001 s | **40/40** · 14.590 ± 0.003 s |
+| open differential | **40/40** · 14.555 ± 0.002 s | **40/40** · 14.556 ± 0.006 s |
 | limited-slip | 0/40 · — | 0/40 · — |
-| allocator only | 40/40 · 14.599 ± 0.000 s | 40/40 · 14.600 ± 0.002 s |
-| **torque vectoring, four wheels** | 40/40 · 14.572 ± 0.001 s | 40/40 · 14.573 ± 0.001 s |
-| torque-vectoring differential | 40/40 · 14.592 ± 0.001 s | 40/40 · 14.591 ± 0.003 s |
+| allocator only | 40/40 · 14.567 ± 0.001 s | 40/40 · 14.567 ± 0.003 s |
+| **torque vectoring, four wheels** | 40/40 · 14.542 ± 0.001 s | 40/40 · 14.542 ± 0.002 s |
+| torque-vectoring differential | 40/40 · 14.554 ± 0.003 s | 40/40 · 14.553 ± 0.008 s |
 
 All `[MEASURED]`. **At a disturbance level that means something, the open
 differential is not measurably more fragile than any TV configuration.** Every
 configuration that can drive this lap at all completes 100% of it at both
-realistic noise levels, and the lap-time scatter across seeds (0.001–0.003 s) is
+realistic noise levels, and the lap-time scatter across seeds (0.001–0.008 s) is
 far below the deterministic gap the configurations already had unperturbed.
 
-**The claim that TV is worth much more to a driver who makes mistakes does not
-survive at a realistic mistake.** It survives at 23° of continuous steering-wheel
-motion, which is not a mistake a driver makes — it is closer to a fault. This
-project's own rule 5 says a trend smaller than the seed noise is "no measurable
-effect, never a small effect"; here the effect was measurable, but only at a
-disturbance magnitude that was never checked against anything a driver does. See
-[F96](../FINDINGS.md) and [F97](../FINDINGS.md) for the full account.
+**So the intuition that TV is worth much more to a driver who makes mistakes does
+not survive at a realistic mistake.** The effect is real at 23° of continuous
+steering-wheel motion and absent at anything a driver actually produces — which
+makes it a statement about fault tolerance, not about driving.
 
-(The limited-slip car's 0/40 at both realistic levels is not a new problem. At this
+(The limited-slip car's 0/40 at both levels is not a new problem. At this
 aggression it is already past its own limit of 0.969 — the same caveat as before —
-and at `sigma = 0.15` it occasionally survived by being randomly nudged off a
-knife-edge it cannot hold deterministically. At the much smaller realistic noise
-there is nothing to nudge it, so it fails consistently instead of intermittently.
+and at large noise it occasionally survives by being randomly nudged off a
+knife-edge it cannot hold deterministically. At realistic noise there is nothing
+to nudge it, so it fails consistently instead of intermittently.
 That is evidence about a device already asked to do something it cannot do cleanly,
 not a new claim about noise.)
 
@@ -400,18 +387,14 @@ robust — torque vectoring is worth +4.6% to +4.8% of cornering limit across
 the whole plausible range of a number we only know to `[LIKELY]`, which is
 what this check exists to establish.
 
-> **Corrected 2026-08-03, and the correction removes a claim rather than
-> just a number.** This previously read +5.36% / +5.18% / +5.00% and
-> concluded "the magnitude moves with the arm, as it must." After the
-> brake-cap fix the three values are +4.82% / +4.64% / +4.82% — **not
-> monotonic in track width at all.** The spread across ±3% is now 0.01
-> percentage points against a bisection resolution worth ~0.27, so the
-> earlier monotonic ordering was reading signal out of noise: three numbers
-> spanning 0.36 pp, all within one resolution step of each other, that
-> happened to fall in the expected order. The moment-arm relationship is
-> real physics and the magnitude surely does scale with it — but **this
-> experiment cannot resolve it**, and should not have been quoted as though
-> it had.
+> **What this check cannot do is measure the moment arm.** The three values
+> are **not monotonic in track width** — +4.82% / +4.64% / +4.82% — and the
+> spread across ±3% is 0.01 percentage points against a bisection resolution
+> worth ~0.27. Yaw moment scales with the arm as a matter of physics, and the
+> magnitude surely does move with it, but **this experiment cannot resolve
+> that**: any ordering read off three numbers this close together is reading
+> signal out of one resolution step. What the check establishes is the
+> robustness of the headline, not the shape of its dependence on track width.
 
 **The driver is a tracker, not a racing driver**, and its preview time changes the
 answer by more than the controller is worth. See the section above; that is the
@@ -474,8 +457,8 @@ Does it agree with us?
 python -m experiments.ep13.run
 ```
 
-About twelve minutes: roughly 1,100 closed-loop laps (two noise studies since F96,
-not one), no solver and no training. `--figures-only` redraws from `results.json`;
+About twelve minutes: roughly 1,100 closed-loop laps across two noise studies, no
+solver and no training. `--figures-only` redraws from `results.json`;
 `--quick` runs a coarser sweep.
 
 **New code this episode.** `physics/torque_vectoring.py` (reference model, PID,

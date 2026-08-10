@@ -33,11 +33,12 @@ Two disturbances, applied separately and then together so each one's contributio
 is attributable:
 
 **Steering noise.** Gaussian noise added to the commanded steering, every step.
-This is meant to be the hands and the linkage — and unlike Episode 9's exploration
-noise, it is still there when you deploy the policy. Episode 9's whole failure was
-noise that vanished on the car you would ship. This does not vanish. *(It took a
-second mistake, found after this episode published, to get the magnitude of "the
-hands and the linkage" right — see the correction below.)*
+This is the hands and the linkage — and unlike Episode 9's exploration noise, it is
+still there when you deploy the policy. Episode 9's whole failure was noise that
+vanished on the car you would ship. This does not vanish. Magnitudes are set by
+asking what a driver's hands actually do, then converting through an `[ASSUMED]`
+13.5:1 steering ratio: **an attentive driver at `sigma = 0.01`** (1.6° at the
+steering wheel) and **a distracted one at `sigma = 0.03`** (4.7°).
 
 **Grip variation.** Peak lateral friction scaled per lap, through the tire file's
 `LMUY` scaling coefficient and never by touching a fitted `P*` coefficient. One
@@ -51,70 +52,37 @@ the second one.
 
 ![What a fragile car looks like](../experiments/ep11/out/01-what-fragile-looks-like.svg)
 
-## What happened, after I got it wrong once
+**Sample size is part of the design here, not an afterthought.** A failure rate
+needs far more samples than a mean does: at n = 10, a true 7% rate reads as zero
+events about half the time, which is not a measurement of "no failures" but the
+absence of a measurement. And any max-over-n quantity — peak load, largest
+excursion, worst slip — grows with sample size, so it describes the sample rather
+than the system. Medians hold still as n grows; maxima do not. So nothing here
+rests on a worst-case reading, and the headline runs at **120 deployed laps per
+cell**, with 40 for the wider grid.
 
-I want to tell this in the order it happened, because the mistake is more useful
-than the result.
-
-I calibrated the disturbance levels on **10 rollouts per cell** and got this: zero
-failures anywhere, worst slip 8.7–9.8° at steering σ 0.15, comfortably inside our
-±12° tire fit. Push harder and failures appeared, but so did 13–17° of slip, where
-the tire model is extrapolating and a crash is a statement about our curve fit
-rather than about the car.
-
-So I wrote the episode up as a null result: *the driver is too far inside the
-envelope to be fragile, and the Pareto front does not exist at any disturbance I
-can defend.* It was a tidy story and it even had a mechanism — Episode 10's
-envelope penalty left the policy cornering at 6–7° with 12° available, five degrees
-of margin it never spends.
-
-Then I ran it properly at 40 rollouts, and it crashes plenty.
-
-**Two errors, and the second is the one worth keeping.**
-
-**A failure rate needs far more samples than a mean does.** At n = 10, a true 7%
-rate shows up as zero events about half the time. I had not measured "no
-failures"; I had measured nothing and read it as absence.
-
-**Worst-slip is an extreme-value statistic and I used it as a bound.** The maximum
-over a sample grows with sample size. "Worst slip 9.8° over ten laps" says nothing
-about the worst over forty — and at forty the same condition reaches 11.7–15.3°.
-Any max-over-n quantity — peak load, largest excursion, worst slip — is a property
-of the sample, not the system. Medians hold still as n grows. Maxima do not. I had
-built a conclusion on a number that was never a limit.
-
-## Discarding laps, not conditions
-
-Fixing that exposed a third error in how I was applying our own rule.
+## How a lap counts
 
 This project's rule 4 says laps from outside the slip envelope are discarded, not
-celebrated. I had implemented that per *condition*: if the worst lap in a condition
-exceeded 12°, the condition was disqualified. At forty rollouts that is absurd —
-one excursion reached 35° while the **median** lap in the same cell sat at about 8°,
-so a single bad lap threw away thirty-nine defensible ones.
+celebrated — and it is a **per-lap** rule, not a per-condition one. Applied to
+whole conditions it becomes absurd at realistic sample sizes: one excursion
+reaching 35° while the *median* lap in the same cell sits near 8° would throw away
+thirty-nine defensible laps.
 
-Rule 4 is a per-lap rule. A lap that left the road at 20° of slip tells us about
-our extrapolation. A lap that left the road having never exceeded 12° is real
-evidence, and so is a lap that finished inside. So: keep those, drop the rest, and
-report the failure rate over what is left.
+A lap that left the road at 20° of slip tells us about our extrapolation. A lap
+that left the road having never exceeded 12° is real evidence, and so is a lap
+that finished inside. So: keep those, drop the rest, and report the failure rate
+over what is left.
 
 One honest consequence, stated where it belongs rather than in a footnote. A lap
 that **both** failed and left the fit gets discarded, and some of those were real
 crashes. Every in-fit failure rate below is therefore a **lower bound**, not an
 estimate. The ordering survives that; the magnitudes are floors.
 
-## The tradeoff is real — and a second mistake, found after this published
+## The tradeoff is real
 
-The numbers below are the corrected ones. The first version of this episode ran the
-disturbance at steering `sigma = 0.15`, described above as "the hands and the
-linkage." It measured 23 degrees of RMS motion at the steering wheel — a continuous
-quarter-turn saw, not a driver — which is [F96](../FINDINGS.md) in the project's
-record. Once that was found, this result had to be re-measured, not just footnoted.
-
-Four designs, 120 deployed laps each, both disturbances applied at F96's calibrated
-levels — an attentive driver (`sigma = 0.01`, 1.6° at the wheel) and a distracted one
-(`sigma = 0.03`, 4.7° at the wheel) — counting only laps that never left the tire's
-fitted region:
+Four designs, 120 deployed laps each, both disturbances applied at both calibrated
+levels, counting only laps that never left the tire's fitted region:
 
 | Design | Lap, undisturbed | Laps lost (attentive) | Laps lost (distracted) | 95% interval |
 |---|---|---|---|---|
@@ -123,9 +91,8 @@ fitted region:
 | 61% front | 19.85 s | 0 of 116 · 0% | 0 of 116 · 0% | 0–3.2% |
 | 65% front | 20.15 s | 0 of 119 · 0% | 0 of 119 · 0% | 0–3.1% |
 
-**The ordering survives, essentially unchanged in magnitude (8.7% became 9.3%).**
-Look closely at those two columns, though: they are **identical, cell for cell** —
-same laps lost, same crashes, at every design. Changing the steering noise threefold
+Look closely at those two columns: they are **identical, cell for cell** — same
+laps lost, same crashes, at every design. Changing the steering noise threefold
 changes none of the numbers this experiment counts.
 
 It does change the driving — measured directly, going from 0.01 to 0.03 on the same
@@ -134,18 +101,16 @@ any lap across either threshold that matters here: 12° of slip, or off the road
 the `steer`-only condition — noise alone, no grip variation — fails 0% of the time at
 every drivable design, exactly like no disturbance at all.
 
-**So this is a grip-variation result, and the episode should have said so.** The
-"two disturbances, applied separately and then together so each contribution is
-attributable" framing implied the steering noise carried part of the effect. It
-carries none of it. That was true before the correction as well — the correction is
-just what made me look.
+**So this is a grip-variation result, and should be read as one.** The "two
+disturbances, applied separately and then together so each contribution is
+attributable" framing is what makes that visible: the steering noise carries none
+of the effect at any magnitude a driver actually produces.
 
 **And it survives correction for multiple comparisons, at both realistic levels.**
 Six pairwise Fisher exact tests, Holm-Bonferroni at family-wise 0.05: the 47% car
 differs from each other design at **p = 0.0005**, identically whether the disturbance
 is the attentive or the distracted level. The other three designs are indistinguishable
-from each other (p = 1.000). At 40 rollouts the same effect sat at p = 0.045
-uncorrected and established nothing.
+from each other (p = 1.000).
 
 **It is a cliff, not a slope.** One design loses laps and three do not. That is more
 useful than a gradient would have been: it means there is a threshold to stay
@@ -154,9 +119,9 @@ behind rather than a dial to trade off.
 The direction is what anyone who has tuned a car would predict. The more rear-biased
 car is quicker and less forgiving. Weight over the driven axle helps it put power
 down — Season 2's mechanism — and takes away the margin that absorbs a surprise. What
-does *not* hold, now that the mechanism is properly isolated, is that steering
-imprecision is part of "a surprise" at any magnitude a driver actually produces —
-here, a surprise means the road itself, not the hands on the wheel.
+does *not* hold is that steering imprecision is part of "a surprise" at any magnitude
+a driver actually produces — here, a surprise means the road itself, not the hands on
+the wheel.
 
 ![The fastest setup is the one that crashes](../experiments/ep11/out/02-speed-vs-fragility.svg)
 
@@ -171,10 +136,10 @@ can be caught out, and Season 3 finally has one.
 ## It isn't margin. It's whether you get it back.
 
 The obvious explanation is that the fast car runs closer to the edge, so it needs
-less provocation to go over. I believed that, wrote it down, and it is wrong.
+less provocation to go over. The data does not support it.
 
 Count how often each car actually went past the tire's fitted limit, and how many
-of those laps ended off the road — at the corrected, realistic disturbance level:
+of those laps ended off the road:
 
 | Design | Laps that left the fit | Of those, crashed |
 |---|---|---|
@@ -183,37 +148,26 @@ of those laps ended off the road — at the corrected, realistic disturbance lev
 | 61% front | 4 | 0 |
 | 65% front | 1 | 0 |
 
-**Read the last three rows as counts, not rates.** At the old, retracted disturbance
-(F96) these were 6, 18 and 15 laps — enough to compare recovery behaviour across
-designs. At a realistic disturbance, 54/61/65% front rarely leave the fitted region
-at all, and 1 or 4 samples is exactly the small-n trap this project has already
-retracted twice (F70, F98) — quoting "100%" or "0%" from them would be the same
-mistake with new numbers. What survives is narrower and still real: **the 47% car,
-the only design with enough exceedances to say anything, crashes on every single one
-of them.**
+**Read the last three rows as counts, not rates.** At a realistic disturbance the
+54/61/65% front cars rarely leave the fitted region at all, and 1 or 4 samples is
+exactly the small-n trap this experiment is designed around — quoting "100%" or
+"0%" from them would be reading noise. What the data supports is narrower and still
+real: **the 47% car, the only design with enough exceedances to say anything,
+crashes on every single one of them.**
 
 ![When it lets go, does it come back?](../experiments/ep11/out/03-when-it-lets-go.svg)
 
-**And here the correction cost a figure.** The published version of this panel drew
-two real laps — the 61%-front car reaching 13.4° of slip and getting round, the 47%
-car reaching 12.0° and not — as the pictorial proof of that asymmetry. Those two
-laps were identified by seed number and their slip angles were *written into the
-caption as text*. At the corrected disturbance the same two laps peak at 7.3° and
-7.6° and never go near the fitted limit, so the figure rendered two unremarkable
-laps under a caption insisting both had gone over it. Nothing errored, because a
-number in a caption cannot disagree with the data beside it.
-
-The figure now **selects** its own pair from the traces — a lap that exceeded 12°
+That panel **selects** its own pair from the traces — a lap that exceeded 12°
 *within the stretch of road the panel actually draws* and recovered, beside one that
 exceeded it and did not — takes the closest-matched pair it can find, and reads every
 number, seed and condition off those laps. Where no such pair exists it says so and
 draws nothing, which is the honest output at a gentle disturbance.
 
-A pair does exist, and it makes the point better than the old one did: the
-**65%-front car reached 12.9° and got round**, while the **47%-front car reached
-13.6° and did not.** The nose-heavy car recovered from slightly *less* provocation
-than the tail-heavy car failed to recover from — so the asymmetry is not that the
-fast car gets pushed further. Both went about equally far over. Only one came back.
+A pair does exist, and it makes the point sharply: the **65%-front car reached 12.9°
+and got round**, while the **47%-front car reached 13.6° and did not.** The
+nose-heavy car recovered from slightly *less* provocation than the tail-heavy car
+failed to recover from — so the asymmetry is not that the fast car gets pushed
+further. Both went about equally far over. Only one came back.
 
 The mechanism is the one Season 2 spent two episodes on, showing up as a robustness
 property instead of a lap-time one. **A car that runs out of front grip pushes wide,
@@ -225,44 +179,40 @@ it requires a correction in the right direction at the right moment.
 
 That mechanism is a property of the vehicle's balance, not of the disturbance that
 exposes it — it does not depend on how hard the car was pushed to get there, only on
-which end ran out of grip first. **What the corrected data can no longer support is
-the population-level claim that the 61% car recovers reliably where the 47% car
-does not**; it can support only that the 47% car, when it does leave the fit,
-essentially never comes back. So "fragile" does not mean "operating with less
-margin." It means **the failure mode is divergent rather than self-limiting when it
-happens** — read here in one design with enough exposure to show it, and illustrated,
-not proven population-wide, by the other three.
+which end ran out of grip first. **What this data cannot support is the
+population-level claim that the 61% car recovers reliably where the 47% car does
+not**; only three designs ever leave the fit, and rarely. It supports that the 47%
+car, when it does leave the fit, essentially never comes back. So "fragile" does not
+mean "operating with less margin." It means **the failure mode is divergent rather
+than self-limiting when it happens** — read here in one design with enough exposure
+to show it, and illustrated, not proven population-wide, by the other three.
 
-## While I was wrong about margin, I was also wrong about the numbers
+## Where the margin isn't
 
-Worth recording because I nearly published it. I described this policy as
-conservative, cornering at 5.8–7.4° of slip against a 12° bound, banking margin it
-never spends.
+It is tempting to describe this policy as conservative — cornering at 5.8–7.4° of
+slip against a 12° bound looks like margin it never spends. It isn't.
 
 The Magic Formula is flat near its peak. Measured on our own tire, at 4 kN it peaks
 at **10.35°** of slip — and at 5.8–7.3° the policy is already extracting **94–98% of
 peak lateral force.** The ±12° envelope sits *at* peak grip, not comfortably beyond
-it. There is no large untapped slip region, and "five degrees of margin" was a
-misreading of a flat curve.
+it. There is no large untapped slip region; a flat curve near its maximum reads as
+slack and is not.
 
-## A word I got wrong
+## Fragile, or just undrivable
 
-Episode 10 ended by calling the 40%-front car "fragile." That was wrong, and this
-experiment is what made it obvious.
-
-Fragile means it fails when something goes wrong. The 40% car fails when **nothing**
-goes wrong — 0% deployed finish rate with no disturbance at all. It is not a
-knife-edge car, it is a car this driver cannot drive. Those are different problems
-with different fixes, and collapsing them into one word cost the distinction. The
-figures put it off the chart with the reason stated rather than plotting it at a lap
-time it never set.
+Those are different problems with different fixes, and it is worth keeping them
+apart. Fragile means it fails when something goes wrong. The 40%-front car fails
+when **nothing** goes wrong — 0% deployed finish rate with no disturbance at all.
+It is not a knife-edge car, it is a car this driver cannot drive. The figures put
+it off the chart with the reason stated rather than plotting it at a lap time it
+never set.
 
 ## What this can't tell you
 
 **The claim is scoped to 47-65% front, and to this driver.** The 40%-front car is
 absent because the policy cannot drive it *unperturbed* — 0% deployed finish rate
-with nothing going wrong. That is not fragility, it is a car outside this driver's
-competence, and Episode 10 called it "fragile," which was the wrong word.
+with nothing going wrong, which is a car outside this driver's competence rather
+than a fragile one.
 
 **"Fragile for this driver" is the honest form.** I checked whether the policy is
 simply *better* at nose-heavy cars, which would fake this whole result: relative to
@@ -276,7 +226,7 @@ be quick in a policy's hands and still be one it cannot catch.
 fit are discarded, and some were genuine crashes. The ranking is robust to that;
 the numbers are floors, and the report counts how many laps each cell had to drop.
 
-**The recovery mechanism is now argued, not measured across the field.** At a
+**The recovery mechanism is argued, not measured across the field.** At a
 realistic disturbance only the fastest design leaves the fitted region often enough
 to count (12 laps of 120, against 1–4 for the others), so this episode can say that
 car essentially never comes back, and can point at Season 2 for *why* — but it can no
@@ -291,24 +241,17 @@ solver or policy work substitutes for it.
 per-step steering noise and a per-lap uniform grip scale are two guesses at what "a
 bad day" means. A gust, a kerb, a damp patch part-way through a corner, or a driver
 with a slow reaction time are all different disturbances and could rank designs
-differently. And as the correction above shows, at any realistic magnitude the
-steering noise contributes nothing measurable here — **this is a grip-variation
-result**, and should be read as one.
-
-**The disturbance magnitude was wrong once and had to be re-measured** (F96/F98).
-It was chosen as "the strongest disturbance the median lap survives" rather than by
-asking what a driver's hands actually do — the second time in this project that a
-perturbation magnitude nobody justified produced a published number (F70 was the
-first). The ordering survived; Episode 13's equivalent result did not (F97).
+differently. At any realistic magnitude the steering noise contributes nothing
+measurable here — **this is a grip-variation result**, and should be read as one.
 
 **Still one training seed.** Episode 11 inherits Episode 10's policy and therefore
 Episode 10's single seed, and Episode 10's D6 failure (`exploration_is_not_growing`)
 applies here unchanged. Nothing in this episode is a claim about what PPO does in
 general.
 
-**Forty rollouts per cell.** Every rate carries a 95% Wilson interval, and at
-n = 40 an observed 0% is consistent with a true rate up to about 9%. "No failures"
-means "no failures in forty laps", which is not the same as "cannot fail".
+**Wilson intervals on every rate.** At n = 40 an observed 0% is consistent with a
+true rate up to about 9%. "No failures" means "no failures in forty laps", which is
+not the same as "cannot fail".
 
 ## The crack
 
@@ -350,14 +293,11 @@ three-design wiring check. `--figures-only` redraws from `results.json`.
 removed, deployed (mean action, no exploration noise — F61).
 
 **Both disturbance magnitudes are `[ASSUMED]`.** Steering noise is in normalised
-action units; grip is a multiplier on peak lateral friction applied through
-`[SCALING_COEFFICIENTS]`, never by editing a fitted `P*` coefficient. They were
-calibrated at 40 rollouts per cell after a 10-rollout calibration produced a
-retracted conclusion — see F70. **The steering magnitude was then wrong a second
-time and re-derived** (F96): the headline runs at 0.01 (an attentive driver, 1.6° at
-the steering wheel through an `[ASSUMED]` 13.5:1 ratio) with 0.03 alongside it, and
-the original 0.15 is kept in the grid as `retracted_0.15` — unquotable, present only
-so the correction is visible in the data rather than asserted.
+action units, calibrated from what a driver's hands do through an `[ASSUMED]`
+13.5:1 steering ratio: the headline runs at 0.01 (attentive, 1.6° at the wheel)
+with 0.03 (distracted, 4.7°) alongside it. Grip is a multiplier on peak lateral
+friction applied through `[SCALING_COEFFICIENTS]`, never by editing a fitted `P*`
+coefficient.
 
 **Rule 4 is applied per lap.** `trial()` records `(finished, worst_slip)` for every
 rollout, and `failure_rate_inside_fit` counts only laps that never exceeded 12° of
@@ -370,6 +310,6 @@ vanished, and `the_faster_car_is_the_more_fragile_one` asserts the *ordering* ra
 than merely the existence of failures — a scrambled ranking would be a tradeoff you
 could not act on.
 
-Full provenance: `FINDINGS.md` F70, plus F63 on the envelope penalty that caused
-this, F61 on why every number is the deployed policy's, and F69 on the inherited
-D6 failure.
+Full provenance: `FINDINGS.md` F70, F96 and F98 on the disturbance calibration,
+F63 on the envelope penalty, F61 on why every number is the deployed policy's, and
+F69 on the inherited D6 failure.

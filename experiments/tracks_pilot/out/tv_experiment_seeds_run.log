@@ -1,0 +1,86 @@
+===== SEED 1 =====
+BASELINE seed=1: Spa, tv_mode=none, w=3 ct=0, envelope 3.0/2.0
+
+========================================================================
+  Spa, speed_ref_penalty=3, cross_track_penalty=0, 40,000,000 steps
+========================================================================
+  plan starts at a_lat 0.45 g, raises by 0.08 g toward 0.97 g while off<0.15 and slip<9.0°
+  upd    0 steps=    262,144 v=  8.1 gate_slip=  0.2 sampled_slip=  3.7 off=1.00 a_lat=0.45g EV=-0.001
+  upd   25 steps=  6,815,744 v= 14.7 gate_slip= 16.0 sampled_slip= 20.0 off=0.00 a_lat=0.45g EV=+0.237
+    ^ plan raised to 0.53 g at update 42
+    ^ plan raised to 0.61 g at update 45
+    ^ plan raised to 0.69 g at update 48
+  upd   50 steps= 13,369,344 v= 18.5 gate_slip=  8.9 sampled_slip= 14.1 off=0.00 a_lat=0.69g EV=+0.437
+    ^ plan raised to 0.77 g at update 51
+    ^ plan raised to 0.85 g at update 54
+  upd   75 steps= 19,922,944 v= 20.8 gate_slip= 10.3 sampled_slip= 13.1 off=0.00 a_lat=0.85g EV=+0.483
+  upd  100 steps= 26,476,544 v= 22.5 gate_slip= 10.0 sampled_slip= 16.0 off=0.00 a_lat=0.85g EV=+0.451
+  upd  125 steps= 33,030,144 v= 23.7 gate_slip= 14.6 sampled_slip= 16.1 off=0.00 a_lat=0.85g EV=+0.507
+  upd  150 steps= 39,583,744 v= 24.5 gate_slip= 13.1 sampled_slip= 15.1 off=0.00 a_lat=0.85g EV=+0.526
+
+  [D16] 6708.7 m (95.8% of lap), finished 96%, off-track 0%, worst slip 6.5 deg, 0/24 outside the fit -- rule 4 valid.
+    NO LAP TIME — finished 96% of runs, covered 95.8% of the lap. (mean speed 23.0 m/s would project 305 s IF it completed one, which it does not.)
+    utilisation mean 0.272 (baseline 0.090), at-limit 0.5% (baseline 0.7%)
+BASELINE seed=1 FINAL: 6708.7 m (95.8% of lap), finished 96%, off-track 0%, worst slip 6.5 deg, 0/24 outside the fit -- rule 4 valid.
+TV seed=1: Spa, tv_mode=end_to_end, same w=3 ct=0, same envelope, same budget
+
+========================================================================
+  Spa, speed_ref_penalty=3, cross_track_penalty=0, 40,000,000 steps
+========================================================================
+  plan starts at a_lat 0.45 g, raises by 0.08 g toward 0.97 g while off<0.15 and slip<9.0°
+  upd    0 steps=    262,144 v=  8.9 gate_slip=  0.2 sampled_slip=  4.1 off=1.00 a_lat=0.45g EV=+0.000
+    ^ plan raised to 0.53 g at update 10
+    ^ plan raised to 0.61 g at update 13
+    ^ plan raised to 0.69 g at update 16
+    ^ plan raised to 0.77 g at update 19
+    ^ plan raised to 0.85 g at update 22
+  upd   25 steps=  6,815,744 v= 15.8 gate_slip= 14.9 sampled_slip= 16.8 off=1.00 a_lat=0.85g EV=+0.190
+  upd   50 steps= 13,369,344 v= 20.4 gate_slip= 17.9 sampled_slip= 16.5 off=0.00 a_lat=0.85g EV=+0.456
+  upd   75 steps= 19,922,944 v= 22.9 gate_slip= 23.1 sampled_slip= 15.6 off=0.00 a_lat=0.85g EV=+0.523
+  upd  100 steps= 26,476,544 v= 24.5 gate_slip= 14.7 sampled_slip= 15.8 off=0.00 a_lat=0.85g EV=+0.535
+  upd  125 steps= 33,030,144 v= 25.6 gate_slip= 17.1 sampled_slip= 14.7 off=0.00 a_lat=0.85g EV=+0.563
+  upd  150 steps= 39,583,744 v= 26.4 gate_slip= 18.1 sampled_slip= 13.7 off=0.00 a_lat=0.85g EV=+0.561
+
+  [D16] 6999.6 m (100.0% of lap), finished 100%, off-track 0%, worst slip 5.5 deg, 0/24 outside the fit -- rule 4 valid.
+    lap 501.8 s vs target 347.6 s (+44%), capped baseline 537.8 s
+    utilisation mean 0.086 (baseline 0.090), at-limit 0.1% (baseline 0.7%)
+TV seed=1 FINAL: 6999.6 m (100.0% of lap), finished 100%, off-track 0%, worst slip 5.5 deg, 0/24 outside the fit -- rule 4 valid.
+===== SEED 2 =====
+BASELINE seed=2: Spa, tv_mode=none, w=3 ct=0, envelope 3.0/2.0
+
+========================================================================
+  Spa, speed_ref_penalty=3, cross_track_penalty=0, 40,000,000 steps
+========================================================================
+  plan starts at a_lat 0.45 g, raises by 0.08 g toward 0.97 g while off<0.15 and slip<9.0°
+  upd    0 steps=    262,144 v=  8.0 gate_slip=  0.3 sampled_slip=  3.5 off=1.00 a_lat=0.45g EV=-0.001
+  upd   25 steps=  6,815,744 v= 15.3 gate_slip= 13.3 sampled_slip= 17.3 off=1.00 a_lat=0.45g EV=+0.460
+  upd   50 steps= 13,369,344 v= 19.0 gate_slip= 13.8 sampled_slip= 14.3 off=0.00 a_lat=0.45g EV=+0.568
+    ^ plan raised to 0.53 g at update 58
+    ^ plan raised to 0.61 g at update 61
+    ^ plan raised to 0.69 g at update 64
+    ^ plan raised to 0.77 g at update 67
+    ^ plan raised to 0.85 g at update 70
+  upd   75 steps= 19,922,944 v= 20.9 gate_slip= 10.7 sampled_slip= 12.9 off=0.00 a_lat=0.85g EV=+0.489
+  upd  100 steps= 26,476,544 v= 22.4 gate_slip= 11.6 sampled_slip= 14.6 off=0.00 a_lat=0.85g EV=+0.437
+  upd  125 steps= 33,030,144 v= 23.6 gate_slip= 11.1 sampled_slip= 14.3 off=0.00 a_lat=0.85g EV=+0.509
+  upd  150 steps= 39,583,744 v= 24.4 gate_slip= 14.7 sampled_slip= 15.8 off=0.00 a_lat=0.85g EV=+0.475
+
+  [D16] 6709.6 m (95.9% of lap), finished 96%, off-track 4%, worst slip 7.8 deg, 0/24 outside the fit -- rule 4 valid.
+    NO LAP TIME — finished 96% of runs, covered 95.9% of the lap. (mean speed 24.9 m/s would project 281 s IF it completed one, which it does not.)
+    utilisation mean 0.318 (baseline 0.090), at-limit 1.6% (baseline 0.7%)
+BASELINE seed=2 FINAL: 6709.6 m (95.9% of lap), finished 96%, off-track 4%, worst slip 7.8 deg, 0/24 outside the fit -- rule 4 valid.
+TV seed=2: Spa, tv_mode=end_to_end, same w=3 ct=0, same envelope, same budget
+
+========================================================================
+  Spa, speed_ref_penalty=3, cross_track_penalty=0, 40,000,000 steps
+========================================================================
+  plan starts at a_lat 0.45 g, raises by 0.08 g toward 0.97 g while off<0.15 and slip<9.0°
+  upd    0 steps=    262,144 v=  8.9 gate_slip=  0.5 sampled_slip=  5.2 off=1.00 a_lat=0.45g EV=+0.000
+    ^ plan raised to 0.53 g at update 10
+    ^ plan raised to 0.61 g at update 13
+  upd   25 steps=  6,815,744 v= 16.4 gate_slip= 18.8 sampled_slip= 17.8 off=1.00 a_lat=0.61g EV=+0.215
+  upd   50 steps= 13,369,344 v= 20.6 gate_slip= 18.2 sampled_slip= 16.6 off=0.00 a_lat=0.61g EV=+0.549
+  upd   75 steps= 19,922,944 v= 22.8 gate_slip= 11.2 sampled_slip= 13.1 off=0.00 a_lat=0.61g EV=+0.565
+    ^ plan raised to 0.69 g at update 98
+  upd  100 steps= 26,476,544 v= 23.9 gate_slip=  8.3 sampled_slip= 13.0 off=0.00 a_lat=0.69g EV=+0.598
+    ^ plan raised to 0.77 g at update 101

@@ -133,27 +133,28 @@ bound in either solve. The answer describes a car, not an extrapolation.
 **Did the solver actually converge?** The long-exit solve converged cleanly. The
 short-exit solve hit the iteration limit.
 
-> **Correction (FINDINGS F39).** This section originally argued that the
-> short-exit solve was "converged in every practical sense" because its objective
-> was stable to 1 part in 10⁵. **That reasoning is wrong, and the reassurance was
-> false.** Warm-starting the same problem from a resampled coarser answer
-> converges cleanly to **5.912 s**, where the unconverged run reported 5.873 s —
-> 0.65% faster. A solve that stops early has not driven its constraint violation to
-> zero, so its objective belongs to a trajectory that does not quite obey the
-> physics. "The objective stopped moving" measures whether the iterate stalled, not
-> whether it reached the optimum, and the two differ by far more than 1 part in 10⁵.
->
-> Which *side* of the optimum an unconverged answer lands on is not predictable —
-> on Episode 6's corner the deviations went both ways. So the lesson is that an
-> unconverged objective is untrustworthy, not that it is optimistic.
->
-> Two cold runs at 140, 200 and 280 nodes agreeing on the apex shift to within
-> 0.4 points was taken as convergence evidence above. It is not: runs that share a
-> stopping criterion can agree about the same artefact. The apex-shift result is a
-> comparison of *where* the apex sits rather than of lap times, and Episode 6's
-> re-solve found the effect there survived clean convergence intact — but
-> re-solving both of this episode's cases with the raised iteration limit is
-> outstanding work, and the times above should not be quoted until it is done.
+That is a gate, not a footnote. A solve that stops early has not driven its
+constraint violation to zero, so its objective belongs to a trajectory that does
+not quite obey the physics. Warm-starting the same problem from a resampled
+coarser answer converges cleanly to **5.912 s**, where the unconverged run
+reports 5.873 s — 0.65% apart. *(That pair is measured at 110 nodes cold against
+80 nodes warm-started, recorded in `FINDINGS.md` F39 — not at the 200 nodes this
+episode's own table uses, where the short-exit solve reports 5.827 s. Same
+corner, same defect, different grid.)* "The objective stopped moving to 1 part in 10⁵"
+measures whether the iterate stalled, not whether it reached the optimum, and the
+two differ by far more than that. Nor is the *direction* predictable: on
+Episode 6's corner the deviations went both ways, so an unconverged objective is
+untrustworthy rather than optimistic.
+
+Agreement across node counts is not convergence evidence either — runs that share
+a stopping criterion can agree about the same artefact. Worth being explicit
+about how much of this table that covers: **five of the six grid-refinement
+solves stopped on the iteration limit** — every short-exit run, and the long-exit
+run at 280 nodes. The apex shift is a
+comparison of *where* the apex sits rather than of lap times, and it survives
+clean convergence intact on Episode 6's corner. **The times in the table above
+are not quotable until both cases are re-solved with the raised iteration
+limit.**
 
 **Absolute times are not comparable** between the two cases — they cover
 different distances (163 m vs 393 m). The comparable quantities are where the

@@ -13,7 +13,8 @@
       "fraction_of_lap": 0.9999999999999999,
       "worst_slip_deg": 3.449569007952886,
       "inside_tyre_fit": true,
-      "rule4_valid": true
+      "rule4_valid": true,
+      "margin_to_bound_deg": 8.550430992047115
     },
     {
       "v_max": 14.0,
@@ -25,7 +26,8 @@
       "fraction_of_lap": 0.9999999999999999,
       "worst_slip_deg": 3.4799425003749103,
       "inside_tyre_fit": true,
-      "rule4_valid": true
+      "rule4_valid": true,
+      "margin_to_bound_deg": 8.52005749962509
     },
     {
       "v_max": 16.0,
@@ -37,7 +39,8 @@
       "fraction_of_lap": 0.9999999999999999,
       "worst_slip_deg": 4.49468937488065,
       "inside_tyre_fit": true,
-      "rule4_valid": true
+      "rule4_valid": true,
+      "margin_to_bound_deg": 7.50531062511935
     },
     {
       "v_max": 18.0,
@@ -49,7 +52,21 @@
       "fraction_of_lap": 0.9999999999999999,
       "worst_slip_deg": 5.586677378641998,
       "inside_tyre_fit": true,
-      "rule4_valid": true
+      "rule4_valid": true,
+      "margin_to_bound_deg": 6.413322621358002
+    },
+    {
+      "v_max": 19.0,
+      "grip_use": 0.6,
+      "completed": true,
+      "reason": "finished",
+      "lap_time_s": 378.488573445452,
+      "distance_m": 6999.485248490279,
+      "fraction_of_lap": 0.9999999999999999,
+      "worst_slip_deg": 6.022675506330783,
+      "inside_tyre_fit": true,
+      "rule4_valid": true,
+      "margin_to_bound_deg": 5.977324493669217
     },
     {
       "v_max": 20.0,
@@ -61,7 +78,47 @@
       "fraction_of_lap": 0.9999999999999999,
       "worst_slip_deg": 6.099113008830981,
       "inside_tyre_fit": true,
-      "rule4_valid": true
+      "rule4_valid": true,
+      "margin_to_bound_deg": 5.900886991169019
+    },
+    {
+      "v_max": 21.0,
+      "grip_use": 0.6,
+      "completed": true,
+      "reason": "finished",
+      "lap_time_s": 347.58857344545197,
+      "distance_m": 6999.485248490279,
+      "fraction_of_lap": 0.9999999999999999,
+      "worst_slip_deg": 8.028693554670985,
+      "inside_tyre_fit": true,
+      "rule4_valid": true,
+      "margin_to_bound_deg": 3.971306445329015
+    },
+    {
+      "v_max": 22.0,
+      "grip_use": 0.6,
+      "completed": true,
+      "reason": "finished",
+      "lap_time_s": 334.748573445452,
+      "distance_m": 6999.485248490279,
+      "fraction_of_lap": 0.9999999999999999,
+      "worst_slip_deg": 10.848810166155646,
+      "inside_tyre_fit": true,
+      "rule4_valid": true,
+      "margin_to_bound_deg": 1.151189833844354
+    },
+    {
+      "v_max": 23.0,
+      "grip_use": 0.6,
+      "completed": false,
+      "reason": "outside the tire fit (15.6 deg)",
+      "lap_time_s": 323.32,
+      "distance_m": 6999.485248490279,
+      "fraction_of_lap": 0.9999999999999999,
+      "worst_slip_deg": 15.550337014062835,
+      "inside_tyre_fit": false,
+      "rule4_valid": false,
+      "margin_to_bound_deg": -3.550337014062835
     },
     {
       "v_max": 24.0,
@@ -73,7 +130,8 @@
       "fraction_of_lap": 0.3848462115528882,
       "worst_slip_deg": 53.48359926616057,
       "inside_tyre_fit": false,
-      "rule4_valid": false
+      "rule4_valid": false,
+      "margin_to_bound_deg": -41.48359926616057
     },
     {
       "v_max": 28.0,
@@ -85,7 +143,8 @@
       "fraction_of_lap": 0.15628907226807262,
       "worst_slip_deg": 47.93422930322531,
       "inside_tyre_fit": false,
-      "rule4_valid": false
+      "rule4_valid": false,
+      "margin_to_bound_deg": -35.93422930322531
     },
     {
       "v_max": 34.0,
@@ -97,7 +156,8 @@
       "fraction_of_lap": 0.15253813453363912,
       "worst_slip_deg": 51.37823078140931,
       "inside_tyre_fit": false,
-      "rule4_valid": false
+      "rule4_valid": false,
+      "margin_to_bound_deg": -39.37823078140931
     },
     {
       "v_max": 45.0,
@@ -109,7 +169,177 @@
       "fraction_of_lap": 0.14553638409602995,
       "worst_slip_deg": 48.53904002730819,
       "inside_tyre_fit": false,
-      "rule4_valid": false
+      "rule4_valid": false,
+      "margin_to_bound_deg": -36.53904002730819
+    },
+    {
+      "v_max": 12.0,
+      "grip_use": 0.7,
+      "completed": true,
+      "reason": "finished",
+      "lap_time_s": 584.108573445452,
+      "distance_m": 6999.485248490279,
+      "fraction_of_lap": 0.9999999999999999,
+      "worst_slip_deg": 4.3108338231665035,
+      "inside_tyre_fit": true,
+      "rule4_valid": true,
+      "margin_to_bound_deg": 7.6891661768334965
+    },
+    {
+      "v_max": 14.0,
+      "grip_use": 0.7,
+      "completed": true,
+      "reason": "finished",
+      "lap_time_s": 502.188573445452,
+      "distance_m": 6999.485248490279,
+      "fraction_of_lap": 0.9999999999999999,
+      "worst_slip_deg": 5.960977610773193,
+      "inside_tyre_fit": true,
+      "rule4_valid": true,
+      "margin_to_bound_deg": 6.039022389226807
+    },
+    {
+      "v_max": 16.0,
+      "grip_use": 0.7,
+      "completed": true,
+      "reason": "finished",
+      "lap_time_s": 441.168573445452,
+      "distance_m": 6999.485248490279,
+      "fraction_of_lap": 0.9999999999999999,
+      "worst_slip_deg": 6.302760400041455,
+      "inside_tyre_fit": true,
+      "rule4_valid": true,
+      "margin_to_bound_deg": 5.697239599958545
+    },
+    {
+      "v_max": 18.0,
+      "grip_use": 0.7,
+      "completed": true,
+      "reason": "finished",
+      "lap_time_s": 394.688573445452,
+      "distance_m": 6999.485248490279,
+      "fraction_of_lap": 0.9999999999999999,
+      "worst_slip_deg": 7.635476349824054,
+      "inside_tyre_fit": true,
+      "rule4_valid": true,
+      "margin_to_bound_deg": 4.364523650175946
+    },
+    {
+      "v_max": 19.0,
+      "grip_use": 0.7,
+      "completed": true,
+      "reason": "finished",
+      "lap_time_s": 375.768573445452,
+      "distance_m": 6999.485248490279,
+      "fraction_of_lap": 0.9999999999999999,
+      "worst_slip_deg": 8.743290986713694,
+      "inside_tyre_fit": true,
+      "rule4_valid": true,
+      "margin_to_bound_deg": 3.256709013286306
+    },
+    {
+      "v_max": 20.0,
+      "grip_use": 0.7,
+      "completed": true,
+      "reason": "finished",
+      "lap_time_s": 359.008573445452,
+      "distance_m": 6999.485248490279,
+      "fraction_of_lap": 0.9999999999999999,
+      "worst_slip_deg": 9.05724680081165,
+      "inside_tyre_fit": true,
+      "rule4_valid": true,
+      "margin_to_bound_deg": 2.942753199188351
+    },
+    {
+      "v_max": 21.0,
+      "grip_use": 0.7,
+      "completed": true,
+      "reason": "finished",
+      "lap_time_s": 344.128573445452,
+      "distance_m": 6999.485248490279,
+      "fraction_of_lap": 0.9999999999999999,
+      "worst_slip_deg": 9.364508387350257,
+      "inside_tyre_fit": true,
+      "rule4_valid": true,
+      "margin_to_bound_deg": 2.6354916126497425
+    },
+    {
+      "v_max": 22.0,
+      "grip_use": 0.7,
+      "completed": true,
+      "reason": "finished",
+      "lap_time_s": 330.848573445452,
+      "distance_m": 6999.485248490279,
+      "fraction_of_lap": 0.9999999999999999,
+      "worst_slip_deg": 11.644393319528788,
+      "inside_tyre_fit": true,
+      "rule4_valid": true,
+      "margin_to_bound_deg": 0.3556066804712117
+    },
+    {
+      "v_max": 23.0,
+      "grip_use": 0.7,
+      "completed": false,
+      "reason": "spun",
+      "lap_time_s": 112.08,
+      "distance_m": 2480.187696201732,
+      "fraction_of_lap": 0.35433858464616147,
+      "worst_slip_deg": 54.74331284070475,
+      "inside_tyre_fit": false,
+      "rule4_valid": false,
+      "margin_to_bound_deg": -42.74331284070475
+    },
+    {
+      "v_max": 24.0,
+      "grip_use": 0.7,
+      "completed": false,
+      "reason": "spun",
+      "lap_time_s": 107.3,
+      "distance_m": 2467.9355339763174,
+      "fraction_of_lap": 0.3525881470367591,
+      "worst_slip_deg": 51.192459963188234,
+      "inside_tyre_fit": false,
+      "rule4_valid": false,
+      "margin_to_bound_deg": -39.192459963188234
+    },
+    {
+      "v_max": 28.0,
+      "grip_use": 0.7,
+      "completed": false,
+      "reason": "off track",
+      "lap_time_s": 43.74,
+      "distance_m": 1099.1939825086401,
+      "fraction_of_lap": 0.1570392598149593,
+      "worst_slip_deg": 46.856249280281965,
+      "inside_tyre_fit": false,
+      "rule4_valid": false,
+      "margin_to_bound_deg": -34.856249280281965
+    },
+    {
+      "v_max": 34.0,
+      "grip_use": 0.7,
+      "completed": false,
+      "reason": "spun",
+      "lap_time_s": 37.26,
+      "distance_m": 1069.4387313897778,
+      "fraction_of_lap": 0.15278819704926802,
+      "worst_slip_deg": 51.529459797910725,
+      "inside_tyre_fit": false,
+      "rule4_valid": false,
+      "margin_to_bound_deg": -39.529459797910725
+    },
+    {
+      "v_max": 45.0,
+      "grip_use": 0.7,
+      "completed": false,
+      "reason": "spun",
+      "lap_time_s": 30.98,
+      "distance_m": 1020.430082488122,
+      "fraction_of_lap": 0.14578644661165888,
+      "worst_slip_deg": 48.92883135604398,
+      "inside_tyre_fit": false,
+      "rule4_valid": false,
+      "margin_to_bound_deg": -36.92883135604398
     },
     {
       "v_max": 12.0,
@@ -121,7 +351,8 @@
       "fraction_of_lap": 0.9999999999999999,
       "worst_slip_deg": 6.443652448353548,
       "inside_tyre_fit": true,
-      "rule4_valid": true
+      "rule4_valid": true,
+      "margin_to_bound_deg": 5.556347551646452
     },
     {
       "v_max": 14.0,
@@ -133,7 +364,8 @@
       "fraction_of_lap": 0.9999999999999999,
       "worst_slip_deg": 13.202789617144706,
       "inside_tyre_fit": false,
-      "rule4_valid": false
+      "rule4_valid": false,
+      "margin_to_bound_deg": -1.2027896171447061
     },
     {
       "v_max": 16.0,
@@ -145,7 +377,8 @@
       "fraction_of_lap": 0.9999999999999999,
       "worst_slip_deg": 13.635744894827422,
       "inside_tyre_fit": false,
-      "rule4_valid": false
+      "rule4_valid": false,
+      "margin_to_bound_deg": -1.6357448948274218
     },
     {
       "v_max": 18.0,
@@ -157,7 +390,21 @@
       "fraction_of_lap": 0.9999999999999999,
       "worst_slip_deg": 14.413788822600182,
       "inside_tyre_fit": false,
-      "rule4_valid": false
+      "rule4_valid": false,
+      "margin_to_bound_deg": -2.413788822600182
+    },
+    {
+      "v_max": 19.0,
+      "grip_use": 0.85,
+      "completed": false,
+      "reason": "outside the tire fit (15.1 deg)",
+      "lap_time_s": 373.36,
+      "distance_m": 6999.485248490279,
+      "fraction_of_lap": 0.9999999999999999,
+      "worst_slip_deg": 15.101678215912688,
+      "inside_tyre_fit": false,
+      "rule4_valid": false,
+      "margin_to_bound_deg": -3.1016782159126883
     },
     {
       "v_max": 20.0,
@@ -169,7 +416,47 @@
       "fraction_of_lap": 0.9999999999999999,
       "worst_slip_deg": 17.803781993471084,
       "inside_tyre_fit": false,
-      "rule4_valid": false
+      "rule4_valid": false,
+      "margin_to_bound_deg": -5.803781993471084
+    },
+    {
+      "v_max": 21.0,
+      "grip_use": 0.85,
+      "completed": false,
+      "reason": "spun",
+      "lap_time_s": 125.26,
+      "distance_m": 2564.2025228902876,
+      "fraction_of_lap": 0.3663415853963491,
+      "worst_slip_deg": 48.55190980532801,
+      "inside_tyre_fit": false,
+      "rule4_valid": false,
+      "margin_to_bound_deg": -36.55190980532801
+    },
+    {
+      "v_max": 22.0,
+      "grip_use": 0.85,
+      "completed": false,
+      "reason": "off track",
+      "lap_time_s": 119.0,
+      "distance_m": 2537.947889550114,
+      "fraction_of_lap": 0.36259064766191546,
+      "worst_slip_deg": 25.567170198198657,
+      "inside_tyre_fit": false,
+      "rule4_valid": false,
+      "margin_to_bound_deg": -13.567170198198657
+    },
+    {
+      "v_max": 23.0,
+      "grip_use": 0.85,
+      "completed": false,
+      "reason": "spun",
+      "lap_time_s": 111.26,
+      "distance_m": 2476.687078423042,
+      "fraction_of_lap": 0.3538384596149036,
+      "worst_slip_deg": 52.957297892615436,
+      "inside_tyre_fit": false,
+      "rule4_valid": false,
+      "margin_to_bound_deg": -40.957297892615436
     },
     {
       "v_max": 24.0,
@@ -181,7 +468,8 @@
       "fraction_of_lap": 0.35033758439609897,
       "worst_slip_deg": 46.431464626407326,
       "inside_tyre_fit": false,
-      "rule4_valid": false
+      "rule4_valid": false,
+      "margin_to_bound_deg": -34.431464626407326
     },
     {
       "v_max": 28.0,
@@ -193,7 +481,8 @@
       "fraction_of_lap": 0.157789447361846,
       "worst_slip_deg": 28.249974249562392,
       "inside_tyre_fit": false,
-      "rule4_valid": false
+      "rule4_valid": false,
+      "margin_to_bound_deg": -16.249974249562392
     },
     {
       "v_max": 34.0,
@@ -205,7 +494,8 @@
       "fraction_of_lap": 0.06526631657914742,
       "worst_slip_deg": 49.793349235952846,
       "inside_tyre_fit": false,
-      "rule4_valid": false
+      "rule4_valid": false,
+      "margin_to_bound_deg": -37.793349235952846
     },
     {
       "v_max": 45.0,
@@ -217,19 +507,156 @@
       "fraction_of_lap": 0.056014003500877464,
       "worst_slip_deg": 52.3734700526849,
       "inside_tyre_fit": false,
-      "rule4_valid": false
+      "rule4_valid": false,
+      "margin_to_bound_deg": -40.3734700526849
     }
   ],
-  "target": {
-    "v_max": 20.0,
-    "grip_use": 0.6,
+  "target_fastest_valid": {
+    "v_max": 22.0,
+    "grip_use": 0.7,
     "completed": true,
     "reason": "finished",
-    "lap_time_s": 362.068573445452,
+    "lap_time_s": 330.848573445452,
     "distance_m": 6999.485248490279,
     "fraction_of_lap": 0.9999999999999999,
-    "worst_slip_deg": 6.099113008830981,
+    "worst_slip_deg": 11.644393319528788,
     "inside_tyre_fit": true,
-    "rule4_valid": true
+    "rule4_valid": true,
+    "margin_to_bound_deg": 0.3556066804712117
+  },
+  "valid_by_lap_time": [
+    {
+      "v_max": 22.0,
+      "grip_use": 0.7,
+      "lap_time_s": 330.848573445452,
+      "worst_slip_deg": 11.644393319528788,
+      "margin_to_bound_deg": 0.3556066804712117
+    },
+    {
+      "v_max": 22.0,
+      "grip_use": 0.6,
+      "lap_time_s": 334.748573445452,
+      "worst_slip_deg": 10.848810166155646,
+      "margin_to_bound_deg": 1.151189833844354
+    },
+    {
+      "v_max": 21.0,
+      "grip_use": 0.7,
+      "lap_time_s": 344.128573445452,
+      "worst_slip_deg": 9.364508387350257,
+      "margin_to_bound_deg": 2.6354916126497425
+    },
+    {
+      "v_max": 21.0,
+      "grip_use": 0.6,
+      "lap_time_s": 347.58857344545197,
+      "worst_slip_deg": 8.028693554670985,
+      "margin_to_bound_deg": 3.971306445329015
+    },
+    {
+      "v_max": 20.0,
+      "grip_use": 0.7,
+      "lap_time_s": 359.008573445452,
+      "worst_slip_deg": 9.05724680081165,
+      "margin_to_bound_deg": 2.942753199188351
+    },
+    {
+      "v_max": 20.0,
+      "grip_use": 0.6,
+      "lap_time_s": 362.068573445452,
+      "worst_slip_deg": 6.099113008830981,
+      "margin_to_bound_deg": 5.900886991169019
+    },
+    {
+      "v_max": 19.0,
+      "grip_use": 0.7,
+      "lap_time_s": 375.768573445452,
+      "worst_slip_deg": 8.743290986713694,
+      "margin_to_bound_deg": 3.256709013286306
+    },
+    {
+      "v_max": 19.0,
+      "grip_use": 0.6,
+      "lap_time_s": 378.488573445452,
+      "worst_slip_deg": 6.022675506330783,
+      "margin_to_bound_deg": 5.977324493669217
+    },
+    {
+      "v_max": 18.0,
+      "grip_use": 0.7,
+      "lap_time_s": 394.688573445452,
+      "worst_slip_deg": 7.635476349824054,
+      "margin_to_bound_deg": 4.364523650175946
+    },
+    {
+      "v_max": 18.0,
+      "grip_use": 0.6,
+      "lap_time_s": 397.068573445452,
+      "worst_slip_deg": 5.586677378641998,
+      "margin_to_bound_deg": 6.413322621358002
+    },
+    {
+      "v_max": 16.0,
+      "grip_use": 0.7,
+      "lap_time_s": 441.168573445452,
+      "worst_slip_deg": 6.302760400041455,
+      "margin_to_bound_deg": 5.697239599958545
+    },
+    {
+      "v_max": 16.0,
+      "grip_use": 0.6,
+      "lap_time_s": 442.428573445452,
+      "worst_slip_deg": 4.49468937488065,
+      "margin_to_bound_deg": 7.50531062511935
+    },
+    {
+      "v_max": 14.0,
+      "grip_use": 0.7,
+      "lap_time_s": 502.188573445452,
+      "worst_slip_deg": 5.960977610773193,
+      "margin_to_bound_deg": 6.039022389226807
+    },
+    {
+      "v_max": 14.0,
+      "grip_use": 0.6,
+      "lap_time_s": 503.008573445452,
+      "worst_slip_deg": 3.4799425003749103,
+      "margin_to_bound_deg": 8.52005749962509
+    },
+    {
+      "v_max": 12.0,
+      "grip_use": 0.85,
+      "lap_time_s": 583.548573445452,
+      "worst_slip_deg": 6.443652448353548,
+      "margin_to_bound_deg": 5.556347551646452
+    },
+    {
+      "v_max": 12.0,
+      "grip_use": 0.7,
+      "lap_time_s": 584.108573445452,
+      "worst_slip_deg": 4.3108338231665035,
+      "margin_to_bound_deg": 7.6891661768334965
+    },
+    {
+      "v_max": 12.0,
+      "grip_use": 0.6,
+      "lap_time_s": 584.7685734454519,
+      "worst_slip_deg": 3.449569007952886,
+      "margin_to_bound_deg": 8.550430992047115
+    }
+  ],
+  "note": "`target_fastest_valid` is the quickest rule-4-valid lap. The QUOTED target may differ: rule 12 discounts laps with little margin to the 12 deg bound. See `valid_by_lap_time` and FINDINGS F125/F140.",
+  "target": {
+    "v_max": 22.0,
+    "grip_use": 0.7,
+    "completed": true,
+    "reason": "finished",
+    "lap_time_s": 330.848573445452,
+    "distance_m": 6999.485248490279,
+    "fraction_of_lap": 0.9999999999999999,
+    "worst_slip_deg": 11.644393319528788,
+    "inside_tyre_fit": true,
+    "rule4_valid": true,
+    "margin_to_bound_deg": 0.3556066804712117
   }
 }

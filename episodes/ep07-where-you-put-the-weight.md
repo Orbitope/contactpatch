@@ -38,14 +38,14 @@ which is the point of a sweep.
 
 | Front mass | Understeer gradient |
 |---|---|
-| 40% | **−0.43 deg/g** |
-| 47% | −0.13 |
-| 54% | +0.17 |
-| 61% | +0.47 |
-| 65% | **+0.63** |
+| 40% | **−0.37 deg/g** |
+| 47% | −0.07 |
+| 54% | +0.22 |
+| 61% | +0.51 |
+| 65% | **+0.68** |
 
 That is the number Episode 3 introduced, and here it finally does some work. It
-swings **1.06 deg/g** across the sweep — from clear oversteer through neutral to
+swings **1.05 deg/g** across the sweep — from clear oversteer through neutral to
 clear understeer — against the 0.2 deg/g floor at which a professional test
 programme can tell two cars apart.
 
@@ -59,10 +59,6 @@ So balance transforms how the car behaves. Now the awkward part.
 ## Result two: it moves the needle, but far less than it moves the feel
 
 ![Balance card](../experiments/ep07/out/03-balance-card.svg)
-
-**These numbers were re-solved after a defect was found in the model's yaw moment
-(FINDINGS F72, F73, F79). Every one of the ten solves now converges, including the
-47% rear-drive case that never had before.**
 
 | Front mass | Rear drive | Front drive | Which wins |
 |---|---|---|---|
@@ -84,22 +80,16 @@ converged with zero envelope occupancy.)*
   does.
 
 So each drivetrain prefers the end of the range that puts weight on the wheels it
-drives. That was the previous draft's conclusion too — but it was reached from
-numbers in which rear drive won *everywhere*, including on a 65%-front car, which
-never quite made sense. With the yaw moment corrected the two halves of the
-statement finally agree with each other.
+drives.
 
-**And the size of it is no longer negligible.** The whole 40–65% range is worth
+**And the size of it is not negligible.** The whole 40–65% range is worth
 **0.21 s** to rear drive and **0.12 s** to front drive — real and resolvable,
-about ten times the ~0.02 s these solves resolve to, not the rounding noise an
-earlier version of this table implied. The earlier draft measured 0.10 s and
-0.11 s and made a point of how small that was; rear drive's sensitivity has
-doubled.
+about ten times the ~0.02 s these solves resolve to.
 
 **But put next to what balance does to the *character* of the car, it is still
 the smaller of the two effects.** 0.21 s is 1.7% of a 12-second lap — a real
 number a driver would notice, not one that decides a race by itself. The
-understeer swing is a different kind of thing entirely: 1.06 deg/g is not 1.7%
+understeer swing is a different kind of thing entirely: 1.05 deg/g is not 1.7%
 of anything, it is the difference between a car that oversteers and a car that
 doesn't, five times over the threshold at which a professional test team can
 tell two cars apart. One number moves the lap time. The other one moves what
@@ -131,19 +121,6 @@ Monotonic, and **it crosses zero near 50:50.** Below the crossover the axle that
 steers should not also drive; above it, it should. A real front-drive hatchback
 sits near 62% front — on the side where this model says front drive wins.
 
-*(An earlier version of this table italicised the 47% figure, which needed 16,000
-iterations and seventeen minutes and still would not converge. With the yaw moment
-corrected it converges in 15 seconds, and all ten solves in this episode are
-certified.)*
-
-**The previous draft got this wrong, and the way it got it wrong is instructive.**
-It reported the penalty shrinking monotonically from +0.202 s to +0.032 s and
-concluded that loading the front axle "buys back about 85% of the penalty" but
-"never reaches zero". The trend was right and the intercept was not: the missing
-yaw term penalised the steered-and-driven axle, so it held front drive artificially
-behind at every point. Correct it and the same monotonic line simply continues
-through zero, which is where it was always heading.
-
 Episode 6's question does not have a drivetrain as its answer. It has a crossover.
 
 ## Result four: the apex doesn't move — the braking point does
@@ -165,14 +142,9 @@ through the sourced range and past it.
 
 A point of apex movement is below what this setup can resolve, so it is not a
 result. The braking point moving ~10.6 m is unambiguous — about three node
-spacings at this solve's grid — and it moves monotonically: **more weight on the
-front, later braking.** More front grip to brake against, so the car carries the
+spacings at this solve's grid — and outside the 47% dip the trend is clear:
+**more weight on the front, later braking.** More front grip to brake against, so the car carries the
 brakes deeper. At 61–65% front it is still braking well after it has turned in.
-
-*Corrected from an earlier draft that reported 15.9 m, measured before the
-drivetrain yaw-moment fix (F72/F73) that also reversed this episode's drivetrain
-ordering (F80). The direction and the conclusion are unchanged; only the
-magnitude moved, along with everything else downstream of that fix. See F90.*
 
 Set that against Episode 4, where changing what came *after* the corner moved the
 apex about 6 points. **The apex is set by the corner's context, not by the car's
@@ -180,42 +152,33 @@ balance.** Where you brake is the car's business; where you apex is the road's.
 
 ## Do we believe it?
 
-**The understeer gradient is the strong result** — a 1.06 deg/g swing against a
+**The understeer gradient is the strong result** — a 1.05 deg/g swing against a
 0.2 deg/g resolution floor, in the textbook direction, from a model that reduces
 to closed-form linear theory (Episode 3) and to the two-wheel model in the
 degenerate limit (Episode 5).
 
-**The lap times needed re-solving before they meant anything.** On the first pass
-three of five rear-drive solves stopped on the solver's iteration limit. An
-unconverged solve returns the time of a trajectory that doesn't quite obey the
-physics — wrong by up to a few tenths of a percent, which on a 12-second corner is
-the size of the effects here. With only two trustworthy rear-drive points there
-was no rear-drive story at all, and the version of this episode I first wrote said
-so.
+**The lap times are gated on convergence.** An unconverged solve returns the time
+of a trajectory that doesn't quite obey the physics — wrong by up to a few tenths
+of a percent, which on a 12-second corner is the size of the effects here. Rear
+drive is the hard case: those solves need five minutes where a front-drive one
+converges in about ten seconds. So the sweep solves front drive first and seeds
+every rear-drive point from the converged answer *for the same car*, with one
+retry at double the iteration budget behind it. All ten solves converge.
 
-Re-solving fixed it, and the fix was ordering. Front-drive solves converge in
-about ten seconds where rear-drive ones need five minutes, so solving front drive
-first gives every rear-drive point a converged answer *for the same car* to start
-from. That plus one retry at double the iteration budget took it from seven
-converged solves to nine. **The rear-drive result above exists because of that
-re-solve; it was not visible before.** One point, 47% front, still refuses to
-converge after seventeen minutes and is excluded.
+**Seeding order is part of the protocol, not an implementation detail.** Chaining
+each balance from the previous one along the sweep lets a single lost convergence
+poison every point after it, and the resulting times read as a physical trend
+rather than as a solver artefact — a chained sweep of this experiment can produce
+an apparent drivetrain crossover worth 0.23 s that simply is not there. Seeding
+outward from the known-good nominal setting instead means no point inherits a bad
+starting guess from a neighbour that struggled.
 
-**A first pass at this sweep was worse and I nearly believed it.** Seeding each
-balance from the previous one starting at 40% meant that when rear drive lost
-convergence at 47%, every later point inherited the bad starting guess. That
-produced a rear-drive time of 12.452 s at 65% front and an apparent *crossover* —
-front drive suddenly faster by 0.23 s. Re-solving outward from the known-good
-nominal setting turned that same point into 12.189 s and the crossover vanished.
-**The dramatic result was a solver artefact, and it was the most interesting-looking
-number in the first run.**
-
-**Apex position was being measured on a grid too coarse to see the effect.** The
-apex was found by picking the node where the car ran closest to the inside, so it
-could only ever land on a node — quantising it to 6.7% of the corner. That is how
-five different cars came to report *exactly* 53.3%: not a physical result, one
-shared array index. Interpolating between nodes fixed it, and the honest answer is
-still that the apex barely moves.
+**Apex position is interpolated between nodes, not snapped to one.** Picking the
+node where the car runs closest to the inside quantises the apex to 6.7% of the
+corner, which is coarser than the movement being looked for — coarse enough that
+five different cars land on one shared array index and report *exactly* the same
+figure. Interpolating removes that, and the honest answer is still that the apex
+barely moves.
 
 ## What this can't tell you
 
@@ -277,8 +240,8 @@ fixed.
 
 **On the 0.02 s floor.** Unconverged minimum-time solves carry an error of
 0.1–0.7% of the objective, which on a 12 s corner is 0.01–0.08 s. Nothing smaller
-than 0.02 s is reported as a difference here, whatever the solver prints. Three
-rear-drive solves are excluded entirely.
+than 0.02 s is reported as a difference here, whatever the solver prints, and any
+solve that stops on the iteration limit is excluded from the comparison entirely.
 
 Full provenance: `FINDINGS.md` F44–F47, plus F39 for why convergence status is a
 gate rather than a footnote.

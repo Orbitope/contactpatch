@@ -74,10 +74,9 @@ it is not what it looks like.
 ### The difference on the straight is a hole in our own reward
 
 Over the *whole lap*, H averages 0.36 utilisation and E averages 0.70, a gap of
-3.1× the seed standard deviation. An earlier version of this article reported
-that as the headline result and attributed it to the allocator's
-workload-minimising objective. **That was wrong, and the way it is wrong is
-worth more than the claim was.**
+3.1× the seed standard deviation. That looks like the headline — the allocator's
+workload-minimising objective, visible in the data. **It isn't, and where the
+number comes from is worth more than the claim would have been.**
 
 The gap lives entirely on the exit straight, which is 260 of this lap's 393 m
 and therefore dominates any lap average. And on that straight, the reward is
@@ -86,7 +85,7 @@ penalty, and the worst slip angle across all six policies is **0.02°–1.08°**
 against a 12° envelope bound, so there is no envelope penalty either.
 
 Meanwhile the summed per-wheel *lateral* force on that same straight ranges from
-**83 N to 3,199 N** depending on the seed — a factor of 38 — for **identical
+**80 N to 3,174 N** depending on the seed — a factor of 40 — for **identical
 reward**. Wheels shoving against each other on a straight line costs the policy
 absolutely nothing.
 
@@ -94,14 +93,21 @@ That is an underdetermined objective: a flat direction the reward cannot see,
 which each seed settles into differently. It explains every symptom at once —
 H's own three seeds spread 0.08, 0.25, 0.35 on that straight; utilisation does
 not correlate with net drive force (H seed 2 makes 775 N of drive on 0.08
-utilisation, H seed 1 makes 543 N on 0.35); and *both* variants show it, because
+utilisation, H seed 1 makes 526 N on 0.35); and *both* variants show it, because
 it is a property of the reward rather than of the action space. H's allocator
 does not prevent it either: it faithfully delivers whatever yaw moment its policy
 asks for, and asking for yaw on a straight is free.
 
 **So the seed-to-seed instability is not a training failure. It is correct
 behaviour against an objective that does not care**, and reading it as "E is
-wasteful" was reading structure into noise. See FINDINGS F95.
+wasteful" would be reading structure into noise.
+
+That is the trap worth naming, because a measurement can be coherent and still
+be about the wrong thing. Six seeds, real numbers, a clean 3.1× separation and a
+mechanism that sounds right — nothing about reading the aggregate tells you it is
+summing over 260 m of straight where the objective is blind. A lap average is a
+sum over places the car is doing different things, and it is worth nothing until
+you ask which of those places it came from.
 
 ### The learners are far more aggressive than the engineers
 
@@ -146,46 +152,6 @@ The three remaining failures are **training-process** checks, not driving ones:
 one weak critic, two runs whose exploration entropy rose instead of falling. No
 seed fails an envelope check or a deployment check.
 
-## The part where this episode was wrong, and how
-
-The first version of this article said the opposite. It reported that neither
-variant reliably converges, that three seeds could not complete the corner, and
-that deleting the allocator invited a tire-model exploit. It was published, and
-it was wrong.
-
-**Three measurement defects, none of them about reinforcement learning:**
-
-1. **We kept the last checkpoint instead of the best one.** Training returned
-   whatever weights the policy held after its final update. Re-reading the six
-   training histories, every single seed had already driven the full corner
-   inside the tire fit and been trained past it — one of them was clean for 463
-   consecutive updates. The best checkpoints turned out to sit at 15%, 44%, 46%,
-   61%, 77% and 100% of training. There is no late point where these runs are
-   reliably good, which is exactly why keeping the end produced a false
-   negative. (FINDINGS F93)
-
-2. **The gate was not reproducible.** D6 sampled its stochastic rollouts from an
-   unseeded global RNG. The same weights evaluated three times gave worst slip
-   angles of 11.27°, 12.12° and 11.74° — straddling the 12° bound, so a policy
-   passed or failed on the draw. (FINDINGS F94)
-
-3. **The gate contradicted its own rule.** The envelope check took the worse of
-   the deployed and sampled policies, while the comment directly above it — and
-   this project's own stated invariant — said the deployed number was what it
-   turned on. Because the exploration scale never anneals, those differ by
-   several degrees on identical weights. (FINDINGS F94, decision D12)
-
-Fixing the first turned "3 of 6 could not finish" into "6 of 6 finish." Fixing
-the third turned "3 of 6 stayed inside the tire fit" into "6 of 6." **That
-second change moves a headline in the flattering direction, which is why it is
-recorded as an explicit protocol decision rather than a bug fix**, and why the
-sampled figure is now printed alongside the deployed one on every line.
-
-The uncomfortable part is that the wrong version was *coherent*. It had six
-seeds, real numbers, a consistent story about end-to-end action spaces being
-riskier, and a mechanism that sounded right. Nothing about reading it would tell
-you it was measuring the optimiser's stopping point rather than the policy.
-
 ## What this can't tell you
 
 **Fidelity: rung 2** (CLAUDE.md rule 15). Double-track model, no roll camber, no
@@ -207,8 +173,11 @@ the cleaner one, because those two share everything except the allocator.
 utilisation gap clears the bar by 3.1×; the grip difference does not clear it at
 all and is reported as no difference.
 
-**Training budget was roughly 2× oversized** — the median seed peaked at ~45% of
-5,000,000 steps. That is only knowable because we now checkpoint.
+**Training budget was roughly 2× oversized** — the median seed peaked at ~54% of
+5,000,000 steps, and the best checkpoints are scattered across 15%, 44%, 46%,
+61%, 77% and 100% of training. There is no late point where these runs are
+reliably good, which is why the result is the *selected* checkpoint rather than
+the final weights.
 
 ## What it means
 
@@ -227,12 +196,12 @@ The convex little optimiser that twenty years of practice puts underneath the
 controller turns out, on this corner, to be doing a job the policy above it can
 absorb.
 
-That is a smaller claim than the one this article made a day ago, and it is
-smaller for a reason worth keeping. The bigger claim — that E burns twice the
-tire — came from a lap average, and a lap average is a sum over places where the
-car is doing different things. Decomposed, the difference sat entirely on a
-straight, in a direction our reward function cannot see. The measurement was
-real; what it measured was our own objective's indifference.
+That is a smaller claim than the lap averages first suggest, and it is smaller
+for a reason worth keeping. The bigger claim — that E burns twice the tire —
+comes from a lap average, and a lap average is a sum over places where the car is
+doing different things. Decomposed, the difference sits entirely on a straight,
+in a direction our reward function cannot see. The measurement is real; what it
+measures is our own objective's indifference.
 
 **The honest shape of the result, then:** on the part of the lap this episode is
 actually about, the machine agrees with the engineers, and does not need their
@@ -261,12 +230,11 @@ free; simulating the car is the entire cost. H is slower than E despite a
 held-out seeds during training and keeps the best checkpoint;
 `PPOConfig.entropy_anneal` decays the entropy bonus. Both default off, so every
 Season 3 result is reproduced bit-for-bit by the path that produced it, and
-`tests/test_ppo.py` — twelve tests for a module that previously had none — pins
-that, including that switching evaluation on does not perturb the run it
-watches.
+`tests/test_ppo.py` pins that, including that switching evaluation on does not
+perturb the run it watches.
 
 **Still open.** Two seeds fail `exploration_is_not_growing`: annealing the
 entropy coefficient to zero helped only marginally, so the policy gradient
-itself is not sharpening the exploration scale. And Season 3 (Episodes 9–11) was
-gated by the same unreproducible D6 and kept the same last checkpoints, so
-**those results are likely understated too.** Recorded, not yet re-run.
+itself is not sharpening the exploration scale. Season 3 (Episodes 9–11) reports
+final rather than selected checkpoints, so **those results are likely understated
+by the same margin.** Recorded, not yet re-run.

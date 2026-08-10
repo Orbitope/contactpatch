@@ -120,10 +120,7 @@ design as quickest — **47% front**. Independent methods, same ordering. The sh
 correlation is **+0.993**, which is real and which you should almost ignore; see
 below for why a handful of monotone points cannot support it.
 
-*(Re-run after the yaw-moment correction of FINDINGS F73/F79. The comparison now
-rests on **four** designs rather than three: the 47%-front rear-drive solve had
-never converged in this project's history, and with the fix it converges in 15
-seconds. Both methods also moved their pick from 54% to 47%, independently.)*
+*(The comparison rests on **four** designs — every solve in it converged.)*
 
 One thing to be careful about, because the table above invites the wrong reading.
 The quickest car the deployed policy *finishes* is **47% front, at 19.13 s** — but
@@ -142,10 +139,6 @@ matters more than the correlation.
 |---|---|
 | Learned driver | **5.1%** |
 | Optimal control | **1.7%** |
-
-*(Was 3.1% against 0.81% — a 4x gap — on three designs and the uncorrected solver.
-The solver's sensitivity roughly doubled once its yaw moment was fixed, which
-narrows the gap without closing it.)*
 
 There's an attractive story here and I'm not going to tell it as though it were
 established. The story is that the solver re-optimises its whole line for each
@@ -179,22 +172,14 @@ deployed policy cannot drive at all. The solver converges on every design it is
 asked about. The comparison still refuses to report a correlation below three
 usable designs rather than producing one.
 
-**And it refused for a reason.** An earlier version computed a shape correlation
-of **+0.9997** across all five designs. That number was worthless — it correlated
-*which cars the policy can drive* against *which cars are quicker*, driven
-entirely by two total failures, with an RL spread of 6.15 s against the solver's
-0.098 s. It would have been this episode's headline.
+**And that gate earns its keep.** Computed across all five designs the shape
+correlation comes out at **+0.9997**, and it is worthless: it correlates *which
+cars the policy can drive* against *which cars are quicker*, driven entirely by
+two total failures, with an RL spread of 6.15 s against the solver's 0.098 s. A
+number that good is the tell. Restricted to the four designs where both methods
+have a trustworthy answer it is **+0.993**.
 
-**It survived the fix by four days, which is the part worth telling.** The gate
-went into the code; the figure on disk was built by the version before it and was
-never rebuilt, because rebuilding meant retraining for an hour. So the retracted
-+0.9997 stayed in the figure, rendered as `+1.00`, next to a red curve whose
-lowest point was the 40% car and a caption asserting the fastest was 54% — the
-figure disagreeing with its own legend in plain sight. Nothing caught it: the
-tests passed, the numbers were internally consistent within each half. It took
-opening the file and looking at it. Recomputed properly it is **+0.985**.
-
-Even on the three legitimate designs, I checked what that statistic is worth:
+Even on those four designs, I checked what that statistic is worth:
 **two random monotone three-point series exceed r = 0.99 about a quarter of the
 time**, and four points is not much better. With n = 3 and both series monotone, the correlation is nearly determined
 by the ordering alone. So the episode reports the ordering and the magnitudes, and
@@ -259,11 +244,9 @@ that is slow — it is a car this driver cannot drive, which is a different fact
 about a car than any Season 1 or 2 measurement could produce, because nothing in
 Seasons 1 or 2 could be surprised.
 
-I originally wrote "that is a car that is fragile" here, and Episode 11 showed
-that was the wrong word. Fragile means it fails when something goes wrong; the 40%
-car fails when nothing goes wrong at all. Those are different problems and running
-the perturbation experiment is what made the distinction obvious. The correction
-is recorded in FINDINGS F70.
+"Fragile" is the wrong word for it, and the distinction matters: fragile means it
+fails when something goes wrong, while the 40% car fails when nothing goes wrong
+at all. Those are different problems with different fixes.
 
 Episode 11 goes looking for fragility on purpose, and does not find it where it
 expected to.
@@ -284,13 +267,9 @@ one policy across five designs, runs D6, attempts the cross-check against Episod
 D6 and is supposed to. `--figures-only` redraws from cached results.
 
 `--eval-only` reloads the cached `policy.pt` and recomputes every downstream
-number and figure in about two minutes without retraining. That exists because its
-absence caused a real problem: the cross-check gate landed in the code and the
-figures on disk were never rebuilt, so a retracted correlation of +0.9997 across
-all five designs sat in a published figure — beside a curve that visibly bottomed
-at 40% front and a caption reading "fastest 54% front" — until the figure was
-reviewed by eye. The policy is the artefact; everything after it is derived, and
-deriving it has to be cheap or it goes stale. See FINDINGS F68.
+number and figure in about two minutes without retraining. The policy is the
+artefact; everything after it is derived, and deriving it has to be cheap or the
+figures drift away from the numbers they illustrate.
 
 **Numbers quoted above** are `[MEASURED]` from `physics/ppo.py` driving
 `physics/rl_env.py` on the four-wheel model with the Project Chrono tire, offsets

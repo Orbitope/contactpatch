@@ -17,7 +17,7 @@ follows from how hard it resists that difference.**
 
 ## One mechanism, not two
 
-I got this wrong first, so it is worth stating carefully.
+This is worth stating carefully, because it is easy to get backwards.
 
 A differential is not a torque-sharing device *and also* a handling device. It is
 one device with one rule:
@@ -36,9 +36,8 @@ depending on which wheel happens to be turning faster:
   traction an LSD is bought for.
 
 Opposite outcomes, same rule. **A model that hard-codes which wheel gets more torque
-can only ever produce one of them** — which is exactly the mistake I made, and it
-put the locked differential's handling backwards until I caught it (FINDINGS F75,
-F77).
+can only ever produce one of them**, and will have the locked differential's
+handling backwards for half the throttle range (FINDINGS F75, F77).
 
 ![Which wheel is in charge](../experiments/ep12/out/01-which-wheel-is-in-charge.svg)
 
@@ -169,15 +168,14 @@ Project Chrono tire, offsets removed, at 40 m radius and 9.0 m/s² lateral (19.0
 **Two `[ASSUMED]` numbers**, both the LSD's, both swept. **One `[LIKELY]`**, the
 track width.
 
-**On the mechanism.** `differential_forces` is one method on purpose. An earlier
-version split it into a torque bias and a separate speed couple, which counted the
-same physical effect twice and gave the bias the wrong direction — the welded
-differential turned *into* the corner. Four D2 checks now guard it, and removing the
-speed term makes two of them fail with exactly the old wrong number. See FINDINGS
-F75, F76 and F77.
+**On the mechanism.** `differential_forces` is one method on purpose. Splitting it
+into a torque bias and a separate speed couple counts the same physical effect
+twice and gives the bias the wrong direction — under which the welded differential
+turns *into* the corner at part throttle. Four D2 checks guard against that, and
+removing the speed term makes two of them fail. See FINDINGS F75, F76 and F77.
 
-**On the yaw moment this rests on.** Until this season the model had no drivetrain
-yaw term at all: moving the entire drive force from one wheel to the other changed
-the computed yaw by exactly zero, so torque vectoring would have measured a silent
-null. That is F72, and it is why Season 4 needed a physics fix before it could
-have an episode.
+**On the yaw moment this rests on.** Every number here depends on the model
+carrying a drivetrain yaw term. Without one, moving the entire drive force from one
+wheel to the other changes the computed yaw by exactly zero and torque vectoring
+measures a silent null — which is why Season 4 needs this term before it can have
+an episode at all. See FINDINGS F72.

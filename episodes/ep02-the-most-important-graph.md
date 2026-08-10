@@ -38,8 +38,8 @@ the road. Does it grip proportionally harder?
 | Load on the tire | Peak sideways force | Grip coefficient |
 |---|---|---|
 | 1 kN | 1,180 N | **1.18** |
-| 3 kN | 3,150 N | 1.05 |
-| 5 kN | 4,830 N | 0.97 |
+| 3 kN | 3,270 N | 1.09 |
+| 5 kN | 5,000 N | 1.00 |
 | 9 kN | 7,350 N | **0.82** |
 
 Nine times the load buys **6.2 times the force**, not nine times.
@@ -74,7 +74,7 @@ Now the split. Two tires, 6 kN between them, shared three ways:
 | Split | Pair's total grip | |
 |---|---|---|
 | 3 + 3 kN | 6,550 N | the most this pair can make |
-| 3.5 + 2.5 kN | 6,530 N | −0.4% |
+| 3.5 + 2.5 kN | 6,530 N | −0.35% |
 | 4 + 2 kN | 6,460 N | −1.4% |
 | 5 + 1 kN | 6,180 N | **−5.6%** |
 
@@ -83,7 +83,7 @@ tire you unload gives up — because the one you pressed harder is now operating
 further down that falling grip curve.
 
 And notice the shape of the penalty: it starts almost free and gets expensive
-fast. Moving 500 N across costs 0.4%. Moving 2,000 N costs 5.6% — fourteen times
+fast. Moving 500 N across costs 0.35%. Moving 2,000 N costs 5.6% — sixteen times
 the penalty for four times the transfer.
 
 That isn't a coincidence. Because the grip coefficient falls almost perfectly

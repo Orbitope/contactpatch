@@ -1,0 +1,38 @@
+[
+ {
+  "weight": 0.0,
+  "time_s": 12.086446365081208,
+  "solver_status": "Solve_Succeeded",
+  "converged": true,
+  "worst_jump_deg": 11.146362622969098,
+  "reversals": 53,
+  "envelope_occupancy": 0.0
+ },
+ {
+  "weight": 0.0001,
+  "time_s": 12.086649312003235,
+  "solver_status": "Solve_Succeeded",
+  "converged": true,
+  "worst_jump_deg": 10.439077467620187,
+  "reversals": 33,
+  "envelope_occupancy": 0.0
+ },
+ {
+  "weight": 0.001,
+  "time_s": 12.08752328770086,
+  "solver_status": "Solve_Succeeded",
+  "converged": true,
+  "worst_jump_deg": 7.053597018076171,
+  "reversals": 19,
+  "envelope_occupancy": 0.0
+ },
+ {
+  "weight": 0.01,
+  "time_s": 12.093171009840077,
+  "solver_status": "Solve_Succeeded",
+  "converged": true,
+  "worst_jump_deg": 3.662816724270807,
+  "reversals": 13,
+  "envelope_occupancy": 0.0
+ }
+]

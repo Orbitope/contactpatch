@@ -19,9 +19,8 @@ next.
 So: **can something learn to drive fast with no instruction at all — just a
 stopwatch?**
 
-Short answer, up front, because the long answer took me two drafts to write
-honestly: **no — and the two things it learned instead are worth more than a
-policy that had simply worked.**
+Short answer, up front: **no — and the two things it learned instead are worth
+more than a policy that had simply worked.**
 
 ## The setup
 
@@ -50,22 +49,20 @@ After 1.2 million steps of trial and error, **the policy you would actually ship
 completes 0% of laps.** It reaches 129 m of a 393 m track and leaves the road, every
 single time.
 
-That is the result. It took me a while to write it that way.
-
-What I had first was this: *88% of laps completed, 362 m average, nobody told it
-about racing lines or apexes.* Which is true of the policy **as it was measured
-during training** — and training measures a policy that is still adding random noise
-to every action it takes. Take the noise away, which is what deploying means, and
-there is no driver there.
+That is the result, and it is not the one the training run reports. Measured the
+way training measures it, the same policy reads: *88% of laps completed, 362 m
+average, nobody told it about racing lines or apexes.* Which is true of the policy
+**as it was measured during training** — and training measures a policy that is
+still adding random noise to every action it takes. Take the noise away, which is
+what deploying means, and there is no driver there.
 
 > **A reinforcement-learning result is the deployed policy's performance.** For a
 > Gaussian policy that means the mean action. If the sampled policy scores well and
 > the mean action fails, the run has not produced a driver — its competence lives in
 > the exploration noise.
 
-That is now a rule in this project (FINDINGS F61) and a gate in its training
-diagnostic, and it exists because of this episode. The first draft of this article
-was written around the 88%.
+That is a rule in this project (FINDINGS F61) and a gate in its training
+diagnostic, and it exists because of this episode.
 
 So the honest question is not "did it learn to drive?" It is: **what did it learn
 instead, and how did that get mistaken for driving?** There turn out to be two
@@ -190,8 +187,10 @@ handed a tire model with no guardrails, should discover that the Magic Formula
 keeps returning force at 25° of slip where no tire was ever measured, and live
 there.
 
-It does go outside — worst slip **14.4°** against our 12° bound, 0.5% of steps
-beyond it, with nothing stopping it. That's real, and D6 fails the run for it.
+It does go outside — worst slip **15.2°** against our 12° bound with the actions
+sampled, about 1% of steps beyond it, and the deployed policy peaks at 12.8° with
+2.5% of its steps outside. Nothing stops it. That's real, and D6 fails the run
+for it.
 
 But it's a footnote, not the story. **The policy isn't fast enough to be tempted
 yet.** The tire-model exploit is available to something operating at the limit
@@ -218,7 +217,7 @@ thing they have in common:
    steering have useful scales an order of magnitude apart, and one number was
    serving both. The policy sat at full throttle for half a million steps because
    it never once sampled the brakes.
-4. **The task was physically impossible.** The corner caps at 19.5 m/s and the
+4. **The task was physically impossible.** The corner caps at 19.3 m/s and the
    environment started the car at 32, a number copied from the optimal-control
    episodes where a solver that sees the whole road plans the braking trivially.
 5. **The critic stopped predicting**, mid-run, while returns still looked fine.
@@ -232,11 +231,12 @@ and to the right.
 That's what D6 checks. Nine tests, seven of them written from a failure that
 actually happened here rather than one I imagined. The useful ones compare a
 hyperparameter against a **derived property of the task** — the corner needs a
-0.037 steering action, the corner caps at 19.5 m/s — rather than against
+0.037 steering action, the corner caps at 19.3 m/s — rather than against
 convention. Those would have caught four of the six before an hour of compute was
 spent.
 
-**D6 fails this run**, on three checks: the noise growth, the greedy gap, and the
+**D6 fails this run**, on four of its twelve checks: the noise growth, the
+deployed policy not completing the task, the greedy/sampled gap, and the
 tire-model excursion. That is the correct outcome and the run is reported as
 failing. A diagnostic that passes whatever you show it is decoration.
 
@@ -245,13 +245,16 @@ failing. A diagnostic that passes whatever you show it is decoration.
 **The environment was tested before anything was trained in it.** Fourteen checks,
 most comparing against geometry the integrator doesn't have access to. The
 important one drives the car round the corner at the textbook Ackermann angle and
-confirms it tracks the centreline — which caught a genuine bug in the curvilinear
-kinematics, where I'd integrated the heading before computing the arc-length rate
-and used the wrong term for the road's own rotation. That error produces perfectly
-smooth, entirely plausible laps.
+confirms it tracks the centreline. That check has teeth: get the curvilinear
+kinematics wrong — integrate the heading before computing the arc-length rate, or
+use the wrong term for the road's own rotation — and the car still produces
+perfectly smooth, entirely plausible laps that no amount of watching would flag.
 
-**The greedy/stochastic gap is not a measurement artefact.** Eight seeds each way,
-the stochastic policy completes 393.3 m with a range of 393 to 393, and the
+**The greedy/stochastic gap is not a measurement artefact.** Eight seeds each
+way, the deployed policy covers 128.7 m with a standard deviation of **zero** —
+it fails identically every time — while the sampled one covers 232 m on average
+and finishes 38% of the time. The sampled spread is enormous (sd 125 m), which is
+the point: its competence lives in the noise, so it varies with the draw. The
 mechanism is arithmetic that can be checked by hand.
 
 **The lap times are not comparable with Seasons 1 and 2** and are not quoted as
@@ -291,10 +294,10 @@ looked like success and wasn't**, and that nothing in the training curves said s
 The reward went up. The losses went down. The policy was learning something the
 whole time; it just wasn't driving.
 
-The uncomfortable part is how nearly it shipped. The first draft of this article
-opened with "it learned", quoted the 88%, and treated the deployment failure as a
-footnote about implementation. What caught it was asking for the one number a
-training run does not print: what does the thing you would actually ship do?
+The uncomfortable part is how easily this passes for success. The curves rise, the
+losses fall, the sampled finish rate is 88%, and every one of those numbers is
+real. What separates them from a driver is the one number a training run does not
+print: what does the thing you would actually ship do?
 
 Season 2 swept hundreds of designs with a solver that was the same solver every
 time. This driver is not the same twice, and cannot drive a second car at all.

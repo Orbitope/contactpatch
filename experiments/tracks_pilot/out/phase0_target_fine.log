@@ -1,0 +1,21 @@
+PHASE 0 TARGET — FINER SWEEP (F139 follow-up)
+Testing whether F125s 347.6 s at v_max 21 / grip 0.60 is reachable.
+
+    v_max   grip   done    lap s   % lap    slip  rule4
+     19.0   0.60   True    378.5  100.0%    6.0   VALID
+     20.0   0.60   True    362.1  100.0%    6.1   VALID
+     21.0   0.60   True    347.6  100.0%    8.0   VALID
+     22.0   0.60   True    334.7  100.0%   10.8   VALID
+     23.0   0.60  False    323.3  100.0%   15.6   
+     24.0   0.60  False    120.0   38.5%   53.5   
+     19.0   0.70   True    375.8  100.0%    8.7   VALID
+     20.0   0.70   True    359.0  100.0%    9.1   VALID
+     21.0   0.70   True    344.1  100.0%    9.4   VALID
+     22.0   0.70   True    330.8  100.0%   11.6   VALID
+     23.0   0.70  False    112.1   35.4%   54.7   
+     24.0   0.70  False    107.3   35.3%   51.2   
+
+  FASTEST RULE-4-VALID: 330.8 s at v_max=22, grip=0.70, slip 11.6 deg
+
+F125 claimed: 347.6 s at v_max 21 / grip 0.60 / slip 8.0 deg
+coarse artefact says: 362.07 s at v_max 20 / grip 0.60 / slip 6.10 deg

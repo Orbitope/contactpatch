@@ -39,14 +39,14 @@ which means:
 
 ![Four wheels](../experiments/ep05/out/01-four-wheels.svg)
 
-| At 0.95 g | Load |
+| At 0.93 g | Load |
 |---|---|
 | Outside front | 5.63 kN |
-| Outside rear | 4.83 kN |
+| Outside rear | 4.82 kN |
 | Inside front | 1.48 kN |
-| Inside rear | 1.41 kN |
+| Inside rear | 1.40 kN |
 
-**The outside pair carries 3.8 times what the inside pair does.** The inside
+**The outside pair carries 3.6 times what the inside pair does.** The inside
 wheels are down to about 1.4 kN each — under 40% of what they carry sitting still.
 
 The total never changes. It is the same car. But Episode 2 already told us what
@@ -81,18 +81,20 @@ resist it with.
 That is the whole reason a car built to corner is low and wide, and it is worth
 seeing as three cars rather than as a formula.
 
-## Result one: cornering grip drops 6%
+## Result one: cornering grip drops 8%
 
-Peak lateral acceleration goes from **1.03 g to 0.97 g** — the same car, the same
+Peak lateral acceleration goes from **1.03 g to 0.95 g** — the same car, the same
 tires, the only difference being that we now account for the load being shared
 unevenly across each axle.
 
-That number is worth pausing on, because **Episode 3 predicted it**. With a model
-that structurally could not simulate lateral load transfer, we estimated from
+That number is worth pausing on, because **Episode 3 went looking for it**. With a
+model that structurally could not simulate lateral load transfer, we estimated from
 static geometry and the tire's load-sensitivity curve alone that it would cost the
-front axle about 6% of its grip and the rear about 5%. Measured, whole car: 6%.
+front axle about 6% of its grip and the rear about 5%. Measured, whole car: 8%.
 
-A prediction made with the wrong model, from first principles, that landed.
+An estimate made with the wrong model, from first principles, that landed within a
+third of the answer. Close enough to say the mechanism was identified correctly —
+not close enough to call it a prediction.
 
 ## Result two: the anti-roll bar
 
@@ -114,11 +116,11 @@ mechanism, and it is why a bar is the first thing anyone changes.
 
 | Front share of roll stiffness | Four wheels | Two wheels |
 |---|---|---|
-| 40% | +0.01 deg/g | +0.19 |
-| 50% | +0.12 | +0.19 |
-| 55% (nominal) | +0.17 | +0.19 |
-| 60% | +0.23 | +0.19 |
-| 70% | +0.33 | +0.19 |
+| 40% | +0.05 deg/g | +0.19 |
+| 50% | +0.16 | +0.19 |
+| 55% (nominal) | +0.22 | +0.19 |
+| 60% | +0.28 | +0.19 |
+| 70% | +0.39 | +0.19 |
 
 The four-wheel model responds monotonically: stiffer front bar, more understeer.
 That is the textbook direction and one of Gate 1's falsification checks.
@@ -142,16 +144,15 @@ exactly like a statement about cars.
 
 ## Two different experiments are both called "changing the bar"
 
-Here is a subtlety I got wrong first time and it is worth spelling out, because
-the obvious question about an anti-roll bar is *"does a stiffer bar reduce body
-roll?"* and the sweep above cannot answer it.
+Here is a subtlety worth spelling out, because the obvious question about an
+anti-roll bar is *"does a stiffer bar reduce body roll?"* and the sweep above
+cannot answer it.
 
 The sweep moves the front **share** of roll stiffness and holds the **total**
 fixed. That is a real protocol — it is what you do by stiffening one bar and
 softening the other — and under it the car leans by exactly the same amount at
-every setting. An earlier version of the figure above therefore said a bar
-*cannot* change how much a car leans. **That was true of our parameterisation and
-false of cars.**
+every setting. Read that sweep alone and you would conclude a bar *cannot* change
+how much a car leans. **That is true of this parameterisation and false of cars.**
 
 Bolting a bar on is the other protocol, and the more common one. A bar is a
 spring. Adding one raises the total roll stiffness, so the car leans less *as well
@@ -175,9 +176,9 @@ way to see that these are two separate effects. **Only the redistribution change
 the handling balance.** Less lean is a comfort and suspension-geometry gain; the
 balance change is what a chassis engineer is buying.
 
-The lesson is not about bars. It is that the protocol was chosen implicitly, by
-writing a sweep over one parameter, and then a statement about that choice got
-published as a statement about cars.
+The lesson is not about bars. It is that a sweep over one parameter chooses a
+test protocol implicitly, and a statement about that choice reads exactly like a
+statement about cars.
 
 ## Result three: a correction to Episode 3
 
@@ -187,11 +188,6 @@ suspension effects.
 
 Adding lateral load transfer: **0.19 → 0.22 deg/g.** Essentially unchanged, and
 very slightly higher.
-
-*(This was published as 0.19 → 0.17 — unchanged and slightly **lower**. The sign of
-that small change was an artefact of a defect in the model's yaw moment, corrected
-in FINDINGS F73. The magnitude and the conclusion below are unaffected; only the
-direction of a 0.03 deg/g wobble flips.)*
 
 Both axles lose grip to transfer, and at a 55% front roll share on a 54%-front car
 the two losses very nearly cancel — the same cancellation that made the cornering
@@ -229,7 +225,7 @@ track exactly halves it; the roll share divides the transfer moment exactly.
 **Wheel lift sits where it should.** The first inside wheel would lift at 1.61 g,
 just below the car's static stability factor of 1.63 — correct, since that factor
 is the rigid-body rollover threshold and no elastic roll distribution can beat it.
-The car runs out of grip at 0.97 g, so nothing in this series involves a lifted
+The car runs out of grip at 0.95 g, so nothing in this series involves a lifted
 wheel. The case is handled, not exercised.
 
 ## What this model still can't tell you
@@ -240,8 +236,8 @@ the springs and bars, and only the elastic part follows roll stiffness. Modellin
 all of it as elastic *overstates* how much authority a bar has.
 
 **And the bar is still weak.** Which is the uncomfortable part. Even overstating
-its authority, the full documented roll-share range buys only 0.31 deg/g — just
-1.5× the 0.2 deg/g floor at which a professional test programme can tell two
+its authority, the full documented roll-share range buys only 0.34 deg/g — just
+1.7× the 0.2 deg/g floor at which a professional test programme can tell two
 builds apart. A single realistic bar change of 0.05 roll share moves the gradient
 by about 0.05 deg/g, which is *below* that floor and would not be reportable. Real
 chassis engineers get considerably more out of a bar than this.
@@ -311,6 +307,4 @@ Gated by `diagnostics/D5_load_transfer.py` (19 checks). The two models share the
 both" a swap of one object rather than a rewrite.
 
 Full provenance: `FINDINGS.md` F29–F31 and F37–F38, plus F18 for the prediction
-this episode confirmed. **F37 is a correction to an earlier version of this
-article**, which asserted that an anti-roll bar cannot change how much a car
-leans.
+this episode confirmed.

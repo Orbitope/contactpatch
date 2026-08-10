@@ -328,7 +328,8 @@ def _run(weight: float, steps: int, seed: int = None,
     # selection criterion must not drift, is handled in `make_eval`.
     r = PE.evaluate(res["model"], trk, n_sections=N_SECTIONS,
                     env_kwargs=_env_kwargs(weight, A_LAT_MAX, cross_track,
-                                          envelope_penalty, envelope_exponent))
+                                          envelope_penalty, envelope_exponent,
+                                          tv_mode))
     # A LAP TIME REQUIRES A LAP. `length / speed_mean` on a policy that
     # covered two-thirds of the circuit is a projection, and it reads as a
     # result: cell 1 printed "268.2 s vs target 347.6 s (-23%)" for a policy
@@ -340,7 +341,8 @@ def _run(weight: float, steps: int, seed: int = None,
     print(f"\n  [D16] {r.headline()}")
     if finished_lap:
         print(f"    lap {lap_s:.1f} s vs target {TARGET_S:.1f} s "
-              f"({100*(lap_s/TARGET_S - 1):+.0f}%), capped baseline 537.8 s")
+              f"({100*(lap_s/TARGET_S - 1):+.0f}%), capped baseline "
+              f"{BASELINE['lap_time_s']:.1f} s")
     else:
         print(f"    NO LAP TIME — finished {100*r.finish_rate:.0f}% of runs, "
               f"covered {100*r.fraction_of_lap:.1f}% of the lap. "
@@ -455,9 +457,16 @@ def limit_ceiling(track, a_lat=A_LAT_MAX) -> float:
 
 #: The capped baseline this run has to beat on utilisation without losing the
 #: lap. [MEASURED] F120, `curr_ct2_policy.pt` re-scored through `policy_eval`.
-BASELINE = {"fraction_of_lap": 1.000, "worst_slip_deg": 10.4,
+#:
+#: **Corrected 2026-08-10 (F141) against the artefact this comment names.**
+#: `out/spa_ct2_lap_figure.json` gives worst_slip 9.690 (was written 10.4),
+#: speed_mean 13.074 (was 13.03), and distance/speed_mean = 535.4 s (was
+#: 537.8). `utilisation_mean`, `frac_at_limit` and `fraction_of_lap` were
+#: already right. The lap time is DERIVED here -- the artefact stores distance
+#: and mean speed, not a lap time -- so it is quoted to 0.1 s and no further.
+BASELINE = {"fraction_of_lap": 1.000, "worst_slip_deg": 9.7,
             "utilisation_mean": 0.090, "frac_at_limit": 0.007,
-            "speed_mean": 13.03, "valid": True, "lap_time_s": 537.8}
+            "speed_mean": 13.07, "valid": True, "lap_time_s": 535.4}
 
 #: [MEASURED] F125, `phase0_target.py`. The classical driver's fastest lap
 #: that is BOTH complete and inside the tyre fit, with margin: v_max 21,

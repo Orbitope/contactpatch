@@ -45,10 +45,21 @@ OUT = ROOT / "experiments" / "tracks_pilot" / "out"
 TRACK = "Spa"
 #: Swept, not fixed at 45 the way the existing baseline did. 12 is the value
 #: the plan records as lapping cleanly, so the answer is bracketed already.
-V_MAX = (12.0, 14.0, 16.0, 18.0, 20.0, 24.0, 28.0, 34.0, 45.0)
+#:
+#: **19-23 and grip 0.70 are here because F125's headline came from a finer
+#: sweep that this grid did not contain (F139/F140).** Re-running the script
+#: wrote an artefact whose best row was 362.1 s at v_max 20, while the finding
+#: quoted 347.6 s at v_max 21 — a number the file had no way to produce. The
+#: result was right and reproduced exactly on a re-run; it simply was not
+#: *persisted*, so an audit against the named artefact could not confirm it.
+#: The grid a finding is quoted from has to be the grid the script actually
+#: runs, or the artefact silently stops being evidence for the finding.
+V_MAX = (12.0, 14.0, 16.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0,
+         28.0, 34.0, 45.0)
 #: The lateral budget the PLAN is built for, as a fraction of the tyre's
-#: measured 0.97 g peak. Two levels: one conservative, one at the limit.
-GRIP = (0.60, 0.85)
+#: measured 0.97 g peak. Three levels: conservative, mid, and at the limit --
+#: 0.70 is the one F125's fastest-valid row (330.8 s) came from.
+GRIP = (0.60, 0.70, 0.85)
 SLIP_BOUND_DEG = 12.0
 
 
@@ -109,9 +120,29 @@ def main():
               f"speed plan the RL policy does not. An upper reference, NOT an "
               f"external validation (rule 2).")
 
+    # `target` is the FASTEST rule-4-valid lap. That is NOT automatically the
+    # quotable one: F125 quotes 347.6 s rather than this 330.8 s because the
+    # fastest sits 0.4 deg from the 12 deg bound, and rule 12 says report to
+    # the precision the inputs support. That is a judgement, not a threshold --
+    # so rather than bake in a margin nobody has justified, every valid row is
+    # written out with its own margin, and the judgement stays reconstructible
+    # from the artefact. F139 mistook this gap for a wrong measurement; the
+    # rows were simply not in the file (F140).
+    for r in rows:
+        r["margin_to_bound_deg"] = SLIP_BOUND_DEG - r["worst_slip_deg"]
     (OUT / "phase0_target.json").write_text(json.dumps(
         {"track": TRACK, "track_length_m": float(trk.length),
          "slip_bound_deg": SLIP_BOUND_DEG, "attempts": rows,
+         "target_fastest_valid": best,
+         "valid_by_lap_time": sorted(
+             ({k: r[k] for k in ("v_max", "grip_use", "lap_time_s",
+                                 "worst_slip_deg", "margin_to_bound_deg")}
+              for r in rows if r["rule4_valid"]),
+             key=lambda r: r["lap_time_s"]),
+         "note": ("`target_fastest_valid` is the quickest rule-4-valid lap. "
+                  "The QUOTED target may differ: rule 12 discounts laps with "
+                  "little margin to the 12 deg bound. See `valid_by_lap_time` "
+                  "and FINDINGS F125/F140."),
          "target": best}, indent=2) + "\n")
     print(f"\n  wrote phase0_target.json")
 

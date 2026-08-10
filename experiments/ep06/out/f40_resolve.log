@@ -1,0 +1,17 @@
+F40 RE-SOLVE — Ep6 long_exit, rwd, ideal diff, 100 nodes, 32 m/s, max_iter 8000
+corrected yaw moment (_LEGACY_YAW_MOMENT=False)
+
+
+******************************************************************************
+This program contains Ipopt, a library for large-scale nonlinear optimization.
+ Ipopt is released as open source code under the Eclipse Public License (EPL).
+         For more information visit https://github.com/coin-or/Ipopt
+******************************************************************************
+
+  w=0       time=12.0864  conv=True  Solve_Succeeded            jump= 11.1deg  rev=53  env=0.000
+  w=0.0001  time=12.0866  conv=True  Solve_Succeeded            jump= 10.4deg  rev=33  env=0.000
+  w=0.001   time=12.0875  conv=True  Solve_Succeeded            jump=  7.1deg  rev=19  env=0.000
+  w=0.01    time=12.0932  conv=True  Solve_Succeeded            jump=  3.7deg  rev=13  env=0.000
+
+F40 published (legacy): 12.0909 / 12.0917 / 12.0945 / 12.0989
+  only w=0 converged; jumps 10.9/8.3/7.1/4.8 deg; reversals 4/4/4/4

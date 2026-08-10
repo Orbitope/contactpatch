@@ -377,11 +377,12 @@ applies to `a_y`, which is now the accelerometer reading `Fy/m` rather than
 **Carry forward:** the double-track model's *lateral* load transfer has exactly
 the same trap — it must use `Fy/m`, not `dv_y/dt`.
 
-### F15 · The car is neutral at 50.4% front weight, and the sweep is resolvable.
-K rises monotonically from −0.369 deg/g at 42% front to +0.507 at 62%: a 0.88
+### F15 · The car is neutral at ~49.7% front weight, and the sweep is resolvable. **Numbers corrected 2026-08-10 (F138) — this entry predated F17's skidpad-protocol fix.**
+K rises monotonically from −0.340 deg/g at 42% front to +0.538 at 62%: a 0.88
 deg/g spread against the 0.2 deg/g real-world measurement noise floor. Neutral
-lands at 50.4% front — essentially 50:50, which is what identical tires at both
-ends gives you.
+lands at about 49.7% front — essentially 50:50, which is what identical tires at
+both ends gives you. (Published as −0.369 → +0.507 and 50.4%, measured on the
+coasting skidpad F17 replaced; the *spread*, 0.88, is unchanged.)
 
 **Source:** `[MEASURED]` — D3 `K_monotone_in_weight_distribution`. Noise floor
 `[SOURCED]` §4.
@@ -710,9 +711,10 @@ real car needs those terms, not a wider track.
 
 ### F30 · The bicycle model is blind to an anti-roll bar, not merely approximate.
 Sweeping the front share of roll stiffness across the documented 0.40–0.70 range
-moves K from **+0.02 to
-+0.32 deg/g** in the four-wheel
-model. The identical sweep through the two-wheel model moves it by
+moves K from **+0.05 to
++0.39 deg/g** in the four-wheel
+model *(corrected 2026-08-10, F138; published as +0.02 → +0.32 before F73's
+yaw-moment fix)*. The identical sweep through the two-wheel model moves it by
 **0e+00 deg/g — exactly zero.**
 
 **Source:** `[MEASURED]` — D5 `the_bicycle_model_cannot_see_the_bar_at_all`,
@@ -727,8 +729,10 @@ indistinguishable in form from a statement about cars.
 
 ### F31 · Our anti-roll bar authority is weak, and that is a real limitation.
 The full roll-share range buys only
-0.31 deg/g, about **1.5× the 0.2 deg/g floor** at
-which a professional test programme can distinguish two builds. A single realistic
+0.34 deg/g, about **1.7× the 0.2 deg/g floor** at
+which a professional test programme can distinguish two builds *(corrected
+2026-08-10, F138; published as 0.31 deg/g and 1.5× before F73's yaw-moment
+fix — the conclusion is unchanged and the margin is still thin)*. A single realistic
 bar change of 0.05 roll share moves K by ~0.05 deg/g — **below that floor, and
 not reportable.**
 
@@ -758,7 +762,7 @@ was written to satisfy — the class of check CLAUDE.md rule 11 asks for. The 0.
 residual is the per-wheel slip-angle difference from yaw rate across the track,
 which the bicycle model averages away and which does not vanish with height.
 
-### F33 · F18's prediction landed.
+### F33 · ~~F18's prediction landed.~~ **SUPERSEDED by F139 — pre-yaw-moment numbers. Grip loss is 8.1% not 6%, the double-track limit 0.95 g not 0.97, outside/inside 3.6x not 3.8. The estimate landed within a third, not on the nose.**
 Episode 3 estimated, from static geometry and the tire's load sensitivity alone —
 with a model that could not simulate the effect — that lateral load transfer would
 cost the front axle ~6% of its grip. Measured whole-car loss:
@@ -782,7 +786,7 @@ Evidence: `experiments/ep06/out/results.json`, `traces.npz`. Four minimum-time
 solves — both drivetrains × both differential bounds — on the long-exit corner,
 160 nodes, entry 32 m/s, four-wheel model.
 
-### F34 · Rear-wheel drive is faster out of a corner, and the differential decides by how much.
+### F34 · ~~Rear-wheel drive is faster out of a corner, and the differential decides by how much.~~ **SUPERSEDED by F136 — predates the yaw-moment correction and was never re-solved. The ideal-diff ordering is REVERSED (front drive is 0.033 s faster, not 0.10 s slower) and the open-diff half rests on an unconverged solve. Read F136; the numbers below are pre-correction.**
 
 | | Open diff | Ideal diff | a perfect diff is worth |
 |---|---|---|---|
@@ -1000,7 +1004,7 @@ justification* was the failure rather than the code. The code did what it said;
 the sentence explaining why that was acceptable was false. Convergence status is
 now a gate, not a footnote.
 
-### F43 · The front-drive penalty is proportional to engine power, and at low power it vanishes.
+### F43 · ~~The front-drive penalty is proportional to engine power, and at low power it vanishes.~~ **SUPERSEDED by F135 — this entry predates the yaw-moment correction and was never re-solved. The penalty reverses sign at low power rather than vanishing. Read F135 instead; the numbers below are the pre-correction ones.**
 The whole Episode 6 mechanism is front tires running out of grip because they are
 steering *and* accelerating. So the penalty should scale with how much
 acceleration there is to place — and the drive-force cap was `[ASSUMED]` at
@@ -1082,7 +1086,7 @@ real?" It is real, it is the point, and the figures should lead with it rather t
 apologise for it. It also means the overlay figure is the right hero: two lines a
 reader cannot tell apart, with wheels that are obviously doing different things.
 
-### F40 · The approach "straight" is a hard manoeuvre at the grip limit, and the busy steering there is real. **This entry replaces an earlier one that called it a defect. The earlier one was wrong.**
+### F40 · The approach "straight" is a hard manoeuvre at the grip limit, and the busy steering there is real. **NOTE (F136): the lap times below predate the yaw-moment correction and have not been re-solved. The qualitative conclusion is believed to survive but is unverified.** **This entry replaces an earlier one that called it a defect. The earlier one was wrong.**
 
 **What I originally claimed:** that minimising time alone leaves the steering
 degenerate on the approach straight, that the observed ±10° swings were the
@@ -1188,7 +1192,7 @@ track section.
 checking *the shape* led to checking *the controls*, which is where the real defect
 was. The question that finds a bug is often not about the thing that is broken.
 
-### F41 · Episode 6's differential numbers are not all on equal footing.
+### F41 · ~~Episode 6's differential numbers are not all on equal footing.~~ **SUPERSEDED by F136 — the convergence structure still holds (the rear-drive open-diff solve still fails), but every number is pre-correction. Read F136.**
 With the 100-node primary grid, three of the four solves converge cleanly and one
 does not:
 
@@ -1355,7 +1359,7 @@ documented range:
 |---|---|---|
 | Rise time | **201 ms** | **304 ms** |
 | Settling time | 386 ms | 560 ms |
-| Understeer gradient | −0.30 deg/g | **−0.30 deg/g** |
+| Understeer gradient | −0.24 deg/g | **−0.24 deg/g** |
 
 **Same steady-state behaviour, 51% difference in how long it takes to get
 there.** That comparison cannot be made with real cars, because moving an engine
@@ -1365,11 +1369,15 @@ The five layout archetypes, placed on the two axes:
 
 | Layout | Front mass | Polar moment | Rise time | K |
 |---|---|---|---|---|
-| Front engine, FWD | 62% | 1.25× | 234 ms | +0.49 |
-| Front engine, RWD | **55%** | **1.20×** | 236 ms | +0.21 |
-| Front-mid, RWD | 53% | 1.00× | 201 ms | +0.13 |
-| Mid engine, RWD | 43% | **0.80×** | 201 ms | −0.30 |
-| Rear engine, RWD | **38%** | **1.22×** | 356 ms | −0.51 |
+| Front engine, FWD | 62% | 1.25× | 234 ms | +0.53 |
+| Front engine, RWD | **55%** | **1.20×** | 236 ms | +0.26 |
+| Front-mid, RWD | 53% | 1.00× | 201 ms | +0.18 |
+| Mid engine, RWD | 43% | **0.80×** | 201 ms | −0.24 |
+| Rear engine, RWD | **38%** | **1.22×** | 356 ms | −0.45 |
+
+*(Understeer column corrected 2026-08-10, F138 — published as +0.49 / +0.21 /
++0.13 / −0.30 / −0.51 before F73's yaw-moment fix. Balance, polar moment and
+rise time are unaffected and the entry's argument is unchanged.)*
 
 **The front-engine saloon and the rear-engine 911 sit at opposite ends of the
 balance axis — 55% against 38%, about as far apart as production cars get — and
@@ -1790,7 +1798,7 @@ designs** rather than producing one. On this run that leaves two, so it refuses.
 **Source:** `[MEASURED]` — `experiments/ep10/run.py`; `crosscheck_n_usable`.
 
 
-### F65 · The learned driver says balance matters ~4x more than the solver does. Observed, and NOT explained.
+### F65 · ~~The learned driver says balance matters ~4x more than the solver does.~~ **SUPERSEDED by F136 — the ratio is 3.0x on four designs post-correction, not ~4x on three. The finding survives in substance (the gap is real and still unattributed); the number in the title does not. Read F136.**
 Over the three designs where both methods have a trustworthy answer (54%, 61%,
 65% front):
 
@@ -1872,7 +1880,7 @@ Kept as a general caution: a correlation computed over a handful of monotone
 points will look spectacular and is not evidence. Check what the same statistic
 does on random data of the same shape before quoting it.
 
-### F68 · Episode 10's figures were generated by an earlier version of the code and were never regenerated. **Defect, four parts.** · 2026-07-27
+### F68 · **[shape correlation corrected by F139: the artefact gives +0.993 on four designs, not +0.985 on three]** Episode 10's figures were generated by an earlier version of the code and were never regenerated. **Defect, four parts.** · 2026-07-27
 
 **Source:** `experiments/ep10/out/02-two-methods-one-answer.svg` and
 `results.json`, reviewed by eye against `experiments/ep10/run.py`.
@@ -3815,6 +3823,17 @@ found 4–5× amplification from its own lowest to highest power point) —
 balance's range brackets it, layout's sits inside it — on an axis (layout)
 that F99 had just corrected to a *tighter* null at 1×.
 
+> **Correction to this comparison only (F135, 2026-08-10).** The "4–5×
+> amplification" anchor is F43's *pre-yaw-moment-correction* number and does
+> not survive. On the corrected drivetrain sweep the effect **reverses sign**
+> between nominal and high power (−0.033 s at 4.5 kN, +0.287 s at 10 kN), so a
+> multiplicative amplification factor is not well defined for it at all. The
+> comparable quantity is the *span*, 0.31 s corrected against F43's 0.46 s.
+> **This affects only the sentence above.** Phase 1's own 270 solves postdate
+> the correction and have been re-verified against F99 — its `long_exit|1x|flat`
+> cells reproduce F99's corrected balance table to four decimals across all ten
+> designs — so every growth factor in this entry stands as measured.
+
 **F49's null does not survive the power curve, and this is the second
 correction to it in one day, for a different reason than the first.** F99
 corrected F49's numbers at the power level it was measured at (drift, not a
@@ -3900,6 +3919,17 @@ point 3 of POWER-REVIEW.md).
 | 1× | **+4.6%** | +8.8% |
 | 1.5× | +48.3% | +66.2% |
 | 2× | **+125.5%** | +123.0% |
+
+> **The "25×" in this entry's title is not reproducible from the table above
+> and should be read as "more than an order of magnitude" (checked 2026-08-10).**
+> The 2×/1× ratio is **27.1×** under the flat cap and **14.0×** under
+> power-limited drive; 25 matches neither, and the figure appears nowhere in
+> the body. The two drive models differ by nearly 2× on this ratio precisely
+> because they disagree most at 1× (+4.6% against +8.8%), which is the
+> smallest number in the fraction — so a single model-independent multiplier
+> was never the right summary. Every cell in the table itself verifies exactly
+> against `out/phase2_results.json`, as do the lap-time and section figures
+> below; this note concerns the derived headline only.
 
 Monotonic under both drive models, growing from a low-single-digit number —
 matching F82's original 1× measurement (+5.18% there; +4.6% here, the small
@@ -5250,7 +5280,7 @@ above; seed spread computed in this session.
 
 ---
 
-### F125 · Spa has a target lap time at last: ~347 s. The "solved" RL policy is 48-63% slower · 2026-08-05
+### F125 · Spa has a target lap time at last: ~347 s. The "solved" RL policy is 48-63% slower **— CONFIRMED by re-run 2026-08-10 (F140). Every number here reproduces exactly. F139 briefly marked this entry unreproducible; that was wrong and is retracted. The artefact did not contain these rows because the script's grid omitted them, not because the measurement was bad.** · 2026-08-05
 
 RL_PLAN Phase 0, run for the first time. The plan puts it first and states
 why: every phase below it tunes an RL policy toward a number nobody had
@@ -5704,6 +5734,697 @@ reliably it does so.
 
 ---
 
+### F134 · The first TV-vs-baseline D16 result was invalid — `_run()`'s own evaluator dropped `tv_mode`; corrected, `end_to_end` still finishes where the baseline does not · 2026-08-08
+
+**The bug.** `_run()`'s D16 call built `env_kwargs` via
+`_env_kwargs(weight, A_LAT_MAX, cross_track, envelope_penalty,
+envelope_exponent)` — five positional args, silently omitting the sixth,
+`tv_mode`, which defaults to `"none"`. Every `_run()` call before this session
+used `tv_mode="none"` anyway, so the omission was invisible until the first
+`tv_mode="end_to_end"` run: its own printed `[D16]`/`FINAL:` line scored the
+5-action end_to_end policy through a **`tv_mode="none"` environment** —
+`attach_torque_vectoring(None)`, "exactly as Episodes 9-11 found it"
+(`physics/rl_env.py:574`) — which never engages the allocator hardware and
+reads `a[1]` as plain drive force. For an end_to_end policy `a[1]` is actually
+`w_fl`, the front-left wheel-force fraction; the four TV channels the policy
+was trained on (`a[1:5]`) were silently discarded. **The run's own log line
+claiming "TV (end_to_end) FINAL: 100% finish, 5.9° slip, 515.1s" never
+exercised torque vectoring at all.** Fixed at
+`experiments/tracks_pilot/speed_ref.py`'s D16 call (now passes `tv_mode`
+through).
+
+**Corrected comparison, extended to 3 baseline seeds and 2 of 3 TV seeds**
+(all Spa, w=3, ct=0, envelope 3.0/2.0, 40M steps; D16's 24-probe aggregate,
+not a single lap):
+
+| variant | seed | distance | finish | off-track | worst slip | util mean | lap time |
+|---|---|---|---|---|---|---|---|
+| `none` (baseline) | 0 | 95.9% of lap | 96% | 4% | 7.5° | 0.319 | none (below 99% gate) |
+| `none` (baseline) | 1 | 95.8% of lap | 96% | 0% | 6.5° | 0.272 | none |
+| `none` (baseline) | 2 | 95.9% of lap | 96% | 4% | 7.8° | 0.318 | none |
+| `end_to_end` | 0 (corrected) | **100.0%** | **100%** | **0%** | 7.6° | 0.098 | **472.7 s** (+36% vs 347.6 s target) |
+| `end_to_end` | 1 | **100.0%** | **100%** | **0%** | 5.5° | 0.086 | **501.8 s** (+44%) |
+
+> *(These percentages were briefly withdrawn by F139 on the grounds that the
+> 347.6 s target was unreproducible. F140 re-ran the sweep and reproduced it
+> exactly, so they are reinstated unchanged. See F125 and F140.)*
+| `end_to_end` | 2 | **incomplete — stopped by user request mid-training** (update 101/150, a_lat=0.77g); no checkpoint saved, not evaluable |
+
+**All 3 baseline seeds land within a tight band** — 95.8-95.9% of the lap,
+96% finish, 6.5-7.8° worst slip, every one short of the 99% distance gate.
+**Both completed TV seeds finish the full lap, 100%, 0% off-track**, at
+roughly a third of the baseline's mean utilisation (0.086-0.098 vs
+0.272-0.319). The pattern that survived correction on seed 0 now holds
+identically on seed 1 — two independent training runs, same qualitative
+result. Seed 2's TV leg was stopped intentionally before finishing (user
+call, given the time cost of a third full run) and is not part of this
+comparison; the baseline side of seed 2 completed first and is included
+above since it was already done when the run was stopped.
+
+**Why the utilisation gap exists, mechanistically — not because of TV.**
+Checked directly in `physics/rl_env.py`: `envelope_penalty` only fires above
+12° slip (`rel = excess / 12°`), and every seed here stays at 5.5-7.8°
+worst slip — the term never actually engages on any of these deployed
+policies, baseline or TV. The real driver is `speed_ref_penalty`, which is
+one-sided (`reward -= speed_ref_penalty * dt * max(0, speed - v_ref)`) —
+once a policy holds the curvature-computed reference speed, using more grip
+buys no additional reward and only adds envelope risk. This is the same
+mechanism F120 already named for the very first capped baseline ("pinned
+against the [reference], not against the tyres") — not a TV-specific effect.
+The within-recipe comparison (baseline 0.27-0.32 vs `end_to_end` 0.09-0.10,
+~3.3x) is the number attributable to the action-space change; a naive
+comparison against Episode 14's single-corner E variant (0.70-0.85, a
+different reward with no `speed_ref` term at all) would overstate the gap by
+conflating two different reward functions.
+
+**Caveats, stated rather than smoothed over.**
+
+1. **Baseline: n=3, seeded, tight.** TV: n=2 of the planned 3 — rule 5's
+  bar is met for the baseline, not quite for `end_to_end`. The 2-seed TV
+  pattern is identical both times, which is better evidence than one seed,
+  but a third would still tighten it.
+2. **This tests `end_to_end`, not `hybrid`.** `BatchedDrivingEnv` does not
+  implement hybrid (`physics/batched_env.py`'s `_reject_unsupported`) — the
+  QP allocator is not vectorized. `end_to_end` removes the allocator AND
+  changes the action space from 2 to 5 dimensions at once. A difference here
+  is attributable to that combination, not isolated to "a learned upper
+  decision layer" the way Episode 14's own hybrid-vs-classical comparison was
+  designed to isolate.
+
+**The original bug, for the record.** `_run()`'s D16 call built `env_kwargs`
+via a 5-positional-argument call that silently omitted the 6th, `tv_mode`
+(defaults to `"none"`). Every `_run()` call before this session used
+`tv_mode="none"` anyway, so the omission was invisible until the first
+`tv_mode="end_to_end"` run: its own printed `[D16]`/`FINAL:` line scored the
+5-action end_to_end policy through a **`tv_mode="none"` environment** —
+`attach_torque_vectoring(None)`, "exactly as Episodes 9-11 found it"
+(`physics/rl_env.py:574`) — which never engages the allocator hardware and
+reads `a[1]` as plain drive force (for an end_to_end policy `a[1]` is
+actually `w_fl`, the front-left wheel-force fraction). **The run's own log
+line claiming "TV (end_to_end) FINAL: 100% finish, 5.9° slip, 515.1s" never
+exercised torque vectoring at all.** Fixed at `speed_ref.py`'s D16 call (now
+passes `tv_mode` through); the corrected seed 0 numbers above replace it.
+Confined to this session's `tv_mode="end_to_end"` calls — F127, F131, F132,
+F133, and stage 1 all used `tv_mode="none"` throughout, where the omitted
+default and the intended value were identical, so none of those results are
+affected.
+
+**Source:** `experiments/tracks_pilot/speed_ref.py` (fix);
+`experiments/tracks_pilot/tv_lap_figure.py` (per-seed figures);
+`out/speedref_w3_ct0[_s{1,2}]_{tvbaseline,tv_e2e}_policy.pt`;
+`out/tv_experiment_run.log`, `out/tv_experiment_seeds_run.log`.
+
+---
+
+### F135 · F43 predates the yaw-moment correction and was never re-solved — the front-drive penalty REVERSES sign at low power. **Supersedes F43.** · 2026-08-10
+
+**F99 corrected F44 and F49 after the yaw-moment fix (F73/F79/F80) and named
+those two. F43 sits in the same pre-correction era, on the same solver, and
+was missed.** Found while auditing Episode 6's prose against its own tables —
+the article and the finding disagreed, and the article turned out to be the
+current one.
+
+**The same operating point, two answers.** 54% front (nominal balance),
+4.5 kN (nominal power) — the cell where F43's power sweep and F44/F99's
+balance sweep intersect, so they must agree:
+
+| Source | Rear drive | Front drive | Front drive is |
+|---|---|---|---|
+| F44 original, and **F43's power sweep** | 12.091 / 12.092 s | 12.191 / 12.193 s | 0.100 s **slower** |
+| **F99 corrected** (post yaw-moment fix) | 12.086 s | 12.054 s | 0.032 s **quicker** |
+
+F43's numbers match the *superseded* side of that table to a millisecond.
+`experiments/ep06/out/results.json` carries the corrected values and matches
+F99 exactly, so the stale artefact is F43, not the episode.
+
+**The corrected power sweep, all eight solves `Solve_Succeeded`**
+[MEASURED, `experiments/ep06/out/results.json`, `power_sweep`]:
+
+| Drive cap | ≈ power at 30 m/s | RWD | FWD | Front drive is |
+|---|---|---|---|---|
+| 2.5 kN | 101 hp | 13.2075 s | 13.1818 s | **0.026 s quicker** |
+| 4.5 kN | 181 hp | 12.0864 s | 12.0537 s | **0.033 s quicker** |
+| 7.0 kN | 282 hp | 11.3479 s | 11.3521 s | 0.004 s slower — level |
+| 10.0 kN | 402 hp | 11.0390 s | 11.3255 s | **0.287 s slower** |
+
+**What changes, and it is the finding's central sentence.** F43 states: *"There
+is no measurable reversal — the penalty goes to zero, it does not go
+negative."* On the corrected data it **does** go negative: front drive is
+quicker at 101 and 181 hp, level at 282, and only pays a penalty at 402. The
+sign reverses across the power range rather than decaying to zero.
+
+**What survives.** The mechanism and its direction are untouched — more power
+means a larger front-drive penalty, because the front tyres are steering and
+accelerating on one budget. The span is comparable too (0.31 s corrected
+against F43's 0.46 s). What does not survive is the claim that low power is
+the *floor* of the effect. Low power is where the other sign lives, which is
+a stronger version of the same mechanism, not a weaker one: with little power
+the exit is engine-limited rather than grip-limited, so the tyre-budget
+problem has nothing to bite on and front drive's own small advantages show.
+
+**Also corrected: F43's convergence caveat.** F43 reports only the 4.5 kN row
+converged, with the other three carrying an unconverged rear-drive solve.
+Every one of the eight solves in the current artefact reports
+`Solve_Succeeded`, so the individual times are quotable under F39 rather than
+indicative. Episode 6 carried both statements in different sections — its
+summary said all converged, its detail section repeated F43's caveat — and
+has been made consistent with the artefact.
+
+**Scope.** This corrects F43 only. F100's Phase 1 power sweep is a separate,
+later measurement on its own grid and is not affected. Episode 6's article
+already carried the corrected numbers in every table; three stale *sentences*
+(a "3 milliseconds apart" figure, a convergence caveat, and a grid claim) were
+fixed to match.
+
+**The generalisable point, and it is F99's lesson arriving a second time.** A
+correction to shared machinery invalidates every number downstream of it —
+including the numbers in the file that exists to prevent exactly this. F99
+said so, applied it to F44 and F49, and did not sweep the rest of the same
+era. The audit that caught this was reading an article against its own tables,
+which is the check that has now found three of these.
+
+**Source:** `[MEASURED]` — `experiments/ep06/out/results.json` (`power_sweep`,
+all eight solves `Solve_Succeeded`); compared against FINDINGS F43, F44, F99.
+
+---
+
+### F136 · The yaw-moment sweep, completed: F34, F41 and F65 are stale too. Six of the eight pre-correction solver findings needed re-solving; only three had been done. **Supersedes F34, F41, F65.** · 2026-08-10
+
+**Prompted by F135's own closing line** — that F99 corrected F44 and F49 and did
+not sweep the rest of the same era. This is that sweep, done systematically
+rather than by noticing one at a time.
+
+**Method.** Every finding numbered below F73 (the yaw-moment fix) whose body
+quotes a four-wheel minimum-time lap time — eight of the 72 pre-correction
+entries — checked against the current artefacts on disk, and checked for whether
+any later entry re-solved it.
+
+| Finding | Subject | Status |
+|---|---|---|
+| F43 | Ep 6 power sweep | superseded by **F135** |
+| F44 | Ep 7 balance sweep | superseded by **F99** |
+| F49 | Ep 8 layout sweep | superseded by **F99** |
+| **F34** | **Ep 6 drivetrain + differential headline** | **stale — superseded here** |
+| **F41** | **Ep 6 which diff numbers are quotable** | **stale — superseded here** |
+| **F65** | **Ep 10 RL-vs-solver balance sensitivity** | **stale — superseded here** |
+| F40 | Ep 6 approach-straight steering | numbers legacy, conclusion not re-verified — see below |
+| F39 | unconverged-solve methodology | checked, unaffected — its claim is about convergence, not about drivetrain ordering |
+
+**F34, against its own cited fields** [MEASURED, `experiments/ep06/out/results.json`]:
+
+| | F34 published | current artefact |
+|---|---|---|
+| front-drive cost, ideal diff | **+0.10 s** (front drive slower) | **−0.033 s — front drive FASTER**, sign reversed |
+| front-drive cost, open diff | +0.16 s | +0.196 s, but `rwd_open` **did not converge** — not quotable (F39) |
+| perfect diff worth to rear drive | 0.07 s | 0.073 s ✓ |
+| perfect diff worth to front drive | 0.13 s | **0.302 s** |
+| "worth roughly twice as much to front drive" | 2× | **4.1×** |
+
+F34's central sentence — *"front drive costs at least 0.10 s here, and up to
+0.16 s with no LSD at all"* — is wrong in sign on the quotable half and rests on
+an unconverged solve on the other half. **F80 said so explicitly at the time**
+(*"With the corrected moment that is wrong in sign, not merely in magnitude"*)
+and F34 was never struck. The mechanism claim survives and gets *stronger*: a
+perfect differential really is worth much more to front drive, by 4.1× rather
+than 2×, for the reason F34 gives (the driven wheels are also the steered ones).
+
+**F41.** Its convergence *structure* is still correct — `rwd_open` still reports
+`converged: false`, so the open-diff comparison is still unavailable. Every
+number in it is legacy: the "established" headline of +0.100 s is now −0.033 s,
+"0.131 s to front drive" is 0.302 s, "0.067 s to rear drive" is 0.073 s. Its
+closing judgement that "roughly twice" survives now *understates* the effect by
+a factor of two.
+
+**F65**, against `experiments/ep10/out/results.json`:
+
+| | F65 published | current artefact |
+|---|---|---|
+| designs in the cross-check | three (54/61/65%) | **four** — 0.47 converges post-fix (`crosscheck_n_usable` 4) |
+| learned driver spread | 3.1% | **5.1%** (`rl_relative_spread` 0.0509) |
+| optimal control spread | 0.81% (12.091 → 12.189 s) | **1.7%** (`oc_relative_spread` 0.0169, `oc_spread_s` 0.205) |
+| **the headline ratio** | **~4×** | **3.0×** (`rl_over_oc_sensitivity` 3.007) |
+
+The solver's balance sensitivity doubled exactly as F80 predicted (0.10 → 0.21 s),
+which narrows the gap without closing it. **F65's finding survives in substance —
+the learned driver is still markedly more balance-sensitive than the solver, and
+the mechanism is still unattributed — but the number in its title is wrong.**
+
+**F40 is flagged, not corrected.** Its lap times are legacy (its `weight 0` row,
+12.0909 s, is the legacy rear-drive ideal-diff value to four decimals). Its
+conclusion is qualitative — that the approach straight is a real limit-grip
+manoeuvre rather than optimiser noise, and that damping the steering costs time
+monotonically — and nothing about that obviously turns on the yaw-moment sign.
+**But it has not been re-solved, so that is a judgement, not a measurement**, and
+it is recorded as one rather than assumed either way.
+
+**The articles were right and the record was wrong, for the third time.**
+Episode 6 already states the open-diff comparison is unavailable; Episode 10
+already carries 5.1% / 1.7% / 3.0×. Every one of these corrections has had the
+same shape: the reader-facing draft was regenerated from the artefact and the
+numbered record was not. **`FINDINGS.md` is the file whose entire purpose is
+being the thing that does not drift, and it is the thing that drifted** — F99
+made exactly this observation about F44 and F49 and it went on being true for
+five more entries.
+
+**What would have caught all six at once**, and is the cheap check worth keeping:
+re-derive every quoted number from the artefact it names. Each of these findings
+cites its own source fields; every stale one disagrees with those fields today.
+That is a mechanical check, not a judgement call, and it found six.
+
+**Source:** `[MEASURED]` — `experiments/ep06/out/results.json`
+(`time_delta_s_ideal`, `time_delta_s_open`, `diff_worth_s_rwd`,
+`diff_worth_s_fwd`, per-solve `converged`); `experiments/ep10/out/results.json`
+(`rl_relative_spread`, `oc_relative_spread`, `rl_over_oc_sensitivity`,
+`crosscheck_n_usable`, `oc_spread_s`). Compared against F34, F39, F40, F41, F65,
+F80, F99, F135.
+
+---
+
+### F137 · Episodes 5 and 7 published pre-correction understeer tables — and the mechanical artefact check missed one of them. · 2026-08-10
+
+**The articles were checked next, on the assumption they were clean** (F135 and
+F136 both found the article current and the finding stale). Two are not. Both
+carry understeer-gradient tables that predate the yaw-moment fix, in the same
+era and by the same offset as everything in F136.
+
+**Episode 7, "Result one" — its headline table, all five values wrong**
+[MEASURED, `experiments/ep07/out/results.json`, `K_deg_per_g`]:
+
+| Front mass | article published | artefact |
+|---|---|---|
+| 40% | −0.43 | **−0.3697** |
+| 47% | −0.13 | **−0.0738** |
+| 54% | +0.17 | **+0.2201** |
+| 61% | +0.47 | **+0.5118** |
+| 65% | +0.63 | **+0.6771** |
+
+Every one low by ~0.05 — F73's own `0.172 → 0.220` correction. The derived
+swing (1.06 → **1.05 deg/g**) was quoted three times and is corrected in all
+three. The artefact matches F99's corrected table exactly, so the data was
+right and only the article drifted.
+
+**Episode 5, "Result two" — the four-wheel column, all five values wrong**
+[MEASURED, `experiments/ep05/out/results.json`, `K_vs_roll_share_double_track`]:
+
+| Front roll-stiffness share | article published | artefact |
+|---|---|---|
+| 40% | +0.01 | **+0.0505** |
+| 50% | +0.12 | **+0.1639** |
+| 55% (nominal) | +0.17 | **+0.2201** |
+| 60% | +0.23 | **+0.2762** |
+| 70% | +0.33 | **+0.3888** |
+
+The full-range span (0.31 → **0.34 deg/g**, and "1.5× the 0.2 floor" →
+**1.7×**) follows. Its two-wheel column is correct — 0.18724 at every setting,
+so "the spread across the entire sweep is 0 deg/g, exactly" is exactly right,
+and the bicycle model was untouched by a fix that lived in
+`physics/double_track.py`.
+
+**Episode 5 contradicted itself in print, which is how this was found.** Its
+table said the four-wheel nominal was +0.17; its own prose seventy lines later
+said *"Adding lateral load transfer: 0.19 → 0.22 deg/g"* and built the whole
+"we reproduce 5% of a real car's understeer" argument on 0.22. **0.17 is F73's
+before and 0.22 is its after** — the prose had been regenerated and the table
+had not.
+
+**Episode 8 was checked the same way and is completely clean** — five
+understeer gradients, five rise times, five lap times, both span figures, all
+exact against `experiments/ep08/out/results.json`. Episode 3's bicycle sweep is
+clean too. So this is confined to two episodes, not a Season-2-wide problem.
+
+**A cross-episode inconsistency that resolves itself once fixed.** Episode 8
+reports 53% front at +0.178 while Episode 7 reported 54% at +0.17 — more front
+mass giving *less* understeer, which is backwards. Against Ep 7's corrected
++0.220 the ordering is monotonic again. **Two episodes disagreeing was the
+symptom; neither article alone showed anything wrong.**
+
+**The mechanical check has a false-negative mode, and this is it.** F136
+recommended re-deriving every quoted number from the artefact it names, and
+that check *passed* Episode 5 — because it asked "does 0.17 appear anywhere in
+this JSON" rather than "does it appear in the field the table claims to
+report." 0.17 appears in `results.json` for unrelated reasons, so a stale value
+sailed through. **The scan must be field-targeted, not pool-matched**, and the
+thing that actually caught Episode 5 was reading all fifteen articles together
+and noticing one disagreed with itself. Automation narrowed the search; reading
+closed it.
+
+**Source:** `[MEASURED]` — `experiments/ep05/out/results.json`
+(`K_vs_roll_share_double_track`, `K_vs_roll_share_bicycle`);
+`experiments/ep07/out/results.json` (`K_deg_per_g`);
+`experiments/ep08/out/results.json` (`archetypes.*`, verified clean). Compared
+against F73, F99, F136.
+
+---
+
+### F138 · Both fault lines swept to the end. Four more stale entries corrected, and the second one — F17's skidpad protocol — is closed with exactly one casualty. · 2026-08-10
+
+**Two shared-machinery corrections have been silently invalidating downstream
+numbers, not one.** F135/F136/F137 traced the first (F73's yaw moment). This
+entry finishes it and sweeps the second.
+
+**Fault line 1 — F73's yaw-moment fix (K +0.05 on the double-track model).**
+Three entries still carried pre-fix numbers:
+
+| Entry | published | artefact | field checked |
+|---|---|---|---|
+| **F30** | +0.02 → +0.32 deg/g | **+0.05 → +0.39** | `ep05 K_vs_roll_share_double_track` |
+| **F31** | 0.31 deg/g, 1.5× floor | **0.34, 1.7×** | same, span |
+| **F48** | +0.49/+0.21/+0.13/−0.30/−0.51, pair −0.30 | **+0.53/+0.26/+0.18/−0.24/−0.45, pair −0.24** | `ep08 archetypes.*` |
+
+**Fault line 2 — F17's skidpad protocol, and this one is new to the audit.**
+F17 established that holding speed (SAE J266) rather than coasting moves K by
+about +0.03 — *"the protocol changes the measured balance by more than the
+effect being measured."* F11 was marked corrected for it at the time. **F15 was
+not, and has carried coasting-protocol numbers ever since:**
+
+| | published | artefact (`ep03 K_by_front_fraction`) |
+|---|---|---|
+| K at 42% front | −0.369 | **−0.340** |
+| K at 62% front | +0.507 | **+0.538** |
+| neutral point | 50.4% front | **~49.7%** |
+| spread | 0.88 deg/g | **0.877 — unchanged** |
+
+The whole curve is shifted ~+0.03, which is F17's own correction to the digit.
+The *spread* survives untouched, which is why nothing downstream of F15 ever
+noticed: every claim built on it used the spread, not the endpoints.
+
+**The F17 line is closed, not sampled.** Only sixteen findings predate F17, and
+exactly two of them quote a skidpad gradient: F11 (marked corrected) and F15
+(this entry). There is no tail. That is worth stating positively — the previous
+three entries each ended by discovering the sweep was incomplete, and this one
+ends by establishing that it is not.
+
+**Both fault lines have the same signature and it is worth naming.** A
+correction lands in shared machinery, the artefacts are regenerated, the
+articles are regenerated, and the numbered record is not. It has now happened
+across two independent corrections, seven findings and two published episodes,
+over roughly two weeks. The failure is not that anyone was careless about the
+physics — every correction was found, understood, and written up properly. **The
+failure is that "regenerate the downstream numbers" was never part of what
+finishing a correction meant.**
+
+**Audit status, stated plainly so the next person does not have to re-derive
+it.** Everything measured after 2026-07-30 verifies clean: F100, F101, F102,
+F124, and Episodes 3, 8, 12, 13, 14, 15. Everything before it has now been
+checked against its own artefact, field by field. **One item remains genuinely
+unverified: F40**, whose lap times are pre-correction and which has never been
+re-solved; its conclusion is qualitative and believed to survive, and that is a
+judgement rather than a measurement. Settling it needs four solves of Episode
+6's steer-rate penalty sweep.
+
+**Source:** `[MEASURED]` — `experiments/ep03/out/results.json`
+(`K_by_front_fraction`), `experiments/ep05/out/results.json`
+(`K_vs_roll_share_double_track`), `experiments/ep08/out/results.json`
+(`archetypes.*`, `pair_understeer_gradient_deg_per_g`). Compared against F11,
+F15, F17, F30, F31, F48, F73, F135, F136, F137.
+
+---
+
+### F139 · Third audit pass: F40 re-solved and survives, but Season 5's target lap time is not reproducible from any artefact. **Supersedes F33; withdraws F125's 347.6 s.** · 2026-08-10
+
+Twenty-two findings that name a checkable artefact were verified field-by-field
+against it (the earlier passes covered nine). Most hold. Three things do not,
+and one of them is load-bearing for a whole season.
+
+> **CORRECTED 2026-08-10 by F140, before this entry was a day old.** The
+> section below concluded F125 was "not reproducible". **It is reproducible —
+> a re-run returned 347.6 s at v_max 21 / grip 0.60 / 8.0° exactly, along with
+> every other row in F125's table.** What this section actually established is
+> narrower and still worth having: F125's numbers could not be *recovered from
+> its named artefact*, because `phase0_target.py`'s grid never contained the
+> finer sweep. Read "unpersisted", not "unreproducible". The error was mine:
+> I declared a measurement wrong on the strength of a missing file rather than
+> re-running it, which is the exact failure this audit exists to catch.
+
+**F125's 347.6 s target could not be recovered from its named artefact, and
+everything in Season 5 is measured against it.** The entry names
+`out/phase0_target.json`, committed in F125's own commit and unchanged since.
+That file says:
+
+| quantity | F125 published | artefact |
+|---|---|---|
+| target lap time | **347.6 s** | **362.07 s** |
+| target `v_max` | 21 | 20.0 |
+| target worst slip | 8.0° | 6.10° |
+
+Worse than a moved number: **the rows F125 headlines do not exist.** Its sweep
+covers `grip_use ∈ {0.60, 0.85}` × `v_max ∈ {12,14,16,18,20,24,28,34,45}` —
+there is no `v_max` 21, no 22, no 23, and no `grip_use` 0.70 anywhere in it. The
+three rows the finding leads with (334.7 s, 330.8 s, and the 54.7° spin) have no
+counterpart. Only the one row it does *not* headline reproduces. `347.6`
+survives in the repo solely as `TARGET_S = 347.6`, a hardcoded constant in
+`speed_ref.py`, echoed forward into every later result.
+
+**Consequence, as corrected by F140.** The "likely history is a finer sweep
+that was never persisted" guess in this paragraph turned out to be exactly
+right — and once re-run, it reproduced. So the target stands at 347.6 s and
+F134's percentages are reinstated. What remains true is the process failure:
+**a finding whose numbers cannot be produced by the script it names has lost
+its evidence**, even when the numbers are correct. Rule 3 asks you to name the
+artefact; this is the case for also making sure the artefact can still make
+the number.
+
+**F40 is re-solved, and it survives — the last open item from F136/F138 is
+closed.** Episode 6's steer-rate penalty sweep, re-run on corrected physics
+(`long_exit`, rwd, ideal diff, 100 nodes, 32 m/s, `max_iter` 8000)
+[MEASURED, `experiments/ep06/out/f40_resolve.json`]:
+
+| steer-rate weight | published (legacy) | re-solved | converged now |
+|---|---|---|---|
+| 0 | 12.0909 s | **12.0864 s** | yes |
+| 1e-4 | 12.0917 s | **12.0866 s** | **yes** (was: iteration limit) |
+| 1e-3 | 12.0945 s | **12.0875 s** | **yes** (was: iteration limit) |
+| 1e-2 | 12.0989 s | **12.0932 s** | **yes** (was: iteration limit) |
+
+**F40's conclusion holds and is now better supported than when it was written**:
+damping the steering costs time, monotonically, and the worst single-step jump
+falls with the weight (11.1° → 3.7°). All four solves converge where only one
+did before, and envelope occupancy is 0.000 throughout — so this is no longer
+an argument resting on three uncertified solves. The published *times* were
+pre-correction; the *finding* was right.
+
+*(One metric is not comparable: F40 reports 4 steering reversals at every
+weight, the re-solve counts 53/33/19/13. That is a definitional difference —
+the re-solve counts every sign change in the steer trace above a 1e-9
+threshold, which F40 evidently did not. The trend is the same direction; the
+counts are not the same quantity and are not treated as a disagreement.)*
+
+**F33 superseded — and unusually, the article was stale here too.** Episode 5's
+grip-loss result is the F73 yaw-moment signature again, but this time it had
+propagated into the prose while the *figure* was regenerated correctly:
+
+| quantity | published | artefact |
+|---|---|---|
+| whole-car grip loss | 6% | **8.1%** (`ep05 grip_loss_pct`) |
+| peak lateral, double-track | 0.97 g | **0.95 g** (`max_g_double_track`) |
+| outside/inside pair ratio | 3.8× | **3.6×** (`at_the_limit.outside_over_inside`) |
+| inside-rear load | 1.41 kN | **1.40 kN** (`loads_N.rl`) |
+
+`01-four-wheels.svg` already rendered `3.6x` and `1.40 kN` — **the figure and
+the sentence beside it disagreed in print.** Episode 5 has been corrected, and
+one claim genuinely weakens: Episode 3 estimated ~6% from static geometry, the
+measurement is 8.1%, so "a prediction that landed" becomes "an estimate that
+landed within a third." The mechanism was identified correctly; the precision
+was overstated.
+
+**Also corrected: Episode 10's shape correlation.** The artefact gives
+**+0.993 on four designs** (`shape_correlation`, `crosscheck_n_usable`); the
+article carried +0.993 in one place and +0.985 in another, for the same
+quantity. The +0.985-on-three-designs figure matches no committed version of
+the artefact. Fixed — and worth recording that **this one was introduced by an
+editing pass, not inherited**: the retraction cleanup preserved the wrong
+figure while rewriting the sentence around it.
+
+**Episode 7's braking trend is not monotonic** and the article said it was, two
+sentences after correctly describing the dip at 47% (`brake_release_s` runs
+71.09 → 66.09 → 69.15 → 72.01 → 75.89). Reworded.
+
+**Findings whose artefacts were legitimately replaced, already documented, no
+action:** F71 (superseded by F98's re-run), F92 (retracted by F93), F97
+(superseded by F115's brake-cap re-run), F127 (overwritten per F130). These are
+history behaving correctly. **F127's divergence magnitude is *not* recorded
+anywhere, though** — F130 predicted the recovery re-run would reproduce it
+bit-for-bit and it did not (5.1° → 7.1° worst slip, 3 curriculum raises → 5).
+Recorded here so it stops being folklore.
+
+**Verified clean this pass:** F9, F21, F28, F47, F50, F89, F90, F98, F120,
+F122, F128, F129, F131. F25 is uncheckable by construction (no numeric claims).
+
+**Source:** `[MEASURED]` — `experiments/ep06/out/f40_resolve.json` (new this
+entry), `experiments/tracks_pilot/out/phase0_target.json`,
+`experiments/ep05/out/results.json`, `diagnostics/out/D5_report.json`,
+`experiments/ep10/out/results.json`, `experiments/ep07/out/results.json`.
+
+---
+
+### F140 · F125 re-run and confirmed exactly. **Retracts F139's "not reproducible" verdict** — the sweep was unpersisted, not wrong, and I should have re-run before writing it up. · 2026-08-10
+
+**F139, written hours earlier, called F125's 347.6 s target "not
+reproducible" and withdrew every "vs target" percentage in Season 5 on the
+strength of it. That was wrong.** Re-running the sweep on the finer grid
+returns F125's table to the digit [MEASURED,
+`experiments/tracks_pilot/out/phase0_target_fine.json`]:
+
+| v_max | grip_use | lap | worst slip | rule 4 | F125 published |
+|---|---|---|---|---|---|
+| 20 | 0.60 | 362.1 s | 6.1° | valid | — (this is the coarse grid's best) |
+| **21** | **0.60** | **347.6 s** | **8.0°** | **valid** | **347.6 s, 8.0° ✓** |
+| 22 | 0.60 | 334.7 s | 10.8° | valid | 334.7 s, 10.8° ✓ |
+| 22 | 0.70 | **330.8 s** | **11.6°** | valid | 330.8 s, 11.6° ✓ |
+| 23 | 0.70 | spins, 35% of lap | 54.7° | — | "spins, 54.7°" ✓ |
+
+Every row matches, including the reasoning: the fastest rule-4-valid lap
+really is 330.8 s sitting **0.4° from the 12° bound**, so quoting 347.6 s
+instead really is the rule-12 call F125 said it was. **F125 is confirmed, its
+supersede marker is removed, and F134's percentages are reinstated unchanged.**
+
+**What actually went wrong, which is a real defect and worth keeping.**
+`phase0_target.py`'s grid is `V_MAX = (12,14,16,18,20,24,28,34,45)` and
+`GRIP = (0.60, 0.85)`. It contains **no v_max 21, 22 or 23, and no grip 0.70** —
+so the script cannot produce the rows its own finding is built on. Re-running
+it overwrites `phase0_target.json` with a file whose best row is 362.1 s. The
+finding's numbers were real and are reproducible; they were **never
+persisted**. Fixed by widening the grid to the values the finding actually
+quotes, with the reason recorded in the source.
+
+**The distinction I collapsed, stated so it does not happen again.** "I cannot
+find this number in the artefact" and "this number is wrong" are different
+claims, and only the first was established. Three prior passes had trained a
+strong prior — six of eight pre-correction findings really were stale — and I
+applied it to a case that looked identical from the outside and wasn't.
+**A missing number is a reason to re-run, not a verdict.** The re-run cost
+about two minutes.
+
+**What survives from F139's version.** The process failure is real and
+unchanged: a finding whose numbers cannot be regenerated by the script it
+names has lost its evidence, even when the numbers are correct. Rule 3 says
+name the artefact that produced the number; this case adds that the artefact
+must still be *able* to produce it. That is now the stronger form of the
+lesson, and it did not require F125 to be wrong.
+
+**Unaffected by this retraction:** every other correction in F135-F139 was
+verified against artefacts that *do* contain the relevant fields, and several
+were confirmed by more than one route (Episode 8's clean table cross-checking
+Episode 7's stale one, Episode 5's own figure contradicting its own prose).
+This retraction is scoped to F139's F125 verdict alone.
+
+**Closed at the root, same day.** `phase0_target.py` was re-run on the widened
+grid and `out/phase0_target.json` now contains all four of F125's headline rows
+— 39 attempts against the old 18. **A second, structural trap was found and
+fixed while doing it:** the script writes `target` = the *fastest* rule-4-valid
+lap (330.8 s), while F125 quotes 347.6 s under rule 12, so `target.lap_time_s`
+could never equal `TARGET_S` and any future audit would raise the same false
+alarm. No margin threshold was invented to paper over it — F125's pick does not
+follow from one (a 2 deg rule selects 344.1 s instead). Instead every row now
+carries `margin_to_bound_deg` and the artefact ships a `valid_by_lap_time`
+ranking, which makes the judgement reconstructible:
+
+| lap | margin to the 12 deg bound |
+|---|---|
+| 330.8 s | 0.36 deg — the script's auto-pick, and too thin to quote |
+| 334.7 s | 1.15 deg |
+| 344.1 s | 2.64 deg |
+| **347.6 s** | **3.97 deg — F125's quoted target, the first with real margin** |
+
+**Source:** `[MEASURED]` — `experiments/tracks_pilot/out/phase0_target_fine.json`
+and `phase0_target_fine.log` (12 laps, the confirming run), then
+`out/phase0_target.json` regenerated at 39 laps. Same `attempt()` function and
+same driver as F125. Grid and artefact fixes in
+`experiments/tracks_pilot/phase0_target.py`.
+
+---
+
+### F141 · All fifteen episodes field-verified. Ten of fifteen carried a wrong number, and the last two failure modes are ones diffing cannot find. · 2026-08-10
+
+**Coverage is now complete.** Every number in every episode has been checked
+against the specific artefact field it claims to report — not "does this value
+appear somewhere in the JSON", which is the check that passed two entirely
+stale tables (F137). Result: **10 of 15 episodes carried at least one wrong
+number.**
+
+| clean | corrected |
+|---|---|
+| Ep 1, 3, 8, 11, 12 | Ep 2, 4, 5, 6, 7, 9, 10, 13, 14, 15 |
+
+**Three fault lines account for most of it** and were traced in F135-F138:
+F73's yaw moment (Ep 5, 6, 7), F17's skidpad protocol, F115's brake-cap re-run
+(Ep 13's noise table, every lap time ~0.03 s high). **Two are new, and neither
+is drift.**
+
+**New failure mode 1 — a transcription error that never matched anything
+(Episode 2).** Its load-sensitivity table, the one the episode is named for:
+
+| load | published | artefact | article's own stated slope predicts |
+|---|---|---|---|
+| 1 kN | 1.18 | 1.1833 | 1.1833 ✓ |
+| **3 kN** | **1.05** | **1.0915** | **1.0915** |
+| **5 kN** | **0.97** | **0.9997** | **0.9997** |
+| 9 kN | 0.82 | 0.8161 | 0.8161 ✓ |
+
+Present since the initial commit, in a **single-tire** result none of the three
+fault lines can physically reach. The artefact is current and the SVG agrees
+with it; only the prose was ever wrong. **The episode contained its own
+refutation**: it states the slope is −0.046/kN two paragraphs below the table,
+and that slope reproduces the artefact at all four loads. The endpoints sit on
+the line; the two middle rows sit 0.03-0.04 below it. Also corrected: the
+penalty ratio, quoted as "fourteen times" from `5.6/0.4` on *rounded*
+percentages, is **16.0×** on the underlying values.
+
+**New failure mode 2 — an artefact regenerated without the prose following
+(Episode 9), the worst single episode at 8 mismatches.** Its
+`evaluation.stochastic` block was re-generated (F94's seeded-RNG fix is the
+likely cause) and the article kept the old numbers:
+
+| claim | published | artefact |
+|---|---|---|
+| 8-seed sampled distance | **"393.3 m, range 393 to 393"** | **231.9 m, sd 124.9** |
+| 8-seed sampled finish | implied 100% | **37.5%** |
+| worst slip | 14.4° | 15.2° sampled / 12.8° deployed |
+| steps beyond 12° | 0.5% | 0.97% sampled / 2.5% deployed |
+| D6 failures | "three checks" | **4 of 12** |
+| corner speed cap | 19.5 m/s | 19.313 m/s |
+
+**The corrected numbers argue Episode 9's own thesis better than the wrong
+ones did.** "Range 393 to 393" said the sampled policy always completes; it
+completes 37.5% of the time with a 125 m standard deviation. That *is* the
+episode's point — the policy's competence lives in the exploration noise, so it
+varies with the draw. **What earlier verification got right and stopped at:**
+the 88% / 362 m figures were checked and confirmed legitimate (a tail-7 window
+of `history.json`, exactly as the article claims). Confirming one number in a
+section is not confirming the section.
+
+**Smaller corrections.** Episode 14: three straight-segment forces drifted
+(83→80 N, 3,199→3,174 N, 543→526 N) and the median best-checkpoint is 54%, not
+45% — every headline table reconciles exactly. Episode 15: the front-driven
+balance spread is "0.091 at both powers **with the controller on or off**" —
+off is 0.091/0.091, but **on is 0.094 and 0.080**, and the article's own next
+paragraph quotes 0.094, so it contradicted itself exactly the way Episode 5
+did. Episode 4: two disclosure gaps closed — its 5.873/5.912 s pair comes from
+F39 at 110/80 nodes, not from its own 200-node table (which reports 5.827 s),
+and **five of its six grid-refinement solves stopped on the iteration limit**,
+which was not stated.
+
+**`speed_ref.BASELINE` corrected too** — a `[MEASURED]` constant disagreeing
+with the artefact its own comment names: `worst_slip_deg` 10.4→**9.7**,
+`speed_mean` 13.03→**13.07**, `lap_time_s` 537.8→**535.4** (derived, since the
+artefact stores distance and mean speed rather than a lap time). A duplicate
+hardcoded 537.8 in a print statement now reads the dict.
+
+**What this says about how to audit.** Both new failure modes are invisible to
+the technique that found the other eight: there is no correction to diff
+against, and no fault line to sweep. Both were visible from **reading the
+article against itself** — a table contradicting the slope beneath it, a claim
+contradicting its own next paragraph. Mechanical checks narrow the search;
+they do not close it. That is now demonstrated twice, and it is the strongest
+practical result of this whole audit.
+
+**Source:** `[MEASURED]` — field-by-field verification of all 15 episodes
+against `experiments/ep{01..15}/out/results.json` (plus `history.json`,
+`traces.npz`, `production_report.json`, `full_trace_*.npz` and
+`diagnostics/out/D*_report.json` where an episode draws on them).
+
+---
+
 
 # Decisions
 
@@ -6079,7 +6800,7 @@ for a reason unrelated to the question being asked. Power is instead a
 |---|---|---|
 | RV-1 (1×) | 174 kW / 228 hp `[SOURCED]` | the validation anchor; every diagnostic keeps passing here |
 | 1.5× | ~260 kW / ~350 hp | the ordinary sports-car tier, and arguably the most *relevant*: effects that express here matter for cars people drive |
-| RV-1P (2×) | ~350 kW / ~470 hp `[ASSUMED]` | the amplification end, where F43 showed design effects at 4-5× their 1× size |
+| RV-1P (2×) | ~350 kW / ~470 hp `[ASSUMED]` | the amplification end, where design effects are several times their 1× size — F100 measures ×2.3–8.1 on balance and ×2.5–4.9 on layout (this row originally cited F43's "4-5×", which F135 supersedes) |
 
 **Every design question is answered as the curve, with its shape stated.** An
 effect that grows smoothly through 1.5× is a different and more useful claim
@@ -6113,4 +6834,46 @@ single-track spot checks. And no TUM import — these are built from the
 existing `Segment` machinery, because real-circuit geometry is `TRACKS.md`'s
 problem and mixing the two would confound a power result with an import
 result.
+
+---
+
+### D19 · Season 5's multi-track/`TrackBank`/`speed_ref`/TV thread is discontinued. · 2026-08-10
+
+**Decision, the user's call, recorded rather than left implicit.** No further
+training investment in: seed 2's `end_to_end` TV leg, the `TrackBank`
+per-circuit speed-plan work that blocked stage 4, the 17-circuit generalist
+(stage 4), and the generalist-vs-specialist gap analysis (stage 5).
+
+**The stated reasoning.** The pattern of the last several sessions — a real
+bug found and fixed nearly every checkpoint (F128, F129, F130, F134) — read
+as too many failures to keep investing in, and F134's headline number
+(`end_to_end` at roughly a third of the baseline's tyre utilisation) read as
+not worth reporting.
+
+**Recorded for whoever reads this next, because the two readings differ and
+both are worth having on the page.** My own reading, given at the time: the
+bugs found were evaluation/reporting defects (checkpoint selection, a
+silently-defaulted `tv_mode`), not the policy failing to learn to drive —
+every one of F127/F131-F133/F134's underlying D16 results held up under
+independent re-evaluation. And the utilisation gap has a named mechanism
+(F134): `speed_ref_penalty` is one-sided and caps reward at a reference
+pace, so a low-utilisation policy is the reward being satisfied, not a
+weak result — F120 named this same property of the very first capped
+baseline, before TV entered the picture. Both readings are in the record;
+this entry does not resolve which is right, only that the decision was made
+knowing the counter-argument.
+
+**What this does NOT touch.** Episodes 9-14 and their published corrections
+stand as-is — this is scoped to the unpublished Season 5 multi-track/TV
+thread only, not a re-litigation of the RL arc back through Episode 14.
+F127-F134 remain accurate records of what was measured; nothing here
+retracts them.
+
+**What stays possible, not planned.** `TrackBank` carries curvature and
+half-width per circuit already (`physics/track_bank.py`); a per-circuit
+speed-plan channel is the specific missing piece, sized at roughly a
+session's work per HANDOFF's own estimate, should this be revisited.
+
+**Source:** this conversation, 2026-08-10. See `HANDOFF.md`'s Season 5
+section for the state this freezes.
 

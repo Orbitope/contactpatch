@@ -53,8 +53,10 @@ power.**
 
 ## The exception, and it is a finding, not a gap
 
-Balance for a front-driven car does not flatten. At all — the spread is 0.091 at
-both powers, with the controller on or off. That is not a hole in the result. It is
+Balance for a front-driven car does not flatten. With the controller off the
+spread is 0.091 at both powers — identical, so power was never what constrained
+it — and switching the controller on leaves it at 0.094 and 0.080, either side of
+where it started rather than collapsed. That is not a hole in the result. It is
 checked, not assumed.
 
 The archetype behind that row puts 62% of the car's mass over its own driven

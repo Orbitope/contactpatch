@@ -1,0 +1,161 @@
+{
+ "grid": "v_max 19-24 x grip 0.60,0.70",
+ "rows": [
+  {
+   "v_max": 19.0,
+   "grip_use": 0.6,
+   "completed": true,
+   "reason": "finished",
+   "lap_time_s": 378.488573445452,
+   "distance_m": 6999.485248490279,
+   "fraction_of_lap": 0.9999999999999999,
+   "worst_slip_deg": 6.022675506330783,
+   "inside_tyre_fit": true,
+   "rule4_valid": true
+  },
+  {
+   "v_max": 20.0,
+   "grip_use": 0.6,
+   "completed": true,
+   "reason": "finished",
+   "lap_time_s": 362.068573445452,
+   "distance_m": 6999.485248490279,
+   "fraction_of_lap": 0.9999999999999999,
+   "worst_slip_deg": 6.099113008830981,
+   "inside_tyre_fit": true,
+   "rule4_valid": true
+  },
+  {
+   "v_max": 21.0,
+   "grip_use": 0.6,
+   "completed": true,
+   "reason": "finished",
+   "lap_time_s": 347.58857344545197,
+   "distance_m": 6999.485248490279,
+   "fraction_of_lap": 0.9999999999999999,
+   "worst_slip_deg": 8.028693554670985,
+   "inside_tyre_fit": true,
+   "rule4_valid": true
+  },
+  {
+   "v_max": 22.0,
+   "grip_use": 0.6,
+   "completed": true,
+   "reason": "finished",
+   "lap_time_s": 334.748573445452,
+   "distance_m": 6999.485248490279,
+   "fraction_of_lap": 0.9999999999999999,
+   "worst_slip_deg": 10.848810166155646,
+   "inside_tyre_fit": true,
+   "rule4_valid": true
+  },
+  {
+   "v_max": 23.0,
+   "grip_use": 0.6,
+   "completed": false,
+   "reason": "outside the tire fit (15.6 deg)",
+   "lap_time_s": 323.32,
+   "distance_m": 6999.485248490279,
+   "fraction_of_lap": 0.9999999999999999,
+   "worst_slip_deg": 15.550337014062835,
+   "inside_tyre_fit": false,
+   "rule4_valid": false
+  },
+  {
+   "v_max": 24.0,
+   "grip_use": 0.6,
+   "completed": false,
+   "reason": "spun",
+   "lap_time_s": 119.98,
+   "distance_m": 2693.7253807018105,
+   "fraction_of_lap": 0.3848462115528882,
+   "worst_slip_deg": 53.48359926616057,
+   "inside_tyre_fit": false,
+   "rule4_valid": false
+  },
+  {
+   "v_max": 19.0,
+   "grip_use": 0.7,
+   "completed": true,
+   "reason": "finished",
+   "lap_time_s": 375.768573445452,
+   "distance_m": 6999.485248490279,
+   "fraction_of_lap": 0.9999999999999999,
+   "worst_slip_deg": 8.743290986713694,
+   "inside_tyre_fit": true,
+   "rule4_valid": true
+  },
+  {
+   "v_max": 20.0,
+   "grip_use": 0.7,
+   "completed": true,
+   "reason": "finished",
+   "lap_time_s": 359.008573445452,
+   "distance_m": 6999.485248490279,
+   "fraction_of_lap": 0.9999999999999999,
+   "worst_slip_deg": 9.05724680081165,
+   "inside_tyre_fit": true,
+   "rule4_valid": true
+  },
+  {
+   "v_max": 21.0,
+   "grip_use": 0.7,
+   "completed": true,
+   "reason": "finished",
+   "lap_time_s": 344.128573445452,
+   "distance_m": 6999.485248490279,
+   "fraction_of_lap": 0.9999999999999999,
+   "worst_slip_deg": 9.364508387350257,
+   "inside_tyre_fit": true,
+   "rule4_valid": true
+  },
+  {
+   "v_max": 22.0,
+   "grip_use": 0.7,
+   "completed": true,
+   "reason": "finished",
+   "lap_time_s": 330.848573445452,
+   "distance_m": 6999.485248490279,
+   "fraction_of_lap": 0.9999999999999999,
+   "worst_slip_deg": 11.644393319528788,
+   "inside_tyre_fit": true,
+   "rule4_valid": true
+  },
+  {
+   "v_max": 23.0,
+   "grip_use": 0.7,
+   "completed": false,
+   "reason": "spun",
+   "lap_time_s": 112.08,
+   "distance_m": 2480.187696201732,
+   "fraction_of_lap": 0.35433858464616147,
+   "worst_slip_deg": 54.74331284070475,
+   "inside_tyre_fit": false,
+   "rule4_valid": false
+  },
+  {
+   "v_max": 24.0,
+   "grip_use": 0.7,
+   "completed": false,
+   "reason": "spun",
+   "lap_time_s": 107.3,
+   "distance_m": 2467.9355339763174,
+   "fraction_of_lap": 0.3525881470367591,
+   "worst_slip_deg": 51.192459963188234,
+   "inside_tyre_fit": false,
+   "rule4_valid": false
+  }
+ ],
+ "fastest_valid": {
+  "v_max": 22.0,
+  "grip_use": 0.7,
+  "completed": true,
+  "reason": "finished",
+  "lap_time_s": 330.848573445452,
+  "distance_m": 6999.485248490279,
+  "fraction_of_lap": 0.9999999999999999,
+  "worst_slip_deg": 11.644393319528788,
+  "inside_tyre_fit": true,
+  "rule4_valid": true
+ }
+}

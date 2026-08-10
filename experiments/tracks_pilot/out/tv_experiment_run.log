@@ -1,0 +1,54 @@
+========================================================================================
+  BASELINE: Spa, tv_mode=none, w=3 ct=0, envelope 3.0/2.0 (matched to TV run)
+  Freshly trained at the SAME envelope settings as the TV variant --
+  F127 used the OLD envelope (1.0/4.0), not a fair comparison point.
+========================================================================================
+
+========================================================================
+  Spa, speed_ref_penalty=3, cross_track_penalty=0, 40,000,000 steps
+========================================================================
+  plan starts at a_lat 0.45 g, raises by 0.08 g toward 0.97 g while off<0.15 and slip<9.0°
+  upd    0 steps=    262,144 v=  8.0 gate_slip=  1.0 sampled_slip=  3.3 off=1.00 a_lat=0.45g EV=+0.001
+  upd   25 steps=  6,815,744 v= 14.9 gate_slip= 16.2 sampled_slip= 18.5 off=1.00 a_lat=0.45g EV=+0.385
+  upd   50 steps= 13,369,344 v= 18.8 gate_slip= 10.7 sampled_slip= 14.9 off=0.00 a_lat=0.45g EV=+0.480
+    ^ plan raised to 0.53 g at update 74
+  upd   75 steps= 19,922,944 v= 20.6 gate_slip=  7.5 sampled_slip=  8.6 off=0.00 a_lat=0.53g EV=+0.575
+    ^ plan raised to 0.61 g at update 77
+    ^ plan raised to 0.69 g at update 80
+    ^ plan raised to 0.77 g at update 83
+    ^ plan raised to 0.85 g at update 86
+  upd  100 steps= 26,476,544 v= 21.9 gate_slip= 11.3 sampled_slip= 14.6 off=0.00 a_lat=0.85g EV=+0.413
+  upd  125 steps= 33,030,144 v= 23.0 gate_slip= 13.4 sampled_slip= 15.0 off=0.00 a_lat=0.85g EV=+0.472
+  upd  150 steps= 39,583,744 v= 23.8 gate_slip= 14.8 sampled_slip= 14.2 off=0.00 a_lat=0.85g EV=+0.466
+
+  [D16] 6709.6 m (95.9% of lap), finished 96%, off-track 4%, worst slip 7.5 deg, 0/24 outside the fit -- rule 4 valid.
+    NO LAP TIME — finished 96% of runs, covered 95.9% of the lap. (mean speed 24.5 m/s would project 286 s IF it completed one, which it does not.)
+    utilisation mean 0.319 (baseline 0.090), at-limit 0.4% (baseline 0.7%)
+
+BASELINE (tv=none) FINAL: 6709.6 m (95.9% of lap), finished 96%, off-track 4%, worst slip 7.5 deg, 0/24 outside the fit -- rule 4 valid.
+
+========================================================================================
+  TV: Spa, tv_mode=end_to_end, same w=3 ct=0, same envelope, same budget
+  Episode 14 variant E: policy outputs 4 raw wheel-force fractions,
+  no QP allocator. First time trained on a full real circuit.
+========================================================================================
+
+========================================================================
+  Spa, speed_ref_penalty=3, cross_track_penalty=0, 40,000,000 steps
+========================================================================
+  plan starts at a_lat 0.45 g, raises by 0.08 g toward 0.97 g while off<0.15 and slip<9.0°
+  upd    0 steps=    262,144 v=  9.0 gate_slip=  0.2 sampled_slip=  4.5 off=1.00 a_lat=0.45g EV=+0.001
+    ^ plan raised to 0.53 g at update 10
+    ^ plan raised to 0.61 g at update 13
+  upd   25 steps=  6,815,744 v= 16.0 gate_slip= 10.6 sampled_slip= 16.7 off=0.00 a_lat=0.61g EV=+0.178
+  upd   50 steps= 13,369,344 v= 20.3 gate_slip= 10.4 sampled_slip= 14.3 off=0.00 a_lat=0.61g EV=+0.529
+  upd   75 steps= 19,922,944 v= 22.4 gate_slip= 12.2 sampled_slip= 13.2 off=0.00 a_lat=0.61g EV=+0.557
+  upd  100 steps= 26,476,544 v= 23.6 gate_slip= 10.7 sampled_slip= 13.4 off=0.00 a_lat=0.61g EV=+0.559
+  upd  125 steps= 33,030,144 v= 24.3 gate_slip= 12.0 sampled_slip= 13.5 off=0.00 a_lat=0.61g EV=+0.581
+  upd  150 steps= 39,583,744 v= 24.9 gate_slip= 12.3 sampled_slip= 13.1 off=0.00 a_lat=0.61g EV=+0.596
+
+  [D16] 6999.6 m (100.0% of lap), finished 100%, off-track 0%, worst slip 5.9 deg, 0/24 outside the fit -- rule 4 valid.
+    lap 515.1 s vs target 347.6 s (+48%), capped baseline 537.8 s
+    utilisation mean 0.086 (baseline 0.090), at-limit 0.2% (baseline 0.7%)
+
+TV (end_to_end) FINAL: 6999.6 m (100.0% of lap), finished 100%, off-track 0%, worst slip 5.9 deg, 0/24 outside the fit -- rule 4 valid.

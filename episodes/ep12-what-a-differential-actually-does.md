@@ -44,7 +44,8 @@ depending on which wheel happens to be turning faster:
 
 Opposite outcomes, same rule. **A model that hard-codes which wheel gets more torque
 can only ever produce one of them**, and will have the locked differential's
-handling backwards for half the throttle range (FINDINGS F75, F77).
+handling backwards for half the throttle range — this project's early draft did
+exactly that, and four standing checks now guard against it.
 
 ![Which wheel is in charge](../experiments/ep12/out/01-which-wheel-is-in-charge.svg)
 
@@ -53,7 +54,7 @@ handling backwards for half the throttle range (FINDINGS F75, F77).
 | Device | Torque bias ratio | Locking |
 |---|---|---|
 | Open | 1.0 — equal torque, always | 0.0 — resists nothing |
-| Limited-slip | 1.5:1 `[ASSUMED]` | 0.5 `[ASSUMED]` |
+| Limited-slip | 1.5:1 — our stand-in | 0.5 — our stand-in |
 | Welded | unbounded — grip only | 1.0 — resists everything |
 
 Two numbers, and the second is the one that steers the car.
@@ -122,18 +123,19 @@ difference with a fixed rule.
 
 ## What this can't tell you
 
-**Fidelity: rung 2** (CLAUDE.md rule 15). This shows the mechanism on a
-double-track model. It is not a claim about any particular hardware.
+**This is the mechanism, not a datasheet.** It runs on the four-wheel model —
+no suspension compliance, no clutch-pack detail — so it shows *why* each device
+does what it does, not what any particular hardware measures.
 
-**Both of the LSD's numbers are `[ASSUMED]`.** The torque bias ratio (1.5:1) and
+**Both of the LSD's numbers are stand-ins we chose.** The torque bias ratio (1.5:1) and
 the locking fraction (0.5) are mid-range stand-ins. Real clutch packs vary their
 locking with torque, and behave differently on coast than on drive — this models
 neither. The conclusion survives the assumed range: sweeping locking from 0.25 to
 0.75, the part-throttle moment stays negative throughout. **The magnitudes plainly
 do not survive it**, and are illustrative.
 
-**Track width is `[LIKELY]`, not measured**, and it is the moment arm for
-everything here. Every yaw number scales directly with it.
+**Track width is the least certain dimension we have** — a plausible published
+figure, not a measured one — and it is the moment arm for everything here. Every yaw number scales directly with it.
 
 **One corner, one steady condition, one car.** The crossover at 3880 N is specific
 to this corner's lateral load transfer. A tighter corner unloads the inside wheel

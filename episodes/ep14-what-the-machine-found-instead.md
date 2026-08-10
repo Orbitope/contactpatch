@@ -56,8 +56,8 @@ The interesting result is *where they differ*, and it is sharper than expected.
 | Peak lateral acceleration | 0.915 ± 0.059 g | 0.976 ± 0.028 g | 1.3× seed sd — **not a finding** |
 | Tire utilisation **in the corner** | 0.70 ± 0.07 | 0.85 ± 0.10 | 1.8× seed sd — **not a finding** |
 
-All `[MEASURED]`, 3 seeds each, deployed policy. Rule 5 asks for more than twice
-the seed standard deviation before a difference counts, and **not one of these
+Three seeds each, deployed policy. Our standing bar: a difference has to clear
+twice the seed-to-seed spread before it counts as real, and **not one of these
 clears it.**
 
 **So the answer to "does it agree with us" is: in the corner, yes — and there is
@@ -122,7 +122,7 @@ own logged per-wheel forces:
 | **H** hybrid | 11 N·m | 1,477 N·m | 4,355 N·m |
 | **E** end-to-end | 48 N·m | 1,393 N·m | 3,219 N·m |
 
-All `[MEASURED]`, representative seed per variant.
+One representative seed per variant, chosen by the run itself.
 
 Most of the time all three do almost nothing — the medians are tiny. But **when
 the learners act, they act about four times harder than the classical
@@ -154,16 +154,16 @@ seed fails an envelope check or a deployment check.
 
 ## What this can't tell you
 
-**Fidelity: rung 2** (CLAUDE.md rule 15). Double-track model, no roll camber, no
-roll steer, no compliance steer. We reproduce roughly 5% of a real car's
-understeer gradient. Trends and orderings, never magnitudes.
+**The usual scale warning, which never stops applying.** Four-wheel model, no
+roll camber, no roll steer, no compliance steer — we reproduce roughly 5% of a
+real car's understeer gradient. Trends and orderings, never magnitudes.
 
 **Four independently commanded wheel forces is a four-motor electric car**, not
 RV-1's rear-drive combustion driveline.
 
 **H and E are their own drivers; C is not.** The classical car is driven by the
 hand-built closed-loop driver from Episode 13, whose preview time moves Episode
-13's own headline by more than the controller is worth (F84). The realized-`Mz`
+13's own headline by more than the controller is worth. The realized-`Mz`
 comparison sidesteps the worst of this — it is a control-surface comparison
 computed identically for all three, not a lap-time race — but the three
 trajectories are not identical and the utilisation comparison between H and E is

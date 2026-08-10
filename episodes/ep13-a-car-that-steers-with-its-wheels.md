@@ -15,9 +15,9 @@ those you wanted.
 
 But the side effect is real. Push harder on the right-hand wheels than the left and
 the car rotates left. That is not subtle: on our car, moving 3000 N from one rear
-wheel to the other is worth about 2240 N·m of yaw moment `[MEASURED]`, which is
-more than a rad/s² of yaw acceleration on this car's 1950 kg·m² of polar moment.
-(That is F72, and until this season the model did not have that term at all.) It is
+wheel to the other is worth about 2240 N·m of yaw moment — more than a rad/s² of
+yaw acceleration on this car's 1950 kg·m² of polar moment. (Our model did not even
+have that term until this season; adding it is what made Season 4 possible.) It is
 a genuine steering input that has nothing to do with the steering wheel.
 
 So: **if pushing one wheel harder rotates the car, why not just do that?**
@@ -61,9 +61,9 @@ r_ref = v · δ / (L + K · v²)
 
 Steering angle `δ`, speed `v`, wheelbase `L`, and `K` — the understeer gradient,
 the same number Episode 3 introduced in deg/g and Episode 5 measured on four
-wheels. Our car's is **0.204 deg/g** `[MEASURED]`, which is tiny; a real car is
-near 4.1, and roughly 3 of those come from suspension terms this model does not
-have (F29, F73). More on that below.
+wheels. Our car's measures **0.204 deg/g**, which is tiny; a real car is near 4.1, and
+roughly 3 of those come from suspension effects this model does not include. More
+on that below.
 
 Feed it the driver's steering angle and it says what yaw rate that angle *ought*
 to produce. A PID closes the gap. Its output is the moment demand.
@@ -71,12 +71,12 @@ to produce. A PID closes the gap. Its output is the moment demand.
 **The saturation matters more than the gains.** The reference model is linear, and
 a linear model does not know that tires run out. Ask it what 25 degrees of steering
 should do at 20 m/s and it answers **3.21 rad/s** — which implies **6.5 g** on a car
-that makes 0.95 `[MEASURED]`. The PID would then see an error that can never be
+that makes 0.95. The PID would then see an error that can never be
 closed, the allocator would saturate against it, and the driver aid would drag the
 car into a spin trying to satisfy a number no tire can produce.
 
 So the reference is capped at what the tires can actually sustain,
-`r_max = a_y_max / v`, with `a_y_max` **0.951 g** `[MEASURED]` on this car — 0.466
+`r_max = a_y_max / v`, with `a_y_max` a measured **0.951 g** on this car — 0.466
 rad/s at that speed, a factor of seven below what the linear model asked for. That
 is not a detail. It is the difference between a stability controller and a hazard.
 
@@ -99,7 +99,7 @@ subject to  −cap_i ≤ Fx_i ≤ cap_i
 ```
 
 `cap_i` is what that tire has left longitudinally given what it is already doing
-laterally — the friction ellipse this project has used since FINDINGS D9, evaluated
+laterally — Episode 4's friction ellipse, evaluated
 per wheel on the previous instant's forces, because that is what a real controller's
 sensors could know.
 
@@ -124,7 +124,7 @@ Seasons 1 and 2 did not have: **a driver who reacts.**
 Not the minimum-time solver. Hand a solver four independent wheel forces and it
 will use them optimally, which answers "what is torque vectoring worth to a driver
 who knows the future?" — and Episode 8 already answered that class of question with
-"almost nothing" (F49), because a solver that cannot be surprised simply plans
+"almost nothing", because a solver that cannot be surprised simply plans
 around whatever the car does. Not the learned policy either: that would confound
 the controller with the training run.
 
@@ -138,16 +138,17 @@ about racing lines and cannot trade entry for exit. **Every configuration theref
 drives the same geometric path**, which is what makes this a comparison — a lap
 time difference cannot be a different line, because there is only one line.
 
-The profile is built for `grip_use` times the car's measured grip. That is the
-knob. Turn it up and the driver asks for more than the tires have.
+The profile is built for an **aggression setting** — a multiplier on the car's
+measured grip. That is the knob. Turn it up past 1.0 and the driver is asking for
+more than the tires have.
 
 ### The metric, chosen before anything was measured
 
-Because every configuration drives the same plan, at any given `grip_use` they are
+Because every configuration drives the same plan, at any given aggression they are
 all attempting an *identical* lap and take an almost identical time. **What differs
 is whether the car can do it.** So the result is:
 
-1. **the highest `grip_use` that still produces a valid lap** — on the road, and
+1. **the highest aggression that still produces a valid lap** — on the road, and
    inside the ±12° region the tire file was actually fitted over;
 2. **the quickest valid lap**, which is a monotone consequence of the first, and is
    reported only because a lap time is something a reader can hold on to.
@@ -182,13 +183,13 @@ worth X" would be a claim about two things at once.
 | **TV, four wheels** | **1.095** | **14.434 s** | **5.445 s** |
 | TV, rear axle | 1.073 | 14.562 s | 5.531 s |
 
-All `[MEASURED]`, one closed-loop driver, `long_exit`, tire offsets removed.
+One closed-loop driver, the long-exit corner from Episode 4, every number measured.
 
 **It works.** The controlled car survives **4.6% more cornering demand** than the
 passive one, and the direct evidence that both layers are doing their jobs is
 better than the lap time: the allocator delivers the moment the PID asks for to
 within 60 N·m of a 996 N·m peak, and RMS yaw-rate error through the corner falls
-from **0.1662 rad/s to 0.0197 — 88% lower** `[MEASURED]`, both cars driving the
+from **0.1662 rad/s to 0.0197 — 88% lower**, both cars driving the
 same plan at the hardest aggression the passive one completes.
 
 **And it is worth 0.51% of lap time.** Half a percent. The corner section — brake
@@ -203,16 +204,15 @@ Which is also why the skidpad matters.
 ## The skidpad, and the number from outside
 
 The best published figure for a torque-vectoring gain is about **9%**, for an FSAE
-car on a skidpad. **That number is `[SOURCED — citation outstanding]`**: it comes
-from this project's own planning document, which states it without a reference, and
-I have not been back to the paper. It is marked as needing one rather than dressed
-up as verified — which is what this project's own rule about validation bands says
-to do when the band has not been traced.
+car on a skidpad. **A caveat before it does any work: I have not traced that
+number to its paper.** It comes from this project's planning notes, which state it
+without a reference. Until someone goes back to the source it is a remembered
+figure, and it is flagged as one rather than dressed up as verified.
 
 A skidpad is the most favourable manoeuvre there is — constant radius, steady
 state, nothing but cornering — so that 9% is a **ceiling**, not a target. Beating it would be evidence of a bug, not of a good
-controller. That is rule 2 of this project doing its job: the comparison band comes
-from outside, and our own model does not get to set it.
+controller. That is a standing rule here doing its job: the yardstick comes from
+outside the project, so our own model never gets to grade itself.
 
 Same driver, constant-radius circle, aggression turned up until it fell off:
 
@@ -224,7 +224,7 @@ Same driver, constant-radius circle, aggression turned up until it fell off:
 | torque vectoring, four wheels | **0.951 g** |
 | torque-vectoring differential | 0.949 g |
 
-All `[MEASURED]`, 40 m radius, same driver, aggression bisected to 0.002.
+Same driver, 40 m radius, aggression bisected to 0.002.
 **+1.30%**, comfortably under the ceiling.
 
 ![What it is worth](../experiments/ep13/out/05-what-it-is-worth.svg)
@@ -285,7 +285,7 @@ One of this episode's twelve checks fails. It is the one that asks whether the
 result survives the driver being tuned differently, and it is the most useful thing
 in the run.
 
-The driver's preview time — how far ahead it aims — is `[ASSUMED]` at 0.55 s. Change
+The driver's preview time — how far ahead it aims — is a number we chose: 0.55 s. Change
 it by 30% in each direction, change nothing else, and:
 
 | driver preview | passive limit | controlled limit | gain |
@@ -294,13 +294,14 @@ it by 30% in each direction, change nothing else, and:
 | nominal | 1.045 | 1.093 | **+4.64%** |
 | 30% more | 0.982 | 1.111 | **+13.18%** |
 
-All `[MEASURED]`; the preview time itself is `[ASSUMED]`. A single assumed number **in the driver** — not in the car, not in the controller —
+Nothing changed between those rows except the preview time. A single chosen number
+**in the driver** — not in the car, not in the controller —
 moves the headline from "nothing at all" to "+13.2%". At 30% less preview the two
 limits are now *identical* — not a near-wash, an exact one.
 
 > **The closed-loop brake cap is set at 0.985 g**, the tire's own demonstrated
 > limit. That matters here specifically because this experiment *bisects*
-> `grip_use` to the cornering limit: a cap below what the tire delivers would
+> the aggression setting to the cornering limit: a cap below what the tire delivers would
 > spend the whole measurement in a regime where the cap, not the tire, sets the
 > braking demand. Braking authority is not a neutral parameter for this table —
 > it moves both the nominal gain (the passive car benefits too) and the spread
@@ -339,7 +340,7 @@ Same 40 seeded laps, same configurations, same aggression, at both levels:
 | **torque vectoring, four wheels** | 40/40 · 14.542 ± 0.001 s | 40/40 · 14.542 ± 0.002 s |
 | torque-vectoring differential | 40/40 · 14.554 ± 0.003 s | 40/40 · 14.553 ± 0.008 s |
 
-All `[MEASURED]`. **At a disturbance level that means something, the open
+**At a disturbance level that means something, the open
 differential is not measurably more fragile than any TV configuration.** Every
 configuration that can drive this lap at all completes 100% of it at both
 realistic noise levels, and the lap-time scatter across seeds (0.001–0.008 s) is
@@ -373,18 +374,20 @@ direction is the same one every driver of a welded car reports.
 
 ## What this can't tell you
 
-**Fidelity: rung 2** (CLAUDE.md rule 15). Four independently commanded wheel forces
-is a four-motor electric car, not RV-1's rear-drive combustion driveline. The
+**This is still the four-wheel model, not a real car.** Four independently
+commanded wheel forces is a four-motor electric car, not our reference car's
+rear-drive combustion driveline. The
 rear-axle version is the one RV-1 could actually have, and it is worth about 60% as
 much: +3.61% of cornering limit against +4.64%. Underneath both is a double-track model with no roll camber, no roll steer and
 no compliance steer — the terms that make up about three quarters of a real car's
 understeer. **We reproduce roughly 5% of a real car's understeer gradient**, so a
 percentage here is a trend, not a specification.
 
-**Track width is `[LIKELY]`, and it is the moment arm.** At −3% the gain is
+**Track width is the least certain dimension in the model, and it is the moment
+arm every yaw figure scales with.** At −3% the gain is
 +4.82% and at +3% it is +4.82%, against +4.64% nominal. The conclusion is
 robust — torque vectoring is worth +4.6% to +4.8% of cornering limit across
-the whole plausible range of a number we only know to `[LIKELY]`, which is
+the whole plausible range of a number we only know approximately, which is
 what this check exists to establish.
 
 > **What this check cannot do is measure the moment arm.** The three values
@@ -400,10 +403,11 @@ what this check exists to establish.
 answer by more than the controller is worth. See the section above; that is the
 biggest caveat in this episode by a distance. It also cannot trade line for exit and
 never brakes in a corner, so its absolute lap times are slower than the
-optimal-control episodes' and are not comparable with them (rule 6).
+optimal-control episodes' and are not comparable with them — absolute times
+never survive a change of method; only orderings do.
 
 **One corner, one car, one tire.** And the aggression knob scales cornering and
-braking limits together, so `grip_use` is a plan the driver believes in, not a
+braking limits together, so the aggression setting is a plan the driver believes in, not a
 property of the road.
 
 **The two headline numbers are one measurement.** Stated above, repeated here,
@@ -430,7 +434,7 @@ than the car is, and the answer changes:
 | 0.000 deg/g — neutral | 1.100 |
 | −0.150 deg/g | 1.102 |
 
-All `[MEASURED]`. Monotone, and small — 0.007 across the whole range against a
+Monotone, and small — 0.007 across the whole range against a
 bisection resolution of 0.002 — so read it as a weak trend and not as a result.
 
 Published work on optimising torque vectoring for lap time is said to report the

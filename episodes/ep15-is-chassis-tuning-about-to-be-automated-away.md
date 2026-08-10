@@ -18,9 +18,9 @@ layout still matter?
 
 ## Why this episode had to wait
 
-Season 2's design sweeps were measured at one power level, and the power review
-that just finished (`POWER-REVIEW.md`, `FINDINGS` F99–F101) found that mattered more
-than anyone had checked. Both design axes are real but small at the reference car's
+Season 2's design sweeps were measured at one power level, and a review that
+re-ran them across a range of engine power found that mattered more than anyone
+had checked. Both design axes are real but small at the reference car's
 own power and grow 2 to 8 times larger by twice it — a sensitivity baseline that
 actually varies, which a single measurement could not show. Torque vectoring's own
 worth grows the same way, from a few percent of cornering limit to more than
@@ -36,7 +36,7 @@ where the previous two findings said the story would be different.
 
 ![Five cars, one corner — with the controller off, then on](../experiments/ep15/out/01-five-cars-one-corner.svg)
 
-Same driver, same corner, same aggression — the same `grip_use`, not each car's own
+Same driver, same corner, same aggression demand — not each car's own
 limit, so the four archetypes that fail are failing at a demand the fifth one meets
 easily. With an open differential, four of five leave the road. With the allocator,
 all five stay on it. Nothing else changed.
@@ -79,8 +79,8 @@ not, because there is nothing to allocate.
 
 ## What this can't tell you
 
-**Fidelity: rung 2** (CLAUDE.md rule 15), same as everything Season 2 through 4
-stands on. This is a double-track model with no roll camber, roll steer or
+**The same scale warning as every episode since 5.** This is the four-wheel
+model with no roll camber, roll steer or
 compliance steer — the terms that make up most of a real car's understeer — driven
 by a tracker that never brakes in a corner or trades line for exit. Whether a real
 911 owner would stop caring where the engine sits is not a claim this project can
@@ -113,8 +113,9 @@ engine actually produces.
 
 ---
 
-**Fidelity: rung 2, one corner, one driver, one modelled power step.** The
-front-driven balance exception is a real mechanism, not a hedge — see above.
+**One corner, one driver, one modelled power step — on a model that reproduces
+trends, not magnitudes.** The front-driven balance exception is a real
+mechanism, not a hedge — see above.
 
 ## Reproducing this
 

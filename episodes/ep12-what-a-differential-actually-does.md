@@ -15,6 +15,13 @@ inside one. Something has to let them turn at different speeds or the tires woul
 scrub. That something is the differential, and **every interesting thing it does
 follows from how hard it resists that difference.**
 
+Episode 6 left this on the table. Comparing front drive against rear, it found
+that swapping an open differential for a perfect one was worth four times as much
+to the front-driven car as to the rear-driven one — and then had to stop, because
+"a perfect differential" is not a thing you can buy. It is the best case, assumed
+rather than built. This episode builds the three devices that actually exist and
+measures what each of them really delivers.
+
 ## One mechanism, not two
 
 This is worth stating carefully, because it is easy to get backwards.

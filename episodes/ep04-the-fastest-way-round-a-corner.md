@@ -42,6 +42,39 @@ a region nobody ever measured. **The lap time would be a statement about our
 curve fit, not about a car.** Both solves sit exactly on that 12° limit through
 the corner, which is what a real minimum-time answer looks like.
 
+## One more thing about tires, because this episode needs it
+
+Everything so far has been about a tire turning. This is the first episode where
+the car also *brakes*, and braking needs two facts Episodes 1–3 never had to
+supply.
+
+**A tire makes forward and backward force the same way it makes sideways force:
+by slipping.** Episode 1's slip angle was the wheel pointing slightly away from
+where it is travelling. The braking equivalent is the wheel turning slightly
+slower than the road is passing under it — a few percent — and that difference is
+called **slip ratio**. Same rubber, same bending, same shape of curve with a peak
+in it. A locked wheel is the far side of that peak, which is why anti-lock brakes
+exist.
+
+**And the two share one budget.** This is the part that matters for what follows.
+A tire has a total amount of force it can make, and it does not get a separate
+allowance for turning and for stopping — it has one, and every newton spent one
+way is unavailable the other. Draw the limit as a shape and it comes out roughly
+elliptical, which is where the name **friction ellipse** comes from. The useful
+consequence is blunt arithmetic: a tire already spending 70% of its grip on
+braking has only about 71% of its cornering force left.
+
+That is not intuitive, and it is worth sitting with. It means "brake, then turn"
+is not a rule about technique — it is a statement about a budget. And it means
+the interesting question is never *whether* you can brake and turn at once, but
+how much of each, which is exactly the kind of trade a minimum-time solver is
+built to make.
+
+*(The elliptical shape is a modelling assumption standing in for coefficients our
+tire file does not contain. That a tire trades braking for cornering is certain;
+that it trades along an ellipse specifically is our choice, and this episode's
+"what it can't tell you" says so.)*
+
 ## The experiment
 
 One 90° corner, 40 m radius, on an 8 m wide road. The car arrives at 32 m/s
@@ -94,14 +127,14 @@ braking — the technique racing drivers spend years learning, and one of the le
 intuitive things about driving fast. Nobody wrote it into the model. It came out
 of a minimum-time solve that had never heard of it.
 
-The mechanism is Episodes 2 and 3 combined. Braking moves weight onto the front
-tires. More load on the front means more front grip, and more front grip means the
+The mechanism is Episode 2, Episode 3 and the friction ellipse combined. Braking
+moves weight onto the front tires. More load on the front means more front grip, and more front grip means the
 car turns in better. So carrying the brakes past turn-in buys you front-end bite
 exactly when you need it.
 
-It isn't free — the friction ellipse says a tire braking at 70% of its
-longitudinal limit keeps only about 71% of its cornering force — and the solver
-weighs that trade rather than being told the answer. Notice the long-exit line
+It isn't free — that is the friction ellipse from two sections ago, charging
+the front tires for braking with grip they would otherwise have for turning —
+and the solver weighs that trade rather than being told the answer. Notice the long-exit line
 gets *off* the brakes 10 m earlier: with a straight to come, getting on the power
 matters more than the last of the turn-in help.
 

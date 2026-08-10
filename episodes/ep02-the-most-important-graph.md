@@ -155,7 +155,7 @@ Episode 3 builds the simplest car that can tell those apart.
 
 ---
 
-**Fidelity: rung 1 — one tire.** The friction ellipse here is a property of a tire, measured one contact patch at a time. What a *car* does with four of them — load transfer, roll, per-wheel differences — is rung 2 and starts at Episode 5.
+**Fidelity: rung 1 — one tire.** Load sensitivity is a property of a tire, measured one contact patch at a time, and everything above is arithmetic on two of them. What a *car* does with four — load transfer, roll, per-wheel differences — is rung 2 and starts at Episode 5.
 
 ## Reproducing this
 

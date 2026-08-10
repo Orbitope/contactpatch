@@ -131,9 +131,11 @@ two differ, and *that difference is most of the understeer we aren't producing*.
 
 The low number would be worrying if the rest were shaky. It isn't. In the linear
 range this model reproduces closed-form vehicle-dynamics theory — formulas that
-appear nowhere in our code — to better than 0.01%: yaw-rate gain, body sideslip,
-and the understeer gradient itself, which converges to the textbook
-`W_f/C_f − W_r/C_r` as the measurement window shrinks.
+appear nowhere in our code — to better than 0.01%: yaw-rate gain (how fast the
+car rotates about its vertical axis for a given amount of steering — the number
+Episode 8 spends its whole length on), body sideslip, and the understeer gradient
+itself, which converges to the textbook `W_f/C_f − W_r/C_r` as the measurement
+window shrinks.
 
 So the structure is right. One term is missing, we know which, and we know
 roughly how big it is.

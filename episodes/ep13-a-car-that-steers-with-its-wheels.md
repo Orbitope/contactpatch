@@ -298,10 +298,10 @@ All `[MEASURED]`; the preview time itself is `[ASSUMED]`. A single assumed numbe
 moves the headline from "nothing at all" to "+13.2%". At 30% less preview the two
 limits are now *identical* — not a near-wash, an exact one.
 
-> **The closed-loop brake cap is set at 0.985 g**, the tyre's own demonstrated
+> **The closed-loop brake cap is set at 0.985 g**, the tire's own demonstrated
 > limit. That matters here specifically because this experiment *bisects*
-> `grip_use` to the cornering limit: a cap below what the tyre delivers would
-> spend the whole measurement in a regime where the cap, not the tyre, sets the
+> `grip_use` to the cornering limit: a cap below what the tire delivers would
+> spend the whole measurement in a regime where the cap, not the tire, sets the
 > braking demand. Braking authority is not a neutral parameter for this table —
 > it moves both the nominal gain (the passive car benefits too) and the spread
 > across preview times.

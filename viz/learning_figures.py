@@ -414,3 +414,78 @@ def failure_figure(cases, results) -> str:
         "Cars drawn oversized for legibility; positions and headings are to "
         "scale. The arrow is the direction of travel along the solved path.",
     )
+
+
+def policy_loop_figure(results) -> str:
+    """What a policy IS, drawn as the loop it lives in. The Ep 9 concept figure.
+
+    "Policy" is the central noun of Episodes 9-11 and was used for three
+    episodes without being introduced (clarity audit, 2026-08-10). The prose
+    fix defines it; this draws it, because the definition is a loop and loops
+    are diagrams. Deliberately small (rule 1: pictorial first; user guidance:
+    small visuals are fine) — three boxes, two arrows forward, one arrow back.
+
+    The observation and action lists are transcribed from ``DrivingEnv.observe``
+    and ``step`` -- the env exposes no name list to read, so keep them in sync
+    by hand. The parameter count is [MEASURED] from ``out/policy.pt``: 5,124
+    numbers on the actor side (weights, biases and the exploration scale).
+    """
+    obs = ["speed", "distance off centreline", "heading vs road", "yaw rate",
+           "sideslip", "steering angle", "curvature ahead (~2 s)"]
+    acts = ["steering rate", "throttle / brake"]
+
+    W, H = 1180, 530
+    s = V.head(
+        W, H,
+        "What a policy is",
+        "A rule that turns what the car senses into what the car does — "
+        "plus the one arrow that makes it learning rather than programming.",
+    )
+
+    by, bh = 150, 190
+    # observation box
+    s += (f'<rect x="70" y="{by}" width="270" height="{bh}" rx="8" fill="none" '
+          f'stroke="{V.SLATE}" stroke-width="1.6"/>')
+    s += D.text(205, by - 12, "what the car senses", V.SLATE, 12.5, "middle", "600")
+    for i, o in enumerate(obs):
+        s += D.text(90, by + 30 + 23 * i, o, V.FG, 12.5)
+
+    # the policy box
+    s += (f'<rect x="450" y="{by + 35}" width="260" height="{bh - 70}" rx="8" '
+          f'fill="{V.TEAL}" opacity="0.14"/>')
+    s += (f'<rect x="450" y="{by + 35}" width="260" height="{bh - 70}" rx="8" '
+          f'fill="none" stroke="{V.TEAL}" stroke-width="2"/>')
+    s += D.text(580, by + 78, "the policy", V.TEAL, 15, "middle", "700")
+    s += D.text(580, by + 100, "a small neural network,", V.FG, 12, "middle")
+    s += D.text(580, by + 118, "5,124 numbers, none written by hand", V.FG, 12, "middle")
+
+    # action box
+    s += (f'<rect x="820" y="{by + 45}" width="240" height="{bh - 90}" rx="8" '
+          f'fill="none" stroke="{V.SLATE}" stroke-width="1.6"/>')
+    s += D.text(940, by + 33, "what the car does", V.SLATE, 12.5, "middle", "600")
+    for i, a in enumerate(acts):
+        s += D.text(845, by + 78 + 26 * i, a, V.FG, 13)
+
+    # forward arrows, 50 times a second
+    s += D.arrow(340, by + bh / 2, 448, by + bh / 2, V.FG, 2.2, 9)
+    s += D.arrow(710, by + bh / 2, 818, by + bh / 2, V.FG, 2.2, 9)
+    s += D.text(394, by + bh / 2 - 12, "50×/s", V.MUT, 11, "middle")
+
+    # the learning arrow, looping back underneath
+    yb = by + bh + 52
+    s += (f'<path d="M 940,{by + bh - 40} L 940,{yb} L 580,{yb} L 580,{by + bh - 32}" '
+          f'fill="none" stroke="{V.AMB}" stroke-width="2" stroke-dasharray="6 5"/>')
+    s += D.arrow(580, yb - 4, 580, by + bh - 34, V.AMB, 2.0, 8)
+    s += D.text(760, yb + 20,
+                "after each attempt: nudge the 5,124 numbers in whichever "
+                "direction made the last stretch of road go better",
+                V.AMB, 12.5, "middle")
+    s += D.text(760, yb + 40,
+                "that nudging is the whole of training — there is no other "
+                "instruction anywhere",
+                V.MUT, 11.5, "middle")
+
+    s += _stamp(H - 22, results,
+                extra="obs/actions from rl_env.py; 5,124 params from policy.pt")
+    s += "</svg>"
+    return s

@@ -33,11 +33,17 @@ it finds out what happens.
 **The thing doing the choosing is called a policy**, and it is worth being
 concrete about what that means, because it is the artefact this whole season
 produces. A policy is just a rule that turns what the car senses into what the
-car does. Ours is a small neural network — about four thousand numbers — and
-"training" means nudging those numbers, over and over, in whatever direction made
-the last few seconds go better. Nobody writes the rule. Nobody knows what it says
+car does. Ours is a small neural network — 5,124 numbers, counted from the saved
+policy file — and "training" means nudging those numbers, over and over, in
+whatever direction made the last few seconds go better. Nobody writes the rule. Nobody knows what it says
 afterwards. You get a driver and a stopwatch, and the only way to find out what
 it learned is to watch it drive.
+
+![What a policy is](../experiments/ep09/out/00-what-a-policy-is.svg)
+
+That dashed amber arrow is the entire difference between this season and the
+solver seasons: the boxes stay the same, and the numbers inside the middle one
+get nudged after every attempt.
 
 **The reward is distance covered. That's all.** No reward for staying on the road
 beyond a penalty for leaving it, no shaping toward a racing line, no penalty for

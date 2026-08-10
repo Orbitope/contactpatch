@@ -162,7 +162,8 @@ of their capability — on acceleration alone.
 
 ![Two things at once](../experiments/ep06/out/01-two-things-at-once.svg)
 
-The friction circles say the same thing more precisely. Each circle is everything
+The friction circles say the same thing more precisely — the same ring-and-arrow
+language Episode 4 introduced, now drawn once per wheel. Each circle is everything
 one tire can do at that instant; the arrow is what it is spending. **A diagonal
 arrow reaches the edge sooner than either direction alone.** The front-drive car's
 front tires are being asked for a diagonal through the whole corner exit — steer

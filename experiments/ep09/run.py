@@ -49,6 +49,10 @@ def figures(out) -> None:
     results = json.loads((out / "results.json").read_text())
     history = json.loads((out / "history.json").read_text())
     traces = dict(np.load(out / "traces.npz"))
+    # The concept figure for the paragraph that introduces "policy" -- the
+    # noun Episodes 9-11 rest on (clarity audit 2026-08-10).
+    write(out / "00-what-a-policy-is.svg",
+          learning_figures.policy_loop_figure(results))
     write(out / "01-what-it-learned.svg",
           learning_figures.learning_figure(results, history, traces))
     write(out / "02-the-noise-was-driving.svg",

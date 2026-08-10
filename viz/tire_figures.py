@@ -485,3 +485,71 @@ def reality_check_figure(rows) -> str:
 
 
 __all__ = ["slip_angle_figure", "load_split_figure", "reality_check_figure"]
+
+
+def friction_ellipse_figure(tire, fz: float, brake_fracs=(0.0, 0.7, 1.0)) -> str:
+    """One tire's force budget, spent three different ways. The Ep 4 concept
+    figure.
+
+    **Why this exists.** The friction ellipse was named in Episode 2's footer
+    and did load-bearing work in Episodes 4, 6 and 13 without ever being drawn
+    or defined — and it is the most inherently *visual* idea in the series,
+    because the whole claim is about the shape of a boundary. A reader who has
+    seen this once understands trail braking, why a front-drive car struggles
+    on corner exit, and what a torque-vectoring allocator is rationing.
+
+    Deliberately small. It carries one idea — you move *around* the limit, not
+    *out* of it — and the arithmetic is derived from the ellipse relation
+    rather than written in, so the panel labels cannot drift from the model
+    (rule 10).
+    """
+    W, H = 1180, 520
+    s = V.head(
+        W, H,
+        "One budget, spent three ways",
+        f"The same tire at the same load ({fz:,.0f} N). The ring is everything it "
+        f"can make; the arrow is what is being asked of it.",
+    )
+
+    r = 108.0
+    cy = 258.0
+    xs = (250.0, 590.0, 930.0)
+    labels = ("Turning only", "Braking AND turning", "Braking only")
+    for x, fxf, lab in zip(xs, brake_fracs, labels):
+        # The ellipse relation the project actually uses (FINDINGS D9):
+        # lateral capability is scaled by sqrt(1 - (Fx/Fx_peak)^2).
+        fyf = math.sqrt(max(0.0, 1.0 - fxf * fxf))
+        # Drawn directly rather than via D.friction_circle: that primitive
+        # scales its fill with utilisation, and every panel here is AT the
+        # limit -- three fully saturated discs swallow the ring, and the ring
+        # is the entire point of this figure. Here the ring stays the loudest
+        # element and the arrow demonstrably touches it.
+        s += (f'<circle cx="{x:.1f}" cy="{cy:.1f}" r="{r:.1f}" '
+              f'fill="{V.COR}" opacity="0.08"/>')
+        s += (f'<circle cx="{x:.1f}" cy="{cy:.1f}" r="{r:.1f}" fill="none" '
+              f'stroke="{V.FG}" stroke-width="2.2"/>')
+        # screen: +x right, +y down; braking points down, cornering left.
+        s += D.arrow(x, cy, x - fyf * r, cy + fxf * r, V.COR, 2.6, 9.0)
+        s += D.text(x, cy + r + 30, lab, V.FG, 14, "middle", "600")
+        s += D.text(x, cy + r + 52,
+                    f"braking {100*fxf:.0f}%   ·   cornering {100*fyf:.0f}%",
+                    V.MUT, 12.5, "middle")
+
+    s += D.text(W / 2, cy - r - 46,
+                "the ring is the limit — the arrow can move around it, but never past it",
+                V.MUT, 13, "middle", "italic")
+
+    mid_fy = math.sqrt(max(0.0, 1.0 - brake_fracs[1] ** 2))
+    s += D.text(40, H - 74,
+                "A tire does not get a separate allowance for stopping and for "
+                "turning — it has one, and spending it one way leaves less for "
+                "the other.", V.FG, 13)
+    s += D.text(40, H - 54,
+                f"Spend {100*brake_fracs[1]:.0f}% of it braking and about "
+                f"{100*mid_fy:.0f}% is left to corner with — which is why braking "
+                f"and turning at once is a trade, not a mistake.", V.FG, 13)
+    s += _stamp(H - 26, tire,
+                extra="ellipse relation [ASSUMED] (D9): fy scaled by "
+                      "sqrt(1-(fx/fx_peak)^2); percentages [DERIVED] from it")
+    s += "</svg>"
+    return s

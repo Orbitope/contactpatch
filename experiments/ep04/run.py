@@ -25,6 +25,8 @@ from experiments.common import episode_dir, write
 from physics import track as T
 from physics.optimal_control import solve_min_time
 from viz import line_figures
+from viz.tire_figures import friction_ellipse_figure
+from physics.tire import default_tire
 
 ENTRY_SPEED = 32.0        # m/s at the start line, both cases [ASSUMED]
 NODES = 200
@@ -84,6 +86,10 @@ def main() -> int:
     labels = ["30 m of straight after the corner",
               "260 m of straight after the corner"]
     write(out / "01-the-fastest-line.svg", line_figures.line_figure(solutions, labels))
+    # The concept figure for the section that introduces the friction ellipse
+    # and slip ratio -- the two facts this episode's braking rests on. Small on
+    # purpose: one idea, derived from the ellipse relation, never hand-placed.
+    write(out / "03-one-budget.svg", friction_ellipse_figure(default_tire(), 3600.0))
     write(out / "02-line-card.svg", line_figures.line_card(solutions, labels))
 
     # Grid refinement: does the apex shift survive changing the discretisation?

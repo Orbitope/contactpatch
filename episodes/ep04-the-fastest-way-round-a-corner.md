@@ -60,7 +60,14 @@ exist.
 A tire has a total amount of force it can make, and it does not get a separate
 allowance for turning and for stopping — it has one, and every newton spent one
 way is unavailable the other. Draw the limit as a shape and it comes out roughly
-elliptical, which is where the name **friction ellipse** comes from. The useful
+elliptical, which is where the name **friction ellipse** comes from.
+
+![One budget, spent three ways](../experiments/ep04/out/03-one-budget.svg)
+
+The same tire, at the limit three different ways. The arrow can point anywhere —
+what it cannot do is leave the ring. (Drawn as a circle, not an ellipse, because
+each axis shows a *fraction* of that direction's own peak; in raw newtons the two
+peaks differ, and the boundary is the ellipse the name comes from.) The useful
 consequence is blunt arithmetic: a tire already spending 70% of its grip on
 braking has only about 71% of its cornering force left.
 

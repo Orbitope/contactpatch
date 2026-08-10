@@ -25,6 +25,10 @@ So: **if pushing one wheel harder rotates the car, why not just do that?**
 Deliberately, on purpose, whenever the car is not rotating the way the driver
 asked.
 
+If you have ever felt a modern car pinch one brake mid-corner — that faint tug
+as the stability control tidies a slide you had barely registered — you have
+felt the crude version. This episode builds the refined one.
+
 ## Two layers
 
 The classical answer has the same shape wherever it appears, and has for about

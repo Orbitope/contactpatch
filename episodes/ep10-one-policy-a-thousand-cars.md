@@ -28,6 +28,11 @@ car it's currently driving is.
 
 Train once. Then ask it about any specific car by pinning that number.
 
+It is the rental-car problem. You already drive one car well; handed a
+different one, the first thing you want is to know what you are in — and then
+the same hands drive it accordingly. Conditioning is being told, rather than
+having to find out by probing the first three corners.
+
 ![One driver, many cars](../experiments/ep10/out/01-one-driver-many-cars.svg)
 
 ## One change from Episode 9, and it's a big one

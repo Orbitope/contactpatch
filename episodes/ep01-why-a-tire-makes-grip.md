@@ -74,7 +74,9 @@ and you can be on the wrong side of it while still generating most of your grip.
 **The top is flatter than you'd expect.** By 5° the tire is already making 91% of
 everything it will ever make. The last 9% costs another 5° of slip. That's the
 part that makes fast driving hard: near the top, the feedback that tells you
-where you are gets very quiet.
+where you are gets very quiet. If you have ever pushed a car on a wet road and
+noticed the point where more steering stopped producing more turning — no
+drama, just diminishing returns — you have felt the top of this hill.
 
 **Zero slip means zero force.** Not "a little force." Zero. A tire tracking
 perfectly straight contributes nothing to turning the car. Every newton of

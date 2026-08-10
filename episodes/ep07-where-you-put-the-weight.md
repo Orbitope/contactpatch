@@ -51,7 +51,10 @@ programme can tell two cars apart.
 
 Move the weight back and the rear tires run out first: the back steps out. Move it
 forward and the front runs out first: the car pushes wide. Nothing surprising in
-the direction. What matters is the size — this is far and away the biggest,
+the direction — and you have driven a slice of this sweep without meaning to.
+A full trunk and two rear passengers move you down this table: the nose goes a
+shade lighter, the car keys into corners a little keener, and it is a little
+less patient about being asked twice. What matters is the size — this is far and away the biggest,
 cleanest effect in the entire sweep.
 
 So balance transforms how the car behaves. Now the awkward part.

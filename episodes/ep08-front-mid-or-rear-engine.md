@@ -26,6 +26,12 @@ Here is the distinction the whole episode turns on.
 total mass, same balance — but gathered near the centre, or flung out toward the
 ends.
 
+You can feel the second number in your hands. Swish a broom side to side
+holding it by the middle, then hold it near the brush and swing the same swing:
+same mass, but with it all sitting far from your grip, the broom answers late
+and argues. That reluctance is polar moment, and a car built with its engine at
+one end carries it everywhere.
+
 Those are different questions and you can have any combination of them. A car
 with its engine ahead of the front axle and a car with its engine behind the rear
 axle are at opposite ends of the *balance* axis, and both have a lot of mass a

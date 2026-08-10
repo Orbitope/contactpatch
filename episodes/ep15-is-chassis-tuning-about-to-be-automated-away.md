@@ -39,7 +39,10 @@ where the previous two findings said the story would be different.
 Same driver, same corner, same aggression demand — not each car's own
 limit, so the four archetypes that fail are failing at a demand the fifth one meets
 easily. With an open differential, four of five leave the road. With the allocator,
-all five stay on it. Nothing else changed.
+all five stay on it. Nothing else changed. You have met the ancestor of this
+result on a button on the dashboard: drive modes already let software reshape a
+car's character faster than any engine swap could — this episode measures how
+far that idea goes.
 
 ![Does the controller flatten design sensitivity?](../experiments/ep15/out/02-does-it-flatten.svg)
 

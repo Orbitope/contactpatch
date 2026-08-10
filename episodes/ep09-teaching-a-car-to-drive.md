@@ -144,7 +144,9 @@ at zero.** Above zero you multiply by 4.5; below zero you multiply by 12.
 
 Now put a noisy policy through that kink. The samples that land below zero get
 multiplied by the big number; the ones above get the small one. So the *average
-force* is not the force of the *average action*:
+force* is not the force of the *average action* — a shaky foot hovering at the
+top of a touchy brake pedal will slow a car all by itself, because the jitters
+that catch the pedal bite harder than the ones that miss it:
 
 | Mean throttle | What the mean action asks for | What sampling actually delivers |
 |---|---|---|

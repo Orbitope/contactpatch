@@ -175,7 +175,9 @@ and pushing wide scrubs speed, which restores grip.** That is a negative feedbac
 loop; it corrects itself whether or not the driver does anything clever. **A car that
 runs out of rear grip rotates, and rotating points the tires further from where they
 need to be, which rotates it more.** That is a positive feedback loop, and catching
-it requires a correction in the right direction at the right moment.
+it requires a correction in the right direction at the right moment. It is why
+running wide feels like the car quietly giving up on you, while a rear slide
+feels like time speeding up.
 
 That mechanism is a property of the vehicle's balance, not of the disturbance that
 exposes it — it does not depend on how hard the car was pushed to get there, only on

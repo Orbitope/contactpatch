@@ -64,7 +64,8 @@ through a centre of gravity 460 mm higher up. That offset is a moment, and the
 springs are what resist it — by compressing on one side and extending on the
 other. **Compressing one side and extending the other is the same event as moving
 load across.** The lean and the load transfer are not cause and effect; they are
-one thing seen two ways.
+one thing seen two ways — and you read the event with your whole body: the lean
+you brace against in the seat *is* the load moving across the car.
 
 The roll angles in that figure are real, not drawn for effect: 5.8 degrees per g,
 computed from the documented spring rates. Worth noting a coincidence that isn't

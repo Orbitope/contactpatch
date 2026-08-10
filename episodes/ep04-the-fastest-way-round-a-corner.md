@@ -137,7 +137,9 @@ of a minimum-time solve that had never heard of it.
 The mechanism is Episode 2, Episode 3 and the friction ellipse combined. Braking
 moves weight onto the front tires. More load on the front means more front grip, and more front grip means the
 car turns in better. So carrying the brakes past turn-in buys you front-end bite
-exactly when you need it.
+exactly when you need it. You have felt the gentle version: lift off the
+throttle mid-corner and the nose tucks in. That is weight sliding forward onto
+the front tires — trail braking is the same effect, held on purpose.
 
 It isn't free — that is the friction ellipse from two sections ago, charging
 the front tires for braking with grip they would otherwise have for turning —

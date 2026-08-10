@@ -99,7 +99,9 @@ Here's the connection that makes it more than arithmetic.
 **Cornering doesn't remove weight from a car. It moves it** — onto the outside
 wheels, off the inside ones. Braking moves it forward. Accelerating moves it
 back. Every one of those is the experiment above, happening to a real car, in
-real time.
+real time. You have felt it run: the heave onto the outside springs in a hard
+lane change is the load moving across, and the sudden vagueness if you ask for
+more grip mid-heave is the pair making less than it did a second ago.
 
 Which means a car has *less total grip while it is doing something* than it has
 sitting still. Not because anything wore out — because the weight got shared

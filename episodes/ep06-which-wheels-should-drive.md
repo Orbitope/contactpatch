@@ -180,6 +180,11 @@ and accelerate, from the same contact patch, at the same time.
 > **It isn't that front tires have less grip. It's that one pair of tires is
 > being asked to do two jobs, and the friction circle charges for both.**
 
+If you drive front-wheel drive, you have felt this at every wet junction: turn
+and accelerate together and the wheel goes light, scrabbles, tugs at your hands
+— ask for the two jobs one at a time and it does both without complaint. That
+scrabble is the diagonal arrow touching the ring.
+
 ## The number depends on something I picked arbitrarily
 
 Here is the honest weakness of everything above, and it turns into the most useful

@@ -378,8 +378,8 @@ if ('IntersectionObserver' in window) {
     /* the whole curve underneath, so the crossover is visible at once */
     var GX = 150, GY = 196, GW = 300, GH = 44;
     line(svg, GX, GY + GH / 2, GX + GW, GY + GH / 2, C.border, 1);
-    txt(svg, GX, GY + GH + 22, '101 hp', C.muted, 9.5);
-    txt(svg, GX + GW, GY + GH + 22, '402 hp', C.muted, 9.5, 'end');
+    txt(svg, GX, GY + GH + 22, rows[0].hp + ' hp', C.muted, 9.5);
+    txt(svg, GX + GW, GY + GH + 22, rows[rows.length - 1].hp + ' hp', C.muted, 9.5, 'end');
     txt(svg, GX, GY - 8, 'front drive advantage across the range', C.muted, 9.5);
     var maxd = 0.30;
     rows.forEach(function (rr, n) {

@@ -6877,3 +6877,39 @@ session's work per HANDOFF's own estimate, should this be revisited.
 **Source:** this conversation, 2026-08-10. See `HANDOFF.md`'s Season 5
 section for the state this freezes.
 
+
+---
+
+### F142 · The web article described the corner as a 40 m **right**-hander. It is a 40 m-**radius left**-hander, and the number was a radius, not a length. · 2026-08-10
+
+Found reviewing `docs/index.html` against the artefacts. Two errors in one phrase,
+both surviving the clarity audit and the visual audit that preceded them:
+
+| Written | Actual | Source |
+|---|---|---|
+| "a 40 m corner" | 40 m **radius**, 62.8 m of arc | `physics/track.py:126` |
+| "A 40 m right-hander" | **left**-hander, 90° | `physics/track.py:126` |
+
+**Confirmed against the data, not just the comment.** At the apex the right-hand
+pair carries 10,566 N and the left pair 2,770 N `[MEASURED]`, so the loaded —
+outside — side is the right, which only happens in a left-hand corner. The
+exported data and every figure were correct throughout; only the prose was wrong.
+
+**Why it survived.** The rest of the article talks in "inside" and "outside",
+which are handedness-free and stay true either way. Exactly one sentence named a
+direction, and nothing cross-checked it — a lone claim in a vocabulary the
+surrounding text never uses again has no neighbours to contradict it. The
+radius-as-length error is the same shape: `40` appears in the source constant, so
+it looked sourced, and the unit it was a radius *of* was never written down.
+
+**What this is not.** Unlike F36, no figure was wrong — the loads, the arrows and
+the racing lines all described a left-hander correctly. This was prose drifting
+from artefacts that were right, which is F141's failure mode arriving one more
+time on the one document that was built specifically so it couldn't.
+
+**Consequence.** When prose names a direction, a handedness or a unit that the
+figures encode implicitly, check it against the array rather than the comment. A
+car outline is nearly symmetric (F36) and so is a sentence.
+
+**Source:** `[MEASURED]` — `docs/data.js` per-wheel `load` at the apex;
+`physics/track.py:126`.

@@ -226,7 +226,7 @@
 <section class="beat">
   <div class="eyebrow">Now a whole car</div>
   <h2>Watch the four tires through one corner.</h2>
-  <p>Four wheels, a 40 m corner, and 260 m of straight afterwards. The car is driven by a minimum-time solver: it gets the tire model, the width of the road and a stopwatch, and it is not told what a racing line is.</p>
+  <p>Four wheels and a 90° left-hander of 40 m radius — about 63 m of curve, with 70 m of approach before it and 260 m of straight after. The car is driven by a minimum-time solver: it gets the tire model, the width of the road and a stopwatch, and it is not told what a racing line is.</p>
   <p>Each wheel below shows what it is <b>carrying</b> (the ring, which grows and shrinks as load moves) and what it is <b>spending</b> (the arrow, and how close it comes to the edge). Scrub through the corner, then switch the drivetrain and watch the front wheels.</p>
 </section>
 
@@ -410,8 +410,8 @@
 
 <figure class="fig reveal">
   <div class="toggle-row">
-    <button class="toggle active" data-vpow="1x">180 hp</button>
-    <button class="toggle" data-vpow="2x">360 hp</button>
+    <button class="toggle active" data-vpow="1x">181 hp · our car</button>
+    <button class="toggle" data-vpow="2x">362 hp · twice the power</button>
   </div>
   <svg id="v_svg" viewBox="0 0 620 300" style="width:100%;display:block"></svg>
   <div class="cap" id="v_cap"></div>
@@ -419,13 +419,13 @@
 
 <section class="beat tight">
   <p>With an open differential, four of the five archetypes leave the road at a demand the fifth one meets easily. With the controller on, all five stay on it. <b>Nothing else changed.</b></p>
-  <p>Measured as spread in cornering limit across the five layouts, the controller flattens the difference between them by <b>16×</b> at 180 hp and <b>47×</b> at twice that. The thing that made a 911 a 911 — where the engine sits — is something this controller has made close to irrelevant to whether the car holds its line.</p>
+  <p>Measured as spread in cornering limit across the five layouts, the controller flattens the difference between them by <b>16×</b> at 181 hp and <b>47×</b> at twice that. The thing that made a 911 a 911 — where the engine sits — is something this controller has made close to irrelevant to whether the car holds its line.</p>
   <p>With one exception worth keeping, because it is a mechanism rather than a gap: the front-driven car doesn't flatten. Its limit is a front-tire slip-angle ceiling, not a torque-distribution problem — and <span class="amber">a controller built to move torque around has nothing to move when torque was never what was failing.</span></p>
 </section>
 
 <div class="caveats">
   <div class="c"><span><b>This is a model, and it says so.</b> Four wheels, load transfer, a real measured tire — but no roll camber, roll steer or compliance steer, which together are most of a real car's understeer. This car produces about <b>5%</b> of a real one's understeer gradient. Read the orderings and the directions; the magnitudes are illustrative.</span></div>
-  <div class="c"><span><b>One corner, one car, one tire file.</b> A 40 m right-hander with a long straight after it. A hairpin or a sweeper stresses different budgets and can reorder things.</span></div>
+  <div class="c"><span><b>One corner, one car, one tire file.</b> A 90° left-hander of 40 m radius, with a long straight after it. A hairpin or a sweeper stresses different budgets and can reorder things.</span></div>
   <div class="c"><span><b>The tire is bigger than the car really wears</b>, and the shape of the braking-versus-cornering trade is an assumption standing in for coefficients this tire file doesn't carry. That a tire trades one for the other is certain; that it trades along an ellipse exactly is our choice.</span></div>
   <div class="c"><span><b>Every number on this page is exported from the experiments' own artefacts</b>, and the tire curve is recomputed live from the same coefficients with a known-answer check against the Python. An audit of this series found ten of fifteen write-ups had drifted from their own data at least once; this page is built so it can't.</span></div>
 </div>

@@ -536,6 +536,100 @@ if ('IntersectionObserver' in window) {
   render();
 })();
 
+/* ====== 7b. RACING LINES UNDER DISTURBANCE, PER DESIGN ====== */
+(function () {
+  var svg = document.getElementById('ln_svg'); if (!svg || !window.CPLines) return;
+  var L = window.CPLines, cond = 'nominal', design = '047';
+  var geo = D.corner, HW = geo.halfWidth;
+
+  var cbar = document.getElementById('ln_conds');
+  Object.keys(L.conds).forEach(function (c) {
+    var b = document.createElement('button');
+    b.className = 'toggle' + (c === cond ? ' active' : '');
+    b.textContent = L.conds[c]; b.setAttribute('data-cond', c);
+    b.addEventListener('click', function () {
+      cbar.querySelectorAll('.toggle').forEach(function (o) { o.classList.remove('active'); });
+      b.classList.add('active'); cond = c; render();
+    });
+    cbar.appendChild(b);
+  });
+  var dbar = document.getElementById('ln_designs');
+  L.designs.forEach(function (d) {
+    var b = document.createElement('button');
+    b.className = 'btn' + (d === design ? ' on' : '');
+    b.textContent = parseInt(d, 10) + '%'; b.setAttribute('data-design', d);
+    b.addEventListener('click', function () {
+      dbar.querySelectorAll('.btn').forEach(function (o) { o.classList.remove('on'); });
+      b.classList.add('on'); design = d; render();
+    });
+    dbar.appendChild(b);
+  });
+
+  function render() {
+    clear(svg);
+    var laps = L.cells[cond + '|' + design] || [];
+    var X0 = 30, X1 = 592, Y = 128, H = 74;
+    function px(s) { return X0 + (X1 - X0) * s / geo.length; }
+    function py(n) { return Y - (n / HW) * H; }
+
+    /* the road: edges are where a lap ends */
+    svg.appendChild(el('rect', { x: X0, y: py(HW), width: X1 - X0, height: 2 * H,
+      fill: C.raised, opacity: .55 }));
+    var e0 = px(geo.entry), e1 = px(geo.entry + geo.arc);
+    svg.appendChild(el('rect', { x: e0, y: py(HW), width: e1 - e0, height: 2 * H,
+      fill: C.amber, opacity: .07 }));
+    txt(svg, (e0 + e1) / 2, py(HW) - 8, 'the corner', C.amberDim, 9.5, 'middle');
+    [HW, -HW].forEach(function (v) { line(svg, X0, py(v), X1, py(v), C.coral, 1.4); });
+    line(svg, X0, py(0), X1, py(0), C.border, 1, '4 5');
+    txt(svg, X0 - 4, py(HW) - 6, 'edge of the road', C.coral, 9, 'start');
+
+    /* The same car with nothing going wrong, underneath. Without it the reader
+       has to toggle back and forth to see what the disturbance actually moved. */
+    if (cond !== 'nominal') {
+      (L.cells['nominal|' + design] || []).forEach(function (lp) {
+        var g = lp.n.map(function (n, k) { return px(L.grid[k]).toFixed(1) + ',' + py(n).toFixed(1); });
+        svg.appendChild(el('polyline', { points: g.join(' '), fill: 'none',
+          stroke: C.steel, 'stroke-width': 1, opacity: .16 }));
+      });
+      txt(svg, X1, 232, 'faint = same car, undisturbed', '#6A6358', 10, 'end');
+    }
+
+    var fails = 0;
+    laps.forEach(function (lp) {
+      var pts = lp.n.map(function (n, k) { return px(L.grid[k]).toFixed(1) + ',' + py(n).toFixed(1); });
+      svg.appendChild(el('polyline', { points: pts.join(' '), fill: 'none',
+        stroke: lp.ok ? C.steel : C.coral,
+        'stroke-width': lp.ok ? 1.2 : 2, opacity: lp.ok ? .55 : .95 }));
+      if (!lp.ok) {
+        fails++;
+        var k = lp.n.length - 1;
+        svg.appendChild(el('circle', { cx: px(L.grid[k]), cy: py(lp.n[k]), r: 4.5, fill: C.coral }));
+      }
+    });
+
+    txt(svg, X0, 232, laps.length + ' laps drawn · ' +
+        (fails ? fails + ' left the road (marked)' : 'all stayed on'),
+        fails ? C.coral : C.sage, 11);
+
+    /* the measured rate, which is NOT the rate among these sampled laps */
+    var r = L.rates[(cond === 'nominal' ? 'nominal' : cond) + '|' + design];
+    var rateTxt = r && r.rate != null
+      ? 'Measured over the full run: <b>' + r.fails + ' of ' + r.n + '</b> laps lost (' +
+        (100 * r.rate).toFixed(1) + '%).'
+      : '';
+    document.getElementById('ln_cap').innerHTML =
+      '<b>' + parseInt(design, 10) + '% of the weight on the front</b>, ' + L.conds[cond] +
+      '. ' + (design === '040'
+        ? 'This car fails whatever you do to it — the driver cannot hold it even undisturbed.'
+        : fails
+          ? 'Some laps run out of road.'
+          : 'Every lap holds its line.') +
+      ' ' + rateTxt +
+      ' <span style="color:#6A6358">The lines are a sample of the laps driven, chosen to include the failures; the percentage comes from all of them.</span>';
+  }
+  render();
+})();
+
 /* ====== 8. WHICH WHEEL PAYS: open differential vs torque vectoring ====== */
 (function () {
   var svg = document.getElementById('w_svg'); if (!svg || !window.CPTv) return;

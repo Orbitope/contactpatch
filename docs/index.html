@@ -346,7 +346,20 @@
   <h2>The driver knew the future.</h2>
   <p>Everything above was driven by a solver that sees the whole road before it turns the wheel. It knows exactly when the corner arrives, so for a car that takes 356 ms to respond instead of 201 ms, it simply <b>starts steering earlier</b>. The delay costs almost nothing, because the delay is perfectly predictable.</p>
   <p>A real driver reacts to what has already happened. For them, 155 ms is 155 ms of the car not doing what they just asked, arriving exactly when they are trying to correct something. <span class="amber">Response time is nearly free if you know the future and expensive if you don't</span> — which is why every "which layout is faster" answer above came back smaller than expected. We were asking about driveability using a driver for whom driveability does not exist.</p>
-  <p>That gap is worth a whole season on its own, and gets one in the long version. Here it matters for one reason: the numbers above are the <i>floor</i>. A design difference that a perfect driver can plan around is a design difference a real one has to survive.</p>
+  <p>So the numbers above are a <i>floor</i>. A design difference a perfect driver can plan around is one a real driver has to survive — and surviving is a different measurement.</p>
+  <p>Here is the same five cars, driven by a learner that reacts instead of planning, over a road whose grip is not quite what it expected. Every lap it drove is drawn.</p>
+</section>
+
+<figure class="fig reveal">
+  <div class="toggle-row" id="ln_conds"></div>
+  <div class="ctl" id="ln_designs" style="gap:8px"><span style="letter-spacing:.06em">weight on front</span></div>
+  <svg id="ln_svg" viewBox="0 0 620 250" style="width:100%;display:block"></svg>
+  <div class="cap" id="ln_cap"></div>
+</figure>
+
+<section class="beat tight">
+  <p>With no disturbance every drivable car traces one line. Turn the grip variation on and they fan out — and <b>the quickest of them starts running out of road</b> while the others do not. That is the whole of "the fast setup is the one that bites", and it is not about running closer to the edge: it is about what happens when you go over it. Lose front grip and the car pushes wide, which scrubs speed, which gives the grip back. Lose rear grip and it rotates, which points the tires further from where they need to be, which rotates it more. <span class="coral">One failure undoes itself and the other feeds itself.</span></p>
+  <p class="dim">Note the 40% car: it fails with nothing going wrong at all. That is not fragility, it is a car this driver simply cannot drive — a different problem with a different fix.</p>
 </section>
 
 <div class="rule"></div>
@@ -434,6 +447,7 @@
 <script src="tire.js"></script>
 <script src="data.js"></script>
 <script src="tvdata.js"></script>
+<script src="linedata.js"></script>
 <script src="widgets.js"></script>
 </body>
 </html>

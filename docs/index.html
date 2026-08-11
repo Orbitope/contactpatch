@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-KG3409EZDQ"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+  gtag('config', 'G-KG3409EZDQ');
+</script>
+
+<title>Contact Patch: What Actually Makes a Car Handle</title>
+<meta name="description" content="Front or rear drive? Is 50:50 real? Is mid-engine better? Built from a measured tire file and a minimum-time solver, most of the famous answers come out smaller than the arguments about them — until you give the car a driver who can be surprised. Runs live in your browser.">
+<meta property="og:title" content="Contact Patch: What Actually Makes a Car Handle">
+<meta property="og:description" content="FWD vs RWD, 50:50 weight distribution, mid-engine, torque vectoring — measured on one car, one corner, one tire model. Drag the sliders and watch the tires run out.">
+<meta property="og:type" content="article">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23111009'/%3E%3Cellipse cx='32' cy='32' rx='13' ry='23' fill='none' stroke='%23E8C068' stroke-width='4'/%3E%3Cline x1='32' y1='32' x2='45' y2='45' stroke='%23FF5E3A' stroke-width='3.5'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --void:#111009; --surface:#1a1812; --raised:#211e17; --border:#2a2820;
+    --amber:#C49A3C; --amber-bright:#E8C068;
+    --steel:#6B7A8D; --steel-bright:#9AAABB;
+    --mauve:#9A7AB0; --sage:#7D9A6A; --terra:#C47A5A; --coral:#FF5E3A;
+    --text-bright:#EDE8DC; --text-primary:#C8C2B4; --text-muted:#6A6358;
+    --font-display:'Rajdhani',sans-serif; --font-mono:'JetBrains Mono',monospace;
+  }
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+  body{background:var(--void);color:var(--text-primary);font-family:var(--font-mono);
+    -webkit-font-smoothing:antialiased;line-height:1.7;overflow-x:hidden}
+  body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+    background-image:radial-gradient(circle,rgba(154,170,187,.10) 1px,transparent 1px);background-size:48px 48px}
+  body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+    background:radial-gradient(120% 120% at 50% 30%,rgba(0,0,0,0) 45%,rgba(0,0,0,.6) 100%)}
+  .wrap{position:relative;z-index:1}
+  .progress{position:fixed;top:0;left:0;height:2px;width:0;z-index:50;
+    background:linear-gradient(90deg,var(--amber),var(--amber-bright))}
+
+  .hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:80px 24px}
+  .kicker{font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--text-muted);margin-bottom:22px}
+  .hero h1{font-family:var(--font-display);font-weight:700;font-size:clamp(36px,8vw,84px);line-height:1.02;color:var(--text-bright);max-width:17ch}
+  .hero h1 .accent{color:var(--amber-bright)}
+  .hero .sub{margin-top:24px;max-width:62ch;font-size:14px;color:var(--text-muted);line-height:1.75}
+  .hero .sub b{color:var(--text-primary);font-weight:500}
+  .scroll-cue{margin-top:46px;font-size:11px;letter-spacing:.2em;color:var(--text-muted);text-transform:uppercase;animation:bob 2s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(6px)}}
+  @media (prefers-reduced-motion:reduce){.scroll-cue{animation:none}}
+
+  .beat{max-width:680px;margin:0 auto;padding:12vh 24px 3vh}
+  .beat.tight{padding-top:5vh}
+  .beat .eyebrow{font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:var(--amber);margin-bottom:18px}
+  .beat h2{font-family:var(--font-display);font-weight:600;font-size:clamp(26px,4.5vw,40px);color:var(--text-bright);line-height:1.12;margin-bottom:20px}
+  .beat p{font-size:15px;color:var(--text-primary);margin-bottom:16px}
+  .beat p b{color:var(--text-bright);font-weight:500}
+  .beat code{background:var(--raised);border:1px solid var(--border);border-radius:3px;padding:1px 5px;font-size:13px;color:var(--steel-bright)}
+  .beat .amber{color:var(--amber-bright)} .beat .sage{color:var(--sage)}
+  .beat .coral{color:var(--coral)} .beat .steel{color:var(--steel-bright)} .beat .dim{color:var(--text-muted)}
+  .rule{width:1px;height:60px;margin:0 auto;background:linear-gradient(transparent,var(--border),transparent)}
+
+  .fig{max-width:940px;margin:34px auto;border:1px solid var(--border);border-radius:6px;overflow:hidden;background:#0d0c07}
+  .fig .cap{font-size:11px;color:var(--text-muted);padding:11px 16px;border-top:1px solid var(--border);letter-spacing:.03em;line-height:1.6}
+  .fig .cap b{color:var(--text-primary);font-weight:500}
+  .fig.narrow{max-width:680px}
+  .reveal{opacity:0;transform:translateY(26px);transition:opacity .7s ease,transform .7s cubic-bezier(.2,.7,.2,1)}
+  .reveal.in{opacity:1;transform:none}
+  @media (prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none}}
+
+  .wdg-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 16px;
+    border-bottom:1px solid var(--border);font-size:12px;color:var(--text-muted);letter-spacing:.04em;flex-wrap:wrap}
+  .wdg-head b{color:var(--text-bright);font-weight:500}
+  .tag{font-weight:500;letter-spacing:.12em;padding:3px 10px;border-radius:3px;font-size:11px;white-space:nowrap}
+  .tag.ok{color:#0d0c07;background:var(--sage)} .tag.no{color:#0d0c07;background:var(--coral)}
+  .tag.idle{color:var(--text-muted);border:1px solid var(--border)}
+  .wdg-foot{padding:12px 16px;border-top:1px solid var(--border);font-size:11px;color:var(--text-muted);
+    display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+  .btn{font-family:var(--font-display);font-weight:600;font-size:12px;letter-spacing:.1em;text-transform:uppercase;
+    background:transparent;color:var(--text-primary);border:1px solid var(--border);border-radius:4px;padding:7px 14px;cursor:pointer;transition:.2s}
+  .btn:hover{color:var(--text-bright);border-color:var(--amber)}
+  .btn:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+  .btn.on{color:#0d0c07;background:var(--amber);border-color:var(--amber)}
+
+  .toggle-row{display:flex;border-bottom:1px solid var(--border);flex-wrap:wrap}
+  .toggle{flex:1;min-width:120px;padding:12px 6px;font-family:var(--font-display);font-weight:600;font-size:12px;
+    letter-spacing:.08em;text-transform:uppercase;text-align:center;cursor:pointer;background:transparent;
+    color:var(--text-muted);border:none;border-right:1px solid var(--border);
+    border-bottom:2px solid transparent;transition:.2s}
+  .toggle:last-child{border-right:none}
+  .toggle.active{color:var(--text-bright);border-bottom-color:var(--amber);background:var(--surface)}
+  .toggle:hover{color:var(--text-primary)}
+  .toggle:focus-visible{outline:2px solid var(--amber);outline-offset:-2px}
+
+  .ctl{display:flex;align-items:center;gap:14px;padding:10px 16px;border-bottom:1px solid var(--border);flex-wrap:wrap;font-size:11px;color:var(--text-muted)}
+  .ctl label{display:flex;align-items:center;gap:8px;letter-spacing:.06em}
+  .ctl input[type=range]{width:150px;accent-color:var(--amber)}
+  .ctl .v{color:var(--amber-bright);font-variant-numeric:tabular-nums;min-width:4ch;display:inline-block}
+
+  .stats{display:flex;justify-content:center;gap:18px;flex-wrap:wrap;padding:4px 12px 14px;font-size:11px;color:var(--text-muted)}
+  .stats b{color:var(--amber-bright);font-weight:500;font-variant-numeric:tabular-nums}
+  .stats .big{color:var(--text-bright);font-size:15px}
+
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:0}
+  .two>div{padding:0 0 6px;min-width:0} .two>div+div{border-left:1px solid var(--border)}
+  @media(max-width:680px){.two{grid-template-columns:1fr}.two>div+div{border-left:none;border-top:1px solid var(--border)}}
+  .two h4{font-family:var(--font-display);font-weight:600;font-size:13px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--text-muted);padding:12px 16px 0;text-align:center}
+
+  .caveats{max-width:680px;margin:0 auto;padding:4vh 24px 2vh;font-size:12px;color:var(--text-muted);line-height:1.75}
+  .caveats .c{display:flex;gap:10px;margin-bottom:12px}
+  .caveats .c::before{content:"▸";color:var(--amber);flex:none}
+  .caveats b{color:var(--text-primary);font-weight:500}
+
+  .outro{max-width:680px;margin:0 auto;padding:12vh 24px 10vh;text-align:center}
+  .outro h2{font-family:var(--font-display);font-weight:600;font-size:clamp(24px,4vw,38px);color:var(--text-bright);margin-bottom:18px}
+  .outro p{font-size:14px;color:var(--text-muted);margin-bottom:22px}
+  .links{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:26px}
+  .links a{display:inline-flex;align-items:center;padding:10px 20px;background:var(--surface);
+    border:1px solid var(--border);border-radius:3px;color:var(--text-primary);text-decoration:none;
+    font-size:12px;letter-spacing:.12em;text-transform:uppercase;transition:.2s}
+  .links a:hover{border-color:var(--amber);color:var(--amber-bright);background:rgba(196,154,60,.06)}
+  .foot{margin-top:34px;font-size:11px;color:var(--text-muted);letter-spacing:.1em}
+  .warn{max-width:680px;margin:20px auto;padding:12px 16px;border:1px solid var(--coral);
+    border-radius:4px;color:var(--coral);font-size:12px;display:none}
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+<div class="wrap">
+
+<header class="hero">
+  <div class="kicker">Contact Patch · how a car actually handles</div>
+  <h1>Everything your car does happens on <span class="accent">four patches of rubber</span> the size of your hand.</h1>
+  <p class="sub">Front-wheel drive or rear? Is 50:50 weight distribution real engineering or a marketing number? Is mid-engine actually better, and better at what? I built a car out of a measured tire file — a real one, from a test rig — pointed a minimum-time solver at it, and asked. <b>Most of the famous answers came back smaller than the arguments about them.</b> Then I replaced the perfect driver with one that could be surprised, and the numbers moved. Everything below runs live in your browser, on the same tire the results use.</p>
+  <div class="scroll-cue">scroll</div>
+</header>
+
+<div class="warn" id="warn">This page's tire model failed its check against the Python it was ported from. The curves below may be wrong — treat them as broken until this message goes away.</div>
+
+<!-- 1. THE TIRE -->
+<section class="beat">
+  <div class="eyebrow">Start with one tire</div>
+  <h2>A tire makes its biggest grip while it is already sliding.</h2>
+  <p>The intuitive model is that a tire holds on until it doesn't — grip as a threshold you cross. That model is wrong in the direction that makes fast driving impossible to explain.</p>
+  <p>To make sideways force, a wheel has to point slightly away from where it is actually travelling. That angle is called <b>slip angle</b>, and the rubber in the contact patch bends as it passes through. Bent rubber pushes back. <span class="amber">Slip isn't a symptom of losing grip — it's the mechanism by which grip exists.</span></p>
+  <p class="dim">Drag the slider. One tire, one load, nothing changing but the angle.</p>
+</section>
+
+<figure class="fig narrow reveal">
+  <div class="wdg-head"><span>one tire · <b>3,600 N</b> on it, about one front corner at rest</span><span class="tag idle" id="t_tag">live</span></div>
+  <div class="ctl">
+    <label>slip angle <input type="range" id="t_a" min="0" max="200" value="50"><span class="v" id="t_av">5.0°</span></label>
+  </div>
+  <svg id="t_svg" viewBox="0 0 620 300" style="width:100%;display:block"></svg>
+  <div class="stats">
+    <span>sideways force <b class="big" id="t_f">—</b></span>
+    <span>of its maximum <b id="t_p">—</b></span>
+  </div>
+  <div class="cap" id="t_cap"></div>
+</figure>
+
+<section class="beat tight">
+  <p><b>Grip has a top, and the top is flat.</b> By 5° the tire is already making about 91% of everything it will ever make; the last 9% costs another 5° of slip. That flatness is what makes driving at the limit hard — near the peak, the feedback telling you where you are goes quiet. If you have pushed a car on a wet road and felt more steering stop producing more turning, no drama, just diminishing returns, you have felt the top of this hill.</p>
+  <p>Push past it and force <i>falls</i>. There is no cliff, no moment of letting go. Just a hill, and you can be on the wrong side of it while still making most of your grip.</p>
+</section>
+
+<div class="rule"></div>
+
+<!-- 2. LOAD SENSITIVITY -->
+<section class="beat">
+  <div class="eyebrow">Why cornering costs you</div>
+  <h2>Press a tire twice as hard and you do not get twice the grip.</h2>
+  <p>This is the one property of rubber that the rest of chassis engineering is bookkeeping on top of. Load a tire more heavily and it grips harder in absolute terms — but <b>less per newton pressing it down</b>.</p>
+  <p>Which matters because a car corners by moving weight, not adding it. Lean on the outside wheels and the pair carries the same total as before, shared unevenly. Drag the split and watch what the pair can do.</p>
+</section>
+
+<figure class="fig reveal">
+  <div class="wdg-head"><span>two tires · <b>6,000 N between them</b>, total never changes</span><span class="tag idle" id="l_tag">even</span></div>
+  <div class="ctl">
+    <label>load moved across <input type="range" id="l_x" min="0" max="100" value="0"><span class="v" id="l_xv">0 N</span></label>
+  </div>
+  <svg id="l_svg" viewBox="0 0 620 250" style="width:100%;display:block"></svg>
+  <div class="stats">
+    <span>inner <b id="l_in">3000 N</b></span>
+    <span>outer <b id="l_out">3000 N</b></span>
+    <span>pair can make <b class="big" id="l_tot">—</b></span>
+    <span>lost <b id="l_loss">0.0%</b></span>
+  </div>
+  <div class="cap">Even sharing always wins. The tire you press harder gains less than the tire you unload gives up, because the loaded one is now further down that falling curve. <b>The penalty starts almost free and gets expensive fast</b> — it grows with the square of the transfer, so the first 500 N is nearly nothing and the last 500 N is most of the bill.</div>
+</figure>
+
+<section class="beat tight">
+  <p>Now the connection that makes it more than arithmetic. <b>Cornering does not remove weight from a car — it moves it</b>, onto the outside wheels and off the inside. Braking moves it forward. Accelerating moves it back. Every one of those is the slider you just dragged, happening to a real car in real time.</p>
+  <p>So a car has <i>less total grip while it is doing something</i> than it has sitting still. Nothing wore out. The weight just got shared unevenly, and unevenly shared weight makes less grip. That single fact is why cars built to corner are low and wide, and why anti-roll bars exist at all.</p>
+</section>
+
+<div class="rule"></div>
+
+<!-- 3. FRICTION ELLIPSE -->
+<section class="beat">
+  <div class="eyebrow">One budget</div>
+  <h2>Turning and stopping come out of the same account.</h2>
+  <p>A tire does not get a separate allowance for cornering and for braking. It has <b>one</b> — and every newton spent one way is unavailable the other. Drawn as a shape, the limit comes out roughly elliptical, which is where the name <b>friction ellipse</b> comes from.</p>
+  <p class="dim">Drag the arrow. It can point anywhere; what it cannot do is leave the ring.</p>
+</section>
+
+<figure class="fig narrow reveal">
+  <div class="wdg-head"><span>the force budget · <b>drag it</b></span><span class="tag idle" id="e_tag">at the limit</span></div>
+  <svg id="e_svg" viewBox="0 0 420 400" style="width:100%;display:block;touch-action:none;cursor:grab"></svg>
+  <div class="stats">
+    <span>braking <b id="e_bx">0%</b></span>
+    <span>cornering <b id="e_by">100%</b></span>
+  </div>
+  <div class="cap">Spend 70% of the budget braking and about <b>71%</b> is left to corner with. That is why "brake, then turn" is not really advice about technique — it is a statement about an account. And it is why trail braking works: carry the brakes past turn-in and the weight moving forward buys the front tires grip exactly when you are asking them to bite.</div>
+</figure>
+
+<div class="rule"></div>
+
+<!-- 4. THE CENTREPIECE: FOUR TIRES THROUGH A CORNER -->
+<section class="beat">
+  <div class="eyebrow">Now a whole car</div>
+  <h2>Watch the four tires through one corner.</h2>
+  <p>Four wheels, a 40 m corner, and 260 m of straight afterwards. The car is driven by a minimum-time solver: it gets the tire model, the width of the road and a stopwatch, and it is not told what a racing line is.</p>
+  <p>Each wheel below shows what it is <b>carrying</b> (the ring, which grows and shrinks as load moves) and what it is <b>spending</b> (the arrow, and how close it comes to the edge). Scrub through the corner, then switch the drivetrain and watch the front wheels.</p>
+</section>
+
+<figure class="fig reveal">
+  <div class="toggle-row">
+    <button class="toggle active" data-drv="rwd">rear-wheel drive</button>
+    <button class="toggle" data-drv="fwd">front-wheel drive</button>
+  </div>
+  <div class="ctl">
+    <label>through the corner <input type="range" id="c_s" min="0" max="49" value="20"><span class="v" id="c_sv">—</span></label>
+    <label style="margin-left:auto"><button class="btn" id="c_play">Play</button></label>
+  </div>
+  <svg id="c_svg" viewBox="0 0 620 378" style="width:100%;display:block"></svg>
+  <div class="cap" id="c_cap"></div>
+</figure>
+
+<section class="beat tight">
+  <p>Through the corner the two cars are indistinguishable — both are cornering as hard as the tires allow, so both solve the same problem and find the same answer. <b>They pick the same line to within the width of your hand.</b></p>
+  <p>Past the exit they part company. The rear-drive car's front wheels go quiet: the corner is done and they are only steering, which costs almost nothing. Its rear wheels do the accelerating. <span class="sage">Two jobs, two axles.</span></p>
+  <p>The front-drive car's front wheels never get to rest. Eighty metres down a straight road, with no cornering left to do at all, <span class="coral">they are still spending well over half of what they have</span> — on acceleration alone. If you drive front-wheel drive you have felt this at every wet junction: turn and accelerate together and the wheel goes light and tugs at your hands. Ask for the two jobs one at a time and it does both without complaint.</p>
+</section>
+
+<div class="rule"></div>
+
+<!-- 5. FWD VS RWD -->
+<section class="beat">
+  <div class="eyebrow">The argument everyone has</div>
+  <h2>Which wheels should drive?</h2>
+  <p>Hold everything else identical — same mass, same weight distribution, same tires, same corner — and change only which axle gets the torque. Real front- and rear-drive cars differ in almost everything, so this is a comparison you cannot run in a car park.</p>
+  <p>At this car's own power the two are within <b>three hundredths of a second</b> of each other: too close to feel, and not the answer anyone wants. The interesting part is what moves it. <span class="dim">Drag the power.</span></p>
+</section>
+
+<figure class="fig reveal">
+  <div class="wdg-head"><span>same car, same corner · <b>only the driven axle changes</b></span><span class="tag idle" id="p_tag">181 hp</span></div>
+  <div class="ctl">
+    <label>engine <input type="range" id="p_i" min="0" max="3" value="1"><span class="v" id="p_v">181 hp</span></label>
+  </div>
+  <svg id="p_svg" viewBox="0 0 620 260" style="width:100%;display:block"></svg>
+  <div class="cap" id="p_cap"></div>
+</figure>
+
+<section class="beat tight">
+  <p><b>"Rear-wheel drive is faster" was never a fact about drivetrains.</b> It is a fact about drivetrains <i>at a given power level</i>, and the condition is doing most of the work. With little power the corner exit is limited by the engine, not by grip, so a tire-budget problem has nothing to bite on. Pile on power and the front tires saturate earlier and earlier.</p>
+  <p>You can check that without any of this: economy hatchbacks are front-wheel drive and nobody objects, while almost every car built to be fast is rear- or all-wheel drive. That split is usually explained by cost and packaging, and those explanations are true — but the friction budget alone reproduces it, from a tire data file and a stopwatch.</p>
+</section>
+
+<div class="rule"></div>
+
+<!-- 6. BALANCE -->
+<section class="beat">
+  <div class="eyebrow">50:50</div>
+  <h2>Weight distribution changes the car far more than it changes the lap time.</h2>
+  <p>Slide the mass along the wheelbase, change nothing else, and measure two things: how the car <i>behaves</i>, and how fast it goes.</p>
+  <p>The behaviour number is the <b>understeer gradient</b> — how much extra steering the car needs as you push harder. Negative means the back gives up first and the car rotates. Positive means the front gives up first and it pushes wide.</p>
+</section>
+
+<figure class="fig reveal">
+  <div class="wdg-head"><span>slide the mass · <b>everything else held fixed</b></span><span class="tag idle" id="b_tag">54% front</span></div>
+  <div class="ctl">
+    <label>weight on the front <input type="range" id="b_i" min="0" max="4" value="2"><span class="v" id="b_v">54%</span></label>
+  </div>
+  <svg id="b_svg" viewBox="0 0 620 280" style="width:100%;display:block"></svg>
+  <div class="cap" id="b_cap"></div>
+</figure>
+
+<section class="beat tight">
+  <p>Across the sweep the car goes from clear oversteer to clear understeer — a swing of about <b>1.05 deg/g</b>, which is five times the difference a professional test team can reliably tell apart. The lap time moves by around two tenths.</p>
+  <p>So 50:50 <i>is</i> mostly a marketing number, though not for the reason I expected. Each drivetrain does want its own end of the range — <b>whichever end carries the weight is the end that should drive it</b> — but the prize for getting it right is a tenth of a second, while the difference in how the car behaves is night and day. <span class="amber">You are mostly choosing a character, not a lap time.</span></p>
+  <p class="dim">You have driven a slice of this without meaning to: a full trunk and two rear passengers move you down this table.</p>
+</section>
+
+<div class="rule"></div>
+
+<!-- 7. LAYOUT -->
+<section class="beat">
+  <div class="eyebrow">Front, mid or rear engine</div>
+  <h2>"Mid-engine is better" is a claim about the wrong number.</h2>
+  <p>Two properties get muddled because you cannot move an engine without changing both. <b>Weight distribution</b> is where along the car the mass sits. <b>Polar moment</b> is how far from the middle it sits — how hard the car is to start and stop rotating.</p>
+  <p>You can feel the second one in your hands: swish a broom holding it by the middle, then hold it near the brush and swing the same swing. Same mass; with it far from your grip the broom answers late and argues.</p>
+</section>
+
+<figure class="fig reveal">
+  <div class="wdg-head"><span>five layouts on two axes · <b>click one</b></span><span class="tag idle" id="y_tag">mid engine</span></div>
+  <svg id="y_svg" viewBox="0 0 620 330" style="width:100%;display:block"></svg>
+  <div class="cap" id="y_cap"></div>
+</figure>
+
+<section class="beat tight">
+  <p>Look where the front-engined saloon and the rear-engined 911 land: <b>opposite ends of the balance axis, and the same height on the inertia one.</b> Now look at the mid-engine car — at 43% front it is <i>less</i> rearward than the 911. If balance were the story, the 911 would be the extreme one and the mid-engine car unremarkable.</p>
+  <p>What actually separates it is the lowest polar moment of the five: mass gathered near the middle. <span class="amber">That is the whole difference, and it is argued as a weight-distribution claim because moving an engine changes both at once.</span></p>
+  <p>And the lap times? Four of the five sit inside four hundredths of a second. Which brings up the thing wrong with the question.</p>
+</section>
+
+<div class="rule"></div>
+
+<!-- 8. THE DRIVER -->
+<section class="beat">
+  <div class="eyebrow">What was wrong with the question</div>
+  <h2>The driver knew the future.</h2>
+  <p>Everything above was driven by a solver that sees the whole road before it turns the wheel. It knows exactly when the corner arrives, so for a car that takes 356 ms to respond instead of 201 ms, it simply <b>starts steering earlier</b>. The delay costs almost nothing, because the delay is perfectly predictable.</p>
+  <p>A real driver reacts to what has already happened. For them, 155 ms is 155 ms of the car not doing what they just asked, arriving exactly when they are trying to correct something. <span class="amber">Response time is nearly free if you know the future and expensive if you don't</span> — which is why every "which layout is faster" answer above came back smaller than expected. We were asking about driveability using a driver for whom driveability does not exist.</p>
+  <p>So I trained one that could be surprised: a small neural network, 5,124 numbers, no instruction beyond a stopwatch. It learned to drive. It also learned to cheat — it found the region where our tire model was extrapolating and lived there, because the reward genuinely was better out where the physics was made up.</p>
+  <p>Fenced in and given a bad day — lower grip, imperfect hands — it produced the one result the perfect driver structurally could not: <b>the quickest setup is the one that crashes</b>. Not because it runs closer to the edge. Because of what happens when it goes over. Run out of front grip and the car pushes wide, which scrubs speed, which restores grip — that loop closes itself. Run out of rear grip and the car rotates, which points the tires further from where they need to be, which rotates it more. <span class="coral">One failure mode corrects itself and the other feeds itself</span>, and that is a property of the car rather than of the disturbance.</p>
+</section>
+
+<div class="rule"></div>
+
+<!-- 9. TORQUE VECTORING -->
+<section class="beat">
+  <div class="eyebrow">And then software gets involved</div>
+  <h2>A computer can decide which wheel pays.</h2>
+  <p>Push harder on the wheels down one side and the car rotates. A differential does that by accident, following one fixed rule with no idea which corner it is in. Torque vectoring does it deliberately: one layer decides how much rotation you want, another decides which wheels pay for it, and it can meter all four separately where a lump of gears could only meter one axle.</p>
+  <p>Here is what that does to the layouts from two sections ago — same driver, same corner, same demand, differential swapped for the controller.</p>
+</section>
+
+<figure class="fig reveal">
+  <div class="toggle-row">
+    <button class="toggle active" data-tv="off">open differential</button>
+    <button class="toggle" data-tv="on">torque vectoring</button>
+  </div>
+  <svg id="v_svg" viewBox="0 0 620 300" style="width:100%;display:block"></svg>
+  <div class="cap" id="v_cap"></div>
+</figure>
+
+<section class="beat tight">
+  <p>With an open differential, four of the five archetypes leave the road at a demand the fifth one meets easily. With the controller on, all five stay on it. <b>Nothing else changed.</b></p>
+  <p>Measured as spread in cornering limit across the five layouts, the controller flattens the difference between them by <b>16×</b> at this car's power and <b>47×</b> at twice it. The thing that made a 911 a 911 — where the engine sits — is something this controller has made close to irrelevant to whether the car holds its line.</p>
+  <p>With one exception worth keeping, because it is a mechanism rather than a gap: the front-driven car doesn't flatten. Its limit is a front-tire slip-angle ceiling, not a torque-distribution problem — and <span class="amber">an allocator built to move torque around has nothing to move when torque was never what was failing.</span></p>
+</section>
+
+<div class="caveats">
+  <div class="c"><span><b>This is a model, and it says so.</b> Four wheels, load transfer, a real measured tire — but no roll camber, roll steer or compliance steer, which together are most of a real car's understeer. This car produces about <b>5%</b> of a real one's understeer gradient. Read the orderings and the directions; the magnitudes are illustrative.</span></div>
+  <div class="c"><span><b>One corner, one car, one tire file.</b> A 40 m right-hander with a long straight after it. A hairpin or a sweeper stresses different budgets and can reorder things.</span></div>
+  <div class="c"><span><b>The tire is bigger than the car really wears</b>, and the shape of the braking-versus-cornering trade is an assumption standing in for coefficients this tire file doesn't carry. That a tire trades one for the other is certain; that it trades along an ellipse exactly is our choice.</span></div>
+  <div class="c"><span><b>Every number on this page is exported from the experiments' own artefacts</b>, and the tire curve is recomputed live from the same coefficients with a known-answer check against the Python. An audit of this series found ten of fifteen write-ups had drifted from their own data at least once; this page is built so it can't.</span></div>
+</div>
+
+<div class="rule"></div>
+
+<section class="outro">
+  <h2>Most of it is one fact about rubber.</h2>
+  <p>Grip falls as load rises. Everything above — why cornering costs you, why the driven axle wants the weight, why a diagonal arrow runs out first, why a computer metering four wheels beats gears metering one — is that fact with different bookkeeping on top. The rest is knowing which question you actually asked.</p>
+  <div class="links">
+    <a href="https://github.com/Orbitope/contact-patch">Source</a>
+    <a href="https://github.com/Orbitope/contact-patch/tree/main/episodes">The long version · 15 parts</a>
+    <a href="https://github.com/Orbitope/contact-patch/blob/main/FINDINGS.md">Every finding, dated</a>
+  </div>
+  <p class="foot">Contact Patch · Orbitope</p>
+</section>
+
+</div>
+<script src="tire.js"></script>
+<script src="data.js"></script>
+<script src="widgets.js"></script>
+</body>
+</html>

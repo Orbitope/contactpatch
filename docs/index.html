@@ -236,8 +236,23 @@
     <button class="toggle" data-drv="fwd">front-wheel drive</button>
   </div>
   <div class="ctl">
-    <label>through the corner <input type="range" id="c_s" min="0" max="49" value="20"><span class="v" id="c_sv">—</span></label>
-    <label style="margin-left:auto"><button class="btn" id="c_play">Play</button></label>
+    <span style="display:flex;gap:6px;align-items:center">
+      <button class="btn" id="c_back" aria-label="previous step">◀</button>
+      <button class="btn" id="c_fwd" aria-label="next step">▶</button>
+      <button class="btn" id="c_play">Play</button>
+    </span>
+    <span class="v" id="c_sv" style="min-width:12ch">—</span>
+    <label style="flex:1;min-width:180px">
+      <input type="range" id="c_s" min="0" max="66" value="20" style="width:100%">
+    </label>
+  </div>
+  <div class="ctl" style="gap:8px">
+    <span style="letter-spacing:.06em">jump to</span>
+    <button class="btn" data-jump="brake">braking</button>
+    <button class="btn" data-jump="turnin">turn-in</button>
+    <button class="btn" data-jump="apex">apex</button>
+    <button class="btn" data-jump="exit">corner exit</button>
+    <button class="btn" data-jump="straight">down the straight</button>
   </div>
   <svg id="c_svg" viewBox="0 0 620 378" style="width:100%;display:block"></svg>
   <div class="cap" id="c_cap"></div>
@@ -256,13 +271,16 @@
   <div class="eyebrow">The argument everyone has</div>
   <h2>Which wheels should drive?</h2>
   <p>Hold everything else identical — same mass, same weight distribution, same tires, same corner — and change only which axle gets the torque. Real front- and rear-drive cars differ in almost everything, so this is a comparison you cannot run in a car park.</p>
-  <p>At this car's own power the two are within <b>three hundredths of a second</b> of each other: too close to feel, and not the answer anyone wants. The interesting part is what moves it. <span class="dim">Drag the power.</span></p>
+  <p>The car being modelled makes about <b>180 hp</b> — a normal sports coupé. At that power the two layouts finish within <b>three hundredths of a second</b> of each other: too close to feel, and not the answer anyone wants. The interesting part is what moves it, so the same corner was solved again at four engine outputs. <span class="dim">Pick one.</span></p>
 </section>
 
 <figure class="fig reveal">
-  <div class="wdg-head"><span>same car, same corner · <b>only the driven axle changes</b></span><span class="tag idle" id="p_tag">181 hp</span></div>
-  <div class="ctl">
-    <label>engine <input type="range" id="p_i" min="0" max="3" value="1"><span class="v" id="p_v">181 hp</span></label>
+  <div class="wdg-head"><span>same car, same corner · <b>only the driven axle changes</b></span><span class="tag idle" id="p_tag">four measured solves</span></div>
+  <div class="toggle-row" id="p_tabs">
+    <button class="toggle" data-pow="0">101 hp</button>
+    <button class="toggle active" data-pow="1">181 hp · our car</button>
+    <button class="toggle" data-pow="2">282 hp</button>
+    <button class="toggle" data-pow="3">402 hp</button>
   </div>
   <svg id="p_svg" viewBox="0 0 620 260" style="width:100%;display:block"></svg>
   <div class="cap" id="p_cap"></div>
@@ -328,8 +346,7 @@
   <h2>The driver knew the future.</h2>
   <p>Everything above was driven by a solver that sees the whole road before it turns the wheel. It knows exactly when the corner arrives, so for a car that takes 356 ms to respond instead of 201 ms, it simply <b>starts steering earlier</b>. The delay costs almost nothing, because the delay is perfectly predictable.</p>
   <p>A real driver reacts to what has already happened. For them, 155 ms is 155 ms of the car not doing what they just asked, arriving exactly when they are trying to correct something. <span class="amber">Response time is nearly free if you know the future and expensive if you don't</span> — which is why every "which layout is faster" answer above came back smaller than expected. We were asking about driveability using a driver for whom driveability does not exist.</p>
-  <p>So I trained one that could be surprised: a small neural network, 5,124 numbers, no instruction beyond a stopwatch. It learned to drive. It also learned to cheat — it found the region where our tire model was extrapolating and lived there, because the reward genuinely was better out where the physics was made up.</p>
-  <p>Fenced in and given a bad day — lower grip, imperfect hands — it produced the one result the perfect driver structurally could not: <b>the quickest setup is the one that crashes</b>. Not because it runs closer to the edge. Because of what happens when it goes over. Run out of front grip and the car pushes wide, which scrubs speed, which restores grip — that loop closes itself. Run out of rear grip and the car rotates, which points the tires further from where they need to be, which rotates it more. <span class="coral">One failure mode corrects itself and the other feeds itself</span>, and that is a property of the car rather than of the disturbance.</p>
+  <p>That gap is worth a whole season on its own, and gets one in the long version. Here it matters for one reason: the numbers above are the <i>floor</i>. A design difference that a perfect driver can plan around is a design difference a real one has to survive.</p>
 </section>
 
 <div class="rule"></div>
@@ -338,14 +355,50 @@
 <section class="beat">
   <div class="eyebrow">And then software gets involved</div>
   <h2>A computer can decide which wheel pays.</h2>
-  <p>Push harder on the wheels down one side and the car rotates. A differential does that by accident, following one fixed rule with no idea which corner it is in. Torque vectoring does it deliberately: one layer decides how much rotation you want, another decides which wheels pay for it, and it can meter all four separately where a lump of gears could only meter one axle.</p>
+  <p><b>First, the part your car already has.</b> When you turn, the outside wheel travels further than the inside one, so something has to let the two driven wheels spin at different speeds or the tires would scrub. That something is the <b>differential</b> — a lump of gears between them — and every interesting thing it does comes from one rule: <span class="amber">torque flows from the faster-turning wheel to the slower one.</span></p>
+  <p>That rule is fixed, and it has no idea which corner you are in. It is why a car with a heavily locked differential binds and pushes wide in a car park, and why a cheap hatchback can spin one unloaded wheel uselessly in the air while the other does nothing.</p>
+  <p><b>Torque vectoring replaces the rule with a decision.</b> Push harder on the wheels down one side and the car rotates — that is a genuine steering input that has nothing to do with the steering wheel. So: measure how the car is actually turning, compare it to how the driver asked it to turn, and deliberately push harder on whichever wheels close the gap. Two layers — one decides how much rotation you want, the other decides which wheels pay for it. Put a motor or a brake at each corner and it can meter all four separately, where the gears could only meter one axle.</p>
   <p>Here is what that does to the layouts from two sections ago — same driver, same corner, same demand, differential swapped for the controller.</p>
 </section>
 
 <figure class="fig reveal">
+  <div class="wdg-head"><span>same corner, same demand · <b>which wheel is being pushed, and how hard</b></span><span class="tag idle" id="w_tag">—</span></div>
+  <div class="ctl">
+    <span style="display:flex;gap:6px;align-items:center">
+      <button class="btn" id="w_back" aria-label="previous step">◀</button>
+      <button class="btn" id="w_fwd" aria-label="next step">▶</button>
+      <button class="btn" id="w_play">Play</button>
+    </span>
+    <span class="v" id="w_sv" style="min-width:12ch">—</span>
+    <label style="flex:1;min-width:180px">
+      <input type="range" id="w_s" min="0" max="95" value="20" style="width:100%">
+    </label>
+  </div>
+  <div class="ctl" style="gap:8px">
+    <span style="letter-spacing:.06em">jump to</span>
+    <button class="btn" data-wjump="brake">braking</button>
+    <button class="btn" data-wjump="turnin">turn-in</button>
+    <button class="btn" data-wjump="apex">apex</button>
+    <button class="btn" data-wjump="exit">corner exit</button>
+    <button class="btn" data-wjump="straight">straight</button>
+  </div>
+  <svg id="w_svg" viewBox="0 0 620 300" style="width:100%;display:block"></svg>
+  <div class="cap" id="w_cap"></div>
+</figure>
+
+<section class="beat tight">
+  <p>Step through it and the difference is not subtle. <b>The differential is left-right identical at every single instant</b> — that is what one fixed rule looks like. The controller is not: at turn-in it <span class="coral">brakes the inside wheels and drives the outside ones</span>, which twists the car into the corner. As the steering unwinds it reverses, taking rotation away. Down the straight it stops meddling and the two look the same again.</p>
+  <p>It is also redistributing under braking. Both cars are slowing at the same rate, but the controller puts more of that through the wheels that have the load to take it.</p>
+</section>
+
+<section class="beat tight">
+  <p>So what is it worth? Not "the car stayed on the road" — you could always ask for less. The honest measure is <b>the most cornering each layout can survive at all</b>, found by turning the demand up until it fails.</p>
+</section>
+
+<figure class="fig reveal">
   <div class="toggle-row">
-    <button class="toggle active" data-tv="off">open differential</button>
-    <button class="toggle" data-tv="on">torque vectoring</button>
+    <button class="toggle active" data-vpow="1x">180 hp</button>
+    <button class="toggle" data-vpow="2x">360 hp</button>
   </div>
   <svg id="v_svg" viewBox="0 0 620 300" style="width:100%;display:block"></svg>
   <div class="cap" id="v_cap"></div>
@@ -353,8 +406,8 @@
 
 <section class="beat tight">
   <p>With an open differential, four of the five archetypes leave the road at a demand the fifth one meets easily. With the controller on, all five stay on it. <b>Nothing else changed.</b></p>
-  <p>Measured as spread in cornering limit across the five layouts, the controller flattens the difference between them by <b>16×</b> at this car's power and <b>47×</b> at twice it. The thing that made a 911 a 911 — where the engine sits — is something this controller has made close to irrelevant to whether the car holds its line.</p>
-  <p>With one exception worth keeping, because it is a mechanism rather than a gap: the front-driven car doesn't flatten. Its limit is a front-tire slip-angle ceiling, not a torque-distribution problem — and <span class="amber">an allocator built to move torque around has nothing to move when torque was never what was failing.</span></p>
+  <p>Measured as spread in cornering limit across the five layouts, the controller flattens the difference between them by <b>16×</b> at 180 hp and <b>47×</b> at twice that. The thing that made a 911 a 911 — where the engine sits — is something this controller has made close to irrelevant to whether the car holds its line.</p>
+  <p>With one exception worth keeping, because it is a mechanism rather than a gap: the front-driven car doesn't flatten. Its limit is a front-tire slip-angle ceiling, not a torque-distribution problem — and <span class="amber">a controller built to move torque around has nothing to move when torque was never what was failing.</span></p>
 </section>
 
 <div class="caveats">
@@ -380,6 +433,7 @@
 </div>
 <script src="tire.js"></script>
 <script src="data.js"></script>
+<script src="tvdata.js"></script>
 <script src="widgets.js"></script>
 </body>
 </html>

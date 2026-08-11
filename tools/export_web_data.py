@@ -23,9 +23,14 @@ import physics.track as T
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "docs" / "data.js"
-#: 100 solver nodes is finer than a scrubber needs; halving keeps the payload
-#: small without changing any shape the reader can see.
-STEP = 2
+#: Where the scrubber's resolution goes. Sampling uniformly in distance spends
+#: two thirds of the slider on the exit straight, where nothing changes, and
+#: leaves only eight steps for the corner itself -- exactly backwards. So: keep
+#: every solver node out to FOCUS_M (braking, turn-in, the corner, and the
+#: stretch of exit where the two drivetrains actually separate), then thin the
+#: long tail where the trace is flat.
+FOCUS_M = 220.0
+TAIL_STEP = 4
 FRACS = (0.40, 0.47, 0.54, 0.61, 0.65)
 #: Front-mass fraction and polar moment per archetype, from Episode 8's table.
 #: They are inputs to that experiment rather than outputs, so they are not in
@@ -52,14 +57,15 @@ def main() -> int:
     wheels = {}
     for drv in ("rwd", "fwd"):
         s = z6[f"{drv}_s"] if f"{drv}_s" in z6.files else np.linspace(0, trk.length, 100)
-        sl = slice(None, None, STEP)
-        d = {"s": _r(s[sl], 1), "n": _r(z6[f"{drv}_n"][sl], 3)}
+        keep = [i for i in range(len(s))
+                if s[i] <= FOCUS_M or i % TAIL_STEP == 0]
+        d = {"s": _r(s[keep], 1), "n": _r(z6[f"{drv}_n"][keep], 3)}
         for c in ("fl", "fr", "rl", "rr"):
             d[c] = {
-                "load": _r(z6[f"{drv}_load_{c}"][sl], 0),
-                "fx": _r(z6[f"{drv}_fx_{c}"][sl], 0),
-                "fy": _r(z6[f"{drv}_fy_{c}"][sl], 0),
-                "alpha": _r(z6[f"{drv}_alpha_{c}"][sl], 3),
+                "load": _r(z6[f"{drv}_load_{c}"][keep], 0),
+                "fx": _r(z6[f"{drv}_fx_{c}"][keep], 0),
+                "fy": _r(z6[f"{drv}_fy_{c}"][keep], 0),
+                "alpha": _r(z6[f"{drv}_alpha_{c}"][keep], 3),
             }
         wheels[drv] = d
 
@@ -73,7 +79,8 @@ def main() -> int:
         "corner": {"length": round(float(trk.length), 1),
                    "entry": round(float(T.ENTRY_STRAIGHT), 1),
                    "arc": round(float(T.CORNER_ARC), 1),
-                   "radius": 40.0, "halfWidth": 4.0},
+                   "radius": 40.0, "halfWidth": 4.0,
+                   "focus": FOCUS_M},
         "wheels": wheels,
         "drivetrain": {
             "lapRwd": r6["rwd_ideal"]["time_s"], "lapFwd": r6["fwd_ideal"]["time_s"],
@@ -90,6 +97,14 @@ def main() -> int:
         },
         "layout": layout,
         "flatten": r15["flattening"],
+        #: The honest torque-vectoring measurement: the highest cornering demand
+        #: each layout survives, per power level, with an open differential and
+        #: with the controller. "Did it leave the road at one fixed demand" is
+        #: only an illustration -- you could always ask for less.
+        "limits": {pw: {k: {"off": r15["layout"][pw][f"open|{k}"]["limit_grip_use"],
+                            "on": r15["layout"][pw][f"tv4|{k}"]["limit_grip_use"]}
+                        for k in LAYOUT_INPUTS}
+                   for pw in ("1x", "2x")},
     }
 
     OUT.write_text(

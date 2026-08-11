@@ -217,6 +217,7 @@ if ('IntersectionObserver' in window) {
   var W = D.wheels, geo = D.corner;
   var N = W.rwd.s.length;
   slider.max = N - 1;
+  slider.step = 1;
   /* One scale for every wheel and both drivetrains, so rings are comparable. */
   var maxLoad = 0;
   ['rwd', 'fwd'].forEach(function (d) { ['fl', 'fr', 'rl', 'rr'].forEach(function (c) {
@@ -226,7 +227,11 @@ if ('IntersectionObserver' in window) {
 
   function render() {
     var w = W[drv], s = w.s[i];
-    document.getElementById('c_sv').textContent = Math.round(s) + ' m';
+    var phase = s < geo.entry ? 'approach'
+              : s < geo.entry + geo.arc ? 'in the corner'
+              : 'exit';
+    document.getElementById('c_sv').textContent =
+      Math.round(s) + ' m · ' + phase;
     clear(svg);
 
     /* --- road map along the top, with the car's position --- */
@@ -295,7 +300,32 @@ if ('IntersectionObserver' in window) {
           : 'Past the exit, and the front tires have gone quiet. The rears are doing the accelerating.')) +
       (lop ? ' <span style="color:#6A6358">(The two driven wheels read very differently here even though they carry almost the same load. Their <i>total</i> is pinned by the engine; how it splits left to right is not, so the solver picks arbitrarily among equally good answers. Nothing physical distinguishes them.)</span>' : '');
   }
-  slider.addEventListener('input', function () { i = +slider.value; render(); });
+  function go(n) { i = Math.max(0, Math.min(N - 1, n)); slider.value = i; render(); }
+  slider.addEventListener('input', function () { go(+slider.value); });
+  document.getElementById('c_back').addEventListener('click', function () { go(i - 1); });
+  document.getElementById('c_fwd').addEventListener('click', function () { go(i + 1); });
+  /* Arrow keys once the widget has been touched — stepping one solver node at
+     a time is the point, and a slider drag cannot do it. */
+  slider.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowLeft') { go(i - 1); e.preventDefault(); }
+    if (e.key === 'ArrowRight') { go(i + 1); e.preventDefault(); }
+  });
+  /* Jump straight to the phases worth comparing, so nobody has to hunt. */
+  var arcEnd = geo.entry + geo.arc;
+  function nearest(target) {
+    var best = 0;
+    for (var k = 0; k < N; k++)
+      if (Math.abs(W[drv].s[k] - target) < Math.abs(W[drv].s[best] - target)) best = k;
+    return best;
+  }
+  var JUMPS = { brake: function () { return nearest(geo.entry - 22); },
+                turnin: function () { return nearest(geo.entry + 4); },
+                apex: function () { return nearest(geo.entry + geo.arc * 0.55); },
+                exit: function () { return nearest(arcEnd + 3); },
+                straight: function () { return nearest(arcEnd + 80); } };
+  document.querySelectorAll('[data-jump]').forEach(function (b) {
+    b.addEventListener('click', function () { go(JUMPS[b.getAttribute('data-jump')]()); });
+  });
   document.querySelectorAll('.toggle[data-drv]').forEach(function (b) {
     b.addEventListener('click', function () {
       document.querySelectorAll('.toggle[data-drv]').forEach(function (o) { o.classList.remove('active'); });
@@ -307,9 +337,14 @@ if ('IntersectionObserver' in window) {
     if (playing) { clearInterval(playing); playing = null; playBtn.textContent = 'Play';
       playBtn.classList.remove('on'); return; }
     playBtn.textContent = 'Pause'; playBtn.classList.add('on');
+    if (i >= N - 1) go(0);
     playing = setInterval(function () {
-      i = (i + 1) % N; slider.value = i; render();
-    }, 110);
+      if (i >= N - 1) {                    /* stop at the end, don't loop */
+        clearInterval(playing); playing = null;
+        playBtn.textContent = 'Play'; playBtn.classList.remove('on'); return;
+      }
+      go(i + 1);
+    }, 340);
   });
   render();
 })();
@@ -317,11 +352,11 @@ if ('IntersectionObserver' in window) {
 /* ============ 5. FWD vs RWD ACROSS POWER ============ */
 (function () {
   var svg = document.getElementById('p_svg'); if (!svg) return;
-  var rows = D.drivetrain.power, sl = document.getElementById('p_i');
+  /* Four discrete solves, so four buttons. A slider would imply we measured
+     the range in between, and we didn't. */
+  var rows = D.drivetrain.power, k = 1;
   function render() {
-    var k = +sl.value, r = rows[k];
-    document.getElementById('p_v').textContent = r.hp + ' hp';
-    document.getElementById('p_tag').textContent = r.hp + ' hp';
+    var r = rows[k];
     clear(svg);
     var diff = r.fwd - r.rwd;                 /* + means FWD slower */
     var L = 150, TOP = 46, BH = 34, GAP = 22;
@@ -360,14 +395,21 @@ if ('IntersectionObserver' in window) {
     txt(svg, GX + GW + 12, GY + GH + 2, 'rear', C.steel, 9.5);
 
     document.getElementById('p_cap').innerHTML =
-      'At <b>' + r.hp + ' hp</b>: rear drive ' + r.rwd.toFixed(3) + ' s, front drive ' +
+      'At <b>' + r.hp + ' hp</b>' + (k === 1 ? ' (the car being modelled)' : '') +
+      ': rear drive ' + r.rwd.toFixed(3) + ' s, front drive ' +
       r.fwd.toFixed(3) + ' s. ' + (mag < 0.006
         ? 'Level — neither layout has an advantage worth the name here.'
         : (winner === 'front'
           ? 'Front drive is ahead, because at this power the exit is limited by the <b>engine</b>, not by grip.'
           : 'Rear drive is ahead, and the gap grows fast — the front tires are saturating and being asked to steer as well.'));
   }
-  sl.addEventListener('input', render); render();
+  document.querySelectorAll('[data-pow]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      document.querySelectorAll('[data-pow]').forEach(function (o) { o.classList.remove('active'); });
+      b.classList.add('active'); k = +b.getAttribute('data-pow'); render();
+    });
+  });
+  render();
 })();
 
 /* ============ 6. BALANCE -> UNDERSTEER ============ */
@@ -494,56 +536,149 @@ if ('IntersectionObserver' in window) {
   render();
 })();
 
-/* ============ 8. TORQUE VECTORING ON/OFF ============ */
+/* ====== 8. WHICH WHEEL PAYS: open differential vs torque vectoring ====== */
 (function () {
-  var svg = document.getElementById('v_svg'); if (!svg) return;
-  var F = D.flatten, mode = 'off';
-  var KEYS = ['front_fwd', 'front_rwd', 'front_mid_rwd', 'mid_rwd', 'rear_rwd'];
-  var LAB = { front_fwd: 'front, FWD', front_rwd: 'front, RWD',
-    front_mid_rwd: 'front-mid', mid_rwd: 'mid', rear_rwd: 'rear' };
-  /* Episode 15's shared-aggression run: with an open diff four of five leave
-     the road; with the allocator all five stay on. */
-  var SURVIVE = { off: { front_fwd: true, front_rwd: false, front_mid_rwd: false,
-                         mid_rwd: false, rear_rwd: false },
-                  on:  { front_fwd: true, front_rwd: true, front_mid_rwd: true,
-                         mid_rwd: true, rear_rwd: true } };
+  var svg = document.getElementById('w_svg'); if (!svg || !window.CPTv) return;
+  var TV = window.CPTv, OPEN = TV.configs.open, TVC = TV.configs.tv4;
+  var N = Math.min(OPEN.s.length, TVC.s.length), i = 20, playing = null;
+  var slider = document.getElementById('w_s');
+  slider.max = N - 1; slider.step = 1;
+  var geo = D.corner, arcEnd = geo.entry + geo.arc;
+  /* One scale for both cars so the two panels are directly comparable. */
+  var maxF = 0;
+  [OPEN, TVC].forEach(function (cfg) { ['fl','fr','rl','rr'].forEach(function (c) {
+    cfg[c].fx.forEach(function (v) { if (Math.abs(v) > maxF) maxF = Math.abs(v); }); }); });
+
+  function panel(cfg, ox, title, sub) {
+    var s = cfg.s[i];
+    txt(svg, ox + 96, 30, title, C.bright, 12.5, 'middle', '600');
+    txt(svg, ox + 96, 46, sub, C.muted, 10, 'middle');
+    var POS = { fl: [ox + 46, 96], fr: [ox + 146, 96], rl: [ox + 46, 196], rr: [ox + 146, 196] };
+    svg.appendChild(el('rect', { x: ox + 72, y: 74, width: 48, height: 144, rx: 12,
+      fill: 'none', stroke: C.border, 'stroke-width': 1.2 }));
+    txt(svg, ox + 96, 70, 'front', C.muted, 8.5, 'middle');
+    var left = 0, right = 0;
+    ['fl','fr','rl','rr'].forEach(function (c) {
+      var pt = POS[c], x = pt[0], y = pt[1];
+      var fx = cfg[c].fx[i], fz = cfg[c].fz[i];
+      if (c === 'fl' || c === 'rl') left += fx; else right += fx;
+      /* ring = load carried, arrow = drive (up) or brake (down) */
+      var r = 13 + 18 * Math.sqrt(Math.max(fz, 0) / 6200);
+      svg.appendChild(el('circle', { cx: x, cy: y, r: r, fill: 'none',
+        stroke: C.border, 'stroke-width': 1.2 }));
+      var len = (fx / maxF) * 40;
+      var col = fx > 30 ? C.sage : fx < -30 ? C.coral : C.muted;
+      if (Math.abs(len) > 1.5) arrow(svg, x, y, x, y - len, col, 2.6);
+      else svg.appendChild(el('circle', { cx: x, cy: y, r: 2, fill: C.muted }));
+      txt(svg, x, y + r + 13, Math.round(fx) + ' N', col, 9.5, 'middle');
+    });
+    return left - right;
+  }
+
   function render() {
     clear(svg);
-    var on = mode === 'on';
-    txt(svg, 24, 28, 'same driver, same corner, same demand — only the differential changes',
-        C.muted, 10.5);
-    KEYS.forEach(function (k, n) {
-      var y = 62 + n * 44, ok = SURVIVE[mode][k];
-      txt(svg, 128, y + 4, LAB[k], ok ? C.text : C.muted, 11.5, 'end');
-      /* a little road; the car either stays on it or leaves */
-      var RX = 148, RW = 330;
-      svg.appendChild(el('rect', { x: RX, y: y - 13, width: RW, height: 26, rx: 4,
-        fill: C.raised, stroke: C.border }));
-      var frac = ok ? 1 : 0.42 + 0.12 * n;
-      svg.appendChild(el('rect', { x: RX, y: y - 13, width: RW * frac, height: 26, rx: 4,
-        fill: ok ? C.sage : C.coral, opacity: .35 }));
-      var cx = RX + RW * frac;
-      svg.appendChild(el('rect', { x: cx - 11, y: y - 7, width: 22, height: 14, rx: 3,
-        fill: ok ? C.sage : C.coral,
-        transform: ok ? '' : 'rotate(24 ' + cx + ' ' + y + ')' }));
-      txt(svg, RX + RW + 12, y + 4, ok ? 'stayed on' : 'left the road',
-          ok ? C.sage : C.coral, 10.5);
-    });
-    var lay = F.layout, key = on ? 'on' : 'off';
-    var s1 = lay['1x'][key], s2 = lay['2x'][key];
-    txt(svg, 24, 268, 'spread in cornering limit across the five layouts:', C.muted, 10);
-    txt(svg, 24, 286, 'at this car’s power ' + s1.toFixed(3) +
-        '   ·   at twice it ' + s2.toFixed(3), on ? C.sage : C.coral, 12);
-    document.getElementById('v_cap').innerHTML = on
-      ? 'With the allocator, <b>all five stay on the road</b> and the spread between layouts collapses to ' +
-        lay['1x'].on.toFixed(3) + ' — a <b>16×</b> flattening at this power and <b>47×</b> at twice it.'
-      : 'With an open differential, <b>four of five leave the road</b> at a demand the fifth meets easily, ' +
-        'and the layouts spread over ' + lay['1x'].off.toFixed(3) + ' of cornering limit.';
+    var s = OPEN.s[i];
+    var phase = s < geo.entry ? 'approach' : s < arcEnd ? 'in the corner' : 'exit';
+    document.getElementById('w_sv').textContent = Math.round(s) + ' m · ' + phase;
+    var leanO = panel(OPEN, 20, 'open differential', 'one fixed rule');
+    var leanV = panel(TVC, 330, 'torque vectoring', 'deciding, every instant');
+    line(svg, 310, 24, 310, 268, C.border, 1);
+    /* the asymmetry each one is creating, which is the whole comparison */
+    txt(svg, 116, 262, 'left minus right: ' + Math.round(leanO) + ' N',
+        Math.abs(leanO) > 60 ? C.amber : C.muted, 11, 'middle');
+    txt(svg, 426, 262, 'left minus right: ' + Math.round(leanV) + ' N',
+        Math.abs(leanV) > 60 ? C.amber : C.muted, 11, 'middle');
+    txt(svg, 310, 288, 'green = pushing that wheel forward · red = braking it', C.muted, 9.5, 'middle');
+    var tag = document.getElementById('w_tag');
+    tag.textContent = Math.abs(leanV) > 60 ? 'controller is twisting the car' : 'nothing to correct';
+    tag.className = 'tag ' + (Math.abs(leanV) > 60 ? 'ok' : 'idle');
+
+    document.getElementById('w_cap').innerHTML =
+      'At <b>' + Math.round(s) + ' m</b>. The differential\'s two sides are ' +
+      (Math.abs(leanO) < 1 ? '<b>exactly equal</b>' : 'within ' + Math.round(Math.abs(leanO)) + ' N') +
+      ' — it has no way to be anything else. The controller is running a ' +
+      Math.round(Math.abs(leanV)) + ' N difference across the car' +
+      (Math.abs(leanV) < 60 ? ', which is to say it has decided this moment needs nothing.'
+        : (leanV < 0 ? ', pushing harder on the outside to rotate the car <b>into</b> the corner.'
+                     : ', pushing harder on the inside to take rotation <b>away</b>.'));
   }
-  document.querySelectorAll('.toggle[data-tv]').forEach(function (b) {
+
+  function go(n) { i = Math.max(0, Math.min(N - 1, n)); slider.value = i; render(); }
+  slider.addEventListener('input', function () { go(+slider.value); });
+  document.getElementById('w_back').addEventListener('click', function () { go(i - 1); });
+  document.getElementById('w_fwd').addEventListener('click', function () { go(i + 1); });
+  function nearest(target) { var b = 0;
+    for (var k = 0; k < N; k++) if (Math.abs(OPEN.s[k] - target) < Math.abs(OPEN.s[b] - target)) b = k;
+    return b; }
+  var J = { brake: geo.entry - 22, turnin: geo.entry + 6, apex: geo.entry + geo.arc * 0.55,
+            exit: arcEnd + 4, straight: arcEnd + 80 };
+  document.querySelectorAll('[data-wjump]').forEach(function (b) {
+    b.addEventListener('click', function () { go(nearest(J[b.getAttribute('data-wjump')])); });
+  });
+  var pb = document.getElementById('w_play');
+  pb.addEventListener('click', function () {
+    if (playing) { clearInterval(playing); playing = null; pb.textContent = 'Play'; pb.classList.remove('on'); return; }
+    pb.textContent = 'Pause'; pb.classList.add('on');
+    if (i >= N - 1) go(0);
+    playing = setInterval(function () {
+      if (i >= N - 1) { clearInterval(playing); playing = null;
+        pb.textContent = 'Play'; pb.classList.remove('on'); return; }
+      go(i + 1);
+    }, 300);
+  });
+  render();
+})();
+
+/* ====== 9. WHAT IT IS WORTH: the cornering ceiling, per layout ====== */
+(function () {
+  var svg = document.getElementById('v_svg'); if (!svg || !D.limits) return;
+  var pw = '1x';
+  var KEYS = ['front_fwd', 'front_rwd', 'front_mid_rwd', 'mid_rwd', 'rear_rwd'];
+  var LAB = { front_fwd: 'front engine, FWD', front_rwd: 'front engine, RWD',
+    front_mid_rwd: 'front-mid, RWD', mid_rwd: 'mid engine', rear_rwd: 'rear engine' };
+  function render() {
+    clear(svg);
+    var L = D.limits[pw];
+    var X0 = 168, X1 = 560, lo = 0.30, hi = 1.16;
+    function px(v) { return X0 + (X1 - X0) * (v - lo) / (hi - lo); }
+    txt(svg, 20, 24, 'the most cornering each layout survives before it fails', C.muted, 10.5);
+    KEYS.forEach(function (k, n) {
+      var y = 58 + n * 42, o = L[k].off, v = L[k].on;
+      txt(svg, X0 - 12, y + 4, LAB[k], C.text, 11, 'end');
+      line(svg, px(lo), y, X1, y, C.border, 1);
+      /* the gain, drawn as the distance between the two */
+      if (Math.abs(v - o) > 0.004)
+        line(svg, px(Math.min(o, v)), y, px(Math.max(o, v)), y,
+             v > o ? C.sage : C.coral, 5);
+      svg.appendChild(el('circle', { cx: px(o), cy: y, r: 6, fill: C.steel }));
+      svg.appendChild(el('circle', { cx: px(v), cy: y, r: 6, fill: C.amber }));
+      var d = 100 * (v / o - 1);
+      txt(svg, X1 + 12, y + 4, (d > 0 ? '+' : '') + d.toFixed(0) + '%',
+          Math.abs(d) < 3 ? C.muted : d > 0 ? C.sage : C.coral, 10.5);
+    });
+    var offs = KEYS.map(function (k) { return L[k].off; });
+    var ons = KEYS.map(function (k) { return L[k].on; });
+    function spread(a) { return Math.max.apply(null, a) - Math.min.apply(null, a); }
+    txt(svg, X0 - 12, 274, 'spread across the five', C.muted, 10, 'end');
+    txt(svg, X0 + 4, 274, 'open ' + spread(offs).toFixed(3), C.steel, 11);
+    txt(svg, X0 + 104, 274, '→  with the controller ' + spread(ons).toFixed(3), C.amber, 11);
+    svg.appendChild(el('circle', { cx: X0 + 4, cy: 246, r: 5, fill: C.steel }));
+    txt(svg, X0 + 16, 250, 'open differential', C.muted, 10);
+    svg.appendChild(el('circle', { cx: X0 + 150, cy: 246, r: 5, fill: C.amber }));
+    txt(svg, X0 + 162, 250, 'torque vectoring', C.muted, 10);
+
+    document.getElementById('v_cap').innerHTML =
+      'Every layout lands in the same narrow band once the controller is on — spread falls from <b>' +
+      spread(offs).toFixed(3) + '</b> to <b>' + spread(ons).toFixed(3) + '</b>' +
+      (pw === '2x' ? ' at double power, where the passive cars fall apart entirely.' : '.') +
+      ' <b>The rear-engined car gains most</b> because it had the most to fix. ' +
+      'And the front-driven one <span class="coral">gets marginally worse</span> — its limit is the front tires ' +
+      'running out of slip angle, not torque going to the wrong place, and moving torque around cannot help with that.';
+  }
+  document.querySelectorAll('[data-vpow]').forEach(function (b) {
     b.addEventListener('click', function () {
-      document.querySelectorAll('.toggle[data-tv]').forEach(function (o) { o.classList.remove('active'); });
-      b.classList.add('active'); mode = b.getAttribute('data-tv'); render();
+      document.querySelectorAll('[data-vpow]').forEach(function (o) { o.classList.remove('active'); });
+      b.classList.add('active'); pw = b.getAttribute('data-vpow'); render();
     });
   });
   render();

@@ -150,7 +150,9 @@ CLAUDE.md      the working rules
 
 ---
 
-## Attribution
+## Licence and attribution
+
+This project is [MIT licensed](LICENSE).
 
 `tires/Sedan_Pac02Tire.tir` is from [Project Chrono](https://github.com/projectchrono/chrono),
 BSD-3-Clause — a Magic Formula 2002 set, 245/40 R18. It is sized for a heavier

@@ -349,6 +349,206 @@ if ('IntersectionObserver' in window) {
   render();
 })();
 
+/* ====== 4b. THE RACING LINE, IN REAL GEOMETRY ====== */
+(function () {
+  var svg = document.getElementById('g_svg'); if (!svg || !window.CPGeom) return;
+  var G = window.CPGeom, drv = 'rwd', i = 0, playing = null;
+  /* Everything here is already world (x, y) in metres, converted in Python by
+     Track.to_xy. This function only scales and flips -- it must never do frame
+     arithmetic of its own. See tools/export_racing_line.py. */
+  var VIEW = { x0: -9, x1: 123, y0: -9, y1: 78 };
+  var PADX = 16, PADY = 14, W = 620, H = 420;
+  var k = Math.min((W - 2 * PADX) / (VIEW.x1 - VIEW.x0),
+                   (H - 2 * PADY) / (VIEW.y1 - VIEW.y0));
+  var offx = PADX + ((W - 2 * PADX) - k * (VIEW.x1 - VIEW.x0)) / 2;
+  var offy = PADY + ((H - 2 * PADY) - k * (VIEW.y1 - VIEW.y0)) / 2;
+  function PX(x) { return offx + (x - VIEW.x0) * k; }
+  function PY(y) { return H - offy - (y - VIEW.y0) * k; }   /* world +y is up */
+
+  var slider = document.getElementById('g_s');
+  function frames() { return G.drives[drv].frames.filter(function (f) { return f.s <= 168; }); }
+  slider.max = frames().length - 1;
+
+  /* one force scale across both drivetrains so the panels compare */
+  var maxF = 0;
+  ['rwd', 'fwd'].forEach(function (d) {
+    G.drives[d].frames.forEach(function (f) {
+      ['fl','fr','rl','rr'].forEach(function (c) {
+        var m = Math.hypot(f.w[c].fx, f.w[c].fy); if (m > maxF) maxF = m; });
+    });
+  });
+
+  function poly(xs, ys, col, wdt, dash) {
+    var pts = [], n = Math.min(xs.length, ys.length);
+    for (var j = 0; j < n; j++) {
+      if (xs[j] < VIEW.x0 - 30 || xs[j] > VIEW.x1 + 30) continue;
+      if (ys[j] < VIEW.y0 - 30 || ys[j] > VIEW.y1 + 30) continue;
+      pts.push(PX(xs[j]).toFixed(1) + ',' + PY(ys[j]).toFixed(1));
+    }
+    var a = { points: pts.join(' '), fill: 'none', stroke: col, 'stroke-width': wdt,
+              'stroke-linecap': 'round' };
+    if (dash) a['stroke-dasharray'] = dash;
+    svg.appendChild(el('polyline', a));
+  }
+
+  function render() {
+    clear(svg);
+    var F = frames(), f = F[i], R = G.road;
+
+    /* the road surface: left edge out, right edge back */
+    var d = [];
+    for (var j = 0; j < R.lx.length; j++) d.push((j ? 'L' : 'M') + PX(R.lx[j]).toFixed(1) + ' ' + PY(R.ly[j]).toFixed(1));
+    for (j = R.rx.length - 1; j >= 0; j--) d.push('L' + PX(R.rx[j]).toFixed(1) + ' ' + PY(R.ry[j]).toFixed(1));
+    svg.appendChild(el('path', { d: d.join(' ') + ' Z', fill: C.raised, opacity: .62 }));
+    poly(R.lx, R.ly, C.border, 1.6);
+    poly(R.rx, R.ry, C.border, 1.6);
+    poly(R.cx, R.cy, C.muted, 1.1, '5 7');
+
+    /* the line it found */
+    var L = G.drives[drv].line;
+    poly(L.x, L.y, C.amberDim, 2.4);
+    /* and the part already driven, brighter */
+    /* the line array is the solver's uniform 100-node s grid, so index maps
+       linearly to distance -- brighten only what has been driven so far */
+    var upto = { x: [], y: [] };
+    for (j = 0; j < L.x.length; j++) {
+      if (j / (L.x.length - 1) * G.geo.length <= f.s) { upto.x.push(L.x[j]); upto.y.push(L.y[j]); }
+    }
+    poly(upto.x, upto.y, C.amber, 3);
+
+    /* the car on the map: position and heading only, the detail goes in the
+       inset -- at 130 m across, a 4 m car is three percent of the frame */
+    var cs = Math.cos(f.psi), sn = Math.sin(f.psi);
+    var A = G.car.a + 0.55, B = G.car.b + 0.75, HWc = 0.80;
+    function shape(pts, px, py, sc) {
+      return pts.map(function (o) {
+        return (px(f.x + o[0] * cs - o[1] * sn)).toFixed(1) + ',' +
+               (py(f.y + o[0] * sn + o[1] * cs)).toFixed(1);
+      }).join(' ');
+    }
+    var BODY = [[A, HWc], [A, -HWc], [-B, -HWc], [-B, HWc]];
+    var NOSE = [[A, 0], [A - 0.9, 0.55], [A - 0.9, -0.55]];
+    svg.appendChild(el('polygon', { points: shape(BODY, PX, PY), fill: '#0d0c07',
+      stroke: C.steel, 'stroke-width': 1.5 }));
+    svg.appendChild(el('polygon', { points: shape(NOSE, PX, PY), fill: C.steel }));
+    svg.appendChild(el('circle', { cx: PX(f.x), cy: PY(f.y), r: 17, fill: 'none',
+      stroke: C.amber, 'stroke-width': 1, opacity: .55 }));
+
+    /* ---- the inset: the same car, big enough to read, in the empty corner
+       the L-shaped track leaves. Pure scale about the car; no rotation, so the
+       car turns on screen exactly as it turns on the road. ---- */
+    var IX = 18, IY = 16, IW = 292, IH = 216;
+    var icx = IX + IW / 2, icy = IY + IH / 2;
+    var k2 = Math.min(IW, IH) / 8.6;              /* ~8.6 m across, so a 4 m car fills it */
+    function ZX(x) { return icx + (x - f.x) * k2; }
+    function ZY(y) { return icy - (y - f.y) * k2; }
+    svg.appendChild(el('rect', { x: IX, y: IY, width: IW, height: IH, rx: 5,
+      fill: '#0d0c07', stroke: C.border, 'stroke-width': 1 }));
+    line(svg, PX(f.x) - 12, PY(f.y) - 12, IX + IW, IY + IH, C.border, 1, '3 4');
+    txt(svg, IX + 9, IY + 17, 'what each tire is doing', C.muted, 10);
+
+    /* Draw order matters: load rings first, then the car on top of them, then
+       the force arrows on top of everything. Rings over the body hid the car;
+       coral arrows over coral rings were invisible at the limit. */
+    var ARROW_M = 2.6;                     /* metres of arrow at full force */
+    var RAD = {};
+    ['fl','fr','rl','rr'].forEach(function (c) {
+      var w = f.w[c];
+      var r = (0.26 + 0.50 * Math.sqrt(Math.max(w.load, 0) / 6200)) * k2;
+      RAD[c] = r;
+      svg.appendChild(el('circle', { cx: ZX(w.x), cy: ZY(w.y), r: r, fill: C.coral,
+        opacity: .05 + .18 * Math.min(w.u, 1) }));
+      svg.appendChild(el('circle', { cx: ZX(w.x), cy: ZY(w.y), r: r, fill: 'none',
+        stroke: w.u > .92 ? C.coral : C.steel, 'stroke-width': w.u > .92 ? 2 : 1.2 }));
+    });
+    svg.appendChild(el('polygon', { points: shape(BODY, ZX, ZY), fill: '#0d0c07',
+      stroke: C.steel, 'stroke-width': 1.8, opacity: .96 }));
+    svg.appendChild(el('polygon', { points: shape(NOSE, ZX, ZY), fill: C.steel, opacity: .9 }));
+
+    ['fl','fr','rl','rr'].forEach(function (c) {
+      var w = f.w[c], r = RAD[c], m = Math.hypot(w.fx, w.fy);
+      if (m > 60) {
+        var Ln = (m / maxF) * ARROW_M;
+        arrow(svg, ZX(w.x), ZY(w.y), ZX(w.x + w.fx / m * Ln), ZY(w.y + w.fy / m * Ln),
+              C.amber, 2.8);
+      }
+      /* push the label away from the car's centre, so rotation never stacks
+         two of them on top of each other */
+      var lx = ZX(w.x) - icx, ly = ZY(w.y) - icy, ln = Math.hypot(lx, ly) || 1;
+      txt(svg, ZX(w.x) + lx / ln * (r + 13), ZY(w.y) + ly / ln * (r + 13) + 3,
+          Math.round(100 * w.u) + '%', w.u > .92 ? C.coral : C.muted, 10, 'middle');
+    });
+
+    /* legend + phase */
+    txt(svg, 14, H - 22, 'dashed = middle of the road · solid = the line it found', C.muted, 10.5);
+    txt(svg, 14, H - 6, 'inset: ring = load on that tire · arrow = force it is making, to scale', C.muted, 10.5);
+    var phase = f.s < G.geo.entry ? 'approach'
+              : f.s < G.geo.entry + G.geo.arc ? 'in the corner' : 'exit';
+    document.getElementById('g_sv').textContent = Math.round(f.s) + ' m · ' + phase;
+
+    var worst = 'fl', wv = 0;
+    ['fl','fr','rl','rr'].forEach(function (c) { if (f.w[c].u > wv) { wv = f.w[c].u; worst = c; } });
+    var NM = { fl: 'front left', fr: 'front right', rl: 'rear left', rr: 'rear right' };
+    var lat = Math.abs(f.w.fl.load + f.w.rl.load - f.w.fr.load - f.w.rr.load);
+    /* Every clause below is read off the frame. Nothing here asserts a phase
+       from where we are on the road -- the first version said "braking" at
+       20 m, where the car is still accelerating. */
+    var act = f.long > 400 ? 'on the power' : f.long < -400 ? 'braking' : 'neither driving nor braking';
+    var shift = f.frontShare > 57 ? 'weight has moved onto the front tires'
+              : f.frontShare < 50 ? 'weight has settled back onto the rears'
+              : 'weight is close to evenly split';
+    document.getElementById('g_cap').innerHTML =
+      '<b>' + (drv === 'rwd' ? 'Rear-wheel drive' : 'Front-wheel drive') + '</b> at ' +
+      Math.round(f.s) + ' m, ' + f.v.toFixed(1) + ' m/s (' + Math.round(f.v * 2.237) + ' mph). ' +
+      '<b>' + act.charAt(0).toUpperCase() + act.slice(1) + '</b> (' +
+      Math.abs(Math.round(f.long)).toLocaleString() + ' N), ' + shift +
+      ' at <b>' + f.frontShare.toFixed(0) + '%</b> front. ' +
+      'Busiest tire <b>' + NM[worst] + '</b> at ' + Math.round(100 * wv) + '%. ' +
+      (f.s < G.geo.entry
+        ? (Math.abs(f.lat) > 3000
+            ? 'Still on the straight, but already steering <b>away</b> from the corner to use the full width.'
+            : f.long < -400
+              ? 'Braking in a straight line — and the <b>rear</b> tires read highest, because braking is what unloaded them.'
+              : 'Straight and square, before anything has happened.')
+        : f.s < G.geo.entry + G.geo.arc
+          ? 'In the corner: <b>' + Math.round(lat) + ' N</b> more load on the outside pair than the inside, and that gap is what costs grip.'
+          : 'Past the exit, the arrows swinging forward into acceleration.');
+  }
+
+  function go(n) { i = Math.max(0, Math.min(frames().length - 1, n)); slider.value = i; render(); }
+  slider.addEventListener('input', function () { go(+slider.value); });
+  document.getElementById('g_back').addEventListener('click', function () { go(i - 1); });
+  document.getElementById('g_fwd').addEventListener('click', function () { go(i + 1); });
+  document.querySelectorAll('[data-gdrv]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      document.querySelectorAll('[data-gdrv]').forEach(function (o) { o.classList.remove('active'); });
+      b.classList.add('active'); drv = b.getAttribute('data-gdrv');
+      slider.max = frames().length - 1; go(Math.min(i, frames().length - 1));
+    });
+  });
+  var JUMP = { power: 12, brake: 32, wide: 52, turnin: 71, apex: 99, exit: 122 };
+  document.querySelectorAll('[data-gjump]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var want = JUMP[b.getAttribute('data-gjump')], F = frames(), best = 0, bd = 1e9;
+      F.forEach(function (f, n) { var q = Math.abs(f.s - want); if (q < bd) { bd = q; best = n; } });
+      go(best);
+    });
+  });
+  var pb = document.getElementById('g_play');
+  pb.addEventListener('click', function () {
+    if (playing) { clearInterval(playing); playing = null; pb.textContent = 'Play';
+      pb.classList.remove('on'); return; }
+    pb.textContent = 'Pause'; pb.classList.add('on');
+    if (i >= frames().length - 1) go(0);
+    playing = setInterval(function () {
+      if (i >= frames().length - 1) { clearInterval(playing); playing = null;
+        pb.textContent = 'Play'; pb.classList.remove('on'); return; }
+      go(i + 1);
+    }, 300);
+  });
+  render();
+})();
+
 /* ============ 5. FWD vs RWD ACROSS POWER ============ */
 (function () {
   var svg = document.getElementById('p_svg'); if (!svg) return;

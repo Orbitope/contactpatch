@@ -227,7 +227,46 @@
   <div class="eyebrow">Now a whole car</div>
   <h2>Watch the four tires through one corner.</h2>
   <p>Four wheels and a 90° left-hander of 40 m radius — about 63 m of curve, with 70 m of approach before it and 260 m of straight after. The car is driven by a minimum-time solver: it gets the tire model, the width of the road and a stopwatch, and it is not told what a racing line is.</p>
-  <p>Each wheel below shows what it is <b>carrying</b> (the ring, which grows and shrinks as load moves) and what it is <b>spending</b> (the arrow, and how close it comes to the edge). Scrub through the corner, then switch the drivetrain and watch the front wheels.</p>
+  <p>Here is the road from above, and the line it chose. The dashed line is the middle of the road — the obvious way round. The solid one is what came back.</p>
+</section>
+
+<figure class="fig reveal">
+  <div class="toggle-row">
+    <button class="toggle active" data-gdrv="rwd">rear-wheel drive</button>
+    <button class="toggle" data-gdrv="fwd">front-wheel drive</button>
+  </div>
+  <div class="ctl">
+    <span style="display:flex;gap:6px;align-items:center">
+      <button class="btn" id="g_back" aria-label="previous step">&#9664;</button>
+      <button class="btn" id="g_fwd" aria-label="next step">&#9654;</button>
+      <button class="btn" id="g_play">Play</button>
+    </span>
+    <span class="v" id="g_sv" style="min-width:14ch">&mdash;</span>
+    <label style="flex:1;min-width:160px">
+      <input type="range" id="g_s" min="0" max="10" value="0" style="width:100%">
+    </label>
+  </div>
+  <div class="ctl" style="gap:8px">
+    <span style="letter-spacing:.06em">jump to</span>
+    <button class="btn" data-gjump="power">still on power</button>
+    <button class="btn" data-gjump="brake">hard braking</button>
+    <button class="btn" data-gjump="wide">out to the edge</button>
+    <button class="btn" data-gjump="turnin">turn-in</button>
+    <button class="btn" data-gjump="apex">apex</button>
+    <button class="btn" data-gjump="exit">back on power</button>
+  </div>
+  <svg id="g_svg" viewBox="0 0 620 420" style="width:100%;display:block"></svg>
+  <div class="cap" id="g_cap"></div>
+</figure>
+
+<section class="beat tight">
+  <p>Nobody told it to do that. It was given the tire model, the width of the road and a stopwatch, and <b>it runs to the far edge before the corner even starts</b> — steering away from a left-hander in order to take it. Widening the corner is worth more than the distance it costs, and the solver found that on its own.</p>
+  <p>Watch the arrows rather than the car, and step through in order. For the first 25 m it is <b>still accelerating</b> — the arrows point forward — while already steering away from the corner. Then it brakes, hard: <span class="coral">11,000 N</span> at the 32 m mark, and the weight piles onto the front tires, which go from carrying 48% of the car to <b>70%</b>. Through the corner the arrows swing sideways and <span class="amber">the outside two grow while the inside two shrink to almost nothing</span> — the car is leaning on two tires. Past the apex they rotate forward again.</p>
+  <p class="dim">The view stops just past the corner exit; the road runs straight for another 230 m beyond it.</p>
+</section>
+
+<section class="beat tight">
+  <p>Now the same corner as a diagram, so the numbers are readable. Each wheel shows what it is <b>carrying</b> (the ring, which grows and shrinks as load moves) and what it is <b>spending</b> (the arrow, and how close it comes to the edge).</p>
 </section>
 
 <figure class="fig reveal">
@@ -448,6 +487,7 @@
 <script src="data.js"></script>
 <script src="tvdata.js"></script>
 <script src="linedata.js"></script>
+<script src="linegeom.js"></script>
 <script src="widgets.js"></script>
 </body>
 </html>

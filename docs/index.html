@@ -40,7 +40,82 @@
     --mauve:#9A7AB0; --sage:#7D9A6A; --terra:#C47A5A; --coral:#FF5E3A;
     --text-bright:#EDE8DC; --text-primary:#C8C2B4; --text-muted:#6A6358;
     --font-display:'Rajdhani',sans-serif; --font-mono:'JetBrains Mono',monospace;
+  
+    --fig-bg:#0d0c07; --slate:#3f4a56; --border-strong:#3d3a30;
   }
+
+  /* ── Accessibility mode ────────────────────────────────────────────────
+     Engaged by the control in the corner, or automatically under
+     `prefers-contrast: more`. Three things change, in the order they
+     actually matter to a reader:
+
+       1. the data-series tokens move to a scale separated by LIGHTNESS as
+          well as hue. The house scale separates by hue alone, so sage and
+          terra land 20.4 apart under simulated deuteranopia — the same
+          colour, for the ~5% of men who have it.
+       2. hairlines get a 2px floor and decorative opacity is dropped.
+          Presentation attributes lose to any CSS declaration, so this
+          reaches the stroke widths figure JS sets inline, without a redraw.
+       3. where a figure encodes category by colour alone, it gains a
+          second channel — shape, or a letter.
+
+     (3) is what does the real work. Colour alone cannot be made
+     colour-blind-safe at five-plus categories: any set of hues at one
+     lightness collapses for somebody. The palette only buys margin, which
+     is why these hues can stay in the house families rather than going
+     electric to chase a separation number.                              */
+  html[data-a11y]{
+    --amber:#D9B45F; --amber-bright:#F2CF79;
+    --steel:#79BCF3; --steel-bright:#A8D2F7;
+    --mauve:#B563C6; --sage:#668442; --terra:#DB8F6D; --coral:#D45F77;
+    --slate:#4F9D99;
+    --text-muted:#A39B8C;      /* house var(--text-muted) is 3.21:1 — under the floor */
+    --text-primary:#DED8CA;
+    --border:#6E6959;          /* house var(--border) is 1.29:1 */
+    --border-strong:#837D6B;
+    --stroke-floor:2px;
+    --mark-opacity:1;
+  }
+  /* A blanket stroke-width would also thin the strokes that are deliberately
+     heavy. CSS cannot take a max against a presentation attribute, so raise
+     the thin values by name. */
+  html[data-a11y] .fig svg [stroke-width="1"],
+  html[data-a11y] .fig svg [stroke-width="1.5"],
+  html[data-a11y] .fig svg [stroke-width="0.5"],
+  html[data-a11y] .fig svg [stroke-width=".5"],
+  html[data-a11y] figure svg [stroke-width="1"],
+  html[data-a11y] figure svg [stroke-width="1.5"]{stroke-width:var(--stroke-floor)}
+  /* Decorative transparency halves effective contrast: a .72-opacity mark at
+     4.47:1 lands at 2.84:1, under the 3:1 floor for a graphic. */
+  html[data-a11y] figure svg [opacity]{opacity:var(--mark-opacity)}
+
+  .sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;
+    clip-path:inset(50%);white-space:nowrap;border:0}
+  .kbd-hint{font-size:10px;color:var(--text-muted);letter-spacing:.04em}
+
+  /* The control that turns on legibility must not itself be the least legible
+     thing on the page. 10.7:1 resting, 44px target, first tab stop. */
+  .a11y-btn{position:fixed;top:14px;right:14px;z-index:60;display:inline-flex;align-items:center;
+    justify-content:center;gap:7px;min-height:44px;
+    font-family:var(--font-display,sans-serif);font-weight:600;font-size:11px;letter-spacing:.12em;
+    text-transform:uppercase;background:rgba(26,24,18,.92);backdrop-filter:blur(6px);
+    color:var(--text-primary);border:1px solid var(--border-strong,#3d3a30);border-radius:4px;
+    padding:7px 13px;cursor:pointer;transition:.2s}
+  .a11y-btn:hover{color:var(--text-bright);border-color:var(--amber)}
+  .a11y-btn:focus-visible{outline:3px solid var(--amber-bright);outline-offset:3px}
+  .a11y-btn svg{flex:none}
+  /* State is not carried by colour. Amber-vs-bone is invisible to exactly the
+     readers this control exists for, so on/off is spelled out in the label and
+     the icon flips fill as well. */
+  .a11y-btn .state{font-weight:700}
+  .a11y-btn .state::after{content:"OFF"}
+  .a11y-btn[aria-pressed="true"]{color:var(--amber-bright);border-color:var(--amber);
+    background:rgba(196,154,60,.16);box-shadow:inset 0 0 0 1px var(--amber)}
+  .a11y-btn[aria-pressed="true"] .state::after{content:"ON"}
+  .a11y-btn[aria-pressed="true"] .half{transform:rotate(180deg);transform-origin:12px 12px}
+  @media(max-width:560px){.a11y-btn .txt{position:absolute;width:1px;height:1px;overflow:hidden;
+    clip-path:inset(50%)}.a11y-btn{min-width:44px;padding:8px 10px}}
+
   html{scroll-behavior:smooth}
   @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
   body{background:var(--void);color:var(--text-primary);font-family:var(--font-mono);
@@ -74,7 +149,7 @@
   .beat .coral{color:var(--coral)} .beat .steel{color:var(--steel-bright)} .beat .dim{color:var(--text-muted)}
   .rule{width:1px;height:60px;margin:0 auto;background:linear-gradient(transparent,var(--border),transparent)}
 
-  .fig{max-width:940px;margin:34px auto;border:1px solid var(--border);border-radius:6px;overflow:hidden;background:#0d0c07}
+  .fig{max-width:940px;margin:34px auto;border:1px solid var(--border);border-radius:6px;overflow:hidden;background:var(--fig-bg)}
   .fig .cap{font-size:11px;color:var(--text-muted);padding:11px 16px;border-top:1px solid var(--border);letter-spacing:.03em;line-height:1.6}
   .fig .cap b{color:var(--text-primary);font-weight:500}
   .fig.narrow{max-width:680px}
@@ -86,7 +161,7 @@
     border-bottom:1px solid var(--border);font-size:12px;color:var(--text-muted);letter-spacing:.04em;flex-wrap:wrap}
   .wdg-head b{color:var(--text-bright);font-weight:500}
   .tag{font-weight:500;letter-spacing:.12em;padding:3px 10px;border-radius:3px;font-size:11px;white-space:nowrap}
-  .tag.ok{color:#0d0c07;background:var(--sage)} .tag.no{color:#0d0c07;background:var(--coral)}
+  .tag.ok{color:var(--fig-bg);background:var(--sage)} .tag.no{color:var(--fig-bg);background:var(--coral)}
   .tag.idle{color:var(--text-muted);border:1px solid var(--border)}
   .wdg-foot{padding:12px 16px;border-top:1px solid var(--border);font-size:11px;color:var(--text-muted);
     display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
@@ -94,7 +169,7 @@
     background:transparent;color:var(--text-primary);border:1px solid var(--border);border-radius:4px;padding:7px 14px;cursor:pointer;transition:.2s}
   .btn:hover{color:var(--text-bright);border-color:var(--amber)}
   .btn:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
-  .btn.on{color:#0d0c07;background:var(--amber);border-color:var(--amber)}
+  .btn.on{color:var(--fig-bg);background:var(--amber);border-color:var(--amber)}
 
   .toggle-row{display:flex;border-bottom:1px solid var(--border);flex-wrap:wrap}
   .toggle{flex:1;min-width:120px;padding:12px 6px;font-family:var(--font-display);font-weight:600;font-size:12px;
@@ -144,6 +219,17 @@
 </style>
 </head>
 <body>
+<!-- orbitope:a11y-control — self-contained; move as one block. -->
+<button id="a11yBtn" class="a11y-btn" type="button" aria-pressed="false"
+        title="High-contrast, colour-blind-safe figures">
+  <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none"
+       stroke="currentColor" stroke-width="2" stroke-linecap="round">
+    <circle cx="12" cy="12" r="9"/>
+    <path class="half" d="M12 3a9 9 0 0 1 0 18Z" fill="currentColor" stroke="none"/>
+  </svg>
+  <span class="txt">Contrast</span><span class="state"></span>
+</button>
+
 <div class="progress" id="progress"></div>
 <div class="wrap">
 
@@ -168,14 +254,14 @@
 <figure class="fig narrow reveal">
   <div class="wdg-head"><span>one tire · <b>3,600 N</b> on it, about one front corner at rest</span><span class="tag idle" id="t_tag">live</span></div>
   <div class="ctl">
-    <label>slip angle <input type="range" id="t_a" min="0" max="200" value="50"><span class="v" id="t_av">5.0°</span></label>
+    <label>slip angle <input type="range" id="t_a" min="0" max="200" value="50" aria-label="Slip angle, degrees"><span class="v" id="t_av">5.0°</span></label>
   </div>
-  <svg id="t_svg" viewBox="0 0 620 300" style="width:100%;display:block"></svg>
+  <svg id="t_svg" role="img" aria-describedby="t_cap" aria-label="One tire under 3,600 N, about one front corner at rest: how much grip it returns as load changes." viewBox="0 0 620 300" style="width:100%;display:block"></svg>
   <div class="stats">
     <span>sideways force <b class="big" id="t_f">—</b></span>
     <span>of its maximum <b id="t_p">—</b></span>
   </div>
-  <div class="cap" id="t_cap"></div>
+  <figcaption class="cap" id="t_cap"></figcaption>
 </figure>
 
 <section class="beat tight">
@@ -196,16 +282,16 @@
 <figure class="fig reveal">
   <div class="wdg-head"><span>two tires · <b>6,000 N between them</b>, total never changes</span><span class="tag idle" id="l_tag">even</span></div>
   <div class="ctl">
-    <label>load moved across <input type="range" id="l_x" min="0" max="100" value="0"><span class="v" id="l_xv">0 N</span></label>
+    <label>load moved across <input type="range" id="l_x" min="0" max="100" value="0" aria-label="Load moved across the axle, newtons"><span class="v" id="l_xv">0 N</span></label>
   </div>
-  <svg id="l_svg" viewBox="0 0 620 250" style="width:100%;display:block"></svg>
+  <svg id="l_svg" role="img" aria-describedby="cap-2" aria-label="Two tires sharing 6,000 N. Sharing the load evenly always returns more total grip than loading one." viewBox="0 0 620 250" style="width:100%;display:block"></svg>
   <div class="stats">
     <span>inner <b id="l_in">3000 N</b></span>
     <span>outer <b id="l_out">3000 N</b></span>
     <span>pair can make <b class="big" id="l_tot">—</b></span>
     <span>lost <b id="l_loss">0.0%</b></span>
   </div>
-  <div class="cap">Even sharing always wins. The tire you press harder gains less than the tire you unload gives up, because the loaded one is now further down that falling curve. <b>The penalty starts almost free and gets expensive fast</b> — it grows with the square of the transfer, so the first 500 N is nearly nothing and the last 500 N is most of the bill.</div>
+  <figcaption class="cap" id="cap-2">Even sharing always wins. The tire you press harder gains less than the tire you unload gives up, because the loaded one is now further down that falling curve. <b>The penalty starts almost free and gets expensive fast</b> — it grows with the square of the transfer, so the first 500 N is nearly nothing and the last 500 N is most of the bill.</figcaption>
 </figure>
 
 <section class="beat tight">
@@ -225,12 +311,12 @@
 
 <figure class="fig narrow reveal">
   <div class="wdg-head"><span>the force budget · <b>drag it</b></span><span class="tag idle" id="e_tag">at the limit</span></div>
-  <svg id="e_svg" viewBox="0 0 420 400" style="width:100%;display:block;touch-action:none;cursor:grab"></svg>
+  <svg id="e_svg" role="img" aria-describedby="cap-3" aria-label="The force budget as a circle: braking and cornering drawn from the same total, draggable." viewBox="0 0 420 400" style="width:100%;display:block;touch-action:none;cursor:grab"></svg>
   <div class="stats">
     <span>braking <b id="e_bx">0%</b></span>
     <span>cornering <b id="e_by">100%</b></span>
   </div>
-  <div class="cap">Spend 70% of the budget braking and about <b>71%</b> is left to corner with. That is why "brake, then turn" is not really advice about technique — it is a statement about an account. And it is why trail braking works: carry the brakes past turn-in and the weight moving forward buys the front tires grip exactly when you are asking them to bite.</div>
+  <figcaption class="cap" id="cap-3">Spend 70% of the budget braking and about <b>71%</b> is left to corner with. That is why "brake, then turn" is not really advice about technique — it is a statement about an account. And it is why trail braking works: carry the brakes past turn-in and the weight moving forward buys the front tires grip exactly when you are asking them to bite.</figcaption>
 </figure>
 
 <div class="rule"></div>
@@ -256,7 +342,7 @@
     </span>
     <span class="v" id="g_sv" style="min-width:14ch">&mdash;</span>
     <label style="flex:1;min-width:160px">
-      <input type="range" id="g_s" min="0" max="10" value="0" style="width:100%">
+      <input type="range" id="g_s" min="0" max="10" value="0" style="width:100%" aria-label="Step through the corner">
     </label>
   </div>
   <div class="ctl" style="gap:8px">
@@ -268,8 +354,8 @@
     <button class="btn" data-gjump="apex">apex</button>
     <button class="btn" data-gjump="exit">back on power</button>
   </div>
-  <svg id="g_svg" viewBox="0 0 620 420" style="width:100%;display:block"></svg>
-  <div class="cap" id="g_cap"></div>
+  <svg id="g_svg" role="img" aria-describedby="g_cap" aria-label="The corner seen from above. Dashed line is the middle of the road; the solid line is the path the car chose." viewBox="0 0 620 420" style="width:100%;display:block"></svg>
+  <figcaption class="cap" id="g_cap"></figcaption>
 </figure>
 
 <section class="beat tight">
@@ -295,7 +381,7 @@
     </span>
     <span class="v" id="c_sv" style="min-width:12ch">—</span>
     <label style="flex:1;min-width:180px">
-      <input type="range" id="c_s" min="0" max="66" value="20" style="width:100%">
+      <input type="range" id="c_s" min="0" max="66" value="20" style="width:100%" aria-label="Step through the corner">
     </label>
   </div>
   <div class="ctl" style="gap:8px">
@@ -306,8 +392,8 @@
     <button class="btn" data-jump="exit">corner exit</button>
     <button class="btn" data-jump="straight">down the straight</button>
   </div>
-  <svg id="c_svg" viewBox="0 0 620 378" style="width:100%;display:block"></svg>
-  <div class="cap" id="c_cap"></div>
+  <svg id="c_svg" role="img" aria-describedby="c_cap" aria-label="The same corner as a diagram. Each wheel shows the load it carries as a ring and the grip it spends as a fill." viewBox="0 0 620 378" style="width:100%;display:block"></svg>
+  <figcaption class="cap" id="c_cap"></figcaption>
 </figure>
 
 <section class="beat tight">
@@ -334,8 +420,8 @@
     <button class="toggle" data-pow="2">282 hp</button>
     <button class="toggle" data-pow="3">402 hp</button>
   </div>
-  <svg id="p_svg" viewBox="0 0 620 260" style="width:100%;display:block"></svg>
-  <div class="cap" id="p_cap"></div>
+  <svg id="p_svg" role="img" aria-describedby="p_cap" aria-label="Four measured solves of the same corner in the same car, changing only which axle drives." viewBox="0 0 620 260" style="width:100%;display:block"></svg>
+  <figcaption class="cap" id="p_cap"></figcaption>
 </figure>
 
 <section class="beat tight">
@@ -356,10 +442,10 @@
 <figure class="fig reveal">
   <div class="wdg-head"><span>slide the mass · <b>everything else held fixed</b></span><span class="tag idle" id="b_tag">54% front</span></div>
   <div class="ctl">
-    <label>weight on the front <input type="range" id="b_i" min="0" max="4" value="2"><span class="v" id="b_v">54%</span></label>
+    <label>weight on the front <input type="range" id="b_i" min="0" max="4" value="2" aria-label="Weight on the front axle"><span class="v" id="b_v">54%</span></label>
   </div>
-  <svg id="b_svg" viewBox="0 0 620 280" style="width:100%;display:block"></svg>
-  <div class="cap" id="b_cap"></div>
+  <svg id="b_svg" role="img" aria-describedby="b_cap" aria-label="Weight distribution slid front to rear, everything else fixed, against lap time and understeer gradient." viewBox="0 0 620 280" style="width:100%;display:block"></svg>
+  <figcaption class="cap" id="b_cap"></figcaption>
 </figure>
 
 <section class="beat tight">
@@ -380,8 +466,8 @@
 
 <figure class="fig reveal">
   <div class="wdg-head"><span>five layouts on two axes · <b>click one</b></span><span class="tag idle" id="y_tag">mid engine</span></div>
-  <svg id="y_svg" viewBox="0 0 620 330" style="width:100%;display:block"></svg>
-  <div class="cap" id="y_cap"></div>
+  <svg id="y_svg" role="img" aria-describedby="y_cap" aria-label="Five engine layouts plotted on two axes: how quick the car is against how eager it is to rotate." viewBox="0 0 620 330" style="width:100%;display:block"></svg>
+  <figcaption class="cap" id="y_cap"></figcaption>
 </figure>
 
 <section class="beat tight">
@@ -405,8 +491,8 @@
 <figure class="fig reveal">
   <div class="toggle-row" id="ln_conds"></div>
   <div class="ctl" id="ln_designs" style="gap:8px"><span style="letter-spacing:.06em">weight on front</span></div>
-  <svg id="ln_svg" viewBox="0 0 620 250" style="width:100%;display:block"></svg>
-  <div class="cap" id="ln_cap"></div>
+  <svg id="ln_svg" role="img" aria-describedby="ln_cap" aria-label="Every lap driven by a reactive learner on a road whose grip is not what it expected." viewBox="0 0 620 250" style="width:100%;display:block"></svg>
+  <figcaption class="cap" id="ln_cap"></figcaption>
 </figure>
 
 <section class="beat tight">
@@ -436,7 +522,7 @@
     </span>
     <span class="v" id="w_sv" style="min-width:12ch">—</span>
     <label style="flex:1;min-width:180px">
-      <input type="range" id="w_s" min="0" max="95" value="20" style="width:100%">
+      <input type="range" id="w_s" min="0" max="95" value="20" style="width:100%" aria-label="Step through the corner">
     </label>
   </div>
   <div class="ctl" style="gap:8px">
@@ -447,8 +533,8 @@
     <button class="btn" data-wjump="exit">corner exit</button>
     <button class="btn" data-wjump="straight">straight</button>
   </div>
-  <svg id="w_svg" viewBox="0 0 620 300" style="width:100%;display:block"></svg>
-  <div class="cap" id="w_cap"></div>
+  <svg id="w_svg" role="img" aria-describedby="w_cap" aria-label="The same corner and demand for each layout, with a torque controller in place of a differential." viewBox="0 0 620 300" style="width:100%;display:block"></svg>
+  <figcaption class="cap" id="w_cap"></figcaption>
 </figure>
 
 <section class="beat tight">
@@ -465,8 +551,8 @@
     <button class="toggle active" data-vpow="1x">181 hp · our car</button>
     <button class="toggle" data-vpow="2x">362 hp · twice the power</button>
   </div>
-  <svg id="v_svg" viewBox="0 0 620 300" style="width:100%;display:block"></svg>
-  <div class="cap" id="v_cap"></div>
+  <svg id="v_svg" role="img" aria-describedby="v_cap" aria-label="The most cornering each layout survives, found by asking for more until it lets go." viewBox="0 0 620 300" style="width:100%;display:block"></svg>
+  <figcaption class="cap" id="v_cap"></figcaption>
 </figure>
 
 <section class="beat tight">
@@ -496,6 +582,27 @@
 </section>
 
 </div>
+<!-- orbitope:a11y-control script — pairs with the button above. -->
+<script>
+(function(){
+  var KEY='orbitope-a11y', root=document.documentElement, btn=document.getElementById('a11yBtn');
+  function stored(){ try{ return localStorage.getItem(KEY); }catch(e){ return null; } }
+  function apply(on,persist){
+    if(on) root.setAttribute('data-a11y',''); else root.removeAttribute('data-a11y');
+    if(btn) btn.setAttribute('aria-pressed',on?'true':'false');
+    if(persist){ try{ localStorage.setItem(KEY,on?'on':'off'); }catch(e){} }
+    document.dispatchEvent(new CustomEvent('a11ychange',{detail:{on:on}}));
+  }
+  // No media query reports colour blindness, so prefers-contrast is only a
+  // hint. An explicit choice always wins, and it is shared across the site
+  // because every article sits on the one origin.
+  var pref=stored();
+  var auto=window.matchMedia&&window.matchMedia('(prefers-contrast: more)').matches;
+  apply(pref?pref==='on':!!auto,false);
+  if(btn) btn.addEventListener('click',function(){ apply(!root.hasAttribute('data-a11y'),true); });
+})();
+</script>
+
 <script src="tire.js"></script>
 <script src="data.js"></script>
 <script src="tvdata.js"></script>

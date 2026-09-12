@@ -249,7 +249,7 @@
   <div class="eyebrow">Start with one tire</div>
   <h2>A tire makes its biggest grip while it is already sliding.</h2>
   <p>The intuitive model is that a tire holds on until it doesn't — grip as a threshold you cross. That model is wrong in the direction that makes fast driving impossible to explain.</p>
-  <p>To make sideways force, a wheel has to point slightly away from where it is actually travelling. That angle is called <b>slip angle</b>, and the rubber in the contact patch bends as it passes through. Bent rubber pushes back. <span class="amber">Slip isn't a symptom of losing grip — it's the mechanism by which grip exists.</span></p>
+  <p>To make sideways force, a wheel has to point slightly away from where it is actually traveling. That angle is called <b>slip angle</b>, and the rubber in the contact patch bends as it passes through. Bent rubber pushes back. <span class="amber">Slip isn't a symptom of losing grip — it's the mechanism by which grip exists.</span></p>
   <p class="dim">Drag the slider. One tire, one load, nothing changing but the angle.</p>
 </section>
 
@@ -401,7 +401,7 @@
 <section class="beat tight">
   <p>Through the corner the two cars are indistinguishable — both are cornering as hard as the tires allow, so both solve the same problem and find the same answer. <b>They pick the same line to within the width of your hand.</b></p>
   <p>Past the exit they part company. The rear-drive car's front wheels go quiet: the corner is done and they are only steering, which costs almost nothing. Its rear wheels do the accelerating. <span class="sage">Two jobs, two axles.</span></p>
-  <p>The front-drive car's front wheels never get to rest. Eighty metres down a straight road, with no cornering left to do at all, <span class="coral">they are still spending well over half of what they have</span> — on acceleration alone. If you drive front-wheel drive you have felt this at every wet junction: turn and accelerate together and the wheel goes light and tugs at your hands. Ask for the two jobs one at a time and it does both without complaint.</p>
+  <p>The front-drive car's front wheels never get to rest. Eighty meters down a straight road, with no cornering left to do at all, <span class="coral">they are still spending well over half of what they have</span> — on acceleration alone. If you drive front-wheel drive you have felt this at every wet junction: turn and accelerate together and the wheel goes light and tugs at your hands. Ask for the two jobs one at a time and it does both without complaint.</p>
 </section>
 
 <div class="rule"></div>
@@ -411,7 +411,7 @@
   <div class="eyebrow">The argument everyone has</div>
   <h2>Which wheels should drive?</h2>
   <p>Hold everything else identical — same mass, same weight distribution, same tires, same corner — and change only which axle gets the torque. Real front- and rear-drive cars differ in almost everything, so this is a comparison you cannot run in a car park.</p>
-  <p>The car being modelled makes about <b>180 hp</b> — a normal sports coupé. At that power the two layouts finish within <b>three hundredths of a second</b> of each other: too close to feel, and not the answer anyone wants. The interesting part is what moves it, so the same corner was solved again at four engine outputs. <span class="dim">Pick one.</span></p>
+  <p>The car being modeled makes about <b>180 hp</b> — a normal sports coupé. At that power the two layouts finish within <b>three hundredths of a second</b> of each other: too close to feel, and not the answer anyone wants. The interesting part is what moves it, so the same corner was solved again at four engine outputs. <span class="dim">Pick one.</span></p>
 </section>
 
 <figure class="fig reveal">
@@ -438,7 +438,7 @@
   <div class="eyebrow">50:50</div>
   <h2>Weight distribution changes the car far more than it changes the lap time.</h2>
   <p>Slide the mass along the wheelbase, change nothing else, and measure two things: how the car <i>behaves</i>, and how fast it goes.</p>
-  <p>The behaviour number is the <b>understeer gradient</b> — how much extra steering the car needs as you push harder. Negative means the back gives up first and the car rotates. Positive means the front gives up first and it pushes wide.</p>
+  <p>The behavior number is the <b>understeer gradient</b> — how much extra steering the car needs as you push harder. Negative means the back gives up first and the car rotates. Positive means the front gives up first and it pushes wide.</p>
 </section>
 
 <figure class="fig reveal">
@@ -487,7 +487,7 @@
   <p>Everything above was driven by a solver that sees the whole road before it turns the wheel. It knows exactly when the corner arrives, so for a car that takes 356 ms to respond instead of 201 ms, it simply <b>starts steering earlier</b>. The delay costs almost nothing, because the delay is perfectly predictable.</p>
   <p>A real driver reacts to what has already happened. For them, 155 ms is 155 ms of the car not doing what they just asked, arriving exactly when they are trying to correct something. <span class="amber">Response time is nearly free if you know the future and expensive if you don't</span> — which is why every "which layout is faster" answer above came back smaller than expected. We were asking about driveability using a driver for whom driveability does not exist.</p>
   <p>So the numbers above are a <i>floor</i>. A design difference a perfect driver can plan around is one a real driver has to survive — and surviving is a different measurement.</p>
-  <p>Here is the same five cars, driven by a learner that reacts instead of planning, over a road whose grip is not quite what it expected. Every lap it drove is drawn.</p>
+  <p>Here are the same five cars, driven by a learner that reacts instead of planning, over a road whose grip is not quite what it expected. Every lap it drove is drawn.</p>
 </section>
 
 <figure class="fig reveal">
@@ -567,7 +567,7 @@
   <div class="c"><span><b>This is a model, and it says so.</b> Four wheels, load transfer, a real measured tire — but no roll camber, roll steer or compliance steer, which together are most of a real car's understeer. This car produces about <b>5%</b> of a real one's understeer gradient. Read the orderings and the directions; the magnitudes are illustrative.</span></div>
   <div class="c"><span><b>One corner, one car, one tire file.</b> A 90° left-hander of 40 m radius, with a long straight after it. A hairpin or a sweeper stresses different budgets and can reorder things.</span></div>
   <div class="c"><span><b>The tire is bigger than the car really wears</b>, and the shape of the braking-versus-cornering trade is an assumption standing in for coefficients this tire file doesn't carry. That a tire trades one for the other is certain; that it trades along an ellipse exactly is our choice.</span></div>
-  <div class="c"><span><b>Every number on this page is exported from the experiments' own artefacts</b>, and the tire curve is recomputed live from the same coefficients with a known-answer check against the Python. An audit of this series found ten of fifteen write-ups had drifted from their own data at least once; this page is built so it can't.</span></div>
+  <div class="c"><span><b>Every number on this page is exported from the experiments' own artifacts</b>, and the tire curve is recomputed live from the same coefficients with a known-answer check against the Python. An audit of this series found ten of fifteen write-ups had drifted from their own data at least once; this page is built so it can't.</span></div>
 </div>
 
 <div class="rule"></div>

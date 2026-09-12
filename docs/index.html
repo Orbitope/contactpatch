@@ -249,7 +249,7 @@
   <div class="eyebrow">Start with one tire</div>
   <h2>A tire makes its biggest grip while it is already sliding.</h2>
   <p>The intuitive model is that a tire holds on until it doesn't, treating grip as a threshold you cross. That model is wrong in the direction that makes fast driving impossible to explain.</p>
-  <p>To make sideways force, a wheel has to point slightly away from where it is actually traveling. That angle is called <b>slip angle</b>, and the rubber in the contact patch bends as it passes through. Bent rubber pushes back. <span class="amber">Slip is the mechanism by which grip exists, not a symptom of losing it.</span></p>
+  <p>To make sideways force, a wheel has to point slightly away from where it is actually traveling. That angle is called <b>slip angle</b>, and the rubber in the contact patch bends as it passes through. Bent rubber pushes back. <span class="amber">Slip is the mechanism by which grip exists.</span></p>
   <p class="dim">Drag the slider. One tire, one load, nothing changing but the angle.</p>
 </section>
 
@@ -278,7 +278,7 @@
   <div class="eyebrow">Why cornering costs you</div>
   <h2>Press a tire twice as hard and you do not get twice the grip.</h2>
   <p>This is the one property of rubber that the rest of chassis engineering is bookkeeping on top of. Load a tire more heavily and it grips harder in absolute terms, but <b>less per newton pressing it down</b>.</p>
-  <p>This matters because a car corners by moving weight, not adding it. Lean on the outside wheels and the pair carries the same total as before, shared unevenly. Drag the split and watch what the pair can do.</p>
+  <p>This matters because a car corners by moving weight. Lean on the outside wheels and the pair carries the same total as before, shared unevenly. Drag the split and watch what the pair can do.</p>
 </section>
 
 <figure class="fig reveal">
@@ -297,7 +297,7 @@
 </figure>
 
 <section class="beat tight">
-  <p>Here is the connection that makes this more than arithmetic. <b>Cornering moves a car's weight</b> onto the outside wheels and off the inside; it does not remove any. Braking moves it forward. Accelerating moves it back. Every one of those is the slider you just dragged, happening to a real car in real time.</p>
+  <p>Here is the connection that makes this more than arithmetic. <b>Cornering moves a car's weight</b> onto the outside wheels and off the inside. Braking moves it forward. Accelerating moves it back. Every one of those is the slider you just dragged, happening to a real car in real time.</p>
   <p>So a car has <i>less total grip while it is doing something</i> than it has sitting still. Nothing wore out. The weight got shared unevenly, and unevenly shared weight makes less grip. That single fact is why cars built to corner are low and wide, and why anti-roll bars exist at all.</p>
 </section>
 
@@ -318,7 +318,7 @@
     <span>braking <b id="e_bx">0%</b></span>
     <span>cornering <b id="e_by">100%</b></span>
   </div>
-  <figcaption class="cap" id="cap-3">Spend 70% of the budget braking and about <b>71%</b> is left to corner with. That is why "brake, then turn" is a statement about an account, not advice about technique. It is also why trail braking works. Carry the brakes past turn-in and the weight moving forward buys the front tires grip exactly when you are asking them to bite.</figcaption>
+  <figcaption class="cap" id="cap-3">Spend 70% of the budget braking and about <b>71%</b> is left to corner with. That is why "brake, then turn" is a statement about an account. It is also why trail braking works. Carry the brakes past turn-in and the weight moving forward buys the front tires grip exactly when you are asking them to bite.</figcaption>
 </figure>
 
 <div class="rule"></div>
@@ -427,7 +427,7 @@
 </figure>
 
 <section class="beat tight">
-  <p><b>"Rear-wheel drive is faster" is a fact about drivetrains only <i>at a given power level</i></b>, and the condition is doing most of the work. With little power the corner exit is limited by the engine, not by grip, so a tire-budget problem has nothing to bite on. Pile on power and the front tires saturate earlier and earlier.</p>
+  <p><b>"Rear-wheel drive is faster" is true only <i>at a given power level</i></b>, and the condition is doing most of the work. With little power the corner exit is limited by the engine, not by grip, so a tire-budget problem has nothing to bite on. Pile on power and the front tires saturate earlier and earlier.</p>
   <p>You can check that without any of this. Economy hatchbacks are front-wheel drive and nobody objects, while almost every car built to be fast is rear- or all-wheel drive. That split is usually explained by cost and packaging, and those explanations are true, but the friction budget alone reproduces it, from a tire data file and a stopwatch.</p>
 </section>
 
@@ -498,8 +498,8 @@
 </figure>
 
 <section class="beat tight">
-  <p>With no disturbance every drivable car traces one line. Turn the grip variation on and they fan out, and <b>the quickest of them starts running out of road</b> while the others do not. That is what "the fast setup is the one that bites" comes down to. It is about what happens when you go over the edge, not about running closer to it. Lose front grip and the car pushes wide, which scrubs speed, which gives the grip back. Lose rear grip and it rotates, which points the tires further from where they need to be, which rotates it more.</p>
-  <p class="dim">Note the 40% car, which fails with nothing going wrong. It is not fragile; this driver cannot drive it, which is a different problem with a different fix.</p>
+  <p>With no disturbance every drivable car traces one line. Turn the grip variation on and they fan out, and <b>the quickest of them starts running out of road</b> while the others do not. That is what "the fast setup is the one that bites" comes down to. It is about what happens when you go over the edge. Lose front grip and the car pushes wide, which scrubs speed, which gives the grip back. Lose rear grip and it rotates, which points the tires further from where they need to be, which rotates it more.</p>
+  <p class="dim">Note the 40% car, which fails with nothing going wrong. This driver cannot drive it, which is a different problem with a different fix.</p>
 </section>
 
 <div class="rule"></div>
@@ -560,7 +560,7 @@
 <section class="beat tight">
   <p>With an open differential, four of the five archetypes leave the road at a demand the fifth one meets easily. With the controller on, all five stay on it. <b>Nothing else changed.</b></p>
   <p>Measured as spread in cornering limit across the five layouts, the controller flattens the difference between them by <b>16×</b> at 181 hp and <b>47×</b> at twice that. This controller makes where the engine sits, the thing that made a 911 a 911, close to irrelevant to whether the car holds its line.</p>
-  <p>There is one exception, a mechanism rather than a gap. The front-driven car doesn't flatten. Its limit is a front-tire slip-angle ceiling, not a torque-distribution problem, and <span class="amber">a controller built to move torque around has nothing to move when torque was never what was failing.</span></p>
+  <p>There is one exception, a mechanism rather than a gap. The front-driven car doesn't flatten. Its limit is a front-tire slip-angle ceiling, and <span class="amber">a controller built to move torque around has nothing to move when torque was never what was failing.</span></p>
 </section>
 
 <div class="caveats">

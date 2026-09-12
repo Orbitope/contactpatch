@@ -223,7 +223,7 @@
 <body>
 <!-- orbitope:a11y-control — self-contained; move as one block. -->
 <button id="a11yBtn" class="a11y-btn" type="button" aria-pressed="false"
-        title="High-contrast, colour-blind-safe figures">
+        title="High-contrast, color-blind-safe figures">
   <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none"
        stroke="currentColor" stroke-width="2" stroke-linecap="round">
     <circle cx="12" cy="12" r="9"/>
@@ -238,18 +238,18 @@
 <header class="hero">
   <div class="kicker">Contact Patch · how a car actually handles</div>
   <h1>Everything your car does happens on <span class="accent">four patches of rubber</span> the size of your hand.</h1>
-  <p class="sub">Front-wheel drive or rear? Is 50:50 weight distribution real engineering or a marketing number? Is mid-engine actually better, and better at what? I built a car out of a measured tire file — a real one, from a test rig — pointed a minimum-time solver at it, and asked. <b>Most of the famous answers came back smaller than the arguments about them.</b> Then I replaced the perfect driver with one that could be surprised, and the numbers moved. Everything below runs live in your browser, on the same tire the results use.</p>
+  <p class="sub">Front-wheel drive or rear? Is 50:50 weight distribution real engineering or a marketing number? Is mid-engine actually better, and better at what? I built a car out of a measured tire file (a real one, from a test rig), pointed a minimum-time solver at it, and asked. <b>Most of the famous answers came back smaller than the arguments about them.</b> Then I replaced the perfect driver with one that could be surprised, and the numbers moved. Everything below runs live in your browser, on the same tire the results use.</p>
   <div class="scroll-cue">scroll</div>
 </header>
 
-<div class="warn" id="warn">This page's tire model failed its check against the Python it was ported from. The curves below may be wrong — treat them as broken until this message goes away.</div>
+<div class="warn" id="warn">This page's tire model failed its check against the Python it was ported from. The curves below may be wrong. Treat them as broken until this message goes away.</div>
 
 <!-- 1. THE TIRE -->
 <section class="beat">
   <div class="eyebrow">Start with one tire</div>
   <h2>A tire makes its biggest grip while it is already sliding.</h2>
-  <p>The intuitive model is that a tire holds on until it doesn't — grip as a threshold you cross. That model is wrong in the direction that makes fast driving impossible to explain.</p>
-  <p>To make sideways force, a wheel has to point slightly away from where it is actually travelling. That angle is called <b>slip angle</b>, and the rubber in the contact patch bends as it passes through. Bent rubber pushes back. <span class="amber">Slip isn't a symptom of losing grip — it's the mechanism by which grip exists.</span></p>
+  <p>The intuitive model is that a tire holds on until it doesn't, treating grip as a threshold you cross. That model is wrong in the direction that makes fast driving impossible to explain.</p>
+  <p>To make sideways force, a wheel has to point slightly away from where it is actually traveling. That angle is called <b>slip angle</b>, and the rubber in the contact patch bends as it passes through. Bent rubber pushes back. <span class="amber">Slip is the mechanism by which grip exists.</span></p>
   <p class="dim">Drag the slider. One tire, one load, nothing changing but the angle.</p>
 </section>
 
@@ -267,8 +267,8 @@
 </figure>
 
 <section class="beat tight">
-  <p><b>Grip has a top, and the top is flat.</b> By 5° the tire is already making about 91% of everything it will ever make; the last 9% costs another 5° of slip. That flatness is what makes driving at the limit hard — near the peak, the feedback telling you where you are goes quiet. If you have pushed a car on a wet road and felt more steering stop producing more turning, no drama, just diminishing returns, you have felt the top of this hill.</p>
-  <p>Push past it and force <i>falls</i>. There is no cliff, no moment of letting go. Just a hill, and you can be on the wrong side of it while still making most of your grip.</p>
+  <p><b>Grip has a top, and the top is flat.</b> By 5° the tire is already making about 91% of everything it will ever make; the last 9% costs another 5° of slip. That flatness is what makes driving at the limit hard. Near the peak, the feedback telling you where you are goes quiet. If you have pushed a car on a wet road and felt more steering stop producing more turning, no drama, only diminishing returns, you have felt the top of this curve.</p>
+  <p>Push past it and force <i>falls</i>, but gradually. Nothing lets go all at once, and you can be past the peak while still making most of your grip.</p>
 </section>
 
 <div class="rule"></div>
@@ -277,8 +277,8 @@
 <section class="beat">
   <div class="eyebrow">Why cornering costs you</div>
   <h2>Press a tire twice as hard and you do not get twice the grip.</h2>
-  <p>This is the one property of rubber that the rest of chassis engineering is bookkeeping on top of. Load a tire more heavily and it grips harder in absolute terms — but <b>less per newton pressing it down</b>.</p>
-  <p>Which matters because a car corners by moving weight, not adding it. Lean on the outside wheels and the pair carries the same total as before, shared unevenly. Drag the split and watch what the pair can do.</p>
+  <p>This is the one property of rubber that the rest of chassis engineering is bookkeeping on top of. Load a tire more heavily and it grips harder in absolute terms, but <b>less per newton pressing it down</b>.</p>
+  <p>This matters because a car corners by moving weight. Lean on the outside wheels and the pair carries the same total as before, shared unevenly. Drag the split and watch what the pair can do.</p>
 </section>
 
 <figure class="fig reveal">
@@ -293,12 +293,12 @@
     <span>pair can make <b class="big" id="l_tot">—</b></span>
     <span>lost <b id="l_loss">0.0%</b></span>
   </div>
-  <figcaption class="cap" id="cap-2">Even sharing always wins. The tire you press harder gains less than the tire you unload gives up, because the loaded one is now further down that falling curve. <b>The penalty starts almost free and gets expensive fast</b> — it grows with the square of the transfer, so the first 500 N is nearly nothing and the last 500 N is most of the bill.</figcaption>
+  <figcaption class="cap" id="cap-2">Even sharing always wins. The tire you press harder gains less than the tire you unload gives up, because the loaded one is now further down that falling curve. <b>The penalty grows with the square of the transfer</b>, so the first 500 N is nearly nothing and the last 500 N is most of the bill.</figcaption>
 </figure>
 
 <section class="beat tight">
-  <p>Now the connection that makes it more than arithmetic. <b>Cornering does not remove weight from a car — it moves it</b>, onto the outside wheels and off the inside. Braking moves it forward. Accelerating moves it back. Every one of those is the slider you just dragged, happening to a real car in real time.</p>
-  <p>So a car has <i>less total grip while it is doing something</i> than it has sitting still. Nothing wore out. The weight just got shared unevenly, and unevenly shared weight makes less grip. That single fact is why cars built to corner are low and wide, and why anti-roll bars exist at all.</p>
+  <p>Here is the connection that makes this more than arithmetic. <b>Cornering moves a car's weight</b> onto the outside wheels and off the inside. Braking moves it forward. Accelerating moves it back. Every one of those is the slider you just dragged, happening to a real car in real time.</p>
+  <p>So a car has <i>less total grip while it is doing something</i> than it has sitting still. Nothing wore out. The weight got shared unevenly, and unevenly shared weight makes less grip. That single fact is why cars built to corner are low and wide, and why anti-roll bars exist at all.</p>
 </section>
 
 <div class="rule"></div>
@@ -307,7 +307,7 @@
 <section class="beat">
   <div class="eyebrow">One budget</div>
   <h2>Turning and stopping come out of the same account.</h2>
-  <p>A tire does not get a separate allowance for cornering and for braking. It has <b>one</b> — and every newton spent one way is unavailable the other. Drawn as a shape, the limit comes out roughly elliptical, which is where the name <b>friction ellipse</b> comes from.</p>
+  <p>A tire does not get a separate allowance for cornering and for braking. It has <b>one</b>, and every newton spent one way is unavailable the other. Drawn as a shape, the limit comes out roughly elliptical, which is where the name <b>friction ellipse</b> comes from.</p>
   <p class="dim">Drag the arrow. It can point anywhere; what it cannot do is leave the ring.</p>
 </section>
 
@@ -318,7 +318,7 @@
     <span>braking <b id="e_bx">0%</b></span>
     <span>cornering <b id="e_by">100%</b></span>
   </div>
-  <figcaption class="cap" id="cap-3">Spend 70% of the budget braking and about <b>71%</b> is left to corner with. That is why "brake, then turn" is not really advice about technique — it is a statement about an account. And it is why trail braking works: carry the brakes past turn-in and the weight moving forward buys the front tires grip exactly when you are asking them to bite.</figcaption>
+  <figcaption class="cap" id="cap-3">Spend 70% of the budget braking and about <b>71%</b> is left to corner with. That is why "brake, then turn" is a statement about an account. It is also why trail braking works. Carry the brakes past turn-in and the weight moving forward buys the front tires grip exactly when you are asking them to bite.</figcaption>
 </figure>
 
 <div class="rule"></div>
@@ -327,8 +327,8 @@
 <section class="beat">
   <div class="eyebrow">Now a whole car</div>
   <h2>Watch the four tires through one corner.</h2>
-  <p>Four wheels and a 90° left-hander of 40 m radius — about 63 m of curve, with 70 m of approach before it and 260 m of straight after. <a class="xref" href="https://orbitope.com/optimization-kangaroos/">The car is driven by a minimum-time solver</a>: it gets the tire model, the width of the road and a stopwatch, and it is not told what a racing line is.</p>
-  <p>Here is the road from above, and the line it chose. The dashed line is the middle of the road — the obvious way round. The solid one is what came back.</p>
+  <p>Four wheels take a 90° left-hander of 40 m radius, about 63 m of curve, with 70 m of approach before it and 260 m of straight after. <a class="xref" href="https://orbitope.com/optimization-kangaroos/">A minimum-time solver drives the car</a>. It gets the tire model, the width of the road and a stopwatch, and is not told what a racing line is.</p>
+  <p>Here is the road from above, and the line it chose. The dashed line is the middle of the road, the obvious way round. The solid one is what came back.</p>
 </section>
 
 <figure class="fig reveal">
@@ -361,8 +361,8 @@
 </figure>
 
 <section class="beat tight">
-  <p>Nobody told it to do that. It was given the tire model, the width of the road and a stopwatch, and <b>it runs to the far edge before the corner even starts</b> — steering away from a left-hander in order to take it. Widening the corner is worth more than the distance it costs, and the solver found that on its own.</p>
-  <p>Watch the arrows rather than the car, and step through in order. For the first 25 m it is <b>still accelerating</b> — the arrows point forward — while already steering away from the corner. Then it brakes, hard: <span class="coral">11,000 N</span> at the 32 m mark, and the weight piles onto the front tires, which go from carrying 48% of the car to <b>70%</b>. Through the corner the arrows swing sideways and <span class="amber">the outside two grow while the inside two shrink to almost nothing</span> — the car is leaning on two tires. Past the apex they rotate forward again.</p>
+  <p>Nobody told it to do that. <b>It runs to the far edge before the corner even starts</b>, steering away from a left-hander in order to take it. Widening the corner is worth more than the distance it costs, and the solver found that on its own.</p>
+  <p>Watch the arrows rather than the car, and step through in order. For the first 25 m it is <b>still accelerating</b> (the arrows point forward) while already steering away from the corner. Then it brakes hard, <span class="coral">11,000 N</span> at the 32 m mark, and the weight piles onto the front tires, which go from carrying 48% of the car to <b>70%</b>. Through the corner the arrows swing sideways, and <span class="amber">the outside two grow while the inside two shrink to almost nothing</span>. The car is leaning on two tires. Past the apex they rotate forward again.</p>
   <p class="dim">The view stops just past the corner exit; the road runs straight for another 230 m beyond it.</p>
 </section>
 
@@ -399,9 +399,9 @@
 </figure>
 
 <section class="beat tight">
-  <p>Through the corner the two cars are indistinguishable — both are cornering as hard as the tires allow, so both solve the same problem and find the same answer. <b>They pick the same line to within the width of your hand.</b></p>
-  <p>Past the exit they part company. The rear-drive car's front wheels go quiet: the corner is done and they are only steering, which costs almost nothing. Its rear wheels do the accelerating. <span class="sage">Two jobs, two axles.</span></p>
-  <p>The front-drive car's front wheels never get to rest. Eighty metres down a straight road, with no cornering left to do at all, <span class="coral">they are still spending well over half of what they have</span> — on acceleration alone. If you drive front-wheel drive you have felt this at every wet junction: turn and accelerate together and the wheel goes light and tugs at your hands. Ask for the two jobs one at a time and it does both without complaint.</p>
+  <p>Through the corner the two cars are indistinguishable. Both are cornering as hard as the tires allow, so both solve the same problem and find the same answer. <b>They pick the same line to within the width of your hand.</b></p>
+  <p>Past the exit they differ. The rear-drive car's front wheels go quiet: the corner is done and they are only steering, which costs almost nothing. Its rear wheels do the accelerating.</p>
+  <p>The front-drive car's front wheels never get to rest. Eighty meters down a straight road, with no cornering left to do, <span class="coral">they are still spending well over half of what they have</span>, on acceleration alone. If you drive front-wheel drive you have felt this at every wet junction. Turn and accelerate together and the wheel goes light and tugs at your hands. Ask for the two jobs one at a time and it does both cleanly.</p>
 </section>
 
 <div class="rule"></div>
@@ -410,8 +410,8 @@
 <section class="beat">
   <div class="eyebrow">The argument everyone has</div>
   <h2>Which wheels should drive?</h2>
-  <p>Hold everything else identical — same mass, same weight distribution, same tires, same corner — and change only which axle gets the torque. Real front- and rear-drive cars differ in almost everything, so this is a comparison you cannot run in a car park.</p>
-  <p>The car being modelled makes about <b>180 hp</b> — a normal sports coupé. At that power the two layouts finish within <b>three hundredths of a second</b> of each other: too close to feel, and not the answer anyone wants. The interesting part is what moves it, so the same corner was solved again at four engine outputs. <span class="dim">Pick one.</span></p>
+  <p>Hold everything else identical (same mass, same weight distribution, same tires, same corner) and change only which axle gets the torque. Real front- and rear-drive cars differ in almost everything, so this is a comparison you cannot run in a parking lot.</p>
+  <p>The car being modeled makes about <b>180 hp</b>, a normal sports coupe. At that power the two layouts finish within <b>three hundredths of a second</b> of each other, too close to feel. The interesting part is what moves it, so I solved the same corner again at four engine outputs. <span class="dim">Pick one.</span></p>
 </section>
 
 <figure class="fig reveal">
@@ -427,8 +427,8 @@
 </figure>
 
 <section class="beat tight">
-  <p><b>"Rear-wheel drive is faster" was never a fact about drivetrains.</b> It is a fact about drivetrains <i>at a given power level</i>, and the condition is doing most of the work. With little power the corner exit is limited by the engine, not by grip, so a tire-budget problem has nothing to bite on. Pile on power and the front tires saturate earlier and earlier.</p>
-  <p>You can check that without any of this: economy hatchbacks are front-wheel drive and nobody objects, while almost every car built to be fast is rear- or all-wheel drive. That split is usually explained by cost and packaging, and those explanations are true — but the friction budget alone reproduces it, from a tire data file and a stopwatch.</p>
+  <p><b>"Rear-wheel drive is faster" is true only <i>at a given power level</i></b>, and the condition is doing most of the work. With little power the corner exit is limited by the engine, not by grip, so a tire-budget problem has nothing to bite on. Pile on power and the front tires saturate earlier and earlier.</p>
+  <p>You can check that without any of this. Economy hatchbacks are front-wheel drive and nobody objects, while almost every car built to be fast is rear- or all-wheel drive. That split is usually explained by cost and packaging, and those explanations are true, but the friction budget alone reproduces it, from a tire data file and a stopwatch.</p>
 </section>
 
 <div class="rule"></div>
@@ -438,7 +438,7 @@
   <div class="eyebrow">50:50</div>
   <h2>Weight distribution changes the car far more than it changes the lap time.</h2>
   <p>Slide the mass along the wheelbase, change nothing else, and measure two things: how the car <i>behaves</i>, and how fast it goes.</p>
-  <p>The behaviour number is the <b>understeer gradient</b> — how much extra steering the car needs as you push harder. Negative means the back gives up first and the car rotates. Positive means the front gives up first and it pushes wide.</p>
+  <p>The behavior number is the <b>understeer gradient</b>, how much extra steering the car needs as you push harder. Negative means the back gives up first and the car rotates. Positive means the front gives up first and it pushes wide.</p>
 </section>
 
 <figure class="fig reveal">
@@ -451,9 +451,9 @@
 </figure>
 
 <section class="beat tight">
-  <p>Across the sweep the car goes from clear oversteer to clear understeer — a swing of about <b>1.05 deg/g</b>, which is five times the difference a professional test team can reliably tell apart. The lap time moves by around two tenths.</p>
-  <p>So 50:50 <i>is</i> mostly a marketing number, though not for the reason I expected. Each drivetrain does want its own end of the range — <b>whichever end carries the weight is the end that should drive it</b> — but the prize for getting it right is a tenth of a second, while the difference in how the car behaves is night and day. <span class="amber">You are mostly choosing a character, not a lap time.</span></p>
-  <p class="dim">You have driven a slice of this without meaning to: a full trunk and two rear passengers move you down this table.</p>
+  <p>Across the sweep the car goes from clear oversteer to clear understeer, a swing of about <b>1.05 deg/g</b>, which is five times the difference a professional test team can reliably tell apart. The lap time moves by around two tenths.</p>
+  <p>So 50:50 <i>is</i> mostly a marketing number, though not for the reason I expected. Each drivetrain does want its own end of the range (<b>whichever end carries the weight is the end that should drive it</b>), but getting it right is worth a tenth of a second, while the swing in how the car behaves runs from clear oversteer to clear understeer. <span class="amber">You are mostly choosing the car's character, and the lap time barely moves.</span></p>
+  <p class="dim">You have driven a slice of this without meaning to. A full trunk and two rear passengers move you down this table.</p>
 </section>
 
 <div class="rule"></div>
@@ -462,8 +462,8 @@
 <section class="beat">
   <div class="eyebrow">Front, mid or rear engine</div>
   <h2>"Mid-engine is better" is a claim about the wrong number.</h2>
-  <p>Two properties get muddled because you cannot move an engine without changing both. <b>Weight distribution</b> is where along the car the mass sits. <b>Polar moment</b> is how far from the middle it sits — how hard the car is to start and stop rotating.</p>
-  <p>You can feel the second one in your hands: swish a broom holding it by the middle, then hold it near the brush and swing the same swing. Same mass; with it far from your grip the broom answers late and argues.</p>
+  <p>Two properties get muddled because you cannot move an engine without changing both. <b>Weight distribution</b> is where along the car the mass sits. <b>Polar moment</b> is how far from the middle it sits, how hard the car is to start and stop rotating.</p>
+  <p>You can feel the second one in your hands. Swish a broom holding it by the middle, then hold it near the brush and swing the same swing. Same mass, but with the weight far from your grip the broom is slower to start turning and slower to stop.</p>
 </section>
 
 <figure class="fig reveal">
@@ -473,9 +473,9 @@
 </figure>
 
 <section class="beat tight">
-  <p>Look where the front-engined saloon and the rear-engined 911 land: <b>opposite ends of the balance axis, and the same height on the inertia one.</b> Now look at the mid-engine car — at 43% front it is <i>less</i> rearward than the 911. If balance were the story, the 911 would be the extreme one and the mid-engine car unremarkable.</p>
-  <p>What actually separates it is the lowest polar moment of the five: mass gathered near the middle. <span class="amber">That is the whole difference, and it is argued as a weight-distribution claim because moving an engine changes both at once.</span></p>
-  <p>And the lap times? Four of the five sit inside four hundredths of a second. Which brings up the thing wrong with the question.</p>
+  <p>Look where the front-engined sedan and the rear-engined 911 land: <b>opposite ends of the balance axis, the same height on the inertia one.</b> Now look at the mid-engine car. At 43% front it is <i>less</i> rearward than the 911. If balance were the story, the 911 would be the extreme one and the mid-engine car unremarkable.</p>
+  <p>What separates it is the lowest polar moment of the five, mass gathered near the middle. <span class="amber">That is the whole difference, and it is argued as a weight-distribution claim because moving an engine changes both at once.</span></p>
+  <p>The lap times land inside four hundredths of a second for four of the five. That points at what is wrong with the question.</p>
 </section>
 
 <div class="rule"></div>
@@ -484,10 +484,10 @@
 <section class="beat">
   <div class="eyebrow">What was wrong with the question</div>
   <h2>The driver knew the future.</h2>
-  <p>Everything above was driven by a solver that sees the whole road before it turns the wheel. It knows exactly when the corner arrives, so for a car that takes 356 ms to respond instead of 201 ms, it simply <b>starts steering earlier</b>. The delay costs almost nothing, because the delay is perfectly predictable.</p>
-  <p>A real driver reacts to what has already happened. For them, 155 ms is 155 ms of the car not doing what they just asked, arriving exactly when they are trying to correct something. <span class="amber">Response time is nearly free if you know the future and expensive if you don't</span> — which is why every "which layout is faster" answer above came back smaller than expected. We were asking about driveability using a driver for whom driveability does not exist.</p>
-  <p>So the numbers above are a <i>floor</i>. A design difference a perfect driver can plan around is one a real driver has to survive — and surviving is a different measurement.</p>
-  <p>Here is the same five cars, driven by a learner that reacts instead of planning, over a road whose grip is not quite what it expected. Every lap it drove is drawn.</p>
+  <p>Everything above was driven by a solver that sees the whole road before it turns the wheel. It knows exactly when the corner arrives, so for a car that takes 356 ms to respond instead of 201 ms, it <b>starts steering earlier</b>. The delay costs almost nothing, because the delay is perfectly predictable.</p>
+  <p>A real driver reacts to what has already happened. For them, 155 ms is 155 ms of the car not doing what they just asked, arriving exactly when they are trying to correct something. <span class="amber">Response time is nearly free if you know the future and expensive if you don't</span>, which is why every "which layout is faster" answer above came back smaller than expected. We were asking about driveability using a driver for whom driveability does not exist.</p>
+  <p>So the numbers above are a <i>floor</i>. A design difference a perfect driver can plan around is one a real driver has to survive, and surviving is a different measurement.</p>
+  <p>Here are the same five cars, driven by a learner that reacts instead of planning, over a road whose grip is not quite what it expected. Every lap it drove is drawn.</p>
 </section>
 
 <figure class="fig reveal">
@@ -498,8 +498,8 @@
 </figure>
 
 <section class="beat tight">
-  <p>With no disturbance every drivable car traces one line. Turn the grip variation on and they fan out — and <b>the quickest of them starts running out of road</b> while the others do not. That is the whole of "the fast setup is the one that bites", and it is not about running closer to the edge: it is about what happens when you go over it. Lose front grip and the car pushes wide, which scrubs speed, which gives the grip back. Lose rear grip and it rotates, which points the tires further from where they need to be, which rotates it more. <span class="coral">One failure undoes itself and the other feeds itself.</span></p>
-  <p class="dim">Note the 40% car: it fails with nothing going wrong at all. That is not fragility, it is a car this driver simply cannot drive — a different problem with a different fix.</p>
+  <p>With no disturbance every drivable car traces one line. Turn the grip variation on and they fan out, and <b>the quickest of them starts running out of road</b> while the others do not. That is what "the fast setup is the one that bites" comes down to. It is about what happens when you go over the edge. Lose front grip and the car pushes wide, which scrubs speed, which gives the grip back. Lose rear grip and it rotates, which points the tires further from where they need to be, which rotates it more.</p>
+  <p class="dim">Note the 40% car, which fails with nothing going wrong. This driver cannot drive it, which is a different problem with a different fix.</p>
 </section>
 
 <div class="rule"></div>
@@ -508,10 +508,10 @@
 <section class="beat">
   <div class="eyebrow">And then software gets involved</div>
   <h2>A computer can decide which wheel pays.</h2>
-  <p><b>First, the part your car already has.</b> When you turn, the outside wheel travels further than the inside one, so something has to let the two driven wheels spin at different speeds or the tires would scrub. That something is the <b>differential</b> — a lump of gears between them — and every interesting thing it does comes from one rule: <span class="amber">torque flows from the faster-turning wheel to the slower one.</span></p>
-  <p>That rule is fixed, and it has no idea which corner you are in. It is why a car with a heavily locked differential binds and pushes wide in a car park, and why a cheap hatchback can spin one unloaded wheel uselessly in the air while the other does nothing.</p>
-  <p><b>Torque vectoring replaces the rule with a decision.</b> Push harder on the wheels down one side and the car rotates — that is a genuine steering input that has nothing to do with the steering wheel. So: measure how the car is actually turning, compare it to how the driver asked it to turn, and deliberately push harder on whichever wheels close the gap. Two layers — one decides how much rotation you want, the other decides which wheels pay for it. Put a motor or a brake at each corner and it can meter all four separately, where the gears could only meter one axle.</p>
-  <p>Here is what that does to the layouts from two sections ago — same driver, same corner, same demand, differential swapped for the controller.</p>
+  <p><b>First, the part your car already has.</b> When you turn, the outside wheel travels further than the inside one, so something has to let the two driven wheels spin at different speeds or the tires would scrub. That something is the <b>differential</b> (a lump of gears between them), and every interesting thing it does comes from one rule: <span class="amber">torque flows from the faster-turning wheel to the slower one.</span></p>
+  <p>That rule is fixed, the same in every corner. It is why a car with a heavily locked differential binds and pushes wide in a parking lot, and why a cheap hatchback can spin one unloaded wheel uselessly in the air while the other does nothing.</p>
+  <p><b>Torque vectoring replaces the rule with a decision.</b> Push harder on the wheels down one side and the car rotates, a genuine steering input that has nothing to do with the steering wheel. So measure how the car is turning, compare it to how the driver asked it to turn, and push harder on whichever wheels close the gap. It works in two layers: one decides how much rotation you want, the other decides which wheels pay for it. Put a motor or a brake at each corner and it can meter all four separately, where the gears could only meter one axle.</p>
+  <p>Here is what that does to the layouts from two sections ago: same driver, same corner, same demand, with the differential swapped for the controller.</p>
 </section>
 
 <figure class="fig reveal">
@@ -540,12 +540,12 @@
 </figure>
 
 <section class="beat tight">
-  <p>Step through it and the difference is not subtle. <b>The differential is left-right identical at every single instant</b> — that is what one fixed rule looks like. The controller is not: at turn-in it <span class="coral">brakes the inside wheels and drives the outside ones</span>, which twists the car into the corner. As the steering unwinds it reverses, taking rotation away. Down the straight it stops meddling and the two look the same again.</p>
+  <p>Step through it. <b>The differential is left-right identical at every instant</b>, which is what one fixed rule looks like. The controller is not. At turn-in it <span class="coral">brakes the inside wheels and drives the outside ones</span>, which twists the car into the corner. As the steering unwinds it reverses, taking rotation away. Down the straight it stops intervening and the two look the same again.</p>
   <p>It is also redistributing under braking. Both cars are slowing at the same rate, but the controller puts more of that through the wheels that have the load to take it.</p>
 </section>
 
 <section class="beat tight">
-  <p>So what is it worth? Not "the car stayed on the road" — you could always ask for less. The honest measure is <b>the most cornering each layout can survive at all</b>, found by turning the demand up until it fails.</p>
+  <p>So what is it worth? It is not "the car stayed on the road," since you could always ask for less. The honest measure is <b>the most cornering each layout can survive</b>, found by turning the demand up until it fails.</p>
 </section>
 
 <figure class="fig reveal">
@@ -559,22 +559,22 @@
 
 <section class="beat tight">
   <p>With an open differential, four of the five archetypes leave the road at a demand the fifth one meets easily. With the controller on, all five stay on it. <b>Nothing else changed.</b></p>
-  <p>Measured as spread in cornering limit across the five layouts, the controller flattens the difference between them by <b>16×</b> at 181 hp and <b>47×</b> at twice that. The thing that made a 911 a 911 — where the engine sits — is something this controller has made close to irrelevant to whether the car holds its line.</p>
-  <p>With one exception worth keeping, because it is a mechanism rather than a gap: the front-driven car doesn't flatten. Its limit is a front-tire slip-angle ceiling, not a torque-distribution problem — and <span class="amber">a controller built to move torque around has nothing to move when torque was never what was failing.</span></p>
+  <p>Measured as spread in cornering limit across the five layouts, the controller flattens the difference between them by <b>16×</b> at 181 hp and <b>47×</b> at twice that. This controller makes where the engine sits, the thing that made a 911 a 911, close to irrelevant to whether the car holds its line.</p>
+  <p>There is one exception, a mechanism rather than a gap. The front-driven car doesn't flatten. Its limit is a front-tire slip-angle ceiling, and <span class="amber">a controller built to move torque around has nothing to move when torque was never what was failing.</span></p>
 </section>
 
 <div class="caveats">
-  <div class="c"><span><b>This is a model, and it says so.</b> Four wheels, load transfer, a real measured tire — but no roll camber, roll steer or compliance steer, which together are most of a real car's understeer. This car produces about <b>5%</b> of a real one's understeer gradient. Read the orderings and the directions; the magnitudes are illustrative.</span></div>
+  <div class="c"><span><b>This is a model.</b> It has four wheels, load transfer, and a real measured tire, but no roll camber, roll steer, or compliance steer, which together are most of a real car's understeer. This car produces about <b>5%</b> of a real one's understeer gradient. Read the orderings and the directions; the magnitudes are illustrative.</span></div>
   <div class="c"><span><b>One corner, one car, one tire file.</b> A 90° left-hander of 40 m radius, with a long straight after it. A hairpin or a sweeper stresses different budgets and can reorder things.</span></div>
-  <div class="c"><span><b>The tire is bigger than the car really wears</b>, and the shape of the braking-versus-cornering trade is an assumption standing in for coefficients this tire file doesn't carry. That a tire trades one for the other is certain; that it trades along an ellipse exactly is our choice.</span></div>
-  <div class="c"><span><b>Every number on this page is exported from the experiments' own artefacts</b>, and the tire curve is recomputed live from the same coefficients with a known-answer check against the Python. An audit of this series found ten of fifteen write-ups had drifted from their own data at least once; this page is built so it can't.</span></div>
+  <div class="c"><span><b>The tire is bigger than the car wears</b>, and the shape of the braking-versus-cornering trade is an assumption standing in for coefficients this tire file doesn't carry. That a tire trades one for the other is certain; that it trades along an ellipse exactly is our choice.</span></div>
+  <div class="c"><span><b>The numbers on this page are exported from the experiments' own artifacts</b>, and the tire curve is recomputed live from the same coefficients with a known-answer check against the Python. An audit of this series found ten of fifteen write-ups had drifted from their own data at least once; this page is built so it can't.</span></div>
 </div>
 
 <div class="rule"></div>
 
 <section class="outro">
   <h2>Most of it is one fact about rubber.</h2>
-  <p>Grip falls as load rises. Everything above — why cornering costs you, why the driven axle wants the weight, why a diagonal arrow runs out first, why a computer metering four wheels beats gears metering one — is that fact with different bookkeeping on top. The rest is knowing which question you actually asked.</p>
+  <p>Grip falls as load rises. Everything above (why cornering costs you, why the driven axle should carry the weight, why a diagonal arrow runs out first, why a computer metering four wheels beats gears metering one) is that fact with different bookkeeping on top. The rest is knowing which question you asked.</p>
   <div class="links">
     <a href="https://github.com/Orbitope/contact-patch">Source</a>
     <a href="https://github.com/Orbitope/contact-patch/tree/main/episodes">The long version · 15 parts</a>

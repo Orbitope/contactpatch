@@ -410,8 +410,8 @@
 <section class="beat">
   <div class="eyebrow">The argument everyone has</div>
   <h2>Which wheels should drive?</h2>
-  <p>Hold everything else identical (same mass, same weight distribution, same tires, same corner) and change only which axle gets the torque. Real front- and rear-drive cars differ in almost everything, so this is a comparison you cannot run in a car park.</p>
-  <p>The car being modeled makes about <b>180 hp</b>, a normal sports coupé. At that power the two layouts finish within <b>three hundredths of a second</b> of each other, too close to feel. The interesting part is what moves it, so I solved the same corner again at four engine outputs. <span class="dim">Pick one.</span></p>
+  <p>Hold everything else identical (same mass, same weight distribution, same tires, same corner) and change only which axle gets the torque. Real front- and rear-drive cars differ in almost everything, so this is a comparison you cannot run in a parking lot.</p>
+  <p>The car being modeled makes about <b>180 hp</b>, a normal sports coupe. At that power the two layouts finish within <b>three hundredths of a second</b> of each other, too close to feel. The interesting part is what moves it, so I solved the same corner again at four engine outputs. <span class="dim">Pick one.</span></p>
 </section>
 
 <figure class="fig reveal">
@@ -473,7 +473,7 @@
 </figure>
 
 <section class="beat tight">
-  <p>Look where the front-engined saloon and the rear-engined 911 land: <b>opposite ends of the balance axis, the same height on the inertia one.</b> Now look at the mid-engine car. At 43% front it is <i>less</i> rearward than the 911. If balance were the story, the 911 would be the extreme one and the mid-engine car unremarkable.</p>
+  <p>Look where the front-engined sedan and the rear-engined 911 land: <b>opposite ends of the balance axis, the same height on the inertia one.</b> Now look at the mid-engine car. At 43% front it is <i>less</i> rearward than the 911. If balance were the story, the 911 would be the extreme one and the mid-engine car unremarkable.</p>
   <p>What separates it is the lowest polar moment of the five, mass gathered near the middle. <span class="amber">That is the whole difference, and it is argued as a weight-distribution claim because moving an engine changes both at once.</span></p>
   <p>The lap times land inside four hundredths of a second for four of the five. That points at what is wrong with the question.</p>
 </section>
@@ -509,7 +509,7 @@
   <div class="eyebrow">And then software gets involved</div>
   <h2>A computer can decide which wheel pays.</h2>
   <p><b>First, the part your car already has.</b> When you turn, the outside wheel travels further than the inside one, so something has to let the two driven wheels spin at different speeds or the tires would scrub. That something is the <b>differential</b> (a lump of gears between them), and every interesting thing it does comes from one rule: <span class="amber">torque flows from the faster-turning wheel to the slower one.</span></p>
-  <p>That rule is fixed, the same in every corner. It is why a car with a heavily locked differential binds and pushes wide in a car park, and why a cheap hatchback can spin one unloaded wheel uselessly in the air while the other does nothing.</p>
+  <p>That rule is fixed, the same in every corner. It is why a car with a heavily locked differential binds and pushes wide in a parking lot, and why a cheap hatchback can spin one unloaded wheel uselessly in the air while the other does nothing.</p>
   <p><b>Torque vectoring replaces the rule with a decision.</b> Push harder on the wheels down one side and the car rotates, a genuine steering input that has nothing to do with the steering wheel. So measure how the car is turning, compare it to how the driver asked it to turn, and push harder on whichever wheels close the gap. It works in two layers: one decides how much rotation you want, the other decides which wheels pay for it. Put a motor or a brake at each corner and it can meter all four separately, where the gears could only meter one axle.</p>
   <p>Here is what that does to the layouts from two sections ago: same driver, same corner, same demand, with the differential swapped for the controller.</p>
 </section>
